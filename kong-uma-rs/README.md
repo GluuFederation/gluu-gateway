@@ -22,12 +22,10 @@ Table of Contents
   1. Stop kong : `kong stop`
   2. Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`
   3. Enable plugin in your `kong.yml` (typically located at `/etc/kong/kong.yml`).
-
 ```
  custom_plugins:
    - kong-uma-rs
 ```
-
   4. Start kong : `kong start`
 
 
