@@ -9,7 +9,9 @@ Table of Contents
 
  * [Installation](#installation)
  * [Protect your API with UMA](#protect-your-api-with-uma)
-
+   * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
+   * [Enable kong-uma-rs protection](#add-your-api-server-to-kong-apis) 
+ * [References](#references)
 ## Installation
 
 1. [Install Kong](https://getkong.org/install/)
@@ -71,3 +73,5 @@ $ curl -i -X POST \
   --data "config.protection_document={protection document}"
 ```
 
+## References
+ - [Kong](https://getkong.org)
