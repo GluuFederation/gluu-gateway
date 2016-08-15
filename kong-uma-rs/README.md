@@ -21,12 +21,11 @@ Table of Contents
 3. Install kong-uma-rs
   1. Stop kong : `kong stop`
   2. Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`
-  3. Enable plugin in your `kong.yml` (typically located at `/etc/kong/kong.yml`).
+  3. Enable plugin in your `kong.yml` (typically located at `/etc/kong/kong.yml`) and start kong `kong start`.
 ```
  custom_plugins:
    - kong-uma-rs
 ```
-  4. Start kong : `kong start`
 
 
 ## Protect your API with UMA
