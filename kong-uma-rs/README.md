@@ -10,8 +10,10 @@ Table of Contents
  * [Installation](#installation)
  * [Protect your API with UMA](#protect-your-api-with-uma)
    * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
-   * [Enable kong-uma-rs protection](#add-your-api-server-to-kong-apis) 
+   * [Enable kong-uma-rs protection](#enable-kong-uma-rs-protection 
  * [References](#references)
+  
+ 
 ## Installation
 
 1. [Install Kong](https://getkong.org/install/)
