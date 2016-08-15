@@ -12,9 +12,22 @@ Table of Contents
 
 ## Installation
 
+1. [Install Kong](https://getkong.org/install/)
+2. [Install & Configure oxd server](https://oxd.gluu.org/docs/)
+3. Install kong-uma-rs
+  1. Stop kong : `kong stop`
+  2. Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`
+  3. Enable plugin in your `kong.yml` (typically located at `/etc/kong/kong.yml`).
+    ```
+    custom_plugins:
+      - kong-uma-rs
+    ```
+  4. Start kong : `kong start`
+
+
 ## Protect your API with UMA
 
-- Add you API server to kong /apis
+### Add your API server to kong /apis
 
 ```curl
 $ curl -i -X POST \
@@ -48,12 +61,12 @@ $ curl -i -X GET \
   --header 'Host: your.api.server.com'
 ```
 
-- Enable kong-uma-plugin protection
+### Enable kong-uma-rs protection
 
 ```
 $ curl -i -X POST \
   --url http://localhost:8001/apis/2eec1cb2-7093-411a-c14e-42e67142d2c4/plugins/ \
-  --data 'name=kong-uma-plugin' \
+  --data 'name=kong-uma-rs' \
   --data "config.oxd_port=8099" \
   --data "config.protection_document={protection document}"
 ```
