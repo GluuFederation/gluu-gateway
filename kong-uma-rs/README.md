@@ -8,7 +8,7 @@ Table of Contents
 =================
 
  * [Installation](#installation)
- * [Protect your API with UMA](#definitions)
+ * [Protect your API with UMA](#protect-your-api-with-uma)
 
 ## Installation
 
@@ -19,9 +19,9 @@ Table of Contents
 ```curl
 $ curl -i -X POST \
   --url http://localhost:8001/apis/ \
-  --data 'name=yourapiserver' \
-  --data 'upstream_url=http://yourapiserver.com/' \
-  --data 'request_host=yourapiserver.com'
+  --data 'name=your.api.server' \
+  --data 'upstream_url=http://your.api.server.com/' \
+  --data 'request_host=your.api.server.com'
 ```
 
 Response must confirm the API is added
@@ -32,11 +32,11 @@ Content-Type: application/json
 Connection: keep-alive
 
 {
-  "request_host": "yourapiserver.com",
-  "upstream_url": "http://yourapiserver.com/",
+  "request_host": "your.api.server.com",
+  "upstream_url": "http://your.api.server.com/",
   "id": "2eec1cb2-7093-411a-c14e-42e67142d2c4",
   "created_at": 1428456369000,
-  "name": "yourapiserver"
+  "name": "your.api.server"
 }
 ```
 
@@ -45,7 +45,7 @@ Validate your API is correctly proxied via Kong.
 ```
 $ curl -i -X GET \
   --url http://localhost:8000/your/api \
-  --header 'Host: yourapiserver.com'
+  --header 'Host: your.api.server.com'
 ```
 
 2. Enable kong-uma-plugin protection
@@ -53,6 +53,8 @@ $ curl -i -X GET \
 ```
 $ curl -i -X POST \
   --url http://localhost:8001/apis/2eec1cb2-7093-411a-c14e-42e67142d2c4/plugins/ \
-  --data '<uma plugin json configuration>'
+  --data 'name=kong-uma-plugin' \
+  --data "config.oxd_port=8099" \
+  --data "config.protection_document={protection document}"
 ```
 
