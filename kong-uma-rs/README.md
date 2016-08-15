@@ -14,7 +14,7 @@ Table of Contents
 
 ## Protect your API with UMA
 
-1. Add you API server to kong /apis
+- Add you API server to kong /apis
 
 ```curl
 $ curl -i -X POST \
@@ -48,7 +48,7 @@ $ curl -i -X GET \
   --header 'Host: your.api.server.com'
 ```
 
-2. Enable kong-uma-plugin protection
+- Enable kong-uma-plugin protection
 
 ```
 $ curl -i -X POST \
