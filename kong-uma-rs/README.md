@@ -10,7 +10,7 @@ Table of Contents
  * [Installation](#installation)
  * [Protect your API with UMA](#protect-your-api-with-uma)
    * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
-   * [Enable kong-uma-rs protection](#enable-kong-uma-rs-protection 
+   * [Enable kong-uma-rs protection](#enable-kong-uma-rs-protection)
  * [References](#references)
   
  
