@@ -1,16 +1,15 @@
---
--- Created by IntelliJ IDEA.
--- User: yuriy
--- Date: 10.08.16
---
+local function protection_document_validator(given_value, given_config)
+  ngx.log(ngx.DEBUG, "KONG-UMA: given_value:" .. given_value)
+  -- todo
+  return true
+end
 
 return {
-    no_consumer = true, -- this plugin will only be API-wide,
-    fields = {
-        -- Describe your plugin's configuration's schema here.
-    },
-    self_check = function(schema, plugin_t, dao, is_updating)
-        -- perform any custom verification
-        return true
-    end
+  no_consumer = true,
+  fields = {
+    protection_document = { required = true, type = "string", func = protection_document_validator },
+  },
+  self_check = function(schema, plugin_t, dao, is_updating)
+    return true
+  end
 }
