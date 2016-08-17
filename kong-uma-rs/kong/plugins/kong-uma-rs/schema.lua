@@ -1,5 +1,10 @@
 local function protection_document_validator(given_value, given_config)
   ngx.log(ngx.DEBUG, "KONG-UMA: given_value:" .. given_value)
+
+  if false then -- todo
+    return false, "cannot parse protection_document json:'" .. given_value .. "'"
+  end
+
   -- todo
   return true
 end
