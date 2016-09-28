@@ -36,9 +36,9 @@ Table of Contents
  - oxd_host - OPTIONAL, host of the oxd server (default: localhost. It is recommended to have oxd server on localhost.)
  - oxd_port - REQUIRED, port of the oxd server (oxd server default port is 8099)
  - protection_document - REQUIRED, json document that describes UMA protection
- - uma_server_host - REQUIRED, UMA Server that implements UMA 1.0.1 specification. E.g. https://ce-dev.gluu.org
+ - uma_server_host - REQUIRED, UMA Server that implements UMA 1.0.1 specification. E.g. https://ce-dev2.gluu.org
                      (For example [Gluu Server](https://www.gluu.org/gluu-server/overview/)). 
-                     Check that UMA implementation is up and running by visiting `.well-known/uma-configuration` endpoint. E.g. https://ce-dev.gluu.org/.well-known/uma-configuration
+                     Check that UMA implementation is up and running by visiting `.well-known/uma-configuration` endpoint. E.g. https://ce-dev2.gluu.org/.well-known/uma-configuration
                
 ### Protection document   
 
@@ -141,7 +141,7 @@ $ curl -i -X POST \
   --data 'name=kong-uma-rs' \
   --data "config.oxd_host=localhost" \
   --data "config.oxd_port=8099" \
-  --data "config.uma_server_host=https://ce-dev.gluu.org" \
+  --data "config.uma_server_host=https://ce-dev2.gluu.org" \
   --data "config.protection_document={\"resources\":[
                                          {
                                              \"path\":\"/photo\",
@@ -192,7 +192,7 @@ Since you did not specify the required authorized RPT in "Authorization" header 
 ```
 HTTP/1.1 403 Forbiddenrealm
 WWW-Authenticate: UMA realm="rs",
-  as_uri="https://ce-dev.gluu.org",
+  as_uri="https://ce-dev2.gluu.org",
   error="insufficient_scope",
   ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 
@@ -201,7 +201,7 @@ WWW-Authenticate: UMA realm="rs",
 }
 ```
 
-Or in case https://ce-dev.gluu.org is unreachange
+Or in case https://ce-dev2.gluu.org is unreachange
 
 ```
 HTTP/1.1 403 Forbidden

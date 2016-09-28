@@ -24,3 +24,65 @@ kong reload -c /home/yuriy/IdeaProjects/kong/kong_DEVELOPMENT_.yml
 ln -s /home/yuriy/IdeaProjects/kong-plugins/kong-uma-rs/kong/plugins/kong-uma-rs /home/yuriy/IdeaProjects/kong/kong/plugins/
 ln -s /home/yuriy/IdeaProjects/kong-plugins/kong-uma-rs/spec/plugins/kong-uma-rs /home/yuriy/IdeaProjects/kong/spec/plugins/
 ```
+
+
+==================================================================
+1. Call customer api
+
+curl -i -X GET --url http://localhost:8000/status/200/hello --header 'Host: mockbin.org'
+  
+2. Kong - Plugins
+
+curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/6e6814c2-af83-4e79-9fb4-8d8ad42a35f9  
+curl -i -X GET --url http://127.0.0.1:8001/apis
+curl -i -X GET --url http://127.0.0.1:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins
+
+curl -i -X POST \
+  --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/ \
+  --data 'name=kong-uma-rs' \
+  --data "config.oxd_host=localhost" \
+  --data "config.oxd_port=8099" \
+  --data "config.uma_server_host=https://ce-dev2.gluu.org" \
+  --data "config.protection_document={\"resources\":[
+                                         {
+                                             \"path\":\"/status\",
+                                             \"conditions\":[
+                                                 {
+                                                     \"httpMethods\":[\"GET\"],
+                                                     \"scopes\":[
+                                                         \"http://photoz.example.com/dev/actions/view\"
+                                                     ]
+                                                 }
+                                             ]
+                                         }
+                                     ]
+                                     }\"
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
