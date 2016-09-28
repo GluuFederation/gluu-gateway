@@ -38,7 +38,7 @@ Table of Contents
  - protection_document - REQUIRED, json document that describes UMA protection
  - uma_server_host - REQUIRED, UMA Server that implements UMA 1.0.1 specification. E.g. https://ce-dev.gluu.org
                      (For example [Gluu Server](https://www.gluu.org/gluu-server/overview/)). 
-                     Check that UMA implementation is up and running by visiting https://<server_host>/.well-known/uma-configuration
+                     Check that UMA implementation is up and running by visiting `.well-known/uma-configuration` endpoint. E.g. https://ce-dev.gluu.org/.well-known/uma-configuration
                
 ### Protection document   
 
