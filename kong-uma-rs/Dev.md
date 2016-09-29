@@ -43,7 +43,7 @@ curl -i -X GET --url http://localhost:8000/status/200/hello --header 'Host: mock
   
 2. Kong - Plugins
 
-curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/6e6814c2-af83-4e79-9fb4-8d8ad42a35f9  
+curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/622bb387-7721-43a3-a5eb-8addd088ba46 
 curl -i -X GET --url http://127.0.0.1:8001/apis
 curl -i -X GET --url http://127.0.0.1:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins
 

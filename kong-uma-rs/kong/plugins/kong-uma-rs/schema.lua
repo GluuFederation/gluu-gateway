@@ -1,4 +1,5 @@
 local stringy = require "stringy"
+local oxd = require "kong.plugins.kong-uma-rs.oxdclient"
 
 local function isempty(s)
   return s == nil or s == ''
@@ -68,6 +69,6 @@ return {
     protection_document = { required = true, type = "string", func = protection_document_validator },
   },
   self_check = function(schema, plugin_t, dao, is_updating)
-    return true
+    return oxd.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host and oxd_port specified in configuration)"
   end
 }
