@@ -1,3 +1,9 @@
+local stringy = require "stringy"
+
+local function isempty(s)
+  return s == nil or s == ''
+end
+
 local function protection_document_validator(given_value, given_config)
 
   ngx.log(ngx.DEBUG, "protection_document_validator: given_value:" .. given_value)
@@ -45,20 +51,12 @@ local function uma_server_host_validator(given_value, given_config)
     return false
   end
 
-  if not string_starts(given_value, "https://") then
+  if not stringy.startswith(given_value, "https://") then
     ngx.log(ngx.ERROR, "Invalid uma_server_host. It does not start from 'https://', value: " .. given_value)
     return false
   end
 
   return true
-end
-
-local function isempty(s)
-  return s == nil or s == ''
-end
-
-local function string_starts(String,Start)
-  return string.sub(String,1,string.len(Start))==Start
 end
 
 return {
