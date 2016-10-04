@@ -1,14 +1,25 @@
 local oxd = require "kong.plugins.kong-uma-rs.oxdclient"
 local responses = require "kong.tools.responses"
+local stringy = require "stringy"
 
 local function isempty(s)
   return s == nil or s == ''
 end
 
+local function removeBearer(authorization)
+  if authorization ~= nil and not isempty(authorization) and stringy.startswith(authorization, "Bearer ") then
+    return string.sub(authorization, 8)
+  end
+  return ""
+end
+
 local function getRpt()
   local authorization = ngx.req.get_headers()["Authorization"]
-  if authorization ~= nil and authorization[1] ~= nil then
-    return authorization[1]
+  if type(authorization) == "string" then
+    return removeBearer(authorization)
+  end
+  if type(authorization) == "table" then
+    return removeBearer(authorization[1])
   end
   return ""
 end
@@ -51,14 +62,13 @@ function _M.execute(conf)
 
     if response["data"]["access"] == "denied" then
       local ticket = response["data"]["ticket"]
-      if not isempty(ticket) then
-        ngx.header["WWW-Authenticate"] = "UMA realm=\"\",as_uri=\"" .. conf.uma_server_host .. "\",ticket=\"" .. ticket .. "\""
+      if not isempty(ticket) and not isempty(response["data"]["www-authenticate_header"]) then
+        ngx.header["WWW-Authenticate"] = response["data"]["www-authenticate_header"]
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
       end
 
       return responses.send_HTTP_FORBIDDEN("UMA Authorization Server Unreachable")
     end
-
   end
 
   return responses.send_HTTP_FORBIDDEN("Unknown (unsupported) status code from oxd server for uma_rs_check_access operation.")
