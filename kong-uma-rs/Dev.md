@@ -43,31 +43,9 @@ curl -i -X GET --url http://localhost:8000/status/200/hello --header 'Host: mock
   
 2. Kong - Plugins
 
-curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/622bb387-7721-43a3-a5eb-8addd088ba46 
+curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/862039d9-513f-40d1-8546-d796f09af61f
 curl -i -X GET --url http://127.0.0.1:8001/apis
 curl -i -X GET --url http://127.0.0.1:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins
-
-curl -i -X POST \
-  --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/ \
-  --data 'name=kong-uma-rs' \
-  --data "config.oxd_host=localhost" \
-  --data "config.oxd_port=8099" \
-  --data "config.uma_server_host=https://ce-dev2.gluu.org" \
-  --data "config.protection_document={\"resources\":[
-                                         {
-                                             \"path\":\"/status\",
-                                             \"conditions\":[
-                                                 {
-                                                     \"httpMethods\":[\"GET\"],
-                                                     \"scopes\":[
-                                                         \"http://photoz.example.com/dev/actions/view\"
-                                                     ]
-                                                 }
-                                             ]
-                                         }
-                                     ]
-                                     }"
-                                     
                                      
 curl -i -X POST \
   --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/ \
@@ -75,9 +53,11 @@ curl -i -X POST \
   --data "config.oxd_host=localhost" \
   --data "config.oxd_port=8099" \
   --data "config.uma_server_host=https://ce-dev2.gluu.org" \
-  --data "config.protection_document={\"resources\":[{\"path\":\"/status\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scopes\":[\"http://photoz.example.com/dev/actions/view\"]}]}]}"
+  --data "config.protection_document={\"resources\":[{\"path\":\"/status/200/hello\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scopes\":[\"http://photoz.example.com/dev/actions/view\"]}]}]}"
 
-
+curl -i -X GET --url http://localhost:8000/status/200/hello?bla=bla \
+  --header 'Host: mockbin.org' \
+  --header 'Authorization: Bearer gat_1c866cd3-affd-44f3-ad5a-d2605d5da0a5/E435.A640.511B.E8EE.535A.D3FB.5EC9.C8A9'
  
 
 
