@@ -52,7 +52,7 @@ end
 
 function _M.checkaccess(conf, rpt, path, httpMethod)
   local commandAsJson = "{\"command\":\"uma_rs_check_access\",\"params\":{\"oxd_id\":\"" .. conf.oxd_id .. "\",\"rpt\":\"" .. rpt .. "\",\"path\":\"" .. path .. "\",\"http_method\":\"" .. httpMethod .. "\"}}";
-  local response = _M.execute(conf, commandAsJson, 2)
+  local response = _M.execute(conf, commandAsJson, 5)
   return cjson.decode(response)
 end
 
