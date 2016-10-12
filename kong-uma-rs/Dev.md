@@ -43,7 +43,7 @@ curl -i -X GET --url http://localhost:8000/status/200/hello --header 'Host: mock
   
 2. Kong - Plugins
 
-curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/862039d9-513f-40d1-8546-d796f09af61f
+curl -i -X DELETE --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/7208841a-dd4b-4101-89a1-bb5e6e5a3b0f
 curl -i -X GET --url http://127.0.0.1:8001/apis
 curl -i -X GET --url http://127.0.0.1:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins
                                      
@@ -57,8 +57,9 @@ curl -i -X POST \
 
 curl -i -X GET --url http://localhost:8000/status/200/hello?bla=bla \
   --header 'Host: mockbin.org' \
-  --header 'Authorization: Bearer gat_1c866cd3-affd-44f3-ad5a-d2605d5da0a5/E435.A640.511B.E8EE.535A.D3FB.5EC9.C8A9'
+  --header 'Authorization: Bearer gat_9b26e203-1b21-4298-a13b-9cc8b7b6cb9e/F4D8.22EB.B3B7.A39D.89BC.C26D.3A90.C735'
  
+http://mockbin.org/status/200/hello?bla=bla
 
 
 

@@ -199,9 +199,7 @@ WWW-Authenticate: UMA realm="rs",
   error="insufficient_scope",
   ticket="016f84e8-f9b9-11e0-bd6f-0021cc6004de"
 
-{
-"ticket": "016f84e8-f9b9-11e0-bd6f-0021cc6004de"
-}
+{"message":"Unauthorized"}
 ```
 
 Or in case https://ce-dev2.gluu.org is unreachange
