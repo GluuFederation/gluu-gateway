@@ -19,12 +19,6 @@ return {
             crud.put(self.params, dao_factory.oxds)
         end,
         POST = function(self, dao_factory)
-            local oxd_result = oxd.register(self.params)
-
-            if (oxd_result.result == false) then
-                return responses.send_HTTP_BAD_REQUEST("Invalid parameter value")
-            end
-
             if (isempty(self.params.client_id)) then
                 return responses.send_HTTP_BAD_REQUEST("client_id is required")
             end
@@ -33,8 +27,12 @@ return {
                 return responses.send_HTTP_BAD_REQUEST("client_secret is required")
             end
 
-            self.params.oxd_id = oxd_result.oxd_id
+            local oxd_result = oxd.register(self.params)
+            if (oxd_result.result == false) then
+                return responses.send_HTTP_BAD_REQUEST("Invalid parameter value")
+            end
 
+            self.params.oxd_id = oxd_result.oxd_id
             local oxd = {
                 consumer_id = self.params.consumer_id,
                 oxd_id = self.params.oxd_id,

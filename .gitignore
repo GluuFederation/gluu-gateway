@@ -45,3 +45,4 @@ luac.out
 .idea/
 kong-plugins.iml
 kong-uma-rs/kong-uma-rs.iml
+kong-openid-rp/kong-openid-rp.iml

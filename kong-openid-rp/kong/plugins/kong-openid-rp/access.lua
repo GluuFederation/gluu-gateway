@@ -50,7 +50,7 @@ function _M.execute(conf)
     -- ------------------------
 
     -- local oxdConfig = load_oxd_by_client_id(client_id);
-    local oxdConfig = cache.get_or_set(cache.oxd_key(oxd_id), nil, load_oxd_by_oxd_id, oxd_id);
+    local oxdConfig = cache.get_or_set("oxds:"..oxd_id, nil, load_oxd_by_oxd_id, oxd_id);
     local response = oxd.get_user_info(oxdConfig, authorization_code, state)
 
     if response == nil then

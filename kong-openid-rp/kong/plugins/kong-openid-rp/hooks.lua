@@ -3,7 +3,7 @@ local cache = require "kong.tools.database_cache"
 
 local function invalidate(message_t)
   if message_t.collection == "oxds" then
-    cache.delete(cache.oxd_key(message_t.old_entity and message_t.old_entity.oxd_id or message_t.entity.oxd_id))
+    cache.delete("oxds:"..(message_t.old_entity and message_t.old_entity.oxd_id or message_t.entity.oxd_id))
   end
 end
 
