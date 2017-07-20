@@ -1,6 +1,10 @@
 local crud = require "kong.api.crud_helpers"
 local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
 local responses = require "kong.tools.responses"
+local cache = require "kong.tools.database_cache"
+local USER_INFO = "USER_INFO"
+local VALID_REQUEST = "VALID_REQUEST"
+local OXDS = "oxds:"
 
 local function isempty(s)
     return s == nil or s == ''
@@ -56,17 +60,35 @@ return {
                 self.params.consumer_id,
                 "consumer_id");
 
-            self.openid_oxd = credentials[1]
+            self.oxds = credentials[1]
         end,
         GET = function(self, dao_factory, helpers)
-            local response = oxd.get_authorization_url(self.openid_oxd)
+            local response = oxd.get_authorization_url(self.oxds)
 
             if response["status"] == "error" then
-                ngx.log(ngx.ERR, "get_authorization_url : oxd_id: " .. self.openid_oxd.oxd_id)
+                ngx.log(ngx.ERR, "get_authorization_url : oxd_id: " .. self.oxds.oxd_id)
                 return responses.send_HTTP_INTERNAL_SERVER_ERROR(response);
             end
 
             return responses.send_HTTP_OK(response)
+        end
+    },
+    ["/consumers/:username_or_id/logout"] = {
+        DELETE = function(self, dao_factory, helpers)
+            crud.find_consumer_by_username_or_id(self, dao_factory, helpers)
+            self.params.consumer_id = self.consumer.id
+
+            local credentials, err = crud.find_by_id_or_field(dao_factory.oxds,
+                {},
+                self.params.consumer_id,
+                "consumer_id");
+
+            self.oxds = credentials[1]
+            cache.delete(OXDS .. self.oxds.oxd_id)
+            cache.delete(VALID_REQUEST .. self.oxds.oxd_id)
+            cache.delete(USER_INFO .. self.oxds.oxd_id)
+            cache.delete(cache.consumer_key(self.params.consumer_id));
+            return responses.send_HTTP_OK()
         end
     }
 }

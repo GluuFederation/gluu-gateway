@@ -29,6 +29,11 @@ function _M.execute(conf, commandAsJson, timeout)
 
     local client = socket.connect(host, conf.oxd_port);
 
+    if (client == nil) then
+        ngx.log(ngx.ERR, "OXD Server is not started")
+        return '{ "status": "error", "data": { "description": "Oxd server is not start"}}'
+    end
+
     local commandWithLengthPrefix = commandWithLengthPrefix(commandAsJson);
     ngx.log(ngx.DEBUG, "commandWithLengthPrefix: " .. commandWithLengthPrefix)
 

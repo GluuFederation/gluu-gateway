@@ -87,11 +87,12 @@ $ curl -i -X GET \
 ```
 
 ### Enable kong-openid-rp protection  
-
+`session_time_second` is required field. It accept time in second and automatically remove the login session after specified time. (e.g 86400 seconds = 24 hr)
 ```
 $ curl -i -X POST \
   --url http://localhost:8001/apis/4857493c-2211-4c4f-b180-772806d655b7/plugins/ \
   --data 'name=kong-openid-rp' \
+  --data 'config.session_time_second=86400'
 ```
 
 ### Create a Consumer
