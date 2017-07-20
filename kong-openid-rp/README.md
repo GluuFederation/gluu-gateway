@@ -1,8 +1,6 @@
 # Openid Connect RP plugin
 
-Openid Connect RP or OAuth 2.0 plugin for authenticate.
-
-It allows to protect your API (which is proxied by Kong) with [Open Id Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/)
+The Kong OpenID Connect RP or OAuth 2.0 plugin allows you to protect your API (which is proxied by Kong) with [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/).
 
 Table of Contents
 =================
