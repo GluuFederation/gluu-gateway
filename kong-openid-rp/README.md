@@ -1,4 +1,4 @@
-# Openid Connect RP plugin
+# Kong OpenID Connect RP plugin
 
 The Kong OpenID Connect RP or OAuth 2.0 plugin allows you to protect your API (which is proxied by Kong) with [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/).
 
@@ -7,11 +7,14 @@ Table of Contents
 
  * [Installation](#installation)
  * [Configuration](#configuration)
- * [Protect your API with UMA](#protect-your-api-with-uma)
+ * [Protect your API with OpenID Connect RP](#protect-your-api-with-Openid-connect-rp)
    * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
-   * [Enable kong-uma-rs protection](#enable-kong-uma-rs-protection)
-   * [Verify that your API is protected by kong-uma-rs](#verify-that-your-api-is-protected-by-kong-uma-rs)
-   * [Verify that your API can be accessed with valid RPT](#verify-that-your-api-can-be-accessed-with-valid-rpt)
+   * [Enable kong-openid-rp protection](#enable-kong-openid-rp-protection)
+   * [Create a Consumer](#create-a-consumer)
+   * [Config plugin and get OXD ID](#config-plugin-and-get-oxd-id)
+   * [Getting authorization url](#getting-authorization-url)
+   * [Verify that your API is protected by kong-openid-rp](#verify-that-your-api-is-protected-by-kong-openid-rp)
+   * [Upstream Headers](#upstream-headers)
  * [References](#references)
   
 ## Installation
@@ -38,7 +41,7 @@ Table of Contents
  - oxd_port - REQUIRED, port of the oxd server (oxd server default port is 8099)
  - scope - REQUIRED, It is the user claims which you want in user information.
  
-## Protect your API with UMA
+## Protect your API with OpenID Connect RP
 
 ### Add your API server to kong /apis
 
@@ -113,7 +116,7 @@ HTTP/1.1 201 Created
 
 ### Config plugin and get OXD ID
 
-During configuration keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host:oxd_port provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-uma-rs must be re-registered (to force registration with newly installed oxd).
+During configuration keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /consumers/<consumer_id>/kong-openid-rp endpoint, plugin performs self registration on oxd server at oxd_host:oxd_port provided in request parameter. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-openid-rp must be re-registered (to force registration with newly installed oxd).
 
 ```
 curl -i -X POST \
@@ -143,6 +146,8 @@ Response:
 ```
 
 ### Getting authorization url
+The admin API endpoint help you to get `authorization URL` which is generated using `OXD server`.
+You need to passed consumer id in path parameter.
 
 ```
 curl -i -X GET \
@@ -162,7 +167,7 @@ Response
 Use this above `authorization_url` to getting code and state. If you properly registered with your client on your open id provider server and also with oxd server then it will redirect you to your open id service provider(e.g `https://opendid-provider.org`) for authentication. If authentication done successful then it will redirect you to `authorization_redirect_uri` with code and state.
 
 ### Verify that your API is protected by kong-openid-rp
-
+Below is request with some wrong header parameter value and it's return unauthorized in response.
 ```
 $ curl -i -X GET \
   --url http://localhost:8000/your/api \
@@ -179,7 +184,7 @@ Response
 }
 ```
 
-
+Below is request with valid header parameter value.
 ```
 $ curl -i -X GET \
   --url http://localhost:8000/your/api \
@@ -190,3 +195,19 @@ $ curl -i -X GET \
 ```
 
 If your credential is correct then you will get successful response from you api server. (e.g `your.api.server.com/your/api`)  
+
+### Upstream Headers
+When a client has been authenticated, the plugin will append some headers to the request before proxying it to the upstream API/Microservice, so that you can identify the Consumer in your code:
+ - `X-Consumer-ID`, the ID of the Consumer on Kong
+ - `X-Consumer-Custom-ID`, the custom_id of the Consumer (if set)
+ - `X-Consumer-Username`, the username of the Consumer (if set)
+ - `X-OXD-ID`, the OXD ID which is registered in oxd server (if set)
+ - `X-Anonymous-Consumer`, will be set to true when authentication failed, and the 'anonymous' consumer was set instead.
+
+You can use this information on your side to implement additional logic. You can use the `X-Consumer-ID` or `X-OXD-ID` value to query the Kong Admin API and retrieve more information about the Consumer.
+
+## References
+ - [Kong](https://getkong.org)
+ - [oxd server](https://oxd.gluu.org)
+ - [Gluu Server](https://www.gluu.org/gluu-server/overview/)
+ - [OpenId Connect specification](https://gluu.org/docs/ce/admin-guide/openid-connect/)
