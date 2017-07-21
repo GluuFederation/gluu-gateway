@@ -88,6 +88,39 @@ function _M.register(conf)
     return { result = false, oxd_id = nil };
 end
 
+-- Registers API on oxd server.
+-- @param [ t y p e = t a b l e ] conf Schema configuration
+-- @return boolean `ok`: A boolean describing if the registration was successfull or not
+function _M.updateSite(conf)
+    ngx.log(ngx.DEBUG, "Updating site  ... ")
+
+    local commandAsJson = '{"command":"update_site_registration",'
+            .. '"params":{"scope":' .. conf.scope .. ','
+            .. '"oxd_id":"' .. conf.oxd_id .. '",'
+            .. '"op_host":"' .. conf.op_host .. '",'
+            .. '"authorization_redirect_uri":"' .. conf.authorization_redirect_uri .. '",'
+            .. '"client_id":"' .. conf.client_id .. '",'
+            .. '"client_secret":"' .. conf.client_secret .. '",'
+            .. '"response_types":["code"],'
+            .. '"client_name":"kong_open_id"}}';
+
+    local response = _M.execute(conf, commandAsJson, 5)
+
+    if string.match(response, OXD_STATE_OK) then
+        local asJson = cjson.decode(response)
+        local oxd_id = conf.oxd_id
+
+        ngx.log(ngx.DEBUG, "Updated site successfully. oxd_id from oxd server: " .. oxd_id)
+
+        if not isempty(oxd_id) then
+            conf.oxd_id = oxd_id
+            return { result = true, oxd_id = oxd_id };
+        end
+    end
+
+    return { result = false, oxd_id = nil };
+end
+
 function _M.get_authorization_url(conf)
     local commandAsJson = '{"command":"get_authorization_url",'
             .. '"params":{"oxd_id":"' .. conf.oxd_id .. '",'

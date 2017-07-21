@@ -145,6 +145,13 @@ Response:
  }
 ```
 
+If you want to delete this configuration then just use HTTP DELETE method for delete kong configuration(not oxd file from oxd serve config) and then create new one.
+
+```
+curl -i -X DELETE \
+ --url http://localhost:8001/consumers/7f853474-7b70-439d-ad59-2481a0a9a904/kong-openid-rp/ \
+```
+
 ### Getting authorization url
 The admin API endpoint help you to get `authorization URL` which is generated using `OXD server`.
 You need to passed consumer id in path parameter.
