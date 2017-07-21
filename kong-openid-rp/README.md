@@ -206,6 +206,14 @@ When a client has been authenticated, the plugin will append some headers to the
 
 You can use this information on your side to implement additional logic. You can use the `X-Consumer-ID` or `X-OXD-ID` value to query the Kong Admin API and retrieve more information about the Consumer.
 
+### Logout session 
+Using the `/consumers/<consumer_id>/logout` admin API endpoint you can manually destroy the session. After successful destroy session, It will return status code 200 OK.
+
+```
+curl -i -X DELETE \
+ --url http://localhost:8001/consumers/7f853474-7b70-439d-ad59-2481a0a9a904/logout \
+```
+
 ## References
  - [Kong](https://getkong.org)
  - [oxd server](https://oxd.gluu.org)
