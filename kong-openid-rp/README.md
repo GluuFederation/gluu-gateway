@@ -88,7 +88,9 @@ $ curl -i -X GET \
 ```
 
 ### Enable kong-openid-rp protection  
-`session_time_second` is required field. It accept time in second and automatically remove the login session after specified time. (e.g 86400 seconds = 24 hr)
+Add kong-openid-rp plugin in above api using kong admin plugin API. we just need to passed api name("your.api.server") or api_id("4857493c-2211-4c4f-b180-772806d655b7").
+`session_time_second` is required field. It accept time in second and automatically remove the login session after specified time. (e.g 86400 seconds = 24 hr).
+
 ```
 $ curl -i -X POST \
   --url http://localhost:8001/apis/4857493c-2211-4c4f-b180-772806d655b7/plugins/ \
@@ -101,7 +103,7 @@ $ curl -i -X POST \
 You need to associate a credential to an existing Consumer object, that represents a user consuming the API. To create a Consumer you can execute the following request:
 
 ```
-curl -i -X POST http://kong:8001/consumers/ \
+curl -i -X POST http://localhost:8001/consumers/ \
     --data "username=<USERNAME>" \
     --data "custom_id=<CUSTOM_ID>"
 HTTP/1.1 201 Created
