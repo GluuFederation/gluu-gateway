@@ -1,16 +1,12 @@
 local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
+local common = require "kong.plugins.kong-openid-rp.common"
 local responses = require "kong.tools.responses"
-local stringy = require "stringy"
 local singletons = require "kong.singletons"
 local cache = require "kong.tools.database_cache"
 local constants = require "kong.constants"
 local USER_INFO = "USER_INFO"
 local VALID_REQUEST = "VALID_REQUEST"
 local OXDS = "oxds:"
-
-local function isempty(s)
-    return s == nil or s == ''
-end
 
 local _M = {}
 
@@ -44,62 +40,39 @@ local function load_consumer(consumer_id, anonymous)
     return result
 end
 
-local function set_consumer(consumer, credential)
-    ngx.header[constants.HEADERS.CONSUMER_ID] = consumer.id
-    ngx.header[constants.HEADERS.CONSUMER_CUSTOM_ID] = consumer.custom_id
-    ngx.header[constants.HEADERS.CONSUMER_USERNAME] = consumer.username
-    ngx.ctx.authenticated_consumer = consumer
-    if credential then
-        ngx.header["X-OXD-ID"] = credential.oxd_id
-        ngx.ctx.authenticated_credential = credential
-        ngx.header[constants.HEADERS.ANONYMOUS] = nil -- in case of auth plugins concatenation
-    else
-        ngx.header[constants.HEADERS.ANONYMOUS] = true
-    end
-end
-
 function _M.execute(conf)
     local httpMethod = ngx.req.get_method()
     local authorization_code = ngx.req.get_headers()["authorization_code"]
     local state = ngx.req.get_headers()["state"]
     local oxd_id = ngx.req.get_headers()["oxd_id"]
     local path = getPath()
-    local CACHE_TIME_OUT = conf.session_time_second
+    local CACHE_TIME_OUT
 
     -- ------- validation ------
-    if isempty(authorization_code) then
+    if common.isempty(authorization_code) then
         return responses.send_HTTP_BAD_REQUEST("authorization_code is required")
     end
-    if isempty(state) then
+    if common.isempty(state) then
         return responses.send_HTTP_BAD_REQUEST("state is required")
     end
-    if isempty(oxd_id) then
+    if common.isempty(oxd_id) then
         return responses.send_HTTP_BAD_REQUEST("oxd_id is required")
     end
-
-    local cacheValidRequest = cache.get(VALID_REQUEST .. oxd_id)
-
-    if (cacheValidRequest ~= nil and cacheValidRequest.authorization_code ~= authorization_code) then
-        return responses.send_HTTP_BAD_REQUEST("authorization_code is invalid")
-    end
-    if (cacheValidRequest ~= nil and cacheValidRequest.state ~= state) then
-        return responses.send_HTTP_BAD_REQUEST("state is invalid")
-    end
-    if (cacheValidRequest ~= nil and cacheValidRequest.oxd_id ~= oxd_id) then
-        return responses.send_HTTP_BAD_REQUEST("oxd_id is invalid")
-    end
-
     ngx.log(ngx.DEBUG, "kong-openid-rp : Access - http_method: " .. httpMethod .. ", code: " .. authorization_code .. ", path: " .. path .. ", state: " .. state)
     -- ------------------------
 
-    local oxdConfig = cache.get_or_set(OXDS .. oxd_id, CACHE_TIME_OUT, load_oxd_by_oxd_id, oxd_id)
-    if oxdConfig == nil then
-        return responses.send_HTTP_BAD_REQUEST("oxd_id is invalid")
-    end
-
+    local oxdConfig
     local cacheUserInfo = cache.get(USER_INFO .. oxd_id)
 
     if cacheUserInfo == nil then
+        oxdConfig = load_oxd_by_oxd_id(oxd_id)
+        if oxdConfig == nil then
+            return responses.send_HTTP_BAD_REQUEST("oxd_id is invalid")
+        else
+            CACHE_TIME_OUT = tonumber(oxdConfig.session_timeout)
+            cache.set(OXDS .. oxd_id, oxdConfig, CACHE_TIME_OUT)
+        end
+
         local response = oxd.get_user_info(oxdConfig, authorization_code, state)
         if response == nil then
             return responses.send_HTTP_FORBIDDEN("OP Authorization Server Unreachable")
@@ -122,9 +95,10 @@ function _M.execute(conf)
 
         if response["status"] == "ok" then
             cache.set(USER_INFO .. oxd_id, response, CACHE_TIME_OUT)
-            cache.set(VALID_REQUEST .. oxd_id, { state = state, authorization_code = authorization_code, oxd_id = oxd_id }, CACHE_TIME_OUT)
             cacheUserInfo = response
         end
+    else
+        oxdConfig = cache.get(OXDS .. oxd_id);
     end
 
     -- retrieve the consumer linked to this API key, to set appropriate headers
@@ -136,7 +110,7 @@ function _M.execute(conf)
     end
 
     if cacheUserInfo then
-        set_consumer(consumer, oxdConfig)
+        common.set_header(consumer, oxdConfig, cache.set(USER_INFO .. oxd_id))
         return true -- ACCESS GRANTED
     else
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
