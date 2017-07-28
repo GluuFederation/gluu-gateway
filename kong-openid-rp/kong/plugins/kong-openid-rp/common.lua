@@ -1,5 +1,6 @@
-local constants = require "kong.constants"
+local json = require "JSON"
 local stringy = require "stringy"
+local constants = require "kong.constants"
 local _M = {}
 
 function _M.isempty(s)
@@ -120,8 +121,8 @@ function _M.set_header(consumer, oxd, user_info)
     ngx.header[constants.HEADERS.CONSUMER_ID] = consumer.id
     ngx.header[constants.HEADERS.CONSUMER_CUSTOM_ID] = consumer.custom_id
     ngx.header[constants.HEADERS.CONSUMER_USERNAME] = consumer.username
-    ngx.header["X-OXD"] = oxd
-    ngx.header["X-USER-INFO"] = user_info
+    ngx.header["X-OXD"] = json:encode(oxd)
+    ngx.header["X-USER-INFO"] = json:encode(user_info)
 end
 
 return _M

@@ -98,7 +98,7 @@ function _M.execute(conf)
             cacheUserInfo = response
         end
     else
-        oxdConfig = cache.get(OXDS .. oxd_id);
+        oxdConfig = cache.get(OXDS .. oxd_id)
     end
 
     -- retrieve the consumer linked to this API key, to set appropriate headers
