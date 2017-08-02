@@ -1,0 +1,15 @@
+title Kong OpenID Connect RP Authentication
+
+RP->kong: Register Plugin
+kong->RP: Return with API Id
+RP->kong: Config plugin with OP, oxd, etc
+note right of kong: dynamic client registration
+kong->RP: Success with oxd_id
+RP->kong: Request for resources using kong proxy
+kong->OP: Genderate authorization_url and redirect to OP
+OP->kong: Return code and state
+kong->OP: Request token
+OP->kong: Return token
+kong->OP: Return user_info with access token
+OP->kong: return User claims
+kong->RP: Allow to access resource, set cookie and user_info in header
