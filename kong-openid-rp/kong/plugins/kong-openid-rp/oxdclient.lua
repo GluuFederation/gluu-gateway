@@ -58,7 +58,7 @@ end
 -- @param [ t y p e = t a b l e ] conf Schema configuration
 -- @return boolean `ok`: A boolean describing if the registration was successfull or not
 function _M.register(conf)
-    ngx.log(ngx.DEBUG, "Registering on oxd ERR  ... ")
+    ngx.log(ngx.DEBUG, "Registering on oxd ... ")
 
     local commandAsJson = '{"command":"register_site",'
             .. '"params":' .. json:encode(conf) .. '}'

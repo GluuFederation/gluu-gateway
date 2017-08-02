@@ -172,8 +172,8 @@ return {
                     return responses.send_HTTP_INTERNAL_SERVER_ERROR(response)
                 end
 
-                cache.set(USER_INFO .. self.oxds.oxd_id, response, tonumber(self.oxds.session_timeout))
-                cache.set(OXDS .. self.oxds.oxd_id, self.oxds, tonumber(self.oxds.session_timeout))
+                cache.set(USER_INFO, response, tonumber(self.oxds.session_timeout))
+                cache.set(OXDS, self.oxds, tonumber(self.oxds.session_timeout))
                 cache.set(cache.consumer_key(self.params.consumer_id), tonumber(self.oxds.session_timeout))
                 common.set_header(self.consumer, self.oxds, response)
                 return responses.send_HTTP_OK(response)

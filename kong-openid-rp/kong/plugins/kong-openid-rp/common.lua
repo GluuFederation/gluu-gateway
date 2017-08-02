@@ -117,12 +117,13 @@ function _M.print_table(node)
     print(output_str)
 end
 
-function _M.set_header(consumer, oxd, user_info)
-    ngx.header[constants.HEADERS.CONSUMER_ID] = consumer.id
-    ngx.header[constants.HEADERS.CONSUMER_CUSTOM_ID] = consumer.custom_id
-    ngx.header[constants.HEADERS.CONSUMER_USERNAME] = consumer.username
+function _M.set_header(oxd, user_info)
     ngx.header["X-OXD"] = json:encode(oxd)
-    ngx.header["X-USER-INFO"] = json:encode(user_info)
+    if type(user_info) == "string" then
+        ngx.header["X-USER-INFO"] = user_info
+    else
+        ngx.header["X-USER-INFO"] = json:encode(user_info)
+    end
 end
 
 return _M
