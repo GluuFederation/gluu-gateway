@@ -13,6 +13,7 @@ Table of Contents
    * [Config plugin](#config-plugin)
    * [Verify that your resources is protected by kong-openid-rp](#verify-that-your-api-is-protected-by-kong-openid-rp)
    * [Upstream Headers](#upstream-headers)
+   * [Logout](#logout)
  * [References](#references)
   
 ## Installation
@@ -75,7 +76,9 @@ curl -i -X POST \
  --data 'config.authorization_redirect_uri=https://localhost:8443' \
 ```
 
-Successful response must confirm the API is added
+Successful response must confirm the API is added. It return unique plugin id(`id`) in response, which is use in logout request.
+
+During kong-openid-rp addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host:oxd_port provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-openid-rp must be re-registered (to force registration with newly installed oxd).
 
 ### Verify that your resources is protected by kong-openid-rp
 Verify your resource is correctly proxied via Kong. Kong provide by default proxy on secure port 8443 means every time request is handle by kong first on port 8443.
@@ -94,6 +97,25 @@ When a client has been authenticated, the plugin will append some headers to the
 You can use this information on your side to implement additional logic. 
 You can use the `X-OXD` or `X-USER-INFO` value to query the Kong Admin API and retrieve more information about the Consumer.
 
+### Logout
+
+```
+https://localhost:8444/kong_openid_rp/logout?id=<plugin_unique_id>
+```
+
+`plugin_unique_id` is the unique id which you can get from the response of the plugin configuration process.
+
+This above kong admin API use for logout from OP. You need to remove `USER_INFO` cookie from your side, because in authentication process it crete cookie on `https://localhost:8443` but the Admin API is on different port so not possible to delete from Admin API side. So before redirecting using this below logout url you just need to remove clear cookie from your side(`https://your.api.server.com`).
+
+Below node js demo for delete cookie.
+```
+router.get('/logout', (req, res) => {
+  res.clearCookie("USER_INFO");
+  return res.redirect("https://localhost:8444/kong_openid_rp/logout?id=<plugin_unique_id>");
+});
+```
+
+After logout from OP it will return back to our proxy side and proxy again redirect to OP for login and authentication.
 ## References
  - [Kong](https://getkong.org)
  - [oxd server](https://oxd.gluu.org)
