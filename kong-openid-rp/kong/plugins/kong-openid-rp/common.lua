@@ -117,11 +117,11 @@ function _M.print_table(node)
 end
 
 function _M.set_header(oxd, user_info)
-    ngx.header["X-OXD"] = json:encode(oxd)
+    ngx.req.set_header("X-OXD",json:encode(oxd))
     if type(user_info) == "string" then
-        ngx.header["X-USER-INFO"] = user_info
+        ngx.req.set_header("X-USER-INFO", user_info)
     else
-        ngx.header["X-USER-INFO"] = json:encode(user_info)
+        ngx.req.set_header("X-USER-INFO", json:encode(user_info))
     end
 end
 

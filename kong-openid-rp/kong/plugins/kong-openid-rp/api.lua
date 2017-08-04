@@ -26,8 +26,8 @@ return {
             local response = oxd.get_logout_uri(self.oxds)
 
             if response["status"] == "error" then
-                ngx.log(ngx.DEBUG, "get_logout_uri : oxd_id: " .. self.oxds.oxd_id)
-                return responses.send_HTTP_INTERNAL_SERVER_ERROR(response);
+                ngx.log(ngx.DEBUG, "get_logout_uri : oxd_id: " .. self.oxds.id)
+                return responses.send_HTTP_INTERNAL_SERVER_ERROR(response)
             end
 
             return ngx.redirect(response.data.uri)
