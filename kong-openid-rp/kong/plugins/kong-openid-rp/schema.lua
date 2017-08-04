@@ -1,6 +1,7 @@
 local stringy = require "stringy"
 local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
 local common = require "kong.plugins.kong-openid-rp.common"
+local singletons = require "kong.singletons"
 
 local function register(config)
     if not common.isempty(config.oxd_id) then
@@ -43,19 +44,33 @@ local function register(config)
 --        config.authorization_redirect_uri = "https://" .. self.req.headers.host .. "/consumers/" .. config.consumer_id .. "/login"
 --    end
 --
---    if (common.isempty(config.post_logout_redirect_uri)) then
---        config.post_logout_redirect_uri = "https://" .. self.req.headers.host .. "/consumers/" .. config.consumer_id .. "/logout"
---    end
+    if (common.isempty(config.post_logout_redirect_uri)) then
+        config.post_logout_redirect_uri = config.authorization_redirect_uri
+    end
 
     if (not common.isHttps(config.authorization_redirect_uri)) then
-        -- return responses.send_HTTP_BAD_REQUEST("It does not start from 'https://'")
+        ngx.log(ngx.ERR, "authorization_redirect_uri: It does not start from 'https://'")
         return false
     end
 
     local oxd_result = oxd.register(config)
     if (oxd_result.result == false) then
+        ngx.log(ngx.ERR, "Failed to registered site")
         return false
     end
+
+    local oxds, err = singletons.dao.oxds:insert({
+        oxd_id = oxd_result.oxd_id,
+        op_host = config.op_host,
+        oxd_port = config.oxd_port,
+        oxd_host = config.oxd_host
+    })
+
+    if err then
+        ngx.log(ngx.ERR, "Failed add OXD entry in database")
+        return false
+    end
+
     config.oxd_id = oxd_result.oxd_id
     return true
 end
