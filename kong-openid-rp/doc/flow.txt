@@ -13,3 +13,7 @@ OP->kong: Return token
 kong->OP: Return user_info with access token
 OP->kong: return User claims
 kong->RP: Allow to access resource, set cookie and user_info in header
+RP->kong: Request for logout by calling kong admin api
+kong->OP: Request for end session
+OP->kong: Redirect to logout url(kong)
+kong->RP: Return and OP Login
