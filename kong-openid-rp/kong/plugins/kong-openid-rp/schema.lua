@@ -59,18 +59,6 @@ local function register(config)
         return false
     end
 
-    local oxds, err = singletons.dao.oxds:insert({
-        oxd_id = oxd_result.oxd_id,
-        op_host = config.op_host,
-        oxd_port = config.oxd_port,
-        oxd_host = config.oxd_host
-    })
-
-    if err then
-        ngx.log(ngx.ERR, "Failed add OXD entry in database")
-        return false
-    end
-
     config.oxd_id = oxd_result.oxd_id
     return true
 end

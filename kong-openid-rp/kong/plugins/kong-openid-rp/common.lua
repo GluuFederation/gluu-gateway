@@ -1,6 +1,5 @@
 local json = require "JSON"
 local stringy = require "stringy"
-local constants = require "kong.constants"
 local _M = {}
 
 function _M.isempty(s)
