@@ -10,6 +10,9 @@ local function register(config)
 
     if (not common.isempty(config.scope)) then
          config.scope = common.split(config.scope, ",")
+    else
+        config.scope = "openid"
+        config.scope = common.split(config.scope, ",")
     end
 
     if (not common.isempty(config.client_logout_uris)) then
