@@ -1,0 +1,70 @@
+<div class="widgets">
+  <div class="row">
+    <div class="col-lg-12 col-md-8">
+      <div ba-panel ba-panel-class="with-scroll">
+        <form name="$ctrl.PluginForm" novalidate>
+          <div class="row">
+            <div class="col-md-6">
+              <div class="form-group has-feedback"
+                   ng-class="{'has-error': $ctrl.PluginForm.api_id.$invalid && ($ctrl.PluginForm.api_id.$dirty || $ctrl.PluginForm.$submitted)}">
+                <label for="api_id"><span class="text text-danger">*</span> Resource</label>
+                <select class="form-control" id="api_id" name="api_id" title="Select API" selectpicker
+                        ng-model="$ctrl.api_id"
+                        ng-options="api.id as api.name for api in $ctrl.apis" required>
+                  <option value="">--- Select ---</option>
+                </select>
+                <span class="help-block error-block basic-block">This field is required!</span>
+              </div>
+              <div class="form-group has-feedback"
+                   ng-class="{'has-error': $ctrl.PluginForm.uma_server_host.$invalid && ($ctrl.PluginForm.uma_server_host.$dirty || $ctrl.PluginForm.$submitted)}">
+                <label class="control-label" for="uma_server_host"><span class="text text-danger">*</span> UMA server
+                  host</label>
+                <input type="text" class="form-control" id="uma_server_host" name="uma_server_host"
+                       title="Please enter the uma server host"
+                       placeholder="Please enter the uma server host"
+                       ng-model="$ctrl.modelPlugin.config.uma_server_host"
+                       ng-required="true"/>
+                <span class="help-block error-block basic-block">This field is required!</span>
+              </div>
+              <div class="form-group has-feedback"
+                   ng-class="{'has-error': $ctrl.PluginForm.oxd_host.$invalid && ($ctrl.PluginForm.oxd_host.$dirty || $ctrl.PluginForm.$submitted)}">
+                <label class="control-label" for="oxd_host"><span class="text text-danger">*</span> OXD host</label>
+                <input type="text" class="form-control" id="oxd_host" name="oxd_host"
+                       title="Please enter the oxd host"
+                       placeholder="Please enter the oxd host" ng-model="$ctrl.modelPlugin.config.oxd_host"
+                       ng-required="true"/>
+                <span class="help-block error-block basic-block">This field is required!</span>
+              </div>
+              <div class="form-group has-feedback"
+                   ng-class="{'has-error': $ctrl.PluginForm.oxd_port.$invalid && ($ctrl.PluginForm.oxd_port.$dirty || $ctrl.PluginForm.$submitted)}">
+                <label class="control-label" for="oxd_port"><span class="text text-danger">*</span> OXD port</label>
+                <input type="text" class="form-control" id="oxd_port" name="oxd_port"
+                       title="Please enter the oxd port"
+                       placeholder="Please enter the oxd port" ng-model="$ctrl.modelPlugin.config.oxd_port"
+                       ng-required="true"/>
+                <span class="help-block error-block basic-block">This field is required!</span>
+              </div>
+              <button type="submit" class="btn btn-primary" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
+                Save
+              </button>
+            </div>
+            <div class="col-md-6">
+              <div class="form-group has-feedback"
+                   ng-class="{'has-error': $ctrl.PluginForm.protection_document.$invalid && ($ctrl.PluginForm.protection_document.$dirty || $ctrl.PluginForm.$submitted)}">
+                <label class="control-label" for="protection_document"><span class="text text-danger">*</span>
+                  Protection document</label>
+                <textarea class="form-control" id="protection_document" name="protection_document"
+                          title="Please enter the Protection document"
+                          placeholder="Please enter the Protection document"
+                          ng-model="$ctrl.modelPlugin.config.protection_document"
+                          style="height: 245px;"
+                          ng-required="true"></textarea>
+                <span class="help-block error-block basic-block">This field is required!</span>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
