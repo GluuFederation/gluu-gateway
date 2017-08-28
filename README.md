@@ -1,6 +1,6 @@
 # kong-plugins
 
-[KONG](https://getkong.org) plugins for OpenID Connect and UMA.
+[KONG](https://getkong.org) plugins for OpenID Connect and UMA that make use of Gluu's [oxd client software](https://gluu.org/docs/oxd). 
 
 ## [UMA RS plugin](/kong-uma-rs)
 
