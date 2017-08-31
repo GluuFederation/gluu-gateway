@@ -1,5 +1,5 @@
 local stringy = require "stringy"
-local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
+local oxd = require "kong.plugins.kong-openid-rp.oxdweb"
 local common = require "kong.plugins.kong-openid-rp.common"
 local singletons = require "kong.singletons"
 
@@ -9,9 +9,10 @@ local function register(config)
     end
 
     if (not common.isempty(config.scope)) then
-         config.scope = common.split(config.scope, ",")
+        config.scope = config.scope .. ",openid,uma_protection,uma_authorization"
+        config.scope = common.split(config.scope, ",")
     else
-        config.scope = "openid"
+        config.scope = "openid,uma_protection,uma_authorization"
         config.scope = common.split(config.scope, ",")
     end
 
@@ -40,13 +41,13 @@ local function register(config)
     end
 
     if (not common.isempty(config.contacts)) then
-         config.contacts = common.split(config.contacts, ",")
+        config.contacts = common.split(config.contacts, ",")
     end
 
---    if (common.isempty(config.authorization_redirect_uri)) then
---        config.authorization_redirect_uri = "https://" .. self.req.headers.host .. "/consumers/" .. config.consumer_id .. "/login"
---    end
---
+    --    if (common.isempty(config.authorization_redirect_uri)) then
+    --        config.authorization_redirect_uri = "https://" .. self.req.headers.host .. "/consumers/" .. config.consumer_id .. "/login"
+    --    end
+    --
     if (common.isempty(config.post_logout_redirect_uri)) then
         config.post_logout_redirect_uri = config.authorization_redirect_uri
     end
@@ -62,7 +63,10 @@ local function register(config)
         return false
     end
 
-    config.oxd_id = oxd_result.oxd_id
+    config.oxd_id = oxd_result.data.oxd_id
+    config.client_id = oxd_result.data.client_id
+    config.client_secret = oxd_result.data.client_secret
+
     return true
 end
 
@@ -86,7 +90,6 @@ return {
         contacts = { type = "string" },
         client_id = { type = "string" },
         client_secret = { type = "string" },
-
         oxd_port = { type = "string", required = true },
         oxd_host = { type = "string", required = true }
     },

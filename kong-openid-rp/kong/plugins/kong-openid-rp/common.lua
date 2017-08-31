@@ -1,3 +1,4 @@
+local cjson = require "cjson"
 local json = require "JSON"
 local stringy = require "stringy"
 local _M = {}
@@ -121,7 +122,7 @@ function _M.set_header(oxd, user_info)
     if type(user_info) == "string" then
         ngx.req.set_header("X-USER-INFO", user_info)
     else
-        ngx.req.set_header("X-USER-INFO", json:encode(user_info))
+        ngx.req.set_header("X-USER-INFO", cjson.encode(user_info))
     end
 end
 

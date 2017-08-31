@@ -1,5 +1,5 @@
 local crud = require "kong.api.crud_helpers"
-local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
+local oxd = require "kong.plugins.kong-openid-rp.oxdweb"
 local responses = require "kong.tools.responses"
 local cjson = require "cjson"
 local common = require "kong.plugins.kong-openid-rp.common"

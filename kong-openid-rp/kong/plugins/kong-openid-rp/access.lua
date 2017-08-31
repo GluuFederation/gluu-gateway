@@ -1,6 +1,7 @@
-local oxd = require "kong.plugins.kong-openid-rp.oxdclient"
+local oxd = require "kong.plugins.kong-openid-rp.oxdweb"
 local common = require "kong.plugins.kong-openid-rp.common"
 local responses = require "kong.tools.responses"
+local cjson = require "cjson"
 local USER_INFO = "USER_INFO"
 local ck = require "resty.cookie"
 local json = require "JSON"
@@ -23,7 +24,7 @@ function _M.execute(conf)
     local path = getPath()
     local cookie, err = ck:new()
 
-    local cacheUserInfo = cookie:get(USER_INFO);
+    local cacheUserInfo = cookie:get(USER_INFO)
     if cacheUserInfo == nil then
         -- ------- validation ------
         local flag = true
@@ -38,9 +39,9 @@ function _M.execute(conf)
             ngx.log(ngx.DEBUG, "kong-openid-rp : Access - http_method: " .. httpMethod .. ", code: " .. authorization_code .. ", path: " .. path .. ", state: " .. state)
             -- ------------------------
             local response = oxd.get_user_info(conf, authorization_code, state)
-            if response["status"] == "ok" then
+            if response.status == "ok" then
                 cookie:set({
-                    key = USER_INFO, value = json:encode(response),
+                    key = USER_INFO, value = cjson.encode(response),
                 })
                 cacheUserInfo = response
             end
@@ -53,7 +54,7 @@ function _M.execute(conf)
     end
 
     local response = oxd.get_authorization_url(conf)
-    if response["status"] == "error" then
+    if response.status == "error" then
         ngx.log(ngx.ERR, "get_authorization_url : oxd_id: " .. conf.oxd_id)
         return responses.send_HTTP_INTERNAL_SERVER_ERROR(response)
     end
