@@ -90,10 +90,9 @@ return {
         contacts = { type = "string" },
         client_id = { type = "string" },
         client_secret = { type = "string" },
-        oxd_port = { type = "string", required = true },
         oxd_host = { type = "string", required = true }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
-        return register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host and oxd_port specified in configuration)"
+        return register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
     end
 }

@@ -51,7 +51,6 @@ curl -i -X POST \
   --url http://localhost:8001/apis/b1fdd250-6152-4f7d-880e-7a09255e9b7b/plugins/ \
   --data 'name=kong-uma-rs' \
   --data "config.oxd_host=localhost" \
-  --data "config.oxd_port=8099" \
   --data "config.uma_server_host=https://ce-dev2.gluu.org" \
   --data "config.protection_document={\"resources\":[{\"path\":\"/status/200/hello\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scopes\":[\"http://photoz.example.com/dev/actions/view\"]}]}]}"
 

@@ -17,7 +17,7 @@
               </div>
               <div class="form-group has-feedback"
                    ng-class="{'has-error': $ctrl.PluginForm.uma_server_host.$invalid && ($ctrl.PluginForm.uma_server_host.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label class="control-label" for="uma_server_host"><span class="text text-danger">*</span> UMA server
+                <label class="control-label" for="uma_server_host"><span class="text text-danger">*</span> UMA server(OP)
                   host</label>
                 <input type="text" class="form-control" id="uma_server_host" name="uma_server_host"
                        title="Please enter the uma server host"
@@ -28,19 +28,10 @@
               </div>
               <div class="form-group has-feedback"
                    ng-class="{'has-error': $ctrl.PluginForm.oxd_host.$invalid && ($ctrl.PluginForm.oxd_host.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label class="control-label" for="oxd_host"><span class="text text-danger">*</span> OXD host</label>
+                <label class="control-label" for="oxd_host"><span class="text text-danger">*</span> OXD Web URL</label>
                 <input type="text" class="form-control" id="oxd_host" name="oxd_host"
                        title="Please enter the oxd host"
                        placeholder="Please enter the oxd host" ng-model="$ctrl.modelPlugin.config.oxd_host"
-                       ng-required="true"/>
-                <span class="help-block error-block basic-block">This field is required!</span>
-              </div>
-              <div class="form-group has-feedback"
-                   ng-class="{'has-error': $ctrl.PluginForm.oxd_port.$invalid && ($ctrl.PluginForm.oxd_port.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label class="control-label" for="oxd_port"><span class="text text-danger">*</span> OXD port</label>
-                <input type="text" class="form-control" id="oxd_port" name="oxd_port"
-                       title="Please enter the oxd port"
-                       placeholder="Please enter the oxd port" ng-model="$ctrl.modelPlugin.config.oxd_port"
                        ng-required="true"/>
                 <span class="help-block error-block basic-block">This field is required!</span>
               </div>

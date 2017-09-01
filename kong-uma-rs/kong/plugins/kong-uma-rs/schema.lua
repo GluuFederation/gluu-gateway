@@ -28,17 +28,6 @@ local function host_validator(given_value, given_config)
   return true
 end
 
-local function port_validator(given_value, given_config)
-  ngx.log(ngx.DEBUG, "port_validator: given_value:" .. given_value)
-
-  if given_value <= 0 then
-    ngx.log(ngx.ERROR, "Invalid oxd_port. It is less or equals to zero.")
-    return false
-  end
-
-  return true
-end
-
 local function uma_server_host_validator(given_value, given_config)
   ngx.log(ngx.DEBUG, "uma_server_host_validator: given_value:" .. given_value)
 
@@ -64,11 +53,10 @@ return {
   no_consumer = true,
   fields = {
     oxd_host = { required = true, type = "string", func = host_validator },
-    oxd_port = { required = true, type = "number", func = port_validator },
     uma_server_host = { required = true, type = "string", func = uma_server_host_validator },
     protection_document = { required = true, type = "string", func = protection_document_validator },
   },
   self_check = function(schema, plugin_t, dao, is_updating)
-    return oxd.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host and oxd_port specified in configuration)"
+    return oxd.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
   end
 }

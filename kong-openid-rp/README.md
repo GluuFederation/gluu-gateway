@@ -37,7 +37,6 @@ Table of Contents
  - client_secret - OPTIONAL, client_secret of OAuth client
  - authorization_redirect_uri - REQUIRED, This is the URL on your website that the OpenID Connect Provider (OP) will redirect the person to after successful authorization.
  - oxd_host - REQUIRED, host of the oxd server (default: localhost. It is recommended to have oxd server on localhost.)
- - oxd_port - REQUIRED, port of the oxd server (oxd server default port is 8099)
  - scope - REQUIRED, It is the user claims which you want in user information.
 
 You can also passed some extra parameters. For detail refer [oxd-config](https://gluu.org/docs/oxd/protocol/#register-site)
@@ -69,7 +68,6 @@ curl -i -X POST \
  --url https://localhost:8444/apis/9dd75a96-af37-4136-8621-2395f8a42975/plugins/ \
  --data 'name=kong-openid-rp' \
  --data 'config.op_host=https://op.org' \
- --data 'config.oxd_port=8099' \
  --data 'config.oxd_host=localhost' \
  --data 'config.scope=openid,profile' \
  --data 'config.client_name=kong_test' \
@@ -78,7 +76,7 @@ curl -i -X POST \
 
 Successful response must confirm the API is added. It return unique plugin id(`id`) in response, which is use in logout request.
 
-During kong-openid-rp addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host:oxd_port provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-openid-rp must be re-registered (to force registration with newly installed oxd).
+During kong-openid-rp addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-openid-rp must be re-registered (to force registration with newly installed oxd).
 
 ### Verify that your resources is protected by kong-openid-rp
 Verify your resource is correctly proxied via Kong. Kong provide by default proxy on secure port 8443 means every time request is handle by kong first on port 8443.

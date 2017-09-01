@@ -34,7 +34,6 @@ Table of Contents
 ## Configuration
 
  - oxd_host - OPTIONAL, host of the oxd server (default: localhost. It is recommended to have oxd server on localhost.)
- - oxd_port - REQUIRED, port of the oxd server (oxd server default port is 8099)
  - protection_document - REQUIRED, json document that describes UMA protection
  - uma_server_host - REQUIRED, UMA Server that implements UMA 1.0.1 specification. E.g. https://ce-dev2.gluu.org
                      (For example [Gluu Server](https://www.gluu.org/gluu-server/overview/)). 
@@ -135,7 +134,7 @@ $ curl -i -X GET \
 
 Important : each protection_document double quotes must be escaped by '\\' sign. This limitation comes from Kong configuration parameter type limitation which are limited to : "id", "number", "boolean", "string", "table", "array", "url", "timestamp".
    
-During kong-uma-rs addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host:oxd_port provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-uma-rs must be re-registered (to force registration with newly installed oxd).
+During kong-uma-rs addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then kong-uma-rs must be re-registered (to force registration with newly installed oxd).
     
 
 ```
@@ -143,7 +142,6 @@ $ curl -i -X POST \
   --url http://localhost:8001/apis/2eec1cb2-7093-411a-c14e-42e67142d2c4/plugins/ \
   --data 'name=kong-uma-rs' \
   --data "config.oxd_host=localhost" \
-  --data "config.oxd_port=8099" \
   --data "config.uma_server_host=https://ce-dev2.gluu.org" \
   --data "config.protection_document={\"resources\":[
                                          {
