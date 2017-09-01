@@ -106,7 +106,7 @@
       vm.APIModal = $uibModal.open({
         animation: true,
         templateUrl: 'app/pages/api/plugin.modal.html',
-        size: 'md',
+        size: 'lg',
         controller: ['$uibModalInstance', 'APIData', 'apiService', pluginController],
         controllerAs: '$ctrl',
         resolve: {
