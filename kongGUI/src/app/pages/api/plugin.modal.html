@@ -20,7 +20,7 @@
                 <th align="left">Plugin Id</th>
                 <td align="left">{{o.id}}</td>
               </tr>
-              <tr ng-repeat="(key, value) in o.config">
+              <tr ng-repeat="(key, value) in o.config" ng-show="key != 'client_secret'">
                 <th align="left"> {{key}}</th>
                 <td align="left"> {{ value }}</td>
               </tr>

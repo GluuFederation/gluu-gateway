@@ -1,4 +1,4 @@
-local oxd = require "kong.plugins.kong-uma-rs.oxdweb"
+local oxd = require "kong.plugins.kong-uma-rs.helper"
 local responses = require "kong.tools.responses"
 local stringy = require "stringy"
 

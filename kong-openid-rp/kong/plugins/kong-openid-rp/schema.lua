@@ -1,5 +1,5 @@
 local stringy = require "stringy"
-local oxd = require "kong.plugins.kong-openid-rp.oxdweb"
+local oxd = require "kong.plugins.kong-openid-rp.helper"
 local common = require "kong.plugins.kong-openid-rp.common"
 local singletons = require "kong.singletons"
 

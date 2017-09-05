@@ -1,5 +1,5 @@
 local stringy = require "stringy"
-local oxd = require "kong.plugins.kong-uma-rs.oxdweb"
+local oxd = require "kong.plugins.kong-uma-rs.helper"
 
 local function isempty(s)
   return s == nil or s == ''
