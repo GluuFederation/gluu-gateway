@@ -1,4 +1,5 @@
 local oxd = require "oxdweb"
+local json = require "JSON"
 local common = require "kong.plugins.kong-uma-rs.common"
 
 local _M = {}
@@ -8,7 +9,7 @@ function _M.register(conf)
 
     -- ------------------Register Site----------------------------------
     local siteRequest = {
-        oxd_host = conf.conf,
+        oxd_host = conf.oxd_host,
         scope = { "openid", "uma_protection" },
         op_host = conf.uma_server_host,
         authorization_redirect_uri = "https://client.example.com/cb",
@@ -35,7 +36,7 @@ function _M.register(conf)
     -- ------------------GET Client Token-------------------------------
 
     local tokenRequest = {
-        oxd_host = conf.conf,
+        oxd_host = conf.oxd_host,
         client_id = data.client_id,
         client_secret = data.client_secret,
         scope = { "openid", "uma_protection" },
@@ -53,8 +54,9 @@ function _M.register(conf)
 
     -- --------------- UMA-RS Protect ----------------------------------
     local umaRSRequest = {
+        oxd_host = conf.oxd_host,
         oxd_id = data.oxd_id,
-        resources = conf.protection_document
+        resources = json:decode(conf.protection_document)
     }
 
     response = oxd.uma_rs_protect(umaRSRequest, token.data.access_token)
@@ -63,7 +65,7 @@ function _M.register(conf)
         return false
     end
 
-    ngx.log(ngx.ERR, "Registered resources : " .. response.data.oxd_id)
+    ngx.log(ngx.ERR, "Registered resources : " .. data.oxd_id)
     conf.oxd_id = data.oxd_id
     conf.client_id = data.client_id
     conf.client_secret = data.client_secret
