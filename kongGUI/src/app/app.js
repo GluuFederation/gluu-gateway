@@ -17,7 +17,8 @@ angular.module('KongGUI', [
   'KongGUI.theme',
   'KongGUI.pages'
 ]).constant('urls', {
-  KONG_ADMIN_API: 'https://gluu.local.org:8444'
+  KONG_ADMIN_API: 'https://gluu.local.org:8444',
+  KONG_NODE_API: 'http://gluu.local.org:4040'
 }).filter('unique', function() {
   return function (arr, field) {
     var o = {}, i, l = !!arr ? arr.length : 0, r = [];

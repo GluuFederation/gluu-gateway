@@ -11,7 +11,8 @@
     'KongGUI.pages.home',
     'KongGUI.pages.api',
     'KongGUI.pages.openIDConnectRp',
-    'KongGUI.pages.umaRs'
+    'KongGUI.pages.umaRs',
+    'KongGUI.pages.umaScript'
   ])
       .config(routeConfig);
 
