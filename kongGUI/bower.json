@@ -56,7 +56,8 @@
     "ng-js-tree": "~0.0.7",
     "angular-ui-select": "^0.19.6",
     "lodash": "^4.17.4",
-    "angular-loading-bar": "^0.9.0"
+    "angular-loading-bar": "^0.9.0",
+    "checklist-model": "^0.11.0"
   },
   "resolutions": {
     "angular": "~1.5.9",

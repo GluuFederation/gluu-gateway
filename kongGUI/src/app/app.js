@@ -13,7 +13,7 @@ angular.module('KongGUI', [
   'ui.slimscroll',
   'ngJsTree',
   'angular-progress-button-styles',
-
+  'checklist-model',
   'KongGUI.theme',
   'KongGUI.pages'
 ]).constant('urls', {
