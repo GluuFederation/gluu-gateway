@@ -1,4 +1,4 @@
-.show-grid div[class^=col-]{
+.show-grid div[class^=col-] {
   padding: 10px;
   box-sizing: border-box;
   div {
@@ -10,10 +10,10 @@
   }
 }
 
-.grid-h{
+.grid-h {
   margin-top: 40px;
   margin-bottom: 0;
-  &:first-child{
+  &:first-child {
     margin-top: 0;
   }
 }

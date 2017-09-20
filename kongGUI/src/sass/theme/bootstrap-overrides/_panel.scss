@@ -86,7 +86,6 @@ $panel-heading-font-size: 16px;
   }
 }
 
-
 .panel-primary {
   > .panel-heading {
     background-color: $primary-bg;
@@ -122,9 +121,9 @@ $panel-heading-font-size: 16px;
   }
 }
 
-.bootstrap-panel{
+.bootstrap-panel {
   background-color: $bootstrap-panel-bg;
-  .panel-body{
+  .panel-body {
     color: $bootstrap-panel-text;
   }
 }

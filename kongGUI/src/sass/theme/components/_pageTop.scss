@@ -152,8 +152,8 @@ a.collapse-menu-link {
 }
 
 @media (max-width: $resXXS) {
-  .user-profile{
-    min-width: 136px;
+  .user-profile {
+    min-width: 100px;
   }
   a.refresh-data {
     margin-right: 10px;
@@ -167,6 +167,6 @@ a.collapse-menu-link {
   }
 }
 
-.profile-toggle-link{
+.profile-toggle-link {
   cursor: pointer;
 }

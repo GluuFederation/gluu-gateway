@@ -6,6 +6,7 @@
     transform: rotate(360deg); /* Firefox 16+, IE 10+, Opera */
   }
 }
+
 @-moz-keyframes spin {
   0% {
     -moz-transform: rotate(0deg); /* Firefox 16+*/
@@ -74,4 +75,16 @@
       animation: spin 1.5s linear infinite; /* Chrome, Firefox 16+, IE 10+, Opera */
     }
   }
+}
+
+#loading-bar .bar {
+  background: $primary;
+  height: 3px;
+}
+#loading-bar-spinner .spinner-icon {
+  border-top-color: $primary;
+  border-left-color: $primary;
+  margin: 8px 0;
+  width: 22px;
+  height: 22px;
 }

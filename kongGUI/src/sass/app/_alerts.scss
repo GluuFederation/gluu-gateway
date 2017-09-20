@@ -1,66 +1,69 @@
-.alert{
+.alert {
   color: $label-text;
   font-size: 13px;
   font-weight: $font-light;
-  strong{
+  strong {
     font-weight: $font-normal;
   }
-  .close{
+  .close {
     margin-top: -3px;
   }
-  .alert-link{
+  .alert-link {
     font-weight: $font-normal;
   }
-  .control-alert{
-    padding-top:10px ;
-    button{
+  .control-alert {
+    padding-top: 10px;
+    button {
       margin-right: 10px;
     }
   }
 }
 
-.closeable{
-  button{
+.closeable {
+  button {
     color: $input-border;
   }
 }
 
 .bg-success {
-  background-color: rgba($success,0.85);
+  background-color: rgba($success, 0.85);
   color: $label-text;
-  a{
+  a {
     color: $danger-dark;
-    &:hover{
+    &:hover {
       color: $danger;
     }
   }
 }
+
 .bg-info {
-  background-color: rgba($info,0.85);
+  background-color: rgba($info, 0.85);
   color: $label-text;
-  a{
+  a {
     color: $warning-light;
-    &:hover{
+    &:hover {
       color: $warning;
     }
   }
 }
+
 .bg-warning {
-  background-color: rgba($warning,0.85);
+  background-color: rgba($warning, 0.85);
   color: $label-text;
-  a{
+  a {
     color: $danger-dark;
-    &:hover{
+    &:hover {
       color: $danger;
     }
   }
 }
+
 .bg-danger {
-  background-color: rgba($danger,0.85);
+  background-color: rgba($danger, 0.85);
   color: $label-text;
-  a{
+  a {
     color: $warning-light;
-    &:hover{
+    &:hover {
       color: $warning;
     }
   }

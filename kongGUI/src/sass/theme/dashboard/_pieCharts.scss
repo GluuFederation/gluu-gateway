@@ -16,12 +16,12 @@
       width: 25%;
     }
   }
-  @media screen and (min-width: 700px) and (max-width: 1325px)  {
+  @media screen and (min-width: 700px) and (max-width: 1325px) {
     .pie-chart-item-container {
       width: 50%;
     }
   }
-  @media screen and (max-width: 700px)  {
+  @media screen and (max-width: 700px) {
     .pie-chart-item-container {
       width: 100%;
     }
@@ -36,10 +36,9 @@
       z-index: -1;
     }
   }
-  @media screen and
-    (min-width: 1325px) and (max-width: 1650px),
-    (min-width: 700px) and (max-width: 830px),
-    (max-width: 400px) {
+  @media screen and(min-width: 1325px) and (max-width: 1650px),
+  (min-width: 700px) and (max-width: 830px),
+  (max-width: 400px) {
     .chart-icon {
       display: none;
     }

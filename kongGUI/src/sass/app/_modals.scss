@@ -38,19 +38,19 @@ $modal-input-border: #e7e7e7;
     display: inline-block;
     text-align: left;
     margin: 0 auto;
-    .form-control{
+    .form-control {
       color: $github-color;
       background-color: transparent;
       border: 1px solid $modal-input-border;
       @include placeholderStyle($dropdown-text, 0.9);
     }
-    .modal-body p, .modal-body div, .modal-body span{
+    .modal-body p, .modal-body div, .modal-body span {
       color: $dropdown-text;
     }
   }
   .modal-header {
     border: none;
-    .close{
+    .close {
       margin-top: -5px;
     }
   }
@@ -58,7 +58,7 @@ $modal-input-border: #e7e7e7;
     border: none;
     padding-top: 0;
   }
-  .modal-icon{
+  .modal-icon {
     margin-right: 3px;
   }
   .sn-link-close {

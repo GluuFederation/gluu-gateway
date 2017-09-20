@@ -106,7 +106,6 @@ button.btn.btn-danger {
   }
 }
 
-
 button.btn.btn-inverse {
   @include buttonColor($help-text, $help-text);
   color: $label-text;

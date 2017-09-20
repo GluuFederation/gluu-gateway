@@ -1,6 +1,7 @@
-div.blurCalendar{
- font-size: 12px;
+div.blurCalendar {
+  font-size: 12px;
 }
+
 .fc {
   direction: ltr;
   text-align: left;
@@ -55,7 +56,7 @@ div.blurCalendar{
   }
 
   th, td {
-    border: 1px solid rgba(255,255,255,0.3);
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 0;
     vertical-align: top;
   }
@@ -117,12 +118,12 @@ div.blurCalendar{
   }
 
   .fc-today {
-    background: rgba(255,255,255,0.15);
+    background: rgba(255, 255, 255, 0.15);
   }
 }
 
 .fc-highlight {
-  background: rgba(255,255,255,0.25);
+  background: rgba(255, 255, 255, 0.25);
   opacity: .3;
 }
 
@@ -717,48 +718,53 @@ a.fc-more {
   }
 }
 
-.fc-day-grid-container.fc-scroller  {
-  height: auto!important;
+.fc-day-grid-container.fc-scroller {
+  height: auto !important;
 }
 
-.calendar-panel.panel .panel-body{
+.calendar-panel.panel .panel-body {
   padding: 0;
 }
 
-.fc-body > tr > .fc-widget-content{
+.fc-body > tr > .fc-widget-content {
   border: none;
 }
 
-.fc-head{
+.fc-head {
   color: $label-text;
   background-color: $primary;
-  td, th{
-    border:none;
+  td, th {
+    border: none;
   }
-  div.fc-widget-header{
+  div.fc-widget-header {
     padding: 5px 0;
   }
 }
 
-.fc-today-button, .fc-month-button, .fc-agendaWeek-button, .fc-agendaDay-button  {
+.fc-today-button, .fc-month-button, .fc-agendaWeek-button, .fc-agendaDay-button {
   display: none;
 }
-.blurCalendar{
+
+.blurCalendar {
   margin-top: 15px;
 }
-.fc-prev-button, .fc-next-button{
+
+.fc-prev-button, .fc-next-button {
   position: absolute;
   background: transparent;
   box-shadow: none;
   border: none;
   color: $default-text;
 }
+
 .fc-next-button {
   left: 30px;
 }
+
 .fc-prev-button {
 }
-.fc-day-number{
+
+.fc-day-number {
   color: $default-text;
   opacity: 0.9;
 }

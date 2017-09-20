@@ -149,9 +149,11 @@
 .cd-timeline-content.warning {
   @include cd-timeline-color(rgba($warning, 0.2));
 }
+
 .cd-timeline-content.danger {
   @include cd-timeline-color(rgba($danger, 0.2));
 }
+
 .cd-timeline-content.primary {
   @include cd-timeline-color(rgba($primary, 0.2));
 }

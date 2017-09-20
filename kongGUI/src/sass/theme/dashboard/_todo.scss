@@ -130,7 +130,7 @@ label.todo-checkbox {
       border: none;
       font-weight: $font-light;
 
-      .blur-container{
+      .blur-container {
         height: 40px;
         position: absolute;
         width: calc(100% + 40px);;
@@ -138,13 +138,13 @@ label.todo-checkbox {
         left: -25px;
         overflow-y: hidden;
       }
-      &:hover{
-        .blur-container{
+      &:hover {
+        .blur-container {
           box-shadow: 0px 1px 0px 0px rgba(255, 255, 255, 0.12);
         }
         .blur-box {
           height: 100%;
-          background: linear-gradient(to right, rgba(255,255,255,0.3) 0%,rgba(255,255,255,0) 100%);
+          background: linear-gradient(to right, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
           -webkit-filter: blur(3px);
         }
       }
@@ -180,7 +180,7 @@ label.todo-checkbox {
     }
   }
 
-  .box-shadow-border{
+  .box-shadow-border {
     border-bottom: 1px solid rgba(0, 0, 0, 0.12);
     box-shadow: 0px 1px 0px 0px rgba(255, 255, 255, 0.12);
     width: calc(100% + 44px);

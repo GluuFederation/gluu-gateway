@@ -185,6 +185,7 @@ input.search-input {
 .table {
   .editable-wrap .editable-controls, .editable-wrap .editable-error {
     vertical-align: sub;
+    display: inline;
     .btn {
       &.dropdown-toggle {
         padding: 3px 20px;
@@ -196,6 +197,21 @@ input.search-input {
       line-height: 1px;
       height: 30px;
     }
+    select {
+      line-height: 1px;
+      height: 30px;
+    }
+  }
+  .editable-wrap .editable-error {
+    color: #ff0000;
+  }
+
+  .ellipis {
+    overflow: hidden;
+    -ms-text-overflow: ellipsis;
+    -o-text-overflow: ellipsis;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }
 
@@ -236,7 +252,7 @@ input.search-input {
 .table-bordered > tfoot > tr > th,
 .table-bordered > thead > tr > td,
 .table-bordered > tbody > tr > td,
-.table-bordered > tfoot > tr > td{
+.table-bordered > tfoot > tr > td {
   border: 1px solid $border-light;
 }
 
@@ -255,18 +271,23 @@ input.search-input {
     }
   }
 }
+
 .table > tbody > tr.primary > td {
   @include color-row($primary);
 }
+
 .table > tbody > tr.success > td {
   @include color-row($success);
 }
+
 .table > tbody > tr.warning > td {
   @include color-row($warning);
 }
+
 .table > tbody > tr.danger > td {
   @include color-row($danger);
 }
+
 .table > tbody > tr.info > td {
   @include color-row($info);
 }
@@ -291,21 +312,21 @@ th {
 .table-striped > tbody > tr > td {
   border: none;
 }
+
 .pagination > li > a,
-.pagination > li > span{
+.pagination > li > span {
   color: $default-text;
   border-color: $border;
 }
 
-
 .pagination > li:first-of-type > a,
-.pagination > li:first-of-type > span{
+.pagination > li:first-of-type > span {
   border-top-left-radius: 5px;
   border-bottom-left-radius: 5px;
 }
 
 .pagination > li:last-of-type > a,
-.pagination > li:last-of-type > span{
+.pagination > li:last-of-type > span {
   border-top-right-radius: 5px;
   border-bottom-right-radius: 5px;
 }
@@ -323,13 +344,13 @@ th {
 .pagination > li > a:hover,
 .pagination > li > span:hover,
 .pagination > li > a:focus,
-.pagination > li > span:focus{
-  background-color: rgba(0,0,0,.2);
+.pagination > li > span:focus {
+  background-color: rgba(0, 0, 0, .2);
   color: $default-text;
 }
 
 .editable-buttons .btn-with-icon i {
-   margin-right: 0;
+  margin-right: 0;
 }
 
 .table-responsive {
