@@ -26,7 +26,7 @@ angular.module('KongGUI', [
 }).constant('urls', {
   AUTH_URL: 'https://localhost:3000/login.html',
   KONG_ADMIN_API: 'https://gluu.local.org:8444',
-  KONG_NODE_API: 'http://gluu.local.org:4040'
+  KONG_NODE_API: 'https://gluu.local.org:4040'
 }).filter('unique', function () {
   return function (arr, field) {
     var o = {}, i, l = !!arr ? arr.length : 0, r = [];

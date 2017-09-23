@@ -8,7 +8,7 @@
     </div>
     <div class="modal-body">
       <div class="row">
-        <div class="col-md-12">
+        <div class="col-md-6">
           <div class="form-group has-feedback"
                ng-class="{'has-error': $ctrl.ScriptForm.scriptName.$invalid && ($ctrl.ScriptForm.scriptName.$dirty || $ctrl.ScriptForm.$submitted)}">
             <label class="control-label" for="scriptName"><span class="text text-danger">*</span> Script name</label>
@@ -18,6 +18,13 @@
                    ng-model="$ctrl.model.name"
                    ng-required="true"/>
             <span class="help-block error-block basic-block">This field is required!</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="form-group has-feedback">
+            <label class="control-label" for="status">Status</label>
+            <input type="checkbox" class="form-control" id="status" name="status"
+                   ng-model="$ctrl.model.status"/>
           </div>
         </div>
       </div>
@@ -95,11 +102,12 @@
         </div>
       </div>
       <button type="button" class="btn btn-info" ng-click="$ctrl.newItem()">
-        Add New
+        Add New Claim
       </button>
       <button type="submit" class="btn btn-primary" ng-click="$ctrl.manageScript($ctrl.ScriptForm.$valid)">
         Save
-      </button> |
+      </button>
+      |
       <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>
     </div>
     <!--<div class="modal-footer">-->

@@ -23,11 +23,10 @@
     }
 
     function onSuccess(response) {
-      debugger;
       // login successful if there's a token in the response
-      if (response.token) {
+      if (response.data.token) {
         // store username and token in local storage to keep user logged in between page refreshes
-        $localStorage.currentUser = {user: response.user, role: response.role, token: response.token};
+        $localStorage.currentUser = {user: response.data.user, role: response.data.role, token: response.data.token};
         $window.location = urls.BASE;
       } else {
         // execute callback with false to indicate failed login

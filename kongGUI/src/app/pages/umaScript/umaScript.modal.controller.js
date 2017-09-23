@@ -14,18 +14,28 @@
         inum: scriptData.inum,
         name: scriptData.displayName,
         description: scriptData.description,
-        keyValues: JSON.parse(scriptData.oxConfigurationProperty)
+        keyValues: [],
+        status: JSON.parse(scriptData.gluuStatus)
       };
 
+      if (typeof scriptData.oxConfigurationProperty === "string") {
+        vm.model.keyValues.push(JSON.parse(scriptData.oxConfigurationProperty));
+
+      } else {
+        scriptData.oxConfigurationProperty.forEach(o => {
+          vm.model.keyValues.push(JSON.parse(o));
+        });
+      }
+
       vm.model.keyValues.forEach(o => {
-        o.claimDefinition = JSON.stringify(o.claimDefinition)
+        o.claimDefinition = JSON.stringify(o.claimDefinition);
       });
     } else {
       vm.model = {
         name: '',
         description: '',
         keyValues: [{
-          id: counter, key: 'country', value: 'US', claimDefinition: `{
+          key: 'country', value: 'US', claimDefinition: `{
             "issuer" : [ "%1$s" ],
             "name" : "country",
             "claim_token_format" : [ "http://openid.net/specs/openid-connect-core-1_0.html#IDToken" ],
@@ -42,8 +52,7 @@
 
     // definition
     function newItem() {
-      counter++;
-      vm.model.keyValues.push({id: counter, key: '', value: ''});
+      vm.model.keyValues.push({key: '', value: ''});
     }
 
     function manageScript(isValid) {
