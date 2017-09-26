@@ -71,7 +71,13 @@
       function getScopes() {
         umaScriptService.getScope(onSuccess, onError);
         function onSuccess(response) {
-          vm.scopes = response.data
+          vm.scopes = response.data;
+          vm.scopes.forEach(function (o) {
+            if (o.oxPolicyScriptDn == scriptData.dn) {
+              vm.selectedScope.push(o.inum);
+            }
+          });
+          vm.backScope = angular.copy(vm.selectedScope);
         }
 
         function onError(error) {
@@ -79,8 +85,22 @@
         }
       }
 
+      var intersecFilter = function (haystack, arr) {
+        return arr.filter(function (v) {
+          return haystack.indexOf(v) <= -1;
+        });
+      };
+
       function addScope() {
-        umaScriptService.addScope({scopeInums: vm.selectedScope, scriptInum: scriptData.inum}, onSuccess, onError);
+        vm.backScope = intersecFilter(vm.selectedScope, vm.backScope);
+        if (vm.backScope.length > 0) {
+          umaScriptService.addScope({scopeInums: vm.backScope, scriptInum: ""}, onSuccess, onError);
+        }
+
+        if (vm.selectedScope.length > 0) {
+          umaScriptService.addScope({scopeInums: vm.selectedScope, scriptInum: scriptData.inum}, onSuccess, onError);
+        }
+
         function onSuccess(response) {
           toastr.success('Added Successfully', 'Scope', {});
           $uibModalInstance.close(response.data);
