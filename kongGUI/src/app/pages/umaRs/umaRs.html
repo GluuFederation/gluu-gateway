@@ -45,13 +45,19 @@
               <div class="form-group has-feedback">
                 <label for="api_id">--------------- Protection Document ---------------</label>
               </div>
-              <div class="row" ng-repeat="element in $ctrl.modelPlugin.config.protection_document"
+              <div class="row" ng-repeat="element in $ctrl.modelPlugin.config.protection_document track by $index"
                    style="border: 1px dotted;">
                 <hr/>
+                <div class="col-md-1">
+                  <button type="button" title="Delete path" class="btn btn-danger btn-icon"
+                          ng-click="$ctrl.modelPlugin.config.protection_document.splice($index,1)">
+                    <i class="ion-android-close"></i>
+                  </button>
+                </div>
                 <div class="col-md-3">
                   <div class="form-group has-feedback"
                        ng-class="{'has-error': $ctrl.PluginForm.path.$invalid && ($ctrl.PluginForm.path.$dirty || $ctrl.PluginForm.$submitted)}">
-                    <input type="text" class="form-control" id="path" name="path"
+                    <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
                            title="Please enter the path"
                            placeholder="Please enter the path"
                            ng-model="element.path"
@@ -59,29 +65,59 @@
                     <span class="help-block error-block basic-block">This field is required!</span>
                   </div>
                 </div>
-                <div class="col-md-9">
+                <div class="col-md-8">
                   <div class="row" ng-repeat="cond in element.conditions">
-                    <div class="form-group has-feedback"
-                         ng-class="{'has-error': $ctrl.PluginForm.httpMethods.$invalid && ($ctrl.PluginForm.httpMethods.$dirty || $ctrl.PluginForm.$submitted)}">
-                      <tags-input ng-model="cond.httpMethods" placeholder="Please enter the http Methods"></tags-input>
-                      <span class="help-block error-block basic-block">This field is required!</span>
+                    <div class="row">
+                      <div class="col-md-10">
+                        <div class="form-group has-feedback"
+                             ng-class="{'has-error': $ctrl.PluginForm.httpMethods.$invalid && ($ctrl.PluginForm.httpMethods.$dirty || $ctrl.PluginForm.$submitted)}">
+                          <tags-input ng-model="cond.httpMethods"
+                                      id="httpMethods{{$parent.$index}}{{$index}}"
+                                      placeholder="Please enter the http Methods"></tags-input>
+                          <span class="help-block error-block basic-block">This field is required!</span>
+                        </div>
+                      </div>
+                      <div class="col-md-2">
+                        <button type="button" title="Delete condition" class="btn btn-danger btn-icon"
+                                ng-click="element.conditions.splice($index,1)">
+                          <i class="ion-android-close"></i>
+                        </button>
+                      </div>
                     </div>
-                    <div class="form-group has-feedback"
-                         ng-class="{'has-error': $ctrl.PluginForm.scopes.$invalid && ($ctrl.PluginForm.scopes.$dirty || $ctrl.PluginForm.$submitted)}">
-                      <tags-input ng-model="cond.scopes" placeholder="Please enter the scopes"></tags-input>
-                      <span class="help-block error-block basic-block">This field is required!</span>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group has-feedback"
+                             ng-class="{'has-error': $ctrl.PluginForm.scopes.$invalid && ($ctrl.PluginForm.scopes.$dirty || $ctrl.PluginForm.$submitted)}">
+                          <tags-input ng-model="cond.scopes"
+                                      id="scopes{{$parent.$index}}{{$index}}"
+                                      placeholder="Please enter the scopes"></tags-input>
+                          <span class="help-block error-block basic-block">This field is required!</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group has-feedback">
+                          <tags-input ng-model="cond.ticketScopes"
+                                      id="ticketScopes{{$parent.$index}}{{$index}}"
+                                      placeholder="Please enter the ticket scopes"></tags-input>
+                          <span class="help-block error-block basic-block">This field is required!</span>
+                        </div>
+                      </div>
                     </div>
                     <hr/>
                   </div>
+                  <div class="row">
+                    <button type="button" class="btn btn-info" ng-click="$ctrl.addNewCondition($index)">
+                      + Add Condition
+                    </button>
+                  </div>
                   <br/>
-                  <button type="button" class="btn btn-info" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
-                    + Add Condition
-                  </button>
                 </div>
               </div>
               <hr/>
-              <button type="button" class="btn btn-info" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
-                + Add Resource
+              <button type="button" class="btn btn-info" ng-click="$ctrl.addNewPath()">
+                + Add path
               </button>
             </div>
           </div>
