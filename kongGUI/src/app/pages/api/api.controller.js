@@ -63,12 +63,16 @@
     function createAPIController($uibModalInstance, APIData, apiService) {
       var vm = this;
       vm.modalAPI = {};
+
       if (APIData) {
         vm.modalAPI.id = APIData.id;
         vm.modalAPI.name = APIData.name;
         vm.modalAPI.upstream_url = APIData.upstream_url;
         vm.modalAPI.hosts = APIData.hosts.join(",");
         vm.modalAPI.created_at = APIData.created_at;
+        setTimeout(function () {
+          $('#hosts').tagsinput('add', vm.modalAPI.hosts);
+        });
       }
 
       function pushAPI(isFormValid) {

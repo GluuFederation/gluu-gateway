@@ -15,9 +15,12 @@
                 </select>
                 <span class="help-block error-block basic-block">This field is required!</span>
               </div>
+            </div>
+            <div class="col-md-6">
               <div class="form-group has-feedback"
                    ng-class="{'has-error': $ctrl.PluginForm.uma_server_host.$invalid && ($ctrl.PluginForm.uma_server_host.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label class="control-label" for="uma_server_host"><span class="text text-danger">*</span> UMA server(OP)
+                <label class="control-label" for="uma_server_host"><span class="text text-danger">*</span> UMA
+                  server(OP)
                   host</label>
                 <input type="text" class="form-control" id="uma_server_host" name="uma_server_host"
                        title="Please enter the uma server host"
@@ -26,6 +29,8 @@
                        ng-required="true"/>
                 <span class="help-block error-block basic-block">This field is required!</span>
               </div>
+            </div>
+            <div class="col-md-6">
               <div class="form-group has-feedback"
                    ng-class="{'has-error': $ctrl.PluginForm.oxd_host.$invalid && ($ctrl.PluginForm.oxd_host.$dirty || $ctrl.PluginForm.$submitted)}">
                 <label class="control-label" for="oxd_host"><span class="text text-danger">*</span> OXD Web URL</label>
@@ -35,24 +40,56 @@
                        ng-required="true"/>
                 <span class="help-block error-block basic-block">This field is required!</span>
               </div>
-              <button type="submit" class="btn btn-primary" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
-                Save
+            </div>
+            <div class="col-md-12">
+              <div class="form-group has-feedback">
+                <label for="api_id">--------------- Protection Document ---------------</label>
+              </div>
+              <div class="row" ng-repeat="element in $ctrl.modelPlugin.config.protection_document"
+                   style="border: 1px dotted;">
+                <hr/>
+                <div class="col-md-3">
+                  <div class="form-group has-feedback"
+                       ng-class="{'has-error': $ctrl.PluginForm.path.$invalid && ($ctrl.PluginForm.path.$dirty || $ctrl.PluginForm.$submitted)}">
+                    <input type="text" class="form-control" id="path" name="path"
+                           title="Please enter the path"
+                           placeholder="Please enter the path"
+                           ng-model="element.path"
+                           ng-required="true"/>
+                    <span class="help-block error-block basic-block">This field is required!</span>
+                  </div>
+                </div>
+                <div class="col-md-9">
+                  <div class="row" ng-repeat="cond in element.conditions">
+                    <div class="form-group has-feedback"
+                         ng-class="{'has-error': $ctrl.PluginForm.httpMethods.$invalid && ($ctrl.PluginForm.httpMethods.$dirty || $ctrl.PluginForm.$submitted)}">
+                      <tags-input ng-model="cond.httpMethods" placeholder="Please enter the http Methods"></tags-input>
+                      <span class="help-block error-block basic-block">This field is required!</span>
+                    </div>
+                    <div class="form-group has-feedback"
+                         ng-class="{'has-error': $ctrl.PluginForm.scopes.$invalid && ($ctrl.PluginForm.scopes.$dirty || $ctrl.PluginForm.$submitted)}">
+                      <tags-input ng-model="cond.scopes" placeholder="Please enter the scopes"></tags-input>
+                      <span class="help-block error-block basic-block">This field is required!</span>
+                    </div>
+                    <hr/>
+                  </div>
+                  <br/>
+                  <button type="button" class="btn btn-info" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
+                    + Add Condition
+                  </button>
+                </div>
+              </div>
+              <hr/>
+              <button type="button" class="btn btn-info" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
+                + Add Resource
               </button>
             </div>
-            <div class="col-md-6">
-              <div class="form-group has-feedback"
-                   ng-class="{'has-error': $ctrl.PluginForm.protection_document.$invalid && ($ctrl.PluginForm.protection_document.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label class="control-label" for="protection_document"><span class="text text-danger">*</span>
-                  Protection document</label>
-                <textarea class="form-control" id="protection_document" name="protection_document"
-                          title="Please enter the Protection document"
-                          placeholder="Please enter the Protection document"
-                          ng-model="$ctrl.modelPlugin.config.protection_document"
-                          style="height: 245px;"
-                          ng-required="true"></textarea>
-                <span class="help-block error-block basic-block">This field is required!</span>
-              </div>
-            </div>
+          </div>
+          <div class="row">
+            <hr/>
+            <button type="submit" class="btn btn-primary" ng-click="$ctrl.addPlugin($ctrl.PluginForm.$valid)">
+              Save
+            </button>
           </div>
         </form>
       </div>

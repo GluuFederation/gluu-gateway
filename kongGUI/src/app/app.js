@@ -16,6 +16,7 @@ angular.module('KongGUI', [
   'angular-progress-button-styles',
   'checklist-model',
   'KongGUI.theme',
+  'ngTagsInput',
   'KongGUI.pages'
 ]).config(function ($locationProvider) {
   $locationProvider.html5Mode({
