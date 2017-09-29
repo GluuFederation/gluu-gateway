@@ -16,7 +16,6 @@
   }).constant('urls', {
     BASE: 'https://localhost:3000',
     AUTH_URL: 'https://localhost:3000/login.html',
-    KONG_ADMIN_API: 'https://gluu.local.org:8444',
     KONG_NODE_API: 'https://gluu.local.org:4040'
   });
 })();

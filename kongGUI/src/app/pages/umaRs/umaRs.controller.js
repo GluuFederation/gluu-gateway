@@ -30,6 +30,7 @@
     vm.getAPI = getAPI;
     vm.addNewPath = addNewPath;
     vm.addNewCondition = addNewCondition;
+    vm.loadMethods = loadMethods;
 
     //init
     vm.getAPI();
@@ -108,6 +109,10 @@
           ],
           ticketScopes: []
         });
+    }
+
+    function loadMethods() {
+      return ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'];
     }
   }
 })();

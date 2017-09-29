@@ -11,7 +11,7 @@
     };
 
     function addPlugin(api_id, formData, onSuccess, onError) {
-      return $http.post(urls.KONG_ADMIN_API + '/apis/' + api_id + '/plugins', formData).then(onSuccess).catch(onError);
+      return $http.post(urls.KONG_NODE_API + '/api/apis/' + api_id + '/plugins', formData).then(onSuccess).catch(onError);
     }
 
     return service;

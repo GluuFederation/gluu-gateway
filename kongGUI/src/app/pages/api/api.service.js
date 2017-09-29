@@ -15,38 +15,23 @@
     };
 
     function getAPI(onSuccess, onError) {
-      var auth = $http.defaults.headers.common.Authorization;
-      delete $http.defaults.headers.common.Authorization;
-      return $http.get(urls.KONG_ADMIN_API + '/apis', {headers: {}}).then(onSuccess).catch(onError);
-      $http.defaults.headers.common.Authorization = auth;
+      return $http.get(urls.KONG_NODE_API + '/api/apis').then(onSuccess).catch(onError);
     }
 
     function addAPI(formData, onSuccess, onError) {
-      var auth = $http.defaults.headers.common.Authorization;
-      delete $http.defaults.headers.common.Authorization;
-      return $http.post(urls.KONG_ADMIN_API + '/apis', formData).then(onSuccess).catch(onError);
-      $http.defaults.headers.common.Authorization = auth;
+      return $http.post(urls.KONG_NODE_API + '/api/apis', formData).then(onSuccess).catch(onError);
     }
 
     function updateAPI(formData, onSuccess, onError) {
-      var auth = $http.defaults.headers.common.Authorization;
-      delete $http.defaults.headers.common.Authorization;
-      return $http.put(urls.KONG_ADMIN_API + '/apis', formData).then(onSuccess).catch(onError);
-      $http.defaults.headers.common.Authorization = auth;
+      return $http.put(urls.KONG_NODE_API + '/api/apis', formData).then(onSuccess).catch(onError);
     }
 
     function removeAPI(id, onSuccess, onError) {
-      var auth = $http.defaults.headers.common.Authorization;
-      delete $http.defaults.headers.common.Authorization;
-      return $http.delete(urls.KONG_ADMIN_API + '/apis/' + id).then(onSuccess).catch(onError);
-      $http.defaults.headers.common.Authorization = auth;
+      return $http.delete(urls.KONG_NODE_API + '/api/apis/' + id).then(onSuccess).catch(onError);
     }
 
     function getPlugins(api_id, onSuccess, onError) {
-      var auth = $http.defaults.headers.common.Authorization;
-      delete $http.defaults.headers.common.Authorization;
-      return $http.get(urls.KONG_ADMIN_API + '/apis/' + api_id + '/plugins').then(onSuccess).catch(onError);
-      $http.defaults.headers.common.Authorization = auth;
+      return $http.get(urls.KONG_NODE_API + '/api/apis/' + api_id + '/plugins').then(onSuccess).catch(onError);
     }
 
     return service;

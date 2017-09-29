@@ -14,7 +14,7 @@
     'KongGUI.pages.umaRs',
     'KongGUI.pages.login',
     'KongGUI.pages.umaScript',
-    'KongGUI.pages.oxdWeb'
+    //'KongGUI.pages.oxdWeb'
   ])
       .config(routeConfig);
 
