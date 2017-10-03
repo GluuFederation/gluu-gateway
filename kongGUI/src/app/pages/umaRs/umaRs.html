@@ -7,7 +7,7 @@
             <div class="col-md-6">
               <div class="form-group has-feedback"
                    ng-class="{'has-error': $ctrl.PluginForm.api_id.$invalid && ($ctrl.PluginForm.api_id.$dirty || $ctrl.PluginForm.$submitted)}">
-                <label for="api_id"><span class="text text-danger">*</span> Resource</label>
+                <label for="api_id"><span class="text text-danger">*</span> Kong Resource</label>
                 <select class="form-control" id="api_id" name="api_id" title="Select API" selectpicker
                         ng-model="$ctrl.api_id"
                         ng-options="api.id as api.name for api in $ctrl.apis" required>
@@ -32,7 +32,7 @@
             </div>
             <div class="col-md-12">
               <div class="form-group has-feedback">
-                <label for="api_id">--------------- Protection Document ---------------</label>
+                <label for="api_id">--------------- UMA Resources ---------------</label>
               </div>
               <div class="row" ng-repeat="element in $ctrl.modelPlugin.config.protection_document track by $index"
                    style="border: 1px dotted;">
@@ -47,8 +47,8 @@
                   <div class="form-group has-feedback"
                        ng-class="{'has-error': $ctrl.PluginForm.path.$invalid && ($ctrl.PluginForm.path.$dirty || $ctrl.PluginForm.$submitted)}">
                     <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
-                           title="Please enter the path"
-                           placeholder="Please enter the path"
+                           title="Enter path"
+                           placeholder="Enter path"
                            ng-model="element.path"
                            ng-required="true"/>
                     <span class="help-block error-block basic-block">This field is required!</span>
@@ -63,7 +63,7 @@
                           <tags-input ng-model="cond.httpMethods"
                                       id="httpMethods{{$parent.$index}}{{$index}}"
                                       add-from-autocomplete-only="true"
-                                      placeholder="Please enter the http Methods">
+                                      placeholder="Enter http Methods">
                             <auto-complete source="$ctrl.loadMethods($query)"
                                            min-length="0"
                                            debounce-delay="0"></auto-complete>
@@ -84,7 +84,17 @@
                              ng-class="{'has-error': $ctrl.PluginForm.scopes.$invalid && ($ctrl.PluginForm.scopes.$dirty || $ctrl.PluginForm.$submitted)}">
                           <tags-input ng-model="cond.scopes"
                                       id="scopes{{$parent.$index}}{{$index}}"
-                                      placeholder="Please enter the scopes"></tags-input>
+                                      placeholder="Enter scopes">
+                            <auto-complete source="$ctrl.loadScopes($query)"
+                                           min-length="0"
+                                           template="my-custom-template"
+                                           debounce-delay="0"></auto-complete>
+                          </tags-input>
+                          <script type="text/ng-template" id="my-custom-template">
+                            <div>
+                              <span>{{data.name}}</span>
+                            </div>
+                          </script>
                           <span class="help-block error-block basic-block">This field is required!</span>
                         </div>
                       </div>
@@ -94,8 +104,7 @@
                         <div class="form-group has-feedback">
                           <tags-input ng-model="cond.ticketScopes"
                                       id="ticketScopes{{$parent.$index}}{{$index}}"
-                                      placeholder="Please enter ticket scopes"></tags-input>
-                          <span class="help-block error-block basic-block">This field is required!</span>
+                                      placeholder="Enter ticket scopes"></tags-input>
                         </div>
                       </div>
                     </div>

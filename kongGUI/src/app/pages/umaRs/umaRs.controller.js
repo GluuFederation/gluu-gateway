@@ -5,7 +5,7 @@
     .controller('UMARsController', UMARsController);
 
   /** @ngInject */
-  function UMARsController($scope, $filter, $state, toastr, umaRsService, apiService) {
+  function UMARsController($scope, $filter, $state, toastr, umaRsService, apiService, umaScriptService) {
     var vm = this;
     vm.modelPlugin = {
       name: "kong-uma-rs",
@@ -24,6 +24,7 @@
       }
     };
     vm.apis = [];
+    vm.scopes = [];
 
     //Export the modules for view.
     vm.addPlugin = addPlugin;
@@ -31,6 +32,7 @@
     vm.addNewPath = addNewPath;
     vm.addNewCondition = addNewCondition;
     vm.loadMethods = loadMethods;
+    vm.loadScopes = loadScopes;
 
     //init
     vm.getAPI();
@@ -111,8 +113,32 @@
         });
     }
 
-    function loadMethods() {
-      return ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'];
+    function loadMethods(query) {
+      var arr = ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'];
+      arr = arr.filter(function (o) {
+        return o.indexOf(query.toUpperCase()) >= 0;
+      });
+      return arr;
+    }
+
+    function loadScopes(query) {
+      //return vm.scopes;
+      return umaScriptService.getScope(onSuccess, onError);
+
+      function onSuccess(response) {
+        vm.scopes = response.data.map(function (o) {
+          return {text: o.oxId, name: o.displayName};
+        });
+        vm.scopes = vm.scopes.filter(function (o) {
+          return o.name.indexOf(query) >= 0;
+        });
+
+        return vm.scopes;
+      }
+
+      function onError(error) {
+        toastr.error('Failed to fetch scope', 'Scope', {})
+      }
     }
   }
 })();
