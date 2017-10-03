@@ -84,7 +84,7 @@ function _M.checkaccess(conf, rpt, path, httpMethod)
         op_host = conf.uma_server_host
     };
 
-    local token = _M.execute_http(tokenRequest)
+    local token = oxd.get_client_token(tokenRequest)
 
     if token.status == "error" then
         ngx.log(ngx.ERR, "Error in get_client_token")
@@ -102,13 +102,7 @@ function _M.checkaccess(conf, rpt, path, httpMethod)
     };
     local response = oxd.uma_rs_check_access(umaAccessRequest, token.data.access_token)
 
-    if response.status == "error" then
-        ngx.log(ngx.ERR, "Error in uma-rs-check-access ticket")
-        return false
-    end
-
-    return true;
-    -- -----------------------------------------------------------------
+    return response;
 end
 
 return _M

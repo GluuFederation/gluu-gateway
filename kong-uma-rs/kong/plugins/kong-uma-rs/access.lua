@@ -26,6 +26,7 @@ end
 
 local function getPath()
   local path = ngx.var.request_uri
+  ngx.log(ngx.DEBUG, "request_uri " .. path);
   local indexOf = string.find(path, "?")
   if indexOf ~= nil then
     return string.sub(path, 1, (indexOf - 1))
