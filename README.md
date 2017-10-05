@@ -44,7 +44,7 @@ After registration you can use [kong proxy](https://getkong.org/docs/0.11.x/prox
 ## 3. kong UMA RS 
 From this tab you can config [kong-uma-rs](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs).
 After configured the plugin, you can not access the resources directly. [Read more...](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs#verify-that-your-api-is-protected-by-kong-uma-rs) 
-![UMA-RS](/doc/ums-rs.png)
+![UMA-RS](/doc/uma-rs.png)
 
 ## 4. UMA Script
 From this tab you can create the UMA RPT policy and assign it to scopes
@@ -63,4 +63,4 @@ This create the automatic UMA RPT policy.
 
 * Add Script into scope
 You can select multiple scope to add script into it.
-![Add-policy-script](/doc/add-policy-script.png)
+![Add-policy-script](/doc/add-scope.png)
