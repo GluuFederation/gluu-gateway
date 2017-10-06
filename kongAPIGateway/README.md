@@ -310,7 +310,7 @@ RESPONSE
 }
 ```
 
-###Manage Scope
+### Manage Scope
 
 1. GET All Scope REQUEST
 ```
