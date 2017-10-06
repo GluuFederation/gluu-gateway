@@ -72,9 +72,9 @@ var options = {
 For LDAPS you need to configured the tlsOptions in /ldap/client.js file
 ```
 var tlsOptions = {
-    // key: fs.readFileSync('key.pem'),
-    // cert: fs.readFileSync('cert.pem'),
-    // ca: [ fs.readFileSync('cacert.pem'), {encoding: 'utf-8'} ],
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem'),
+    ca: [ fs.readFileSync('cacert.pem'), {encoding: 'utf-8'} ],
   };
 
 ```
