@@ -18,7 +18,7 @@
     kong start
     ```
 2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/)
-3. [Install kongAPIGateway]()
+3. [Install kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)
 4. [Install kong-uma-rs](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 5. [Install kongGUI](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)
 
