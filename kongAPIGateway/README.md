@@ -12,6 +12,7 @@ Use `.env-dev` file for configuration. There are following properties which allo
 5. JWT_EXPIRES_IN: JWT token expired in given expire time. [Details..](https://www.npmjs.com/package/jsonwebtoken)
 
 *Ldap Configuration*
+
 6. LDAP_MAX_CONNS: Use to set maximum connection for ldap
 7. LDAP_SERVER_URL: LDAP server URL
 8. LDAP_BIND_DN: LDAP bind DN
@@ -20,9 +21,11 @@ Use `.env-dev` file for configuration. There are following properties which allo
 11. LDAP_CLIENT_ID: LDAP client ID.
 
 *UMA Script configuration*
+
 12. SCRIPT_TYPE: Type of UMA RPT policy script. which set type in oxScriptType attribute in ldap
 
 *OpenID Client Configuration using [oxd-https-extension](https://gluu.org/docs/oxd/3.1.1/oxd-https/install/)*
+
 13. OXD_ID: Use to set OXD ID. You need to create client using [oxd-https-extension](https://gluu.org/docs/oxd/3.1.1/oxd-https/install/)
 14. OP_HOST: kongAPIGateway is OP specific so it's use this OP_HOST for authentication.
 15. CLIENT_ID: Use to set the OpenID client Id. It's use at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token))
@@ -30,6 +33,7 @@ Use `.env-dev` file for configuration. There are following properties which allo
 17. OXD_WEB: kongAPIGateway use oxd-https-extension so only need to give the oxd web url to use oxd-https-extension.
 
 *[KONG](https://getkong.org) Configuration*
+
 18. KONG_URL: This is the kong web url for access the kong Admin API's. [See details here for kong proxy](https://getkong.org/docs/0.10.x/proxy/)
 
 ## Installation
