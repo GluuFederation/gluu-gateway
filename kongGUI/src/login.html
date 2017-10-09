@@ -28,13 +28,13 @@
 </head>
 <body class="auth">
 <main class="auth-main">
-  <div class="auth-block" ng-controller="LoginController as vm">
+  <div class="auth-block" ng-controller="LoginController as $ctrl">
     <h1>Sign in to OXD-KONG</h1>
     <form name="vm.loginForm" novalidate class="form-horizontal">
       <div class="form-horizontal">
         <div class="form-group">
           <div class="col-sm-offset-2 col-sm-10">
-            <button type="button" id="signIn" ng-click="vm.login()" class="btn btn-default btn-auth">
+            <button type="button" id="signIn" ng-click="$ctrl.login()" class="btn btn-default btn-auth">
               Sign in
             </button>
           </div>
