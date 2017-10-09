@@ -12,7 +12,7 @@ note over kong: setup_client and uma_rs_protect
 note over kong: Stored plugin config in cassandra
 kong->kongAPIGateway: Success
 kongAPIGateway->kongGUI: Success
-opt text
+opt UMA RPT Policy
     kongGUI->kongAPIGateway: Make RPT policy script
     note over kongAPIGateway: Stored script in ldap
     kongAPIGateway->kongGUI: Success
