@@ -1,7 +1,7 @@
 package = "kong-uma-rs"
 version = "1.0-0"
 source = {
-  url = "git://https://ox.gluu.org/luarocks/kong-uma-rs.1.0-0.zip"
+  url = "https://ce-dev4.gluu.org:4040/kong-uma-rs.1.0-0.zip"
 }
 description = {
   summary = "kong uma rs",
@@ -17,10 +17,10 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    access = "access.lua",
-    common = "common.lua",
-    handler = "handler.lua",
-    helper = "helper.lua",
-    schema = "schema.lua"
+    ["kong.plugins.kong-uma-rs.access"] = "access.lua",
+    ["kong.plugins.kong-uma-rs.common"] = "common.lua",
+    ["kong.plugins.kong-uma-rs.handler"] = "handler.lua",
+    ["kong.plugins.kong-uma-rs.helper"] = "helper.lua",
+    ["kong.plugins.kong-uma-rs.schema"] = "schema.lua"
   }
 }
