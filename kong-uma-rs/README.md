@@ -25,9 +25,11 @@ Table of Contents
 3. Install kong-uma-rs
     1. Stop kong : `kong stop`
     2. 
-        Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`
-            or
-        using luarocks `luarocks install kong-uma-rs`
+        Using luarocks `luarocks install kong-uma-rs`
+        
+        or
+        
+        Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`        
             
     3. Enable plugin in your `kong.yml` (typically located at `/etc/kong/kong.yml`) and start kong `kong start`.
     
