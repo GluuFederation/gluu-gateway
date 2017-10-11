@@ -16,13 +16,9 @@
 
     2. **Plugins**: There are two Gluu Kong plugins for resource protection. 
 
-        i. **[kong-openid-rp](/kong-openid-rp)**
+        1. **[kong-openid-rp](/kong-openid-rp)**: kong-openid-rp is the OpenID Connect RP kong plugin. This allows you to protect your Resources(API) with the [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/) OAuth-based identity protocol.
  
-            kong-openid-rp is the OpenID Connect RP kong plugin. This allows you to protect your Resources(API) with the [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/) OAuth-based identity protocol.
- 
-        ii. **[kong-uma-rs](/kong-uma-rs)**
- 
-            kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
+        2. **[kong-uma-rs](/kong-uma-rs)**: kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
 
     3. **[kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)**:  This provides API endpoint for communicate with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API) and plugin into the kong. Also provide Script endpoint for add UMA RPT policy script and add this script into the scopes.  
 
