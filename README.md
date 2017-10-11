@@ -5,52 +5,52 @@
 * The Gluu-oxd-kong is the platform for protect resources(Web application or API application) using the [Kong](https://getkong.org) plugins and proxy. This provides kong-GUI to registered the resources, add resource protection plugins, make custom UMA RPT policy script and provide a kong proxy to protect the resources using the registered plugin in resources. 
 
 * Following below things provide by Gluu-oxd-kong 
-1. Add Resource(API) in kong
-2. Config and add plugins in registered resources(API)
-3. Provide kong proxy endpoint to access and protect resources
-4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
-5. Allow to add policy script into [UMA Scopes](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#scopes)
+    1. Add Resource(API) in kong
+    2. Config and add plugins in registered resources(API)
+    3. Provide kong proxy endpoint to access and protect resources
+    4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
+    5. Allow to add policy script into [UMA Scopes](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#scopes)
 
 * Gluu-oxd-kong has three component
-1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
+    1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
 
-2. **Plugins**: There are two Gluu Kong plugins for resource protection. 
+    2. **Plugins**: There are two Gluu Kong plugins for resource protection. 
 
-    i. **[kong-openid-rp](/kong-openid-rp)**
+        i. **[kong-openid-rp](/kong-openid-rp)**
  
-    kong-openid-rp is the OpenID Connect RP kong plugin. This allows you to protect your Resources(API) with the [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/) OAuth-based identity protocol.
+            kong-openid-rp is the OpenID Connect RP kong plugin. This allows you to protect your Resources(API) with the [OpenID Connect](https://gluu.org/docs/ce/admin-guide/openid-connect/) OAuth-based identity protocol.
  
-    ii. **[kong-uma-rs](/kong-uma-rs)**
+        ii. **[kong-uma-rs](/kong-uma-rs)**
  
-    kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
+            kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
 
-3. **[kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)**:  This provides API endpoint for communicate with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API) and plugin into the kong. Also provide Script endpoint for add UMA RPT policy script and add this script into the scopes.  
+    3. **[kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)**:  This provides API endpoint for communicate with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API) and plugin into the kong. Also provide Script endpoint for add UMA RPT policy script and add this script into the scopes.  
 
-4. **[kongGUI](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)**:  This provides GUI for communicate with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add plugin, UMA RPT policy script and add this script into the scopes.
+    4. **[kongGUI](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)**:  This provides GUI for communicate with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add plugin, UMA RPT policy script and add this script into the scopes.
 
 ## Installation
 
 1. [Install kong](https://getkong.org/install)
 
-Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) guide as per platform.
+    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) guide as per platform.
 
-!! Note: kong supports two databases postgres and cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
+    !! Note: kong supports two databases postgres and cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
 
 2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/)
 
-oxd installation [click here](https://gluu.org/docs/oxd/3.1.1/install/)
+    oxd installation [click here](https://gluu.org/docs/oxd/3.1.1/install/)
  
 3. [Install kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)
 
-kongAPIGateway installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)
+    kongAPIGateway installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)
 
 4. [Install kong-uma-rs](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 
-kong-uma-rs installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
+    kong-uma-rs installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 
 5. [Install kongGUI](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)
 
-kongGUI installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)
+    kongGUI installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kongGUI)
 
 ## Sequence flow of system
 ![Sequence flow](/doc/kong-uma-rs.png)
