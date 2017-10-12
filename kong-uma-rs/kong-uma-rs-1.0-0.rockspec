@@ -1,7 +1,7 @@
 package = "kong-uma-rs"
 version = "1.0-0"
 source = {
-  url = "https://ce-dev4.gluu.org:4040/kong-uma-rs.1.0-0.zip"
+  url = "https://ox.gluu.org/luarocks/kong-uma-rs.1.0-0.zip"
 }
 description = {
   summary = "kong uma rs",
