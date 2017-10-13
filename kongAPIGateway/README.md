@@ -39,8 +39,8 @@ Use `.env-dev` file for configuration. There are following properties which allo
 ## Installation
 This is assumed that node and npm are installed on the machine.
 
- * node js
- * npm
+ * node js >= 6.9.x version
+ * npm >= 3.10.x version
  
 For installing node and npm please refer [here](https://nodejs.org/en/download/package-manager/).
 

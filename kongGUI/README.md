@@ -1,6 +1,11 @@
 # KongGUI Angular admin panel front-end framework
 
 ## Installation
+This is assumed that node and npm are installed on the machine.
+
+ * node js >= 6.9.x version
+ * npm >= 3.10.x version
+ 
 ```
 npm install
 ```

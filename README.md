@@ -26,14 +26,14 @@
 
 ## Installation
 
-1. [Install kong](https://getkong.org/install)
-
-    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) guide as per platform.
+1. [Install kong](https://getkong.org/install) Version: 0.11.0
+    
+    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
 
     !! Note: kong supports two databases postgres and cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
 
-2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/)
-
+2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/) Version: 3.1.1
+    
     oxd installation [click here](https://gluu.org/docs/oxd/3.1.1/install/)
  
 3. [Install kongAPIGateway](https://github.com/GluuFederation/kong-plugins/tree/master/kongAPIGateway)
