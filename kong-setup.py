@@ -2,7 +2,7 @@ import subprocess
 import traceback
 import time
 import sys
-
+import os
 
 class KongSetup:
 
@@ -36,16 +36,40 @@ class KongSetup:
             self.logIt("Error running command : %s" % " ".join(args), True)
             self.logIt(traceback.format_exc(), True)
 
+    def dbSetup(self):
+        originalDBConfigFile = os.path.join("/etc", "kong", "kong.conf")
+        newDBConfigFile = ""
+        input_file = open(originalDBConfigFile)
+        try:
+            for i, line in enumerate(input_file):
+                if line[0:21] == "#database = cassandra":
+                    line = line[1:]
+
+                newDBConfigFile += line
+
+        except Exception, e:
+            self.logIt("Error in writing kong.config file", True)
+            self.logIt(traceback.format_exc(), True)
+
+        finally:
+            input_file.close()
+            f = open(originalDBConfigFile, "w")
+            f.write(newDBConfigFile)
 
 if __name__ == "__main__":
     print sys.argv
     obj = KongSetup()
 
     print "\nInstalling..."
-    # obj.run(["sudo", "apt-get", "update"])
-    # obj.run(["sudo", "apt-get", "install", "openssl", "libpcre3", "procps", "perl"])
+    obj.run(["sudo", "apt-get", "update"])
 
     print "\nInstalling kong..."
     # kong-0.10.3.trusty_all.deb
     obj.run(["sudo", "chmod", "777", "kong-community-edition-0.11.0.trusty.all.deb"])
     obj.run(["sudo", "dpkg", "-i", "kong-community-edition-0.11.0.trusty.all.deb"])
+
+    # cassandra db configuration
+    obj.dbSetup()
+
+    obj.run(["sudo", "kong", "migrations", "up"])
+    obj.run(["sudo", "kong", "start"])
