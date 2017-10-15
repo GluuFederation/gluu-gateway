@@ -15,6 +15,7 @@ class KongSetup(object):
         self.cert_folder = './certs'
         self.template_folder = './templates'
         self.output_folder = './output'
+        self.certFolder = "/etc/certs"
 
         self.logError = 'oxd-kong-setup_error.log'
         self.log = 'oxd-kong-setup.log'
@@ -30,80 +31,24 @@ class KongSetup(object):
         self.pgPwd = ''
 
         self.cmd_mkdir = '/bin/mkdir'
+        self.opensslCommand = '/usr/bin/openssl'
+        self.cmd_chown = '/bin/chown'
+        self.cmd_chmod = '/bin/chmod'
 
-    def logIt(self, msg, errorLog=False):
-        if errorLog:
-            f = open(self.logError, 'a')
-            f.write('%s %s\n' % (time.strftime('%X %x'), msg))
-            f.close()
-        f = open(self.log, 'a')
-        f.write('%s %s\n' % (time.strftime('%X %x'), msg))
-        f.close()
+        self.countryCode = ''
+        self.state = ''
+        self.city = ''
+        self.orgName = ''
+        self.admin_email = ''
 
-    def run(self, args, cwd=None, env=None, usewait=False):
-        self.logIt('Running: %s' % ' '.join(args))
-        try:
-            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env)
-            if usewait:
-                code = p.wait()
-                self.logIt('Run: %s with result code: %d' % (' '.join(args), code))
-            else:
-                output, err = p.communicate()
-                if output:
-                    self.logIt(output)
-                if err:
-                    self.logIt(err, True)
-        except:
-            self.logIt("Error running command : %s" % " ".join(args), True)
-            self.logIt(traceback.format_exc(), True)
-
-    def renderTemplateInOut(self, filePath, templateFolder, outputFolder):
-        self.logIt("Rendering template %s" % filePath)
-        fn = os.path.split(filePath)[-1]
-        f = open(os.path.join(templateFolder, fn))
-        template_text = f.read()
-        f.close()
-        newFn = open(os.path.join(outputFolder, fn), 'w+')
-        newFn.write(template_text % self.__dict__)
-        newFn.close()
-
-    def startKong(self):
+    def configureRedis(self):
         return True
 
-    def stopKong(self):
+    def configurePostgres(self):
         return True
 
-    def renderTemplate(self, filePath):
-        self.renderTemplateInOut(filePath, self.template_folder, self.output_folder)
-
-    def render_templates(self):
-        self.logIt("Rendering templates")
-        for filePath in self.templates.keys():
-            try:
-                self.renderTemplate(filePath)
-            except:
-                self.logIt("Error writing template %s" % filePath, True)
-                self.logIt(traceback.format_exc(), True)
-
-    def getPrompt(self, prompt, defaultValue=None):
-        try:
-            if defaultValue:
-                user_input = raw_input("%s [%s] : " % (prompt, defaultValue)).strip()
-                if user_input == '':
-                    return defaultValue
-                else:
-                    return user_input
-            else:
-                input = False
-                while not input:
-                    user_input = raw_input("%s : " % prompt).strip()
-                    if user_input != '':
-                        input = True
-                        return user_input
-        except KeyboardInterrupt:
-            sys.exit()
-        except:
-            return None
+    def configureOxd(self):
+        return True
 
     def detect_hostname(self):
         detectedHostname = None
@@ -117,12 +62,65 @@ class KongSetup(object):
                 self.logIt(traceback.format_exc(), True)
         return detectedHostname
 
-    def isIP(self, address):
-        try:
-            socket.inet_aton(address)
-            return True
-        except socket.error:
-            return False
+    def gen_cert(self, serviceName, password, user='root', cn=None):
+        self.logIt('Generating Certificate for %s' % serviceName)
+        key_with_password = '%s/%s.key.orig' % (self.certFolder, serviceName)
+        key = '%s/%s.key' % (self.certFolder, serviceName)
+        csr = '%s/%s.csr' % (self.certFolder, serviceName)
+        public_certificate = '%s/%s.crt' % (self.certFolder, serviceName)
+        self.run([self.opensslCommand,
+                  'genrsa',
+                  '-des3',
+                  '-out',
+                  key_with_password,
+                  '-passout',
+                  'pass:%s' % password,
+                  '2048'
+                  ])
+        self.run([self.opensslCommand,
+                  'rsa',
+                  '-in',
+                  key_with_password,
+                  '-passin',
+                  'pass:%s' % password,
+                  '-out',
+                  key
+                  ])
+
+        certCn = cn
+        if certCn == None:
+            certCn = self.hostname
+
+        self.run([self.opensslCommand,
+                  'req',
+                  '-new',
+                  '-key',
+                  key,
+                  '-out',
+                  csr,
+                  '-subj',
+                  '/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress=%s' % (
+                  self.countryCode, self.state, self.city, self.orgName, certCn, self.admin_email)
+                  ])
+        self.run([self.opensslCommand,
+                  'x509',
+                  '-req',
+                  '-days',
+                  '365',
+                  '-in',
+                  csr,
+                  '-signkey',
+                  key,
+                  '-out',
+                  public_certificate
+                  ])
+        self.run([self.cmd_chown, '%s:%s' % (user, user), key_with_password])
+        self.run([self.cmd_chmod, '700', key_with_password])
+        self.run([self.cmd_chown, '%s:%s' % (user, user), key])
+        self.run([self.cmd_chmod, '700', key])
+
+    def genKongSslCertificate(self):
+        return True
 
     def get_ip(self):
         testIP = None
@@ -144,6 +142,45 @@ class KongSetup(object):
             print 'ERROR: The IP Address is invalid. Try again\n'
         return testIP
 
+    def getPrompt(self, prompt, defaultValue=None):
+        try:
+            if defaultValue:
+                user_input = raw_input("%s [%s] : " % (prompt, defaultValue)).strip()
+                if user_input == '':
+                    return defaultValue
+                else:
+                    return user_input
+            else:
+                input = False
+                while not input:
+                    user_input = raw_input("%s : " % prompt).strip()
+                    if user_input != '':
+                        input = True
+                        return user_input
+        except KeyboardInterrupt:
+            sys.exit()
+        except:
+            return None
+
+    def installSample(self):
+        return True
+
+    def isIP(self, address):
+        try:
+            socket.inet_aton(address)
+            return True
+        except socket.error:
+            return False
+
+    def logIt(self, msg, errorLog=False):
+        if errorLog:
+            f = open(self.logError, 'a')
+            f.write('%s %s\n' % (time.strftime('%X %x'), msg))
+            f.close()
+        f = open(self.log, 'a')
+        f.write('%s %s\n' % (time.strftime('%X %x'), msg))
+        f.close()
+
     def makeFolders(self):
         try:
             self.run([self.cmd_mkdir, '-p', self.cert_folder])
@@ -154,16 +191,76 @@ class KongSetup(object):
 
     def promptForProperties(self):
         self.ip = self.get_ip()
-        self.hostname = self.getPrompt("Enter Kong hostname", self.detect_hostname())
+        self.hostname = self.getPrompt('Enter Kong hostname', self.detect_hostname())
+        print 'The next few questions are used to generate the Kong self-signed certificate'
+        self.countryCode = self.getPrompt('Country')
+        self.state = self.getPrompt('State')
+        self.city = self.getPrompt('City')
+        self.orgName = self.getPrompt('Organizatoin')
+        self.admin_email = self.getPrompt('email')
+
+    def render_templates(self):
+        self.logIt("Rendering templates")
+        for filePath in self.templates.keys():
+            try:
+                self.renderTemplate(filePath)
+            except:
+                self.logIt("Error writing template %s" % filePath, True)
+                self.logIt(traceback.format_exc(), True)
+
+    def renderTemplate(self, filePath):
+        self.renderTemplateInOut(filePath, self.template_folder, self.output_folder)
+
+    def renderTemplateInOut(self, filePath, templateFolder, outputFolder):
+        self.logIt("Rendering template %s" % filePath)
+        fn = os.path.split(filePath)[-1]
+        f = open(os.path.join(templateFolder, fn))
+        template_text = f.read()
+        f.close()
+        newFn = open(os.path.join(outputFolder, fn), 'w+')
+        newFn.write(template_text % self.__dict__)
+        newFn.close()
+
+    def run(self, args, cwd=None, env=None, usewait=False):
+        self.logIt('Running: %s' % ' '.join(args))
+        try:
+            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env)
+            if usewait:
+                code = p.wait()
+                self.logIt('Run: %s with result code: %d' % (' '.join(args), code))
+            else:
+                output, err = p.communicate()
+                if output:
+                    self.logIt(output)
+                if err:
+                    self.logIt(err, True)
+        except:
+            self.logIt("Error running command : %s" % " ".join(args), True)
+            self.logIt(traceback.format_exc(), True)
+
+    def startKong(self):
+        return True
+
+    def stopKong(self):
+        return True
+
+    def test(self):
+        return True
 
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
+        kongSetup.configureRedis()
+        kongSetup.configurePostgres()
+        kongSetup.configureOxd()
+        kongSetup.genKongSslCertificate()
         kongSetup.stopKong()
         kongSetup.render_templates()
         kongSetup.startKong()
+        kongSetup.installSample()
+        kongSetup.test()
         print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
