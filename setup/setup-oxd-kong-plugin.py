@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import subprocess
 import traceback
 import time
@@ -5,7 +7,7 @@ import os
 import sys
 import socket
 
-class KongSetup:
+class KongSetup(object):
     def __init__(self):
         self.hostname = ''
         self.ip = ''
@@ -151,7 +153,7 @@ class KongSetup:
             self.logIt(traceback.format_exc(), True)
 
     def promptForProperties(self):
-        self.ip = self.getPrompt("Enter the ip address", self.get_ip())
+        self.ip = self.get_ip()
         self.hostname = self.getPrompt("Enter Kong hostname", self.detect_hostname())
 
 if __name__ == "__main__":
