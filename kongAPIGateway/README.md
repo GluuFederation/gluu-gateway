@@ -1,40 +1,43 @@
 # KONG API Gateway
 
-KONG API Gateway is provide API endpoint for configured kong API and plugin and also make UMA RPT policy and added it to scope. 
+KONG API Gateway provides API endpoint for configured kong API and plugin and also make UMA RPT policy and added it to scope. 
 
 ## Configuration
-Use `.env-dev` file for configuration. There are following properties which allow you to set the environment of the application. 
+The `.env-dev` property file is used to configured the application. 
 
-*Server configuration*
-1. PORT: Use to set port number on which the application is run. 
-2. BASE_URL: Set base url.
-4. APP_SECRET: kongAPIGateway is authenticate by OpenID Connect oAuth security and then it's secure by using JWT Token. APP_SECRET is use to set the secret key for the generate and verify JWT Token.
-5. JWT_EXPIRES_IN: JWT token expired in given expire time. [Details..](https://www.npmjs.com/package/jsonwebtoken)
+**Server configuration**
 
-*Ldap Configuration*
+1. PORT: This property is used to set port number on which the application is run. 
+2. BASE_URL: This property contains the application base URL.
+4. APP_SECRET: This property contains application secret for JWT key generation and verification.
+5. JWT_EXPIRES_IN: This property is used to set the JWT token expiration time. [Details..](https://www.npmjs.com/package/jsonwebtoken).
 
-6. LDAP_MAX_CONNS: Use to set maximum connection for ldap
-7. LDAP_SERVER_URL: LDAP server URL
-8. LDAP_BIND_DN: LDAP bind DN
-9. LDAP_BIND_CREDENTIALS: LDAP connection credential(password)
-10. LDAP_LOG_LEVEL: LDAP log Example: debug, error, info
-11. LDAP_CLIENT_ID: LDAP client ID.
+**Ldap Configuration**
 
-*UMA Script configuration*
+6. LDAP_MAX_CONNS: This property used to set maximum connection for ldap. Example: LDAP_MAX_CONNS=10
+7. LDAP_SERVER_URL: This property used to set LDAP server URL. Example: ldaps://localhost:1636
+8. LDAP_BIND_DN: The Username for the authentication server (local LDAP/remote LDAP/remote Active Directory) goes here. Example: LDAP_BIND_DN=cn=directory manager,o=gluu
+9. LDAP_BIND_CREDENTIALS: This property contains the LDAP connection credential(password).
+10. LDAP_LOG_LEVEL: This property is used to set log level. Example: debug, error, info
+11. LDAP_CLIENT_ID: This property contains the LDAP client ID.
 
-12. SCRIPT_TYPE: Type of UMA RPT policy script. which set type in oxScriptType attribute in ldap
+**UMA Script configuration**
 
-*OpenID Client Configuration using [oxd-https-extension](https://gluu.org/docs/oxd/3.1.1/oxd-https/install/)*
+12. SCRIPT_TYPE: This property contains a type of UMA RPT policy script. which set type in the oxScriptType attribute in LDAP.
 
-13. OXD_ID: Use to set OXD ID. You need to create client using [oxd-https-extension](https://gluu.org/docs/oxd/3.1.1/oxd-https/install/)
-14. OP_HOST: kongAPIGateway is OP specific so it's use this OP_HOST for authentication.
-15. CLIENT_ID: Use to set the OpenID client Id. It's use at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token))
-16. CLIENT_SECRET: Use to set the OpenID client secret. It's use at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token)) 
-17. OXD_WEB: kongAPIGateway use oxd-https-extension so only need to give the oxd web url to use oxd-https-extension.
+**OpenID Client Configuration using [oxd-https-extension](https://gluu.org/docs/oxd/3.1.1/oxd-https/install/)**
 
-*[KONG](https://getkong.org) Configuration*
+You need to first create the client using oxd-https-extension for the set below properties. 
 
-18. KONG_URL: This is the kong web url for access the kong Admin API's. [See details here for kong proxy](https://getkong.org/docs/0.10.x/proxy/)
+13. OXD_ID: This property contains OXD ID.
+14. OP_HOST: This property contains the OpenID provider address. kongAPIGateway is OP specific.
+15. CLIENT_ID: This property contains the OpenID connect client Id. It uses at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token))
+16. CLIENT_SECRET: This property contains the OpenID connect client secret. It uses at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token)) 
+17. OXD_WEB: This is use to set oxd-https-extension's web address(URL).
+
+**[KONG](https://getkong.org) Configuration**
+
+18. KONG_URL: This is the kong web URL for accessing the kong Admin API's. [See details here for kong proxy](https://getkong.org/docs/0.10.x/proxy/)
 
 ## Installation
 This is assumed that node and npm are installed on the machine.
@@ -44,21 +47,25 @@ This is assumed that node and npm are installed on the machine.
  
 For installing node and npm please refer [here](https://nodejs.org/en/download/package-manager/).
 
-Clone the repository and move to cloned directory and hit:
+1. Clone the repository and move to cloned directory and hit:
 
-```npm install```
+    ```
+    npm install
+    ```
 
-This will install all the dependencies for the project.
+    This will install all the dependencies for the project.
 
-To start the project hit:  
+2. To start the project:  
 
-```node index.js```
+    ```
+    node index.js
+    ```
 
-This will start the project.
+    This will start the project.
 
 ## SSL Settings
 
-For run application on https you need to give the ssl certificate in option on index.js
+For run application on https, you need to give the SSL certificate in option on index.js
 ```
 var options = {
   key: fs.readFileSync('key.pem'),
@@ -69,7 +76,7 @@ var options = {
 };
 ```
 
-For LDAPS you need to configured the tlsOptions in /ldap/client.js file
+For LDAPS you need to configure the tlsOptions in /ldap/client.js file
 ```
 var tlsOptions = {
     key: fs.readFileSync('key.pem'),
@@ -82,7 +89,7 @@ var tlsOptions = {
 ## API
 
 ### Manage KONG Resources Endpoint
-REST full api endpoint for add resource(API) in kong.
+REST full API endpoint for add resource(API) in the kong.
 
 1. GET All API REQUEST
 ```
