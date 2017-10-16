@@ -12,6 +12,10 @@ class KongSetup(object):
         self.hostname = ''
         self.ip = ''
 
+        self.installPostgress = True
+        self.installRedis = True
+        self.installOxd = True
+
         self.cert_folder = './certs'
         self.template_folder = './templates'
         self.output_folder = './output'
@@ -61,6 +65,18 @@ class KongSetup(object):
                 self.logIt("No detected hostname", True)
                 self.logIt(traceback.format_exc(), True)
         return detectedHostname
+
+    def getExternalCassandraInfo(self):
+        return True
+
+    def getExternalOxdInfo(self):
+        return True
+
+    def getExternalPostgressInfo(self):
+        return True
+
+    def getExternalRedisInfo(self):
+        return True
 
     def gen_cert(self, serviceName, password, user='root', cn=None):
         self.logIt('Generating Certificate for %s' % serviceName)
@@ -181,6 +197,13 @@ class KongSetup(object):
         f.write('%s %s\n' % (time.strftime('%X %x'), msg))
         f.close()
 
+    def makeBoolean(self, c):
+        if c in ['t', 'T']:
+            return True""
+        if c in ['f', 'F']:
+            return False
+        self.logIt("makeBoolean: invalid value for true|false: " + c, True)
+
     def makeFolders(self):
         try:
             self.run([self.cmd_mkdir, '-p', self.cert_folder])
@@ -198,6 +221,21 @@ class KongSetup(object):
         self.city = self.getPrompt('City')
         self.orgName = self.getPrompt('Organizatoin')
         self.admin_email = self.getPrompt('email')
+        print 'The next few questions will determine which components are installed'
+        self.installOxd = self.makeBoolean(self.getPrompt("Install oxd?", "True")[0])
+        self.installPostgress = self.makeBoolean(self.getPrompt("Install Postgress?", "True")[0])
+        self.installRedis = self.makeBoolean(self.getPrompt("Install Redis?", "True")[0])
+        if not self.installOxd:
+            self.getExternalOxdInfo()
+        if not self.installRedis:
+            self.getExternalRedisInfo()
+        if not self.installPostgress:
+            externalPostgress = self.makeBoolean(self.getPrompt("Configfure External Postgress?", "True")[0])
+            if externalPostgress:
+                self.getExternalPostgressInfo()
+            else:
+                print "Defaulting to external Cassandra"
+                self.getExternalCassandraInfo()
 
     def render_templates(self):
         self.logIt("Rendering templates")
