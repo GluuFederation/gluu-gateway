@@ -14,8 +14,8 @@ The `.env-dev` property file is used to configured the application.
 
 **Ldap Configuration**
 
-6. LDAP_MAX_CONNS: This property used to set maximum connection for ldap. Example: LDAP_MAX_CONNS=10
-7. LDAP_SERVER_URL: This property used to set LDAP server URL. Example: ldaps://localhost:1636
+6. LDAP_MAX_CONNS: This property is used to set maximum connection for ldap. Example: LDAP_MAX_CONNS=10
+7. LDAP_SERVER_URL: This property is used to set LDAP server URL. Example: ldaps://localhost:1636
 8. LDAP_BIND_DN: The Username for the authentication server (local LDAP/remote LDAP/remote Active Directory) goes here. Example: LDAP_BIND_DN=cn=directory manager,o=gluu
 9. LDAP_BIND_CREDENTIALS: This property contains the LDAP connection credential(password).
 10. LDAP_LOG_LEVEL: This property is used to set log level. Example: debug, error, info
@@ -33,7 +33,7 @@ You need to first create the client using oxd-https-extension for the set below 
 14. OP_HOST: This property contains the OpenID provider address. kongAPIGateway is OP specific.
 15. CLIENT_ID: This property contains the OpenID connect client Id. It uses at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token))
 16. CLIENT_SECRET: This property contains the OpenID connect client secret. It uses at the time of getting client token process([get-client-token](https://gluu.org/docs/oxd/3.1.1/oxd-https/api/#get-client-token)) 
-17. OXD_WEB: This is use to set oxd-https-extension's web address(URL).
+17. OXD_WEB: This is used to set oxd-https-extension's web address(URL).
 
 **[KONG](https://getkong.org) Configuration**
 
