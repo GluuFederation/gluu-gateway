@@ -6,6 +6,12 @@ import time
 import os
 import sys
 import socket
+import psycopg2
+import random
+import string
+
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+
 
 class KongSetup(object):
     def __init__(self):
@@ -19,13 +25,12 @@ class KongSetup(object):
         self.cert_folder = './certs'
         self.template_folder = './templates'
         self.output_folder = './output'
-        self.certFolder = "/etc/certs"
 
         self.logError = 'oxd-kong-setup_error.log'
         self.log = 'oxd-kong-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'oxd_uma,oxd_openid'
+        self.kongCustomPlugins = 'kong-uma-rs'
 
         self.oxdLicense = ''
 
@@ -49,7 +54,25 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        return True
+        con = None
+        try:
+            pgPassword = self.getPrompt('Enter postgres password')
+            self.pgPwd = self.getPrompt('Enter new kong user password')
+            con = psycopg2.connect("host='localhost' dbname='postgres' user='postgres' password='%s'" % pgPassword)
+            con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+            cur = con.cursor()
+            cur.execute("CREATE USER kong")
+            cur.execute("ALTER USER kong WITH PASSWORD '%s'" % self.pgPwd)
+            print "ALTER USER kong WITH PASSWORD '%s'" % self.pgPwd
+            cur.execute("CREATE DATABASE kong OWNER kong")
+            con.commit()
+        except psycopg2.DatabaseError, e:
+            if con:
+                con.rollback()
+            self.logIt('Error %s' % e)
+        finally:
+            if con:
+                con.close()
 
     def configureOxd(self):
         return True
@@ -80,10 +103,10 @@ class KongSetup(object):
 
     def gen_cert(self, serviceName, password, user='root', cn=None):
         self.logIt('Generating Certificate for %s' % serviceName)
-        key_with_password = '%s/%s.key.orig' % (self.certFolder, serviceName)
-        key = '%s/%s.key' % (self.certFolder, serviceName)
-        csr = '%s/%s.csr' % (self.certFolder, serviceName)
-        public_certificate = '%s/%s.crt' % (self.certFolder, serviceName)
+        key_with_password = '%s/%s.key.orig' % (self.cert_folder, serviceName)
+        key = '%s/%s.key' % (self.cert_folder, serviceName)
+        csr = '%s/%s.csr' % (self.cert_folder, serviceName)
+        public_certificate = '%s/%s.crt' % (self.cert_folder, serviceName)
         self.run([self.opensslCommand,
                   'genrsa',
                   '-des3',
@@ -116,7 +139,7 @@ class KongSetup(object):
                   csr,
                   '-subj',
                   '/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress=%s' % (
-                  self.countryCode, self.state, self.city, self.orgName, certCn, self.admin_email)
+                      self.countryCode, self.state, self.city, self.orgName, certCn, self.admin_email)
                   ])
         self.run([self.opensslCommand,
                   'x509',
@@ -135,8 +158,13 @@ class KongSetup(object):
         self.run([self.cmd_chown, '%s:%s' % (user, user), key])
         self.run([self.cmd_chmod, '700', key])
 
+    def getPW(self, size=12, chars=string.ascii_uppercase + string.digits + string.lowercase):
+        return ''.join(random.choice(chars) for _ in range(size))
+
     def genKongSslCertificate(self):
-        return True
+        self.gen_cert('oxd-kong', self.getPW())
+        self.kongSslCert = os.path.join(self.cert_folder, 'oxd-kong.crt')
+        self.kongSslKey = os.path.join(self.cert_folder, 'oxd-kong.key')
 
     def get_ip(self):
         testIP = None
@@ -199,7 +227,7 @@ class KongSetup(object):
 
     def makeBoolean(self, c):
         if c in ['t', 'T']:
-            return True""
+            return True
         if c in ['f', 'F']:
             return False
         self.logIt("makeBoolean: invalid value for true|false: " + c, True)
@@ -277,29 +305,34 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        return True
+        self.run(["sudo", "kong", "start", os.path.join(self.output_folder, 'kong.conf')])
 
     def stopKong(self):
-        return True
+        self.run(["sudo", "kong", "stop"])
+
+    def migrateKong(self):
+        self.run(["sudo", "kong", "migrations", "up"])
 
     def test(self):
         return True
+
 
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
-        kongSetup.configureRedis()
+        # kongSetup.configureRedis()
         kongSetup.configurePostgres()
-        kongSetup.configureOxd()
+        # kongSetup.configureOxd()
         kongSetup.genKongSslCertificate()
-        kongSetup.stopKong()
         kongSetup.render_templates()
+        # kongSetup.stopKong()
+        kongSetup.migrateKong()
         kongSetup.startKong()
-        kongSetup.installSample()
-        kongSetup.test()
-        print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
+        # kongSetup.installSample()
+        # kongSetup.test()
+        # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
