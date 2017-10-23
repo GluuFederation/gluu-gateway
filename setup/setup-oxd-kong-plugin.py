@@ -63,7 +63,6 @@ class KongSetup(object):
             cur = con.cursor()
             cur.execute("CREATE USER kong")
             cur.execute("ALTER USER kong WITH PASSWORD '%s'" % self.pgPwd)
-            print "ALTER USER kong WITH PASSWORD '%s'" % self.pgPwd
             cur.execute("CREATE DATABASE kong OWNER kong")
             con.commit()
         except psycopg2.DatabaseError, e:
