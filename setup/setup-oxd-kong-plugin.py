@@ -50,6 +50,10 @@ class KongSetup(object):
         self.orgName = ''
         self.admin_email = ''
 
+        self.distFolder = '/usr/share'
+        self.distKongGUIFolder = '%s/kongGUI' % self.distFolder
+        self.distKongAPIGatewayFolder = '%s/kongAPIGateway' % self.distFolder
+
     def configureRedis(self):
         return True
 
@@ -208,6 +212,13 @@ class KongSetup(object):
     def installSample(self):
         return True
 
+    def installKongGUI(self):
+        self.run(['sudo', 'npm', 'install', '-P'], self.distKongGUIFolder, os.environ.copy(), True)
+        self.run(['sudo', 'bower', 'install', '--allow-root'], self.distKongGUIFolder, os.environ.copy(), True)
+
+    def installKongAPIGateway(self):
+        self.run(['sudo', 'npm', 'install', '-P'], self.distKongAPIGatewayFolder, os.environ.copy(), True)
+
     def isIP(self, address):
         try:
             socket.inet_aton(address)
@@ -312,6 +323,12 @@ class KongSetup(object):
     def migrateKong(self):
         self.run(["sudo", "kong", "migrations", "up"])
 
+    def startKongGUI(self):
+        self.run(["gulp", "serve"], self.distKongGUIFolder, os.environ.copy(), True)
+
+    def startKongAPIGateway(self):
+        self.run(["node", "index.js"], self.distKongAPIGatewayFolder, os.environ.copy(), True)
+
     def test(self):
         return True
 
@@ -329,6 +346,7 @@ if __name__ == "__main__":
         # kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
+        kongSetup.installKongGUI()
         # kongSetup.installSample()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
