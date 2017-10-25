@@ -9,6 +9,7 @@ import socket
 import psycopg2
 import random
 import string
+import shutil
 
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -43,6 +44,7 @@ class KongSetup(object):
         self.opensslCommand = '/usr/bin/openssl'
         self.cmd_chown = '/bin/chown'
         self.cmd_chmod = '/bin/chmod'
+        self.cmd_ln = '/bin/ln'
 
         self.countryCode = ''
         self.state = ''
@@ -53,6 +55,8 @@ class KongSetup(object):
         self.distFolder = '/usr/share'
         self.distKongGUIFolder = '%s/kongGUI' % self.distFolder
         self.distKongAPIGatewayFolder = '%s/kongAPIGateway' % self.distFolder
+
+        self.kongGUIService = "kong-gui"
 
     def configureRedis(self):
         return True
@@ -323,11 +327,28 @@ class KongSetup(object):
     def migrateKong(self):
         self.run(["sudo", "kong", "migrations", "up"])
 
-    def startKongGUI(self):
-        self.run(["gulp", "serve"], self.distKongGUIFolder, os.environ.copy(), True)
+    def installKongGUIService(self):
+        self.logIt("Installing node service %s..." % self.kongGUIService)
+
+        self.copyFile(os.path.join('./templates', self.kongGUIService), '/etc/default')
+        self.run([self.cmd_chown, 'root:root', '/etc/default/%s' % self.kongGUIService])
+
+        self.run([
+            self.cmd_ln,
+            '-sf',
+            os.path.join('./system', self.kongGUIService),
+            '/etc/init.d/%s' % self.kongGUIService])
 
     def startKongAPIGateway(self):
         self.run(["node", "index.js"], self.distKongAPIGatewayFolder, os.environ.copy(), True)
+
+    def copyFile(self, inFile, destFolder):
+        try:
+            shutil.copy(inFile, destFolder)
+            self.logIt("Copied %s to %s" % (inFile, destFolder))
+        except:
+            self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
+            self.logIt(traceback.format_exc(), True)
 
     def test(self):
         return True
@@ -346,7 +367,7 @@ if __name__ == "__main__":
         # kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
-        kongSetup.installKongGUI()
+        kongSetup.installKongGUIService()
         # kongSetup.installSample()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
