@@ -5,7 +5,7 @@
     .controller('APIController', APIController);
 
   /** @ngInject */
-  function APIController($scope, $filter, toastr, apiService, $uibModal, urls) {
+  function APIController($state, $filter, toastr, apiService, $uibModal, urls) {
     var vm = this;
     vm.apis = vm.displayedCollection = undefined;
 
@@ -32,32 +32,33 @@
     }
 
     function openAPIModal(APIData) {
-      vm.APIModal = $uibModal.open({
-        animation: true,
-        templateUrl: 'app/pages/api/api.manage.modal.html',
-        size: 'md',
-        controller: ['$uibModalInstance', 'APIData', 'apiService', createAPIController],
-        controllerAs: '$ctrl',
-        resolve: {
-          APIData: function () {
-            return APIData;
-          }
-        }
-      });
-
-      vm.APIModal.result.then(function (newAPI) {
-        var index = _.findIndex(vm.apis, {id: newAPI.id});
-        if (index >= 0) {
-          vm.apis[index] = newAPI;
-        } else {
-          if (vm.apis === undefined) {
-            vm.apis = vm.displayedCollection = [];
-          }
-          vm.apis.push(newAPI);
-        }
-
-        vm.displayedCollection = angular.copy(vm.apis);
-      });
+      $state.go('manageApi', {oAPI:APIData});
+      // vm.APIModal = $uibModal.open({
+      //   animation: true,
+      //   templateUrl: 'app/pages/api/api.manage.modal.html',
+      //   size: 'md',
+      //   controller: ['$uibModalInstance', 'APIData', 'apiService', createAPIController],
+      //   controllerAs: '$ctrl',
+      //   resolve: {
+      //     APIData: function () {
+      //       return APIData;
+      //     }
+      //   }
+      // });
+      //
+      // vm.APIModal.result.then(function (newAPI) {
+      //   var index = _.findIndex(vm.apis, {id: newAPI.id});
+      //   if (index >= 0) {
+      //     vm.apis[index] = newAPI;
+      //   } else {
+      //     if (vm.apis === undefined) {
+      //       vm.apis = vm.displayedCollection = [];
+      //     }
+      //     vm.apis.push(newAPI);
+      //   }
+      //
+      //   vm.displayedCollection = angular.copy(vm.apis);
+      // });
     }
 
     function createAPIController($uibModalInstance, APIData, apiService) {
@@ -98,12 +99,7 @@
         }
       }
 
-      function stateChanged() {
-        vm.cities = vm.stateCityList[vm.modalAPI.state];
-      }
-
       vm.pushAPI = pushAPI;
-      vm.stateChanged = stateChanged;
     }
 
     function openPluginModal(APIData) {

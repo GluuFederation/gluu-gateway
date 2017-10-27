@@ -17,6 +17,15 @@
           icon: 'ion-navicon-round',
           order: 3
         }
+      })
+      .state('manageApi', {
+        url: '/manageApi',
+        templateUrl: 'app/pages/api/api.manage.modal.html',
+        controller: 'ManageAPIController',
+        controllerAs: '$ctrl',
+        params: {
+          oAPI: null
+        }
       });
   }
 })();
