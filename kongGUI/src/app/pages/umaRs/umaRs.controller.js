@@ -5,7 +5,7 @@
     .controller('UMARsController', UMARsController);
 
   /** @ngInject */
-  function UMARsController($scope, $filter, $state, toastr, umaRsService, apiService, umaScriptService) {
+  function UMARsController($scope, $filter, $state, toastr, umaRsService, apiService) {
     var vm = this;
     vm.modelPlugin = {
       name: "kong-uma-rs",

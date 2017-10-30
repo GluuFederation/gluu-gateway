@@ -75,6 +75,11 @@ After registration, you can use [kong proxy](https://getkong.org/docs/0.11.x/pro
 
     3.Hosts: Required, A list of domain names that point to your API.
     
+    * Kong proxy check the host (in HTTP header) and according to host it serves resources
+    * If you want to use directly in browser then you need to set same host URL as kong proxy URL
+                example: if kong proxy is example.org:8000 then the host must be example.org
+    * If we added resources with hostname "test.com" then we must need to passed host key in header with value "test.com" otherwise kong gives error API not found
+    
 ![Add Resource](/doc/add-api.png)
      
 ## 3. kong UMA RS 

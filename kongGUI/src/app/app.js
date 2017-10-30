@@ -24,9 +24,6 @@ angular.module('KongGUI', [
     requireBase: false,
     rewriteLinks: true
   });
-}).constant('urls', {
-  AUTH_URL: 'https://localhost:3000/login.html',
-  KONG_NODE_API: 'https://gluu.local.org:4040'
 }).filter('unique', function () {
   return function (arr, field) {
     var o = {}, i, l = !!arr ? arr.length : 0, r = [];
