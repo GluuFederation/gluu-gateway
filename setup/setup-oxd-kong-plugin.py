@@ -10,6 +10,9 @@ import psycopg2
 import random
 import string
 import shutil
+import requests
+import json
+
 
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
@@ -26,6 +29,8 @@ class KongSetup(object):
         self.cert_folder = './certs'
         self.template_folder = './templates'
         self.output_folder = './output'
+        self.system_folder = './system'
+        self.osDefault = '/etc/default'
 
         self.logError = 'oxd-kong-setup_error.log'
         self.log = 'oxd-kong-setup.log'
@@ -45,6 +50,7 @@ class KongSetup(object):
         self.cmd_chown = '/bin/chown'
         self.cmd_chmod = '/bin/chmod'
         self.cmd_ln = '/bin/ln'
+        self.hostname = '/bin/hostname'
 
         self.countryCode = ''
         self.state = ''
@@ -52,11 +58,32 @@ class KongSetup(object):
         self.orgName = ''
         self.admin_email = ''
 
-        self.distFolder = '/usr/share'
+        self.distFolder = '/opt'
         self.distKongGUIFolder = '%s/kongGUI' % self.distFolder
         self.distKongAPIGatewayFolder = '%s/kongAPIGateway' % self.distFolder
+        self.distKongAPIConfigFile = '%s/.env-dev' % self.distKongAPIGatewayFolder
 
         self.kongGUIService = "kong-gui"
+        self.kongAPIGatewayService = "kong-api"
+
+        # kong API Property values
+        self.apiPort = '4040'
+        self.apiURL = 'https://%s' % self.run([self.hostname])
+        self.apiJwtExpireTime = '24h'
+        self.apiAppSecret = self.getPW()
+        self.apiLdapMaxConn = 10
+        self.apiLdapHost = ''
+        self.apiLdapBindDN = 'cn=directory manager,o=gluu'
+        self.apiLdapPassword = ''
+        self.apiLdapLogLevel = 'debug'
+        self.apiLdapClientId = ''
+        self.apiPolicyType = 'uma_rpt_policy'
+        self.apiOxdId = ''
+        self.apiOP = ''
+        self.apiClientId = ''
+        self.apiClientSecret = ''
+        self.apiOxdWeb = ''
+        self.apiKongWebURL = ''
 
     def configureRedis(self):
         return True
@@ -216,12 +243,41 @@ class KongSetup(object):
     def installSample(self):
         return True
 
-    def installKongGUI(self):
+    def configKongGUI(self):
         self.run(['sudo', 'npm', 'install', '-P'], self.distKongGUIFolder, os.environ.copy(), True)
         self.run(['sudo', 'bower', 'install', '--allow-root'], self.distKongGUIFolder, os.environ.copy(), True)
 
-    def installKongAPIGateway(self):
+    def configKongAPIGateway(self):
         self.run(['sudo', 'npm', 'install', '-P'], self.distKongAPIGatewayFolder, os.environ.copy(), True)
+        print 'The next few questions are used to configure kong API Gateway'
+        self.apiOP = self.getPrompt('OP host')
+        self.apiLdapPassword = self.getPrompt('LDAP password')
+        self.apiLdapClientId = self.getPrompt('LDAP client id')
+        self.apiOxdWeb = self.getPrompt('oxd-https URL')
+        flag = self.makeBoolean(self.getPrompt('Would you like to generate client_id/client_secret? (yes - generate, no - enter client_id and client_secret manually)'))
+        if flag:
+            payload = {
+                'op_host': self.apiOP,
+                'authorization_redirect_uri': 'https://' + self.hostname + '/login.html',
+                'scope': ['openid', 'email', 'profile', 'uma_protection'],
+                'grant_types': ['authorization_code'],
+                'client_name': 'oxd_kong_client'
+            }
+            res = requests.post(self.apiOxdWeb + '/setup-client', data=json.dumps(payload), headers = {'content-type': 'application/json'})
+            resJson = json.loads(res.text)
+            print resJson
+            print 'Making client...'
+            self.apiClientSecret = resJson['data']['client_secret']
+            self.apiClientId = resJson['data']['client_id']
+        else:
+            self.apiClientId = self.getPrompt('client_id')
+            self.apiClientSecret = self.getPrompt('client_secret')
+
+        self.apiKongWebURL = self.getPrompt('Kong Web URL')
+        # Render kongAPI property
+        self.renderTemplateInOut(self.distKongAPIConfigFile, self.template_folder, self.distKongAPIGatewayFolder)
+
+
 
     def isIP(self, address):
         try:
@@ -240,9 +296,9 @@ class KongSetup(object):
         f.close()
 
     def makeBoolean(self, c):
-        if c in ['t', 'T']:
+        if c in ['t', 'T', 'y', 'Y']:
             return True
-        if c in ['f', 'F']:
+        if c in ['f', 'F', 'n', 'N']:
             return False
         self.logIt("makeBoolean: invalid value for true|false: " + c, True)
 
@@ -281,6 +337,7 @@ class KongSetup(object):
 
     def render_templates(self):
         self.logIt("Rendering templates")
+        # other property
         for filePath in self.templates.keys():
             try:
                 self.renderTemplate(filePath)
@@ -330,17 +387,26 @@ class KongSetup(object):
     def installKongGUIService(self):
         self.logIt("Installing node service %s..." % self.kongGUIService)
 
-        self.copyFile(os.path.join('./templates', self.kongGUIService), '/etc/default')
-        self.run([self.cmd_chown, 'root:root', '/etc/default/%s' % self.kongGUIService])
+        self.copyFile(os.path.join(self.template_folder, self.kongGUIService), self.osDefault)
+        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongGUIService)])
 
         self.run([
             self.cmd_ln,
             '-sf',
-            os.path.join('./system', self.kongGUIService),
+            os.path.join(self.system_folder, self.kongGUIService),
             '/etc/init.d/%s' % self.kongGUIService])
 
-    def startKongAPIGateway(self):
-        self.run(["node", "index.js"], self.distKongAPIGatewayFolder, os.environ.copy(), True)
+    def installKongAPIService(self):
+        self.logIt("Installing kong API service %s..." % self.kongAPIGatewayService)
+
+        self.copyFile(os.path.join(self.template_folder, self.kongAPIGatewayService), self.osDefault)
+        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongAPIGatewayService)])
+
+        self.run([
+            self.cmd_ln,
+            '-sf',
+            os.path.join(self.system_folder, self.kongAPIGatewayService),
+            '/etc/init.d/%s' % self.kongAPIGatewayService])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -351,23 +417,26 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def test(self):
-        return True
+        r = requests.get("https://jsonplaceholder.typicode.com/posts")
+        print json.loads(r.text)[0]['id']
 
 
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
+        # kongSetup.test()
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
+        kongSetup.configKongAPIGateway()
         # kongSetup.configureRedis()
-        kongSetup.configurePostgres()
+        # kongSetup.configurePostgres()
         # kongSetup.configureOxd()
-        kongSetup.genKongSslCertificate()
-        kongSetup.render_templates()
+        # kongSetup.genKongSslCertificate()
+        # kongSetup.render_templates()
         # kongSetup.stopKong()
-        kongSetup.migrateKong()
-        kongSetup.startKong()
-        kongSetup.installKongGUIService()
+        # kongSetup.migrateKong()
+        # kongSetup.startKong()
+        # kongSetup.installKongGUIService()
         # kongSetup.installSample()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
