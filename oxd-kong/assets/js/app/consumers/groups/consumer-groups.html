@@ -1,0 +1,33 @@
+
+<div class="row">
+    <div class="col-md-3" data-ng-repeat="acl in acls">
+        <div
+                class="panel panel-default panel-flat elipsize">
+            <i
+                    data-ng-click="deleteGroup(acl)"
+                    class="mdi mdi-close clickable pull-right margin-top margin-right"></i>
+            <div class="panel-body" style="padding-right: 30px;background: #fff">
+                        <span class=" no-wrap ">
+                            <i class="mdi mdi-account-multiple-outline"></i>
+                            <strong>{{acl.group}}</strong>
+
+                        </span>
+            </div>
+
+        </div>
+
+    </div>
+    <div class="col-md-3">
+        <div
+                data-ng-click="addGroup(consumer)"
+                class="panel panel-dashed panel-flat clickable">
+            <div class="panel-body elipsize">
+                        <span class=" no-wrap">
+                            <i class="mdi mdi-plus"></i>
+                            Add a group
+                        </span>
+
+            </div>
+        </div>
+    </div>
+</div>

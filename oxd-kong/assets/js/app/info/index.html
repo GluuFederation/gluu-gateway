@@ -1,0 +1,18 @@
+<div class="row" data-ng-if="!Gateway">
+    <div class="col-md-12 text-center margin padding">
+        <h4>Fetching node info...</h4>
+        <br>
+        <div class="anim-loader">
+            <span class="dot dot_1"></span>
+            <span class="dot dot_2"></span>
+            <span class="dot dot_3"></span>
+            <span class="dot dot_4"></span>
+        </div>
+    </div>
+</div>
+<div class="row" data-ng-if="Gateway">
+    <div class="col-md-12">
+        <div json-human="Gateway" class="table-responsive"></div>
+    </div>
+</div>
+

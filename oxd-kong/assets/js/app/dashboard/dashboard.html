@@ -1,0 +1,234 @@
+<div class="container margin-top" style="width: 600px;max-width: 100%" ng-if="!loading">
+    <div class="row" ng-if="!user.node && !Gateway">
+        <div class="col-md-12 text-center">
+            <img src="images/conn_sync-100.png" class="margin-bottom">
+            <h2>
+                Welcome!
+            </h2>
+            <p class="lead">First of all, lets setup a connection to Kong Admin.</p>
+
+        </div>
+        <div class="col-md-12 margin-top">
+            <div ng-include="'js/app/connections/partials/create-connection-form-flat.html?r=' + Date.now()"
+                 class="margin-top"></div>
+        </div>
+    </div>
+    <div class="row" ng-if="user.node && !Gateway && error">
+        <div class="col-md-12 text-center">
+            <img src="images/attention.png" class="margin-bottom">
+            <h2>
+                Something went wrong...
+            </h2>
+            <p class="lead">
+                Failed to connect to <strong>{{user.node.name}}</strong>.<br>
+                Make sure your active <a ui-sref="connections">connection</a> is valid and Kong is up and running.
+            </p>
+
+        </div>
+    </div>
+</div>
+
+<konga-loader message="Connecting to node. Please wait.." ng-if="loading && !error"></konga-loader>
+
+<div data-ng-if="!loading && !error && info">
+    <!--<div class="row" vertilize-container>-->
+        <!--&lt;!&ndash; REQUESTS &ndash;&gt;-->
+        <!--<div class="col-md-4">-->
+            <!--<div class="panel panel-default" vertilize>-->
+                <!--<div class="panel-heading">-->
+                    <!--<div class="panel-title">-->
+                        <!--<i class="mdi mdi-cast-connected"></i>&nbsp;-->
+                        <!--REQUESTS-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="panel-body">-->
+                    <!--<canvas id="server"-->
+                            <!--class="chart chart-bar"-->
+                            <!--chart-data="data.server.data"-->
+                            <!--chart-labels="data.server.labels"-->
+                            <!--chart-options="data.server.options"-->
+                            <!--chart-series="data.server.series">-->
+                    <!--</canvas>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!--&lt;!&ndash; END REQUESTS &ndash;&gt;-->
+        <!--&lt;!&ndash; CONNECTIONS &ndash;&gt;-->
+        <!--<div class="col-md-4">-->
+            <!--<div class="panel panel-default" vertilize>-->
+                <!--<div class="panel-heading">-->
+                    <!--<div class="panel-title">-->
+                        <!--<i class="mdi mdi-cast-connected"></i>&nbsp;-->
+                        <!--CONNECTIONS-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="panel-body">-->
+                    <!--<canvas id="activity"-->
+                            <!--class="chart chart-bar"-->
+                            <!--chart-data="data.activity.data"-->
+                            <!--chart-labels="data.activity.labels"-->
+                            <!--chart-options="data.activity.options"-->
+                            <!--chart-series="data.activity.series">-->
+                    <!--</canvas>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!--&lt;!&ndash; END CONNECTIONS &ndash;&gt;-->
+        <!--&lt;!&ndash; TIMERS &ndash;&gt;-->
+        <!--<div class="col-md-4">-->
+            <!--<div class="panel panel-default" vertilize>-->
+                <!--<div class="panel-heading">-->
+                    <!--<div class="panel-title">-->
+                        <!--<i class="mdi mdi-timer"></i>&nbsp;-->
+                        <!--TIMERS-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="panel-body">-->
+                    <!--<canvas id="timers"-->
+                            <!--class="chart chart-bar"-->
+                            <!--chart-data="data.timers.data"-->
+                            <!--chart-labels="data.timers.labels"-->
+                            <!--chart-options="data.timers.options"-->
+                            <!--chart-series="data.timers.series">-->
+                    <!--</canvas>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!--&lt;!&ndash; END &ndash;&gt;-->
+    <!--</div>-->
+    <div class="row" ng-if="!isKongVersionGreater('0.11.0')">
+        <!-- DATABASE -->
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <i class="mdi mdi-database"></i>&nbsp;
+                        DATABASE
+                    </div>
+                </div>
+                <div class="panel-body">
+                <span class="label label-default" ng-repeat="(key,value) in status.database">
+                    {{key.toUpperCase()}} : {{value}}
+                </span>
+                </div>
+
+            </div>
+        </div>
+        <!-- END DATABASE -->
+    </div>
+    <div class="row" vertilize-container>
+        <!-- GATEWAY INFO -->
+        <div class="col-md-4">
+            <div class="panel panel-default" vertilize>
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <i class="mdi mdi-information-outline"></i>&nbsp;GATEWAY INFO
+                    </div>
+                </div>
+                <table class="table no-margin">
+                    <tr>
+                        <th>HostName</th>
+                        <td>{{info.hostname}}</td>
+                    </tr>
+                    <tr>
+                        <th>Tag Line</th>
+                        <td>{{info.tagline}}</td>
+                    </tr>
+                    <tr>
+                        <th>Version</th>
+                        <td>{{info.version}}</td>
+                    </tr>
+                    <tr>
+                        <th>LUA Version</th>
+                        <td>{{info.lua_version}}</td>
+                    </tr>
+                    <tr>
+                        <th>Proxy listen</th>
+                        <td>{{info.configuration.proxy_listen}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <!-- END GATEWAY INFO -->
+
+        <!-- DATABASE INFO -->
+        <div class="col-md-4">
+            <div class="panel panel-default" vertilize>
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <i class="mdi mdi-information-outline"></i>&nbsp;DATABASE INFO
+                        <span ng-if="isKongVersionGreater('0.11.0')"
+                              ng-class="{'text-success' : status.database.reachable, 'text-danger' : !status.database.reachable}"
+                              class="pull-right">
+                            <small>{{status.database.reachable ? 'Reachable' : 'Unreachable'}}</small>
+                        </span>
+                    </div>
+                </div>
+                <table class="table no-margin">
+                    <tr>
+                        <th>DBMS</th>
+                        <td>{{info.configuration.database}}</td>
+                    </tr>
+                    <tr>
+                        <th>Host</th>
+                        <td>{{info.configuration.pg_host}}</td>
+                    </tr>
+                    <tr>
+                        <th>Database</th>
+                        <td>{{info.configuration.pg_database}}</td>
+                    </tr>
+                    <tr>
+                        <th>User</th>
+                        <td>{{info.configuration.pg_user}}</td>
+                    </tr>
+                    <tr>
+                        <th>Port</th>
+                        <td>{{info.configuration.pg_port}}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <!-- END DATABASE INFO -->
+
+        <!-- PLUGINS -->
+        <!--<div class="col-md-4">-->
+            <!--<div class="panel panel-default" vertilize>-->
+                <!--<div class="panel-heading">-->
+                    <!--<div class="panel-title">-->
+                        <!--<i class="mdi mdi-power-plug"></i>&nbsp;-->
+                        <!--PLUGINS-->
+                    <!--</div>-->
+                <!--</div>-->
+                <!--<div class="panel-body">-->
+                <!--<span class="label"-->
+                      <!--data-ng-class="{'label-default' : !isEnabled(key),'label-success' : isEnabled(key)}"-->
+                      <!--data-ng-repeat="(key,value) in info.plugins.available_on_server">-->
+                    <!--{{key}}-->
+                <!--</span>-->
+                <!--</div>-->
+            <!--</div>-->
+        <!--</div>-->
+        <!-- END PLUGINS -->
+    </div>
+    <div class="row" ng-if="showCluster">
+        <!-- CLUSTER -->
+        <div class="col-md-12">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <div class="panel-title">
+                        <i class="mdi mdi-server-network"></i>&nbsp;
+                        CLUSTER ({{clusters.total}} nodes)
+                    </div>
+                </div>
+                <div class="panel-body no-padding table-responsive">
+                    <div ng-controller="ClusterListController" ng-include="'js/app/cluster/views/partials/cluster-list.html?r=' + Date().now"></div>
+                </div>
+
+            </div>
+        </div>
+        <!-- END CLUSTER -->
+    </div>
+</div>
+
+
+

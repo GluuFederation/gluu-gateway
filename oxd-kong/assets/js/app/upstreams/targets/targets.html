@@ -1,0 +1,84 @@
+<div class="panel panel-default">
+    <div class="panel-heading primary">
+        <div class="panel-title pull-left">
+            Targets
+        </div>
+        <button class="btn btn-sm btn-primary btn-link pull-right" data-ng-click="onAddTarget()">
+            <i class="mdi mdi-plus"></i>
+            Add target
+        </button>
+        <div class="clearfix"></div>
+    </div>
+    <div class="panel-body">
+        <p class="help-block">A target is an ip address/hostname with a port that identifies an instance of a backend service. Every upstream can have many targets, and the targets can be dynamically added and removed. So changes are effectuated on the fly.</p>
+
+        <p class="help-block">
+            Because the upstream maintains a history of target changes, the targets cannot be deleted or modified. To disable a target, post a new one with <code>weight=0</code>.
+        </p>
+        <div class="col-md-12 bg-light-grey padding">
+            <list-search
+                    class="pull-left margin-right"
+                    data-filters="filters"
+                    data-options="itemsPerPageOptions"
+                    data-items="itemsPerPage"
+            ></list-search>
+        </div>
+        <div class="clearfix"></div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <tr>
+                    <th width="{{item.width}}" class="text-nowrap"
+                        data-ng-repeat="item in titleItems | filter:titleFilter"
+                    >
+                        <a
+                                class="clickable"
+                                data-ng-show="item.column"
+                                data-ng-click="changeSort(item)"
+                                data-ng-bind-html="item.title.toUpperCase()"
+                        ></a>
+            <span
+                    data-ng-show="!item.column"
+                    data-ng-bind-html="item.title.toUpperCase()"
+            ></span>
+                        <input data-ng-if="item.checkbox" type="checkbox" data-ng-model="globalCheck.isAllChecked"/>
+                        <i class="mdi"
+                           data-ng-show="sort.column == item.column"
+                           data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"
+                        >
+                        </i>
+                    </th>
+                    <th width="1"></th>
+                </tr>
+                <tr dir-paginate="item in items | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage">
+                    <td>
+                        <raw-view data-item="item"></raw-view>
+                    </td>
+                    <td>{{item.target || "-"}}</td>
+                    <td>{{item.weight || "-"}}</td>
+                    <td>{{moment().format("MMM DD YYYY @h:mm")}}</td>
+                    <td>
+                        <button type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
+                            <i class="mdi mdi-delete"></i>
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+
+                <tr data-ng-if="items.length === 0 && !loading">
+                    <td colspan="100%" class="text-center text-muted">
+                        <em>No data found...</em>
+                    </td>
+                </tr>
+                <tr data-ng-if="loading">
+                    <td colspan="100%" class="text-center text-muted">
+                        <em>Loading targets...</em>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <dir-pagination-controls class="pull-right"></dir-pagination-controls>
+
+
+    </div>
+</div>

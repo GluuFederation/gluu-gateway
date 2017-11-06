@@ -1,0 +1,28 @@
+
+<div class="row">
+    <div class="col-md-12 actions">
+        <a data-ui-sref="users.create"
+           ng-if="user.hasPermission($state.name.split('.')[0],'create')"
+           class="btn btn-primary pull-left">
+            <i class="mdi mdi-plus"></i>
+            Create User
+        </a>
+        <list-search
+                class="pull-right margin-right"
+                data-filters="filters"
+                data-options="itemsPerPageOptions"
+                data-items="itemsPerPage"
+        ></list-search>
+
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div
+                class="table-responsive"
+                data-ng-include="'js/app/users/partials/users-table.html'">
+        </div>
+    </div>
+
+</div>
+

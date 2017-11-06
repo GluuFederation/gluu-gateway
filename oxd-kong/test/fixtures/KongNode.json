@@ -1,0 +1,8 @@
+[
+  {
+    "id": 1,
+    "name" : "default",
+    "kong_admin_url": "http://gluu.local.org:8001",
+    "active": false
+  }
+]
