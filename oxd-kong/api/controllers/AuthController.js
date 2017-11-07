@@ -159,32 +159,6 @@ var AuthController = {
     req.body.identifier = 'admin';
     req.body.password = 'adminadminadmin';
     sails.services.passport.callback(req, res, function callback(error, user) {
-      // User must be active
-      // if (user && !user.active) {
-      //   return response.forbidden({
-      //     message: 'Account is not activated.'
-      //   });
-      // }
-      //
-      //
-      // request.login(user, function callback(error) {
-      //   // If an error was thrown, redirect the user to the login which should
-      //   // take care of rendering the error messages.
-      //   if (error) {
-      //     sails.log.verbose('User authentication failed');
-      //     sails.log.verbose(error);
-      //
-      //     response.json(401, error);
-      //   } else { // Upon successful login, send back user data and JWT token
-      //
-      //
-      //     response.json(200, {
-      //       user: user,
-      //       token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)
-      //     });
-      //   }
-      // });
-
       if (!!req.body.code && !!req.body.state) {
         var clientToken = '';
         return getClientAccessToken()
@@ -198,8 +172,8 @@ var AuthController = {
               uri: sails.config.oxdWeb + '/get-tokens-by-code',
               body: {
                 oxd_id: sails.config.oxdId,
-                code: req.query.code,
-                state: req.query.state
+                code: req.body.code,
+                state: req.body.state
               },
               resolveWithFullResponse: true,
               json: true
@@ -231,7 +205,7 @@ var AuthController = {
             if (userInfo.status === 'error') {
               return Promise.reject(userInfo.data)
             }
-            user.info = userInfo;
+            user.info = userInfo.data;
             return res.send({user: user, token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)});
           })
           .catch(function (error) {

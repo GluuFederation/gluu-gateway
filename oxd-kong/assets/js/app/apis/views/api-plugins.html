@@ -49,10 +49,10 @@
         switch-size="mini">
     </td>
     <td>
-      <raw-view data-item="item"></raw-view>
+      <a href data-ng-click="showPluginDetail(item)"><i uib-tooltip="Raw view" class="mdi mdi-eye-outline"></i></a>
     </td>
     <th>
-      {{item.name}}
+      <a href data-ng-click="showPluginDetail(item)">{{item.name}}</a>
     </th>
     <td>{{item.created_at | date : format : timezone}}</td>
     <td>
