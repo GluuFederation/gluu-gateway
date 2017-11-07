@@ -31,12 +31,10 @@ module.exports = {
   /**
    * The default fallback URL to Kong's admin API.
    */
-  kong_admin_url : process.env.KONG_ADMIN_URL || 'http://127.0.0.1:8001',
+  kong_admin_url: process.env.KONG_ADMIN_URL || 'http://127.0.0.1:8001',
 
 
-  connections: {
-
-  },
+  connections: {},
 
   models: {
     connection: process.env.DB_ADAPTER || 'localDiskDb',
@@ -45,9 +43,18 @@ module.exports = {
   session: {
     secret: '' // Add your own SECRET string here
   },
+  ssl: {
+    key: '',
+    cert: ''
+  },
   port: 1338,
   environment: 'development',
   log: {
     level: 'info'
-  }
+  },
+  oxdWeb: '',
+  opHost: '',
+  oxdId: '',
+  clientId: '',
+  clientSecret: ''
 };
