@@ -245,24 +245,24 @@
                         },
                         access: AccessLevels.user
                     },
-                    // {
-                    //     state: 'info',
-                    //     show: function () {
-                    //         return AuthService.isAuthenticated() && $rootScope.Gateway
-                    //     },
-                    //     title: 'Info',
-                    //     icon: 'mdi-information-outline',
-                    //     access: AccessLevels.user
-                    // },
-                    // {
-                    //     state: 'cluster',
-                    //     show: function () {
-                    //         return AuthService.isAuthenticated() && $rootScope.Gateway && $scope.showCluster;
-                    //     },
-                    //     title: 'Cluster',
-                    //     icon: 'mdi-server-network',
-                    //     access: AccessLevels.user
-                    // },
+                    {
+                        state: 'info',
+                        show: function () {
+                            return AuthService.isAuthenticated() && $rootScope.Gateway
+                        },
+                        title: 'Info',
+                        icon: 'mdi-information-outline',
+                        access: AccessLevels.user
+                    },
+                    {
+                        state: 'cluster',
+                        show: function () {
+                            return AuthService.isAuthenticated() && $rootScope.Gateway && $scope.showCluster;
+                        },
+                        title: 'Cluster',
+                        icon: 'mdi-server-network',
+                        access: AccessLevels.user
+                    },
                     {
                         state: 'apis',
                         show: function () {
@@ -272,85 +272,85 @@
                         icon: 'mdi-cloud-outline',
                         access: AccessLevels.user
                     },
-                    // {
-                    //     state: 'consumers',
-                    //     show: function () {
-                    //         return AuthService.hasPermission('consumers', 'read') && $rootScope.Gateway
-                    //     },
-                    //     title: 'Consumers',
-                    //     icon: 'mdi-account-outline',
-                    //     access: AccessLevels.user
-                    // },
+                    {
+                        state: 'consumers',
+                        show: function () {
+                            return AuthService.hasPermission('consumers', 'read') && $rootScope.Gateway
+                        },
+                        title: 'Consumers',
+                        icon: 'mdi-account-outline',
+                        access: AccessLevels.user
+                    },
                     {
                         state: 'plugins',
                         icon: 'mdi-power-plug',
                         show: function () {
                             return AuthService.hasPermission('plugins', 'read') && $rootScope.Gateway
                         },
-                        title: 'UMA-RS Plugins',
+                        title: 'Plugins',
                         access: AccessLevels.anon
                     },
-                    // {
-                    //     state: 'upstreams',
-                    //     icon: 'mdi-shuffle-variant',
-                    //     show: function () {
-                    //         return AuthService.hasPermission('upstreams', 'read') && UserService.user().node && $rootScope.Gateway && Semver.cmp($rootScope.Gateway.version,"0.10.0") >=0;
-                    //     },
-                    //     title: 'Upstreams',
-                    //     access: AccessLevels.anon
-                    // },
-                    // {
-                    //     state: 'certificates',
-                    //     icon: 'mdi-certificate',
-                    //     show: function () {
-                    //         return AuthService.hasPermission('certificates', 'read') && UserService.user().node && $rootScope.Gateway && Semver.cmp($rootScope.Gateway.version,"0.10.0") >=0;
-                    //     },
-                    //     title: 'Certificates',
-                    //     access: AccessLevels.anon
-                    // },
-                    // {
-                    //     title: 'Application',
-                    //     show: function () {
-                    //         return true
-                    //     },
-                    //     access: AccessLevels.user
-                    // },
-                    // {
-                    //     state: 'users',
-                    //     icon: 'mdi-account-multiple-outline',
-                    //     show: function () {
-                    //         return AuthService.hasPermission('users', 'read')
-                    //     },
-                    //     title: 'Users',
-                    //     access: AccessLevels.anon
-                    // },
-                    // {
-                    //     state: 'connections',
-                    //     icon: 'mdi-cast-connected',
-                    //     show: function () {
-                    //         return AuthService.isAuthenticated()
-                    //     },
-                    //     title: 'Connections',
-                    //     access: AccessLevels.anon
-                    // },
-                    // {
-                    //     state: 'snapshots',
-                    //     icon: 'mdi-camera',
-                    //     show: function () {
-                    //         return AuthService.isAuthenticated() && UserService.user().node && $rootScope.Gateway
-                    //     },
-                    //     title: 'Snapshots',
-                    //     access: AccessLevels.anon
-                    // },
-                    // {
-                    //     state: 'settings',
-                    //     icon: 'mdi-settings',
-                    //     show: function () {
-                    //         return AuthService.authorize(AccessLevels.admin)
-                    //     },
-                    //     title: 'Settings',
-                    //     access: AccessLevels.admin
-                    // },
+                    {
+                        state: 'upstreams',
+                        icon: 'mdi-shuffle-variant',
+                        show: function () {
+                            return AuthService.hasPermission('upstreams', 'read') && UserService.user().node && $rootScope.Gateway && Semver.cmp($rootScope.Gateway.version,"0.10.0") >=0;
+                        },
+                        title: 'Upstreams',
+                        access: AccessLevels.anon
+                    },
+                    {
+                        state: 'certificates',
+                        icon: 'mdi-certificate',
+                        show: function () {
+                            return AuthService.hasPermission('certificates', 'read') && UserService.user().node && $rootScope.Gateway && Semver.cmp($rootScope.Gateway.version,"0.10.0") >=0;
+                        },
+                        title: 'Certificates',
+                        access: AccessLevels.anon
+                    },
+                    {
+                        title: 'Application',
+                        show: function () {
+                            return true
+                        },
+                        access: AccessLevels.user
+                    },
+                    {
+                        state: 'users',
+                        icon: 'mdi-account-multiple-outline',
+                        show: function () {
+                            return AuthService.hasPermission('users', 'read')
+                        },
+                        title: 'Users',
+                        access: AccessLevels.anon
+                    },
+                    {
+                        state: 'connections',
+                        icon: 'mdi-cast-connected',
+                        show: function () {
+                            return AuthService.isAuthenticated()
+                        },
+                        title: 'Connections',
+                        access: AccessLevels.anon
+                    },
+                    {
+                        state: 'snapshots',
+                        icon: 'mdi-camera',
+                        show: function () {
+                            return AuthService.isAuthenticated() && UserService.user().node && $rootScope.Gateway
+                        },
+                        title: 'Snapshots',
+                        access: AccessLevels.anon
+                    },
+                    {
+                        state: 'settings',
+                        icon: 'mdi-settings',
+                        show: function () {
+                            return AuthService.authorize(AccessLevels.admin)
+                        },
+                        title: 'Settings',
+                        access: AccessLevels.admin
+                    },
                 ];
             }
 

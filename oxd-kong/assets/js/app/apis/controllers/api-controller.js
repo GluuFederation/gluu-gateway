@@ -10,7 +10,6 @@
     .controller('ApiController', [
       '$scope', '$rootScope', '$state', 'SettingsService', '$log', '_api',
       function controller($scope, $rootScope, $state, SettingsService, $log, _api) {
-
         $scope.api = _api.data
 
         // Fix empty object properties

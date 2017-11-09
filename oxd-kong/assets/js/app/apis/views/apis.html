@@ -41,9 +41,9 @@
     <div class="table-responsive">
       <table class="table table-hover table-striped">
         <tr>
-          <th width="1" ng-if="user.hasPermission($state.name.split('.')[0],'edit')"></th>
-          <th width="1" ng-if="user.hasPermission($state.name.split('.')[0],'edit')"></th>
-          <th width="{{item.width}}" class="text-nowrap"
+          <th ng-if="user.hasPermission($state.name.split('.')[0],'edit')"></th>
+          <th ng-if="user.hasPermission($state.name.split('.')[0],'edit')"></th>
+          <th class="text-nowrap"
               data-ng-repeat="item in titleItems | filter:titleFilter">
             <a data-ng-show="item.column"
                class="clickable"
@@ -57,8 +57,8 @@
                data-ng-show="sort.column == item.column"
                data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"></i>
           </th>
-          <th width="1"></th>
-          <th width="1"></th>
+          <th></th>
+          <th></th>
         </tr>
         <tr
           dir-paginate="api in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
@@ -85,13 +85,15 @@
           <td>{{ api.upstream_url || "-" }}</td>
           <td>{{api.created_at | date : format : timezone}}</td>
           <td>
-            <a ui-sref="apis.edit({ api_id: api.id })" class="btn btn-primary btn-link"><i class="mdi mdi-settings"></i>
-              Manage</a>
+            <a ui-sref="apis.uma-plugin({ api_id: api.id })" class="btn btn-primary btn-link"><i class="mdi mdi-lock"></i>
+              Security
+            </a>
           </td>
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
-            <button type="button" ng-click="deleteItem($index,api)" class="btn btn-danger btn-link">
+            <a ui-sref="apis.edit({ api_id: api.id })" class="btn btn-info btn-link" title="Manage"><i class="mdi mdi-pencil"></i>
+            </a>
+            <button type="button" ng-click="deleteItem($index,api)" class="btn btn-danger btn-link" title="Delete">
               <i class="mdi mdi-delete"></i>
-              Delete
             </button>
           </td>
         </tr>
