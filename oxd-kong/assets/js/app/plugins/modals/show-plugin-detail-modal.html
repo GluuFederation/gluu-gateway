@@ -1,0 +1,71 @@
+<div class="modal-content">
+  <form novalidate>
+    <div class="modal-header">
+     <h4 class="model-title">UMA-RS plugin</h4>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <table class="table table-bordered">
+          <tbody>
+          <tr>
+            <td>
+              <table class="table">
+                <tr>
+                  <th align="left">Name</th>
+                  <td align="left">{{model.name}}</td>
+                </tr>
+                <tr>
+                  <th align="left">Plugin Id</th>
+                  <td align="left">{{model.id}}</td>
+                </tr>
+                <tr>
+                  <th>UMA Server host</th>
+                  <td>{{model.config.uma_server_host}}</td>
+                </tr>
+                <tr>
+                  <th>OXD Id</th>
+                  <td>{{model.config.oxd_id}}</td>
+                </tr>
+                <tr>
+                  <th>OXD Web</th>
+                  <td>{{model.config.oxd_host}}</td>
+                </tr>
+                <tr>
+                  <th>Client Id</th>
+                  <td>{{model.config.client_id}}</td>
+                </tr>
+                <tr>
+                  <th>Client Secret</th>
+                  <td>{{model.config.client_secret}}</td>
+                </tr>
+                <tr>
+                  <th>Protected resources</th>
+                  <td>
+                    <table class="table table-bordered" ng-repeat="item in model.config.protection_document">
+                      <tr>
+                        <th>Path</th>
+                        <td>{{item.path}}</td>
+                      </tr>
+                      <tr>
+                        <th>Condition</th>
+                        <td>
+                          <div ng-repeat="condition in item.conditions">
+                            <div ng-repeat="(key, value) in condition"><b>{{key}}</b>: {{value.join(',')}}</div> <br/>
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-default" ng-click="$dismiss()">Close</button>
+    </div>
+  </form>
+</div>
