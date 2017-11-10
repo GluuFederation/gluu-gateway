@@ -112,9 +112,11 @@
                     </div>
                     <div class="row">
                       <div class="col-md-12">
-                        <div class="form-group has-feedback"
-                             ng-class="{'has-error': PluginForm.scopes.$invalid && (PluginForm.scopes.$dirty || PluginForm.$submitted)}">
-                          <tags-input ng-model="cond.scopes" data-ng-disabled="plugins.length > 0"
+                        <input type="radio" value="or" name="condition{{$parent.$index}}{{$index}}1">or | <input type="radio" value="and" name="condition{{$parent.$index}}{{$index}}1">and
+                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup($parent.$index +''+ $index,1)"><i class="mdi mdi-plus"></i> Add Group</button>
+                        <input type="hidden" value="{{cond.scopes1}}" name="hdScope{{$parent.$index}}{{$index}}1" />
+                        <div class="form-group has-feedback">
+                          <tags-input ng-model="cond.scopes" name="scope{{$parent.$index}}{{$index}}1" data-ng-disabled="plugins.length > 0"
                                       id="scopes{{$parent.$index}}{{$index}}"
                                       placeholder="Enter scopes">
                             <auto-complete source="loadScopes($query)"
@@ -127,7 +129,8 @@
                               <span>{{data.name}}</span>
                             </div>
                           </script>
-                          <span class="help-block error-block basic-block">This field is required!</span>
+                        </div>
+                        <div class="col-md-12" id="dyScope1">
                         </div>
                       </div>
                     </div>
@@ -145,7 +148,7 @@
                   <div class="row">
                     <button type="button" class="btn btn-info" ng-click="addNewCondition($index)"
                             data-ng-if="plugins.length <= 0">
-                      <i class="mdi mdi-clipboard-plus"></i> Add Condition
+                      <i class="mdi mdi-plus"></i> Add Condition
                     </button>
                   </div>
                   <br/>
@@ -153,7 +156,7 @@
               </div>
               <hr/>
               <button type="button" class="btn btn-info" ng-click="addNewPath()" data-ng-if="plugins.length <= 0">
-                <i class="mdi mdi-clipboard-plus"></i> Add path
+                <i class="mdi mdi-plus"></i> Add path
               </button>
               <button type="button" class="btn btn-primary" ng-click="showResourceJSON()"
                       data-ng-if="plugins.length <= 0">
@@ -165,7 +168,7 @@
             <hr/>
             <button type="submit" class="btn btn-primary" ng-click="addPlugin(PluginForm.$valid)"
                     data-ng-if="plugins.length <= 0">
-              <i class="mdi mdi-check"></i> Add Plugin
+              <i class="mdi mdi-check"></i> Add
             </button>
           </div>
         </form>

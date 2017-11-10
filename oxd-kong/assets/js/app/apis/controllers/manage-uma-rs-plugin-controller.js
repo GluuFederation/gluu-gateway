@@ -4,9 +4,9 @@
   angular.module('frontend.apis')
     .controller('ManageUmaRsPluginController', [
       '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_api', '_plugins',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_api', '_plugins', '$compile',
       function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _api, _plugins) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _api, _plugins, $compile) {
         $scope.api = _api.data
         $scope.plugins = _plugins.data.data
         $scope.addNewCondition = addNewCondition
@@ -15,6 +15,8 @@
         $scope.addPlugin = addPlugin
         $scope.loadMethods = loadMethods
         $scope.loadScopes = loadScopes
+        $scope.addGroup = addGroup
+        $scope.removeGroup = removeGroup
         $scope.modelPlugin = {
           api_id: $scope.api.id,
           name: 'kong-uma-rs',
@@ -32,7 +34,7 @@
             }]
           }
         };
-
+        $scope.count = 1;
         if ($scope.plugins.length > 0) {
           $scope.modelPlugin.config.protection_document = JSON.parse($scope.plugins[0].config.protection_document)
         }
@@ -42,6 +44,39 @@
          * Functions
          * ----------------------------------------------------------------------
          */
+        function removeGroup(id) {
+          $("#dyScope" + id).html('');
+          $scope.count = id
+        }
+
+        function addGroup(parent, id) {
+          $scope.count = id + 1;
+          $("#dyScope" + id).append(`
+                      <div class="col-md-12">
+                        <input type="radio" value="or" name="condition${parent}${id + 1}">or | <input type="radio" value="and" name="condition${parent}${id + 1}">and
+                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup(${parent}, ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
+                        <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup(${id})"><i class="mdi mdi-close"></i> Delete</button>
+                        <input type="hidden" value="{{cond.scopes${id + 1}}}" name="hdScope${parent}${id + 1}" />
+                        <div class="form-group has-feedback">
+                          <tags-input ng-model="cond.scopes${id + 1}" name="scope${id + 1}" data-ng-disabled="plugins.length > 0"
+                                      id="scopes{{$parent.$index}}{{$index}}"
+                                      placeholder="Enter scopes">
+                            <auto-complete source="loadScopes($query)"
+                                           min-length="0"
+                                           template="my-custom-template"
+                                           debounce-delay="0"></auto-complete>
+                          </tags-input>
+                          <script type="text/ng-template" id="my-custom-template">
+                            <div>
+                              <span>{{data.name}}</span>
+                            </div>
+                          </script>
+                        </div>
+                        <div class="col-md-12" id="dyScope${id + 1}">
+                        </div>
+                      </div>`);
+          $compile(angular.element("#dyScope" + id).contents())($scope)
+        }
 
         function addNewCondition(pathIndex) {
           $scope.modelPlugin.config.protection_document[pathIndex].conditions.push(
@@ -55,30 +90,30 @@
         }
 
         function showResourceJSON() {
-          $uibModal.open({
-            animation: true,
-            templateUrl: 'js/app/plugins/modals/show-resource-json-modal.html',
-            size: 'lg',
-            controller: ['$uibModalInstance', '$scope', 'modelPlugin', ShowScriptController],
-            resolve: {
-              modelPlugin: function () {
-                return $scope.modelPlugin;
-              }
-            }
-          }).result.then(function (result) {
-          });
-        }
-
-        function ShowScriptController($uibModalInstance, $scope, modelPlugin) {
-          $scope.model = angular.copy(modelPlugin);
-          $scope.model.config.protection_document.forEach(function (path, pIndex) {
+          var model = angular.copy($scope.modelPlugin);
+          model.config.protection_document.forEach(function (path, pIndex) {
             path.conditions.forEach(function (cond, cIndex) {
+              var str = '{%s}'
+              for (var i = 1; i <= $scope.count; i++) {
+                debugger
+                var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val()
+                var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
+                  return o.text;
+                });
+                var s = ""
+                scopes.forEach(function (item) {
+                  s += "\""+ item + "\"" + ","
+                });
+                str = str.replace('%s', `"${op}":[${s} {%s}]`);
+
+                console.log($(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val(), $(`input[name=hdScope${pIndex}${cIndex}${i}]`).val());
+              }
+
               cond.httpMethods = cond.httpMethods.map(function (o) {
                 return o.text;
               });
-              cond.scopes = cond.scopes.map(function (o) {
-                return o.text;
-              });
+              str = str.replace(', {%s}', '')
+              cond.scopes = JSON.parse(str);
               if (cond.ticketScopes.length > 0) {
                 cond.ticketScopes = cond.ticketScopes.map(function (o) {
                   return o.text;
@@ -88,6 +123,26 @@
               }
             });
           });
+
+          model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
+          console.log(model.config.protection_document);
+
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/show-resource-json-modal.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', 'modelPlugin', ShowScriptController],
+            resolve: {
+              modelPlugin: function () {
+                return model;
+              }
+            }
+          }).result.then(function (result) {
+          });
+        }
+
+        function ShowScriptController($uibModalInstance, $scope, modelPlugin) {
+          $scope.model = angular.copy(modelPlugin);
         }
 
         function addNewPath() {
