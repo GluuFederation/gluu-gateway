@@ -34,7 +34,6 @@
             }]
           }
         };
-        $scope.count = 1;
         if ($scope.plugins.length > 0) {
           $scope.modelPlugin.config.protection_document = JSON.parse($scope.plugins[0].config.protection_document)
         }
@@ -44,21 +43,21 @@
          * Functions
          * ----------------------------------------------------------------------
          */
-        function removeGroup(id) {
-          $("#dyScope" + id).html('');
-          $scope.count = id
+        function removeGroup(parent, id) {
+          $("#dyScope" + parent + id).html('');
+          $("input[name=hdScopeCount" + parent + "]").val(id);
         }
 
         function addGroup(parent, id) {
-          $scope.count = id + 1;
-          $("#dyScope" + id).append(`
+          $("input[name=hdScopeCount" + parent + "]").val(id + 1);
+          $("#dyScope" + parent + id).append(`
                       <div class="col-md-12">
                         <input type="radio" value="or" name="condition${parent}${id + 1}">or | <input type="radio" value="and" name="condition${parent}${id + 1}">and
-                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup(${parent}, ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
-                        <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup(${id})"><i class="mdi mdi-close"></i> Delete</button>
-                        <input type="hidden" value="{{cond.scopes${id + 1}}}" name="hdScope${parent}${id + 1}" />
+                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${parent}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
+                        <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${parent}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
+                        <input type="hidden" value="{{cond['scopes${parent}${id + 1}']}}" name="hdScope${parent}${id + 1}" />
                         <div class="form-group has-feedback">
-                          <tags-input ng-model="cond.scopes${id + 1}" name="scope${id + 1}" data-ng-disabled="plugins.length > 0"
+                          <tags-input type="url" ng-model="cond['scopes${parent}${id + 1}']" name="scope${id + 1}" data-ng-disabled="plugins.length > 0"
                                       id="scopes{{$parent.$index}}{{$index}}"
                                       placeholder="Enter scopes">
                             <auto-complete source="loadScopes($query)"
@@ -72,10 +71,10 @@
                             </div>
                           </script>
                         </div>
-                        <div class="col-md-12" id="dyScope${id + 1}">
+                        <div class="col-md-12" id="dyScope${parent}${id + 1}">
                         </div>
                       </div>`);
-          $compile(angular.element("#dyScope" + id).contents())($scope)
+          $compile(angular.element("#dyScope" + parent + id).contents())($scope)
         }
 
         function addNewCondition(pathIndex) {
@@ -90,42 +89,10 @@
         }
 
         function showResourceJSON() {
-          var model = angular.copy($scope.modelPlugin);
-          model.config.protection_document.forEach(function (path, pIndex) {
-            path.conditions.forEach(function (cond, cIndex) {
-              var str = '{%s}'
-              for (var i = 1; i <= $scope.count; i++) {
-                debugger
-                var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val()
-                var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
-                  return o.text;
-                });
-                var s = ""
-                scopes.forEach(function (item) {
-                  s += "\""+ item + "\"" + ","
-                });
-                str = str.replace('%s', `"${op}":[${s} {%s}]`);
-
-                console.log($(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val(), $(`input[name=hdScope${pIndex}${cIndex}${i}]`).val());
-              }
-
-              cond.httpMethods = cond.httpMethods.map(function (o) {
-                return o.text;
-              });
-              str = str.replace(', {%s}', '')
-              cond.scopes = JSON.parse(str);
-              if (cond.ticketScopes.length > 0) {
-                cond.ticketScopes = cond.ticketScopes.map(function (o) {
-                  return o.text;
-                });
-              } else {
-                delete cond.ticketScopes;
-              }
-            });
-          });
-
-          model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
-          console.log(model.config.protection_document);
+          var model = makeJSON($scope.modelPlugin);
+          if (!model) {
+            return false;
+          }
 
           $uibModal.open({
             animation: true,
@@ -162,27 +129,16 @@
 
         function addPlugin(isValid) {
           if (!isValid) {
+            MessageService.error("Invalid UMA Resources");
             return false;
           }
-          var model = angular.copy($scope.modelPlugin);
-          model.config.protection_document.forEach(function (path, pIndex) {
-            path.conditions.forEach(function (cond, cIndex) {
-              cond.httpMethods = cond.httpMethods.map(function (o) {
-                return o.text;
-              });
-              cond.scopes = cond.scopes.map(function (o) {
-                return o.text;
-              });
-              if (cond.ticketScopes.length > 0) {
-                cond.ticketScopes = cond.ticketScopes.map(function (o) {
-                  return o.text;
-                });
-              } else {
-                delete cond.ticketScopes;
-              }
-            });
-          });
-          model.config.protection_document = (JSON.stringify(JSON.parse(angular.toJson(model.config.protection_document))));
+          var model = makeJSON($scope.modelPlugin);
+
+          if (!model) {
+            return false;
+          }
+
+          model.config.protection_document = (JSON.stringify(model.config.protection_document));
           PluginHelperService.addPlugin(
             model,
             function success(res) {
@@ -208,6 +164,7 @@
                   MessageService.error(key + " : " + err.data.body[key])
                 })
               }
+              MessageService.error("Invalid UMA Resources");
               $scope.errors = errors
             }, function evt(event) {
               // Only used for ssl plugin certs upload
@@ -227,6 +184,52 @@
 
         function loadScopes(query) {
           return [];
+        }
+
+        function makeJSON(data) {
+          try {
+            var model = angular.copy(data);
+            model.config.protection_document.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                var str = '{%s}'
+                for (var i = 1; i <= parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
+                  var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val()
+                  var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
+                    return o.text;
+                  });
+                  var s = ""
+                  scopes.forEach(function (item) {
+                    s += "\""+ item + "\"" + ","
+                  });
+                  str = str.replace('%s', `"${op}":[${s} {%s}]`);
+
+                  if(!!cond[`scopes${pIndex}${cIndex}${i}`]) {
+                    delete cond[`scopes${pIndex}${cIndex}${i}`]
+                  }
+                }
+
+                cond.httpMethods = cond.httpMethods.map(function (o) {
+                  return o.text;
+                });
+                str = str.replace(', {%s}', '')
+                cond.scopes = JSON.parse(str);
+
+                if (cond.ticketScopes.length > 0) {
+                  cond.ticketScopes = cond.ticketScopes.map(function (o) {
+                    return o.text;
+                  });
+                } else {
+                  delete cond.ticketScopes;
+                }
+              });
+            });
+
+            model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
+            return model;
+          } catch(e) {
+            MessageService.error("Invalid UMA resource");
+            return null;
+          }
         }
       }
     ])

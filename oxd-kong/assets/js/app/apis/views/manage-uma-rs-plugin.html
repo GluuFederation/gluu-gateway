@@ -75,8 +75,11 @@
                     <i class="mdi mdi-close"></i>
                   </button>
                 </div>
-                <div class="col-md-3">
-                  <div class="form-group has-feedback"
+                <div class="col-md-11">
+                  <div class="form-group has-feedback col-md-4">
+                    <input type="text" class="form-control" value="{{api.upstream_url}}" disabled/>
+                  </div>
+                  <div class="form-group has-feedback col-md-8"
                        ng-class="{'has-error': PluginForm.path.$invalid && (PluginForm.path.$dirty || PluginForm.$submitted)}">
                     <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
                            title="Enter path"
@@ -85,73 +88,80 @@
                            ng-required="true" data-ng-disabled="plugins.length > 0"/>
                     <span class="help-block error-block basic-block">The path which you want to protected by UMA</span>
                   </div>
-                </div>
-                <div class="col-md-8">
-                  <div class="row" ng-repeat="cond in element.conditions">
-                    <div class="row">
-                      <div class="col-md-10">
-                        <div class="form-group has-feedback"
-                             ng-class="{'has-error': PluginForm.httpMethods.$invalid && (PluginForm.httpMethods.$dirty || PluginForm.$submitted)}">
-                          <tags-input ng-model="cond.httpMethods" data-ng-disabled="plugins.length > 0"
-                                      id="httpMethods{{$parent.$index}}{{$index}}"
-                                      add-from-autocomplete-only="true"
-                                      placeholder="Enter http Methods">
-                            <auto-complete source="loadMethods($query)"
-                                           min-length="0"
-                                           debounce-delay="0"></auto-complete>
-                          </tags-input>
-                          <span class="help-block error-block basic-block">This field is required!</span>
+                  <div class="col-md-12">
+                    <div class="row" ng-repeat="cond in element.conditions">
+                      <div class="row">
+                        <div class="col-md-10">
+                          <div class="form-group has-feedback"
+                               ng-class="{'has-error': PluginForm.httpMethods.$invalid && (PluginForm.httpMethods.$dirty || PluginForm.$submitted)}">
+                            <tags-input ng-model="cond.httpMethods" data-ng-disabled="plugins.length > 0"
+                                        id="httpMethods{{$parent.$index}}{{$index}}"
+                                        add-from-autocomplete-only="true"
+                                        placeholder="Enter http Methods">
+                              <auto-complete source="loadMethods($query)"
+                                             min-length="0"
+                                             debounce-delay="0"></auto-complete>
+                            </tags-input>
+                            <span class="help-block error-block basic-block">This field is required!</span>
+                          </div>
+                        </div>
+                        <div class="col-md-2" data-ng-if="plugins.length <= 0">
+                          <button type="button" title="Delete condition" class="btn btn-danger"
+                                  ng-click="element.conditions.splice($index,1)">
+                            <i class="mdi mdi-close"></i>
+                          </button>
                         </div>
                       </div>
-                      <div class="col-md-2" data-ng-if="plugins.length <= 0">
-                        <button type="button" title="Delete condition" class="btn btn-danger"
-                                ng-click="element.conditions.splice($index,1)">
-                          <i class="mdi mdi-close"></i>
-                        </button>
+                      <div class="row">
+                        <input type="hidden" value="1" name="hdScopeCount{{$parent.$index}}{{$index}}"/>
+                        <div class="col-md-12">
+                          <input type="radio" value="or" name="condition{{$parent.$index}}{{$index}}1">or | <input
+                          type="radio" value="and" name="condition{{$parent.$index}}{{$index}}1">and
+                          <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                  data-ng-click="addGroup($parent.$index +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                            Add Group
+                          </button>
+                          <input type="hidden" value="{{cond['scopes' + $parent.$index + $index + '1']}}"
+                                 name="hdScope{{$parent.$index}}{{$index}}1"/>
+                          <div class="form-group has-feedback">
+                            <tags-input ng-model="cond['scopes' + $parent.$index + $index + '1']"
+                                        name="scope{{$parent.$index}}{{$index}}1" data-ng-disabled="plugins.length > 0"
+                                        id="scopes{{$parent.$index}}{{$index}}"
+                                        placeholder="Enter scopes">
+                              <auto-complete source="loadScopes($query)"
+                                             min-length="0"
+                                             template="my-custom-template"
+                                             debounce-delay="0"></auto-complete>
+                            </tags-input>
+                            <script type="text/ng-template" id="my-custom-template">
+                              <div>
+                                <span>{{data.name}}</span>
+                              </div>
+                            </script>
+                          </div>
+                          <div class="col-md-12" id="dyScope{{$parent.$index}}{{$index}}1">
+                          </div>
+                        </div>
                       </div>
+                      <div class="row">
+                        <div class="col-md-12">
+                          <div class="form-group has-feedback">
+                            <tags-input ng-model="cond.ticketScopes" data-ng-disabled="plugins.length > 0"
+                                        id="ticketScopes{{$parent.$index}}{{$index}}"
+                                        placeholder="Enter ticket scopes"></tags-input>
+                          </div>
+                        </div>
+                      </div>
+                      <hr/>
                     </div>
                     <div class="row">
-                      <div class="col-md-12">
-                        <input type="radio" value="or" name="condition{{$parent.$index}}{{$index}}1">or | <input type="radio" value="and" name="condition{{$parent.$index}}{{$index}}1">and
-                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup($parent.$index +''+ $index,1)"><i class="mdi mdi-plus"></i> Add Group</button>
-                        <input type="hidden" value="{{cond.scopes1}}" name="hdScope{{$parent.$index}}{{$index}}1" />
-                        <div class="form-group has-feedback">
-                          <tags-input ng-model="cond.scopes" name="scope{{$parent.$index}}{{$index}}1" data-ng-disabled="plugins.length > 0"
-                                      id="scopes{{$parent.$index}}{{$index}}"
-                                      placeholder="Enter scopes">
-                            <auto-complete source="loadScopes($query)"
-                                           min-length="0"
-                                           template="my-custom-template"
-                                           debounce-delay="0"></auto-complete>
-                          </tags-input>
-                          <script type="text/ng-template" id="my-custom-template">
-                            <div>
-                              <span>{{data.name}}</span>
-                            </div>
-                          </script>
-                        </div>
-                        <div class="col-md-12" id="dyScope1">
-                        </div>
-                      </div>
+                      <button type="button" class="btn btn-info" ng-click="addNewCondition($index)"
+                              data-ng-if="plugins.length <= 0">
+                        <i class="mdi mdi-plus"></i> Add Condition
+                      </button>
                     </div>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group has-feedback">
-                          <tags-input ng-model="cond.ticketScopes" data-ng-disabled="plugins.length > 0"
-                                      id="ticketScopes{{$parent.$index}}{{$index}}"
-                                      placeholder="Enter ticket scopes"></tags-input>
-                        </div>
-                      </div>
-                    </div>
-                    <hr/>
+                    <br/>
                   </div>
-                  <div class="row">
-                    <button type="button" class="btn btn-info" ng-click="addNewCondition($index)"
-                            data-ng-if="plugins.length <= 0">
-                      <i class="mdi mdi-plus"></i> Add Condition
-                    </button>
-                  </div>
-                  <br/>
                 </div>
               </div>
               <hr/>

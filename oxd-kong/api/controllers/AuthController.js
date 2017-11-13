@@ -206,6 +206,12 @@ var AuthController = {
               return Promise.reject(userInfo.data)
             }
             user.info = userInfo.data;
+            user.oxdWeb = sails.config.oxdWeb;
+            user.opHost = sails.config.opHost;
+            user.oxdId = sails.config.oxdId;
+            user.clientId = sails.config.clientId;
+            user.clientSecret = sails.config.clientSecret;
+
             return res.send({user: user, token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)});
           })
           .catch(function (error) {
