@@ -61,16 +61,16 @@ function _M.register(conf)
 
     response = oxd.uma_rs_protect(umaRSRequest, token.data.access_token)
 
-    if response.status == "error" then
+    if response.status == "ok" then
+        ngx.log(ngx.ERR, "Registered resources : " .. data.oxd_id)
+        conf.oxd_id = data.oxd_id
+        conf.client_id = data.client_id
+        conf.client_secret = data.client_secret
+
+        return true
+    else
         return false
     end
-
-    ngx.log(ngx.ERR, "Registered resources : " .. data.oxd_id)
-    conf.oxd_id = data.oxd_id
-    conf.client_id = data.client_id
-    conf.client_secret = data.client_secret
-
-    return true
     -- -----------------------------------------------------------------
 end
 
