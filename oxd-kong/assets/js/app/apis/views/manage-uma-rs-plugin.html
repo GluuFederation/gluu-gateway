@@ -28,7 +28,7 @@
                 </tr>
                 <tr>
                   <th>Proxy Listen</th>
-                  <td>{{info.configuration.proxy_listen}}</td>
+                  <td>http://{{info.hostname}}:{{info.configuration.proxy_port}}</td>
                 </tr>
                 </tbody>
               </table>
@@ -82,7 +82,7 @@
                 <div class="col-md-11">
                   <div class="form-group has-feedback col-md-4">
                     <input type="text" class="form-control" value="{{api.upstream_url}}" title="Upstream URL" disabled/>
-                    <span class="help-block error-block basic-block" title="Kong proxy point">{{info.configuration.proxy_listen}}</span>
+                    <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_port}}</span>
                   </div>
                   <div class="form-group has-feedback col-md-8"
                        ng-class="{'has-error': PluginForm.path.$invalid && (PluginForm.path.$dirty || PluginForm.$submitted)}">
