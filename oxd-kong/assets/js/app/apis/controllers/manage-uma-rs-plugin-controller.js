@@ -193,7 +193,19 @@
         }
 
         function loadScopes(query) {
-          return [];
+          return ApiService.getAllScopes()
+            .then(function (response) {
+              var scopes = response.data.map(function (o) {
+                return {text: o.oxId, name: o.displayName};
+              });
+              var scopes = scopes.filter(function (o) {
+                return o.name.indexOf(query) >= 0;
+              });
+              return scopes;
+            })
+            .catch(function (error) {
+              return [];
+            });
         }
 
         function makeJSON(data) {
@@ -209,11 +221,11 @@
                   });
                   var s = ""
                   scopes.forEach(function (item) {
-                    s += "\""+ item + "\"" + ","
+                    s += "\"" + item + "\"" + ","
                   });
                   str = str.replace('%s', `"${op}":[${s} {%s}]`);
 
-                  if(!!cond[`scopes${pIndex}${cIndex}${i}`]) {
+                  if (!!cond[`scopes${pIndex}${cIndex}${i}`]) {
                     delete cond[`scopes${pIndex}${cIndex}${i}`]
                   }
                 }
@@ -236,7 +248,7 @@
 
             model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
             return model;
-          } catch(e) {
+          } catch (e) {
             MessageService.error("Invalid UMA resource");
             return null;
           }
