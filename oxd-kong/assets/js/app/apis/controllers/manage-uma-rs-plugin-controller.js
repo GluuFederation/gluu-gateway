@@ -4,9 +4,9 @@
   angular.module('frontend.apis')
     .controller('ManageUmaRsPluginController', [
       '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_api', '_plugins', '$compile',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_api', '_plugins', '$compile', 'InfoService',
       function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _api, _plugins, $compile) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _api, _plugins, $compile, InfoService) {
         $scope.api = _api.data
         $scope.plugins = _plugins.data.data
         $scope.addNewCondition = addNewCondition
@@ -17,6 +17,7 @@
         $scope.loadScopes = loadScopes
         $scope.addGroup = addGroup
         $scope.removeGroup = removeGroup
+        $scope.fetchData = fetchData
         $scope.modelPlugin = {
           api_id: $scope.api.id,
           name: 'kong-uma-rs',
@@ -43,6 +44,15 @@
          * Functions
          * ----------------------------------------------------------------------
          */
+        function fetchData() {
+          InfoService
+            .getInfo()
+            .then(function (resp) {
+              $scope.info = resp.data
+              $log.debug("DashboardController:fetchData:info", $scope.info)
+            })
+        }
+
         function removeGroup(parent, id) {
           $("#dyScope" + parent + id).html('');
           $("input[name=hdScopeCount" + parent + "]").val(id);
@@ -52,7 +62,7 @@
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
           $("#dyScope" + parent + id).append(`
                       <div class="col-md-12">
-                        <input type="radio" value="or" name="condition${parent}${id + 1}">or | <input type="radio" value="and" name="condition${parent}${id + 1}">and
+                        <input type="radio" value="or" name="condition${parent}${id + 1}">or | <input type="radio" value="and" name="condition${parent}${id + 1}">and | <input type="radio" value="not" name="condition${parent}${id + 1}">not
                         <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${parent}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
                         <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${parent}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
                         <input type="hidden" value="{{cond['scopes${parent}${id + 1}']}}" name="hdScope${parent}${id + 1}" />
@@ -231,6 +241,9 @@
             return null;
           }
         }
+
+        //init
+        $scope.fetchData()
       }
     ])
   ;

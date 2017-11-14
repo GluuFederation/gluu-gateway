@@ -211,6 +211,7 @@ var AuthController = {
             user.oxdId = sails.config.oxdId;
             user.clientId = sails.config.clientId;
             user.clientSecret = sails.config.clientSecret;
+            user.oxdVersion = sails.config.oxdVersion;
 
             return res.send({user: user, token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)});
           })
