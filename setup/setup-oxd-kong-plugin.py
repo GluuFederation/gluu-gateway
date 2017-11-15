@@ -43,7 +43,7 @@ class KongSetup(object):
         self.kongSslCert = ''
         self.kongSslKey = ''
         self.templates = {'/etc/kong/kong.conf': True}
-        self.pgPwd = ''
+        self.pgPwd = 'admin'
 
         self.cmd_mkdir = '/bin/mkdir'
         self.opensslCommand = '/usr/bin/openssl'
@@ -51,6 +51,8 @@ class KongSetup(object):
         self.cmd_chmod = '/bin/chmod'
         self.cmd_ln = '/bin/ln'
         self.hostname = '/bin/hostname'
+        self.cmd_touch = '/bin/touch'
+        self.cmd_sudo = 'sudo'
 
         self.countryCode = ''
         self.state = ''
@@ -59,31 +61,28 @@ class KongSetup(object):
         self.admin_email = ''
 
         self.distFolder = '/opt'
-        self.distKongGUIFolder = '%s/kongGUI' % self.distFolder
-        self.distKongAPIGatewayFolder = '%s/kongAPIGateway' % self.distFolder
-        self.distKongAPIConfigFile = '%s/.env-dev' % self.distKongAPIGatewayFolder
+        self.distOxdKongFolder = '%s/kong-pluings/oxd-kong' % self.distFolder
+        self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
+        self.distOxdKongConfigFile = '%s/config/local.js' % self.distOxdKongFolder
 
-        self.kongGUIService = "kong-gui"
-        self.kongAPIGatewayService = "kong-api"
+        self.oxdKongService = "oxd-kong"
 
-        # kong API Property values
-        self.apiPort = '4040'
-        self.apiURL = 'https://%s' % self.run([self.hostname])
-        self.apiJwtExpireTime = '24h'
-        self.apiAppSecret = self.getPW()
-        self.apiLdapMaxConn = 10
-        self.apiLdapHost = ''
-        self.apiLdapBindDN = 'cn=directory manager,o=gluu'
-        self.apiLdapPassword = ''
-        self.apiLdapLogLevel = 'debug'
-        self.apiLdapClientId = ''
-        self.apiPolicyType = 'uma_rpt_policy'
-        self.apiOxdId = ''
-        self.apiOP = ''
-        self.apiClientId = ''
-        self.apiClientSecret = ''
-        self.apiOxdWeb = ''
-        self.apiKongWebURL = ''
+        # oxd kong Property values
+        self.oxdKongPort = '1338'
+        self.oxdKongLdapMaxConn = 10
+        self.oxdKongLdapServerURL = ''
+        self.oxdKongLdapBindDN = 'cn=directory manager,o=gluu'
+        self.oxdKongLdapPassword = ''
+        self.oxdKongLdapLogLevel = 'debug'
+        self.oxdKongLdapClientId = ''
+        self.oxdKongPolicyType = 'uma_rpt_policy'
+        self.oxdKongOxdId = ''
+        self.oxdKongOPHost = ''
+        self.oxdKongClientId = ''
+        self.oxdKongClientSecret = ''
+        self.oxdKongOxdWeb = ''
+        self.oxdKongKongAdminWebURL = ''
+        self.oxdKongOxdVersion = 'Version 3.1.1'
 
     def configureRedis(self):
         return True
@@ -91,13 +90,13 @@ class KongSetup(object):
     def configurePostgres(self):
         con = None
         try:
-            pgPassword = self.getPrompt('Enter postgres password')
-            self.pgPwd = self.getPrompt('Enter new kong user password')
-            con = psycopg2.connect("host='localhost' dbname='postgres' user='postgres' password='%s'" % pgPassword)
+            self.pgPwd = self.getPrompt('Enter postgres password')
+            password = self.getPrompt('Enter new kong user password')
+            con = psycopg2.connect("host='localhost' dbname='postgres' user='postgres' password='%s'" % self.pgPwd)
             con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             cur = con.cursor()
             cur.execute("CREATE USER kong")
-            cur.execute("ALTER USER kong WITH PASSWORD '%s'" % self.pgPwd)
+            cur.execute("ALTER USER kong WITH PASSWORD '%s'" % password)
             cur.execute("CREATE DATABASE kong OWNER kong")
             con.commit()
         except psycopg2.DatabaseError, e:
@@ -243,40 +242,40 @@ class KongSetup(object):
     def installSample(self):
         return True
 
-    def configKongGUI(self):
-        self.run(['sudo', 'npm', 'install', '-P'], self.distKongGUIFolder, os.environ.copy(), True)
-        self.run(['sudo', 'bower', 'install', '--allow-root'], self.distKongGUIFolder, os.environ.copy(), True)
+    def configOxdKong(self):
+        self.run([self.cmd_sudo, 'npm', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
+        self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
 
-    def configKongAPIGateway(self):
-        self.run(['sudo', 'npm', 'install', '-P'], self.distKongAPIGatewayFolder, os.environ.copy(), True)
         print 'The next few questions are used to configure kong API Gateway'
-        self.apiOP = self.getPrompt('OP host')
-        self.apiLdapPassword = self.getPrompt('LDAP password')
-        self.apiLdapClientId = self.getPrompt('LDAP client id')
-        self.apiOxdWeb = self.getPrompt('oxd-https URL')
-        flag = self.makeBoolean(self.getPrompt('Would you like to generate client_id/client_secret? (yes - generate, no - enter client_id and client_secret manually)'))
+        self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) host')
+        self.oxdKongLdapServerURL = self.getPrompt('Ldap Server URL')
+        self.oxdKongLdapPassword = self.getPrompt('LDAP password')
+        self.oxdKongLdapClientId = self.getPrompt('LDAP client id')
+        self.oxdKongOxdWeb = self.getPrompt('oxd web URL')
+        flag = self.makeBoolean(self.getPrompt('Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
         if flag:
             payload = {
-                'op_host': self.apiOP,
-                'authorization_redirect_uri': 'https://' + self.hostname + '/login.html',
+                'op_host': self.oxdKongOPHost,
+                'authorization_redirect_uri': 'https://' + self.hostname + ':' + self.oxdKongPort,
                 'scope': ['openid', 'email', 'profile', 'uma_protection'],
                 'grant_types': ['authorization_code'],
                 'client_name': 'oxd_kong_client'
             }
-            res = requests.post(self.apiOxdWeb + '/setup-client', data=json.dumps(payload), headers = {'content-type': 'application/json'})
-            resJson = json.loads(res.text)
-            print resJson
             print 'Making client...'
-            self.apiClientSecret = resJson['data']['client_secret']
-            self.apiClientId = resJson['data']['client_id']
+            res = requests.post(self.oxdKongOxdWeb + '/setup-client', data=json.dumps(payload), headers = {'content-type': 'application/json'})
+            resJson = json.loads(res.text)
+            self.oxdKongOxdId = resJson['data']['oxd_id']
+            self.oxdKongClientSecret = resJson['data']['client_secret']
+            self.oxdKongClientId = resJson['data']['client_id']
         else:
-            self.apiClientId = self.getPrompt('client_id')
-            self.apiClientSecret = self.getPrompt('client_secret')
+            self.oxdKongOxdId = self.getPrompt('oxd_id')
+            self.oxdKongClientId = self.getPrompt('client_id')
+            self.oxdKongClientSecret = self.getPrompt('client_secret')
 
-        self.apiKongWebURL = self.getPrompt('Kong Web URL')
+        self.oxdKongKongAdminWebURL = self.getPrompt('Kong Admin URL')
         # Render kongAPI property
-        self.renderTemplateInOut(self.distKongAPIConfigFile, self.template_folder, self.distKongAPIGatewayFolder)
-
+        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distOxdKongConfigFile)[-1]], self.distOxdKongConfigPath, os.environ.copy(), True)
+        self.renderTemplateInOut(self.distOxdKongConfigFile, self.template_folder, self.distOxdKongConfigPath)
 
 
     def isIP(self, address):
@@ -376,37 +375,26 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        self.run(["sudo", "kong", "start", os.path.join(self.output_folder, 'kong.conf')])
+        self.run([self.cmd_sudo, "kong", "start", os.path.join(self.output_folder, 'kong.conf')])
 
     def stopKong(self):
-        self.run(["sudo", "kong", "stop"])
+        self.run([self.cmd_sudo, "kong", "stop"])
 
     def migrateKong(self):
-        self.run(["sudo", "kong", "migrations", "up"])
+        self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
-    def installKongGUIService(self):
-        self.logIt("Installing node service %s..." % self.kongGUIService)
+    def installOxdKongService(self):
+        self.logIt("Installing node service %s..." % self.oxdKongService)
 
-        self.copyFile(os.path.join(self.template_folder, self.kongGUIService), self.osDefault)
-        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongGUIService)])
-
-        self.run([
-            self.cmd_ln,
-            '-sf',
-            os.path.join(self.system_folder, self.kongGUIService),
-            '/etc/init.d/%s' % self.kongGUIService])
-
-    def installKongAPIService(self):
-        self.logIt("Installing kong API service %s..." % self.kongAPIGatewayService)
-
-        self.copyFile(os.path.join(self.template_folder, self.kongAPIGatewayService), self.osDefault)
-        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongAPIGatewayService)])
+        self.copyFile(os.path.join(self.template_folder, self.oxdKongService), self.osDefault)
+        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.oxdKongService)])
 
         self.run([
             self.cmd_ln,
             '-sf',
-            os.path.join(self.system_folder, self.kongAPIGatewayService),
-            '/etc/init.d/%s' % self.kongAPIGatewayService])
+            os.path.join(self.system_folder, self.oxdKongService),
+            '/etc/init.d/%s' % self.oxdKongService])
+
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -427,7 +415,8 @@ if __name__ == "__main__":
         # kongSetup.test()
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
-        kongSetup.configKongAPIGateway()
+        kongSetup.configurePostgres()
+        kongSetup.configOxdKong()
         # kongSetup.configureRedis()
         # kongSetup.configurePostgres()
         # kongSetup.configureOxd()
