@@ -13,7 +13,6 @@ import shutil
 import requests
 import json
 
-
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
@@ -61,20 +60,18 @@ class KongSetup(object):
         self.admin_email = ''
 
         self.distFolder = '/opt'
-        self.distOxdKongFolder = '%s/kong-pluings/oxd-kong' % self.distFolder
+        self.distOxdKongFolder = '%s/kong-plugins/oxd-kong' % self.distFolder
         self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
         self.distOxdKongConfigFile = '%s/config/local.js' % self.distOxdKongFolder
+
+        self.distOxdServerFolder = '%s/oxd-server' % self.distFolder
+        self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
+        self.distOxdServerConfigFile = '%s/conf/oxd-conf.json' % self.distOxdServerConfigPath
 
         self.oxdKongService = "oxd-kong"
 
         # oxd kong Property values
         self.oxdKongPort = '1338'
-        self.oxdKongLdapMaxConn = 10
-        self.oxdKongLdapServerURL = ''
-        self.oxdKongLdapBindDN = 'cn=directory manager,o=gluu'
-        self.oxdKongLdapPassword = ''
-        self.oxdKongLdapLogLevel = 'debug'
-        self.oxdKongLdapClientId = ''
         self.oxdKongPolicyType = 'uma_rpt_policy'
         self.oxdKongOxdId = ''
         self.oxdKongOPHost = ''
@@ -83,6 +80,12 @@ class KongSetup(object):
         self.oxdKongOxdWeb = ''
         self.oxdKongKongAdminWebURL = ''
         self.oxdKongOxdVersion = 'Version 3.1.1'
+
+        # oxd licence configuration
+        self.oxdServerLicenseId = ''
+        self.oxdServerPublicKey = ''
+        self.oxdServerPublicPassword = ''
+        self.oxdServerLicensePassword = ''
 
     def configureRedis(self):
         return True
@@ -108,9 +111,21 @@ class KongSetup(object):
                 con.close()
 
     def configureOxd(self):
-        return True
+        flag = self.makeBoolean(self.getPrompt(
+            'Would you like to configure oxd-server? (y - configure, n - skip)'))
+        if flag:
+            self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) server')
+            self.oxdServerLicenseId = self.getPrompt('License Id')
+            self.oxdServerPublicKey = self.getPrompt('Public key')
+            self.oxdServerPublicPassword = self.getPrompt('Public password')
+            self.oxdServerLicensePassword = self.getPrompt('License password')
+            self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
 
-    def detect_hostname(self):
+        self.run([self.cmd_sudo, '/etc/init.d/oxd-server', 'start'])
+        self.run([self.cmd_sudo, '/etc/init.d/oxd-https-extension', 'start'])
+
+
+    def detectHostname(self):
         detectedHostname = None
         try:
             detectedHostname = socket.gethostbyaddr(socket.gethostname())[0]
@@ -240,19 +255,20 @@ class KongSetup(object):
             return None
 
     def installSample(self):
-        return True
+        # install lua rocks
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'lua-cjson'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
 
     def configOxdKong(self):
         self.run([self.cmd_sudo, 'npm', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
 
         print 'The next few questions are used to configure kong API Gateway'
-        self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) host')
-        self.oxdKongLdapServerURL = self.getPrompt('Ldap Server URL')
-        self.oxdKongLdapPassword = self.getPrompt('LDAP password')
-        self.oxdKongLdapClientId = self.getPrompt('LDAP client id')
-        self.oxdKongOxdWeb = self.getPrompt('oxd web URL')
-        flag = self.makeBoolean(self.getPrompt('Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
+        self.oxdKongOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
+        flag = self.makeBoolean(self.getPrompt(
+            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
         if flag:
             payload = {
                 'op_host': self.oxdKongOPHost,
@@ -262,7 +278,8 @@ class KongSetup(object):
                 'client_name': 'oxd_kong_client'
             }
             print 'Making client...'
-            res = requests.post(self.oxdKongOxdWeb + '/setup-client', data=json.dumps(payload), headers = {'content-type': 'application/json'})
+            res = requests.post(self.oxdKongOxdWeb + '/setup-client', data=json.dumps(payload),
+                                headers={'content-type': 'application/json'})
             resJson = json.loads(res.text)
             self.oxdKongOxdId = resJson['data']['oxd_id']
             self.oxdKongClientSecret = resJson['data']['client_secret']
@@ -274,9 +291,9 @@ class KongSetup(object):
 
         self.oxdKongKongAdminWebURL = self.getPrompt('Kong Admin URL')
         # Render kongAPI property
-        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distOxdKongConfigFile)[-1]], self.distOxdKongConfigPath, os.environ.copy(), True)
+        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distOxdKongConfigFile)[-1]],
+                 self.distOxdKongConfigPath, os.environ.copy(), True)
         self.renderTemplateInOut(self.distOxdKongConfigFile, self.template_folder, self.distOxdKongConfigPath)
-
 
     def isIP(self, address):
         try:
@@ -311,12 +328,12 @@ class KongSetup(object):
 
     def promptForProperties(self):
         self.ip = self.get_ip()
-        self.hostname = self.getPrompt('Enter Kong hostname', self.detect_hostname())
+        self.hostname = self.getPrompt('Enter Kong hostname', self.detectHostname())
         print 'The next few questions are used to generate the Kong self-signed certificate'
         self.countryCode = self.getPrompt('Country')
         self.state = self.getPrompt('State')
         self.city = self.getPrompt('City')
-        self.orgName = self.getPrompt('Organizatoin')
+        self.orgName = self.getPrompt('Organization')
         self.admin_email = self.getPrompt('email')
         print 'The next few questions will determine which components are installed'
         self.installOxd = self.makeBoolean(self.getPrompt("Install oxd?", "True")[0])
@@ -334,7 +351,7 @@ class KongSetup(object):
                 print "Defaulting to external Cassandra"
                 self.getExternalCassandraInfo()
 
-    def render_templates(self):
+    def renderTemplates(self):
         self.logIt("Rendering templates")
         # other property
         for filePath in self.templates.keys():
@@ -395,7 +412,6 @@ class KongSetup(object):
             os.path.join(self.system_folder, self.oxdKongService),
             '/etc/init.d/%s' % self.oxdKongService])
 
-
     def copyFile(self, inFile, destFolder):
         try:
             shutil.copy(inFile, destFolder)
@@ -405,28 +421,25 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def test(self):
-        r = requests.get("https://jsonplaceholder.typicode.com/posts")
-        print json.loads(r.text)[0]['id']
+        return True
 
 
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
-        # kongSetup.test()
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
         kongSetup.configurePostgres()
         kongSetup.configOxdKong()
+        kongSetup.genKongSslCertificate()
+        kongSetup.renderTemplates()
+        kongSetup.configureOxd()
+        kongSetup.installSample()
+        kongSetup.stopKong()
+        kongSetup.migrateKong()
+        kongSetup.startKong()
+        # kongSetup.installOxdKongService()
         # kongSetup.configureRedis()
-        # kongSetup.configurePostgres()
-        # kongSetup.configureOxd()
-        # kongSetup.genKongSslCertificate()
-        # kongSetup.render_templates()
-        # kongSetup.stopKong()
-        # kongSetup.migrateKong()
-        # kongSetup.startKong()
-        # kongSetup.installKongGUIService()
-        # kongSetup.installSample()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
     except:

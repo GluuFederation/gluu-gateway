@@ -56,8 +56,8 @@ module.exports = {
   },
 
   ssl: {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
+    key: fs.readFileSync('%(kongSslCert)s'),
+    cert: fs.readFileSync('%(kongSslKey)s')
   },
 
   port: process.env.PORT || %(oxdKongPort)s,
@@ -70,12 +70,5 @@ module.exports = {
   oxdId: '%(oxdKongOxdId)s',
   clientId: '%(oxdKongClientId)s',
   clientSecret: '%(oxdKongClientSecret)s',
-  oxdVersion: '%(oxdKongOxdVersion)s',
-  ldapMaxConns: '%(oxdKongLdapMaxConn)s',
-  ldapServerUrl: '%(oxdKongLdapServerURL)s',
-  ldapBindDN: '%(oxdKongLdapBindDN)s',
-  ldapBindCredentials: '%(oxdKongLdapPassword)s',
-  ldapLogLevel: '%(oxdKongLdapLogLevel)s',
-  ldapClientId: '%(oxdKongLdapClientId)s',
-  scriptType: '%(oxdKongPolicyType)s'
+  oxdVersion: '%(oxdKongOxdVersion)s'
 };
