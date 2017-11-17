@@ -56,5 +56,6 @@ module.exports = {
   opHost: '',
   oxdId: '',
   clientId: '',
-  clientSecret: ''
+  clientSecret: '',
+  oxdVersion: ''
 };

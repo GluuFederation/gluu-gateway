@@ -70,9 +70,7 @@
           all: function () {
             return $http.get('kong/apis')
           },
-          getAllScopes: function () {
-            return $http.get('scope')
-          },
+          
           findById: function (apiId) {
             return $http.get('kong/apis/' + apiId)
           },

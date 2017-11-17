@@ -193,19 +193,7 @@
         }
 
         function loadScopes(query) {
-          return ApiService.getAllScopes()
-            .then(function (response) {
-              var scopes = response.data.map(function (o) {
-                return {text: o.oxId, name: o.displayName};
-              });
-              var scopes = scopes.filter(function (o) {
-                return o.name.indexOf(query) >= 0;
-              });
-              return scopes;
-            })
-            .catch(function (error) {
-              return [];
-            });
+          return [];
         }
 
         function makeJSON(data) {

@@ -58,9 +58,6 @@ module.exports.routes = {
     '/auth/:provider/callback'  : 'AuthController.callback',
     '/auth/:provider/:action'   : 'AuthController.callback',
 
-    // LDAP
-    'GET /scope'               : 'ScopeController.get',
-
     //'POST /consumers/sync'                 : 'ConsumerController.sync',
 
 
