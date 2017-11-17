@@ -32,11 +32,18 @@
 
 Install <code>npm</code> and <code>node.js</code>. Instructions can be found [here](http://sailsjs.org/#/getStarted?q=what-os-do-i-need).
 
-Install <code>bower</code>, <code>gulp</code> and <code>sails</code> packages.
+Install <code>bower</code> and <code>gulp</code> packages.
+<pre>
+$ npm install bower -g
+$ npm install gulp -g
+</pre>
+
+
 <pre>
 $ git clone https://github.com/GluuFederation/kong-plugins
 $ cd oxd-kong
 $ npm install
+$ npm bower-deps
 </pre>
 
 ## Configuration
