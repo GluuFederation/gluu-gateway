@@ -37,11 +37,17 @@
 4. [Install kong-uma-rs](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
     1. Stop kong : `kong stop`
     2. 
-        Using luarocks `luarocks install kong-uma-rs`
+        Using luarocks `luarocks install kong-uma-rs`.
         
-        or
+        It also required some luarocks packages. you need to install those package also.
         
-        Copy `kong-uma-rs/kong/plugins/kong-uma-rs` Lua sources to kong plugins folder `kong/plugins/kong-uma-rs`        
+        `luarocks install kong-uma-rs`
+        
+        `luarocks install oxd-web-lua`
+        
+        `luarocks install json-lua`
+        
+        `luarocks install lua-cjson`
             
     3. Enable plugin in your `kong.conf` (typically located at `/etc/kong/kong.conf`) and start kong `kong start`.
     
