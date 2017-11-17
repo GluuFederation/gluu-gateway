@@ -62,7 +62,11 @@ This is property file where you need to specify port, oxd, OP and client setting
 <pre>
 $ npm start
 </pre>
-Konga GUI will be available at http://localhost:1337
+Konga GUI will be available at `https://localhost:1337`
 
 #### Login
-Click on login button and according to configuration in local.js that it goes for oAuth authentication
+You need to make self sign certificate file i:e key.pem and cert.pem and put them in /oxd-kong folder for run application on https.
+
+Also need to make client with `https://localhost:1337` authorization url using oxd-https-extension.
+
+Click on login button and according to configuration in local.js that it goes for oAuth authentication.
