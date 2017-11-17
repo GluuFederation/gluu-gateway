@@ -65,8 +65,4 @@ $ npm start
 Konga GUI will be available at http://localhost:1337
 
 #### Login
-*Admin*
-login: admin | password: adminadminadmin
-
-*Demo user*
-login: demo | password: demodemodemo
+Click on login button and according to configuration in local.js that it goes for oAuth authentication
