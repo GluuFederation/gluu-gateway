@@ -419,7 +419,6 @@ if __name__ == "__main__":
         kongSetup.configOxdKong()
         kongSetup.genKongSslCertificate()
         kongSetup.renderTemplates()
-        kongSetup.configureOxd()
         kongSetup.installSample()
         kongSetup.stopKong()
         kongSetup.migrateKong()
