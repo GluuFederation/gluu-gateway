@@ -6,14 +6,11 @@ import time
 import os
 import sys
 import socket
-import psycopg2
 import random
 import string
 import shutil
 import requests
 import json
-
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 
 
 class KongSetup(object):
