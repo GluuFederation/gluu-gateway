@@ -90,8 +90,8 @@ class KongSetup(object):
     def configurePostgres(self):
         print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
         self.pgPwd = self.getPrompt('Enter password')
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD %s;\\\"' % "\'" + self.pgPwd + "\'")
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"')
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
 
     def configureOxd(self):
         flag = self.makeBoolean(self.getPrompt(
@@ -412,18 +412,18 @@ class KongSetup(object):
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
-        kongSetup.makeFolders()
-        kongSetup.promptForProperties()
+        # kongSetup.makeFolders()
+        # kongSetup.promptForProperties()
         kongSetup.configurePostgres()
-        kongSetup.configureOxd()
-        kongSetup.configOxdKong()
-        kongSetup.genKongSslCertificate()
-        kongSetup.renderTemplates()
-        kongSetup.configureOxd()
-        kongSetup.installSample()
-        kongSetup.stopKong()
-        kongSetup.migrateKong()
-        kongSetup.startKong()
+        # kongSetup.configureOxd()
+        # kongSetup.configOxdKong()
+        # kongSetup.genKongSslCertificate()
+        # kongSetup.renderTemplates()
+        # kongSetup.configureOxd()
+        # kongSetup.installSample()
+        # kongSetup.stopKong()
+        # kongSetup.migrateKong()
+        # kongSetup.startKong()
         # kongSetup.installOxdKongService()
         # kongSetup.configureRedis()
         # kongSetup.test()
