@@ -91,24 +91,10 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        con = None
-        try:
-            self.pgPwd = self.getPrompt('Enter postgres password')
-            password = self.getPrompt('Enter new kong user password')
-            con = psycopg2.connect("host='localhost' dbname='postgres' user='postgres' password='%s'" % self.pgPwd)
-            con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
-            cur = con.cursor()
-            cur.execute("CREATE USER kong")
-            cur.execute("ALTER USER kong WITH PASSWORD '%s'" % password)
-            cur.execute("CREATE DATABASE kong OWNER kong")
-            con.commit()
-        except psycopg2.DatabaseError, e:
-            if con:
-                con.rollback()
-            self.logIt('Error %s' % e)
-        finally:
-            if con:
-                con.close()
+        print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
+        self.pgPwd = self.getPrompt('Enter password')
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD %s;\\\"' % "\'" + self.pgPwd + "\'")
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"')
 
     def configureOxd(self):
         flag = self.makeBoolean(self.getPrompt(
@@ -262,6 +248,8 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
 
     def configOxdKong(self):
+        print "Installing oxd-kong packages..."
+        self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
         self.run([self.cmd_sudo, 'npm', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
 
@@ -430,6 +418,7 @@ if __name__ == "__main__":
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
         kongSetup.configurePostgres()
+        kongSetup.configureOxd()
         kongSetup.configOxdKong()
         kongSetup.genKongSslCertificate()
         kongSetup.renderTemplates()
