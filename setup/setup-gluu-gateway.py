@@ -57,7 +57,7 @@ class KongSetup(object):
         self.admin_email = ''
 
         self.distFolder = '/opt'
-        self.distOxdKongFolder = '%s/kong-plugins/oxd-kong' % self.distFolder
+        self.distOxdKongFolder = '%s/kong-plugins/gluu-gateway' % self.distFolder
         self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
         self.distOxdKongConfigFile = '%s/config/local.js' % self.distOxdKongFolder
 
@@ -94,9 +94,9 @@ class KongSetup(object):
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
 
     def configureOxd(self):
-        flag = self.makeBoolean(self.getPrompt(
-            'Would you like to configure oxd-server? (y - configure, n - skip)'))
-        if flag:
+        self.installOxd = self.makeBoolean(self.getPrompt(
+            'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
+        if self.installOxd:
             self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) server')
             self.oxdServerLicenseId = self.getPrompt('License Id')
             self.oxdServerPublicKey = self.getPrompt('Public key')
@@ -255,6 +255,9 @@ class KongSetup(object):
         flag = self.makeBoolean(self.getPrompt(
             'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
         if flag:
+            if self.installOxd:
+                self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) server')
+
             payload = {
                 'op_host': self.oxdKongOPHost,
                 'authorization_redirect_uri': 'https://' + self.hostname + ':' + self.oxdKongPort,
@@ -320,21 +323,6 @@ class KongSetup(object):
         self.city = self.getPrompt('City')
         self.orgName = self.getPrompt('Organization')
         self.admin_email = self.getPrompt('email')
-        print 'The next few questions will determine which components are installed'
-        self.installOxd = self.makeBoolean(self.getPrompt("Install oxd?", "True")[0])
-        self.installPostgress = self.makeBoolean(self.getPrompt("Install Postgress?", "True")[0])
-        self.installRedis = self.makeBoolean(self.getPrompt("Install Redis?", "True")[0])
-        if not self.installOxd:
-            self.getExternalOxdInfo()
-        if not self.installRedis:
-            self.getExternalRedisInfo()
-        if not self.installPostgress:
-            externalPostgress = self.makeBoolean(self.getPrompt("Configfure External Postgress?", "True")[0])
-            if externalPostgress:
-                self.getExternalPostgressInfo()
-            else:
-                print "Defaulting to external Cassandra"
-                self.getExternalCassandraInfo()
 
     def renderTemplates(self):
         self.logIt("Rendering templates")
