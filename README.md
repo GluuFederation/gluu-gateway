@@ -22,7 +22,7 @@
 
     3. **[oxd-kong](https://github.com/GluuFederation/kong-plugins/tree/master/oxd-kong)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
 
-## Installation
+## Manually Installation
 
 1. [Install kong](https://getkong.org/install) Version: 0.11.0
     
@@ -56,6 +56,24 @@
     ```
     Detail description [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 
-5. Install oxd-kong
+5. Install gluu-gateway
 
-    oxd-kong installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/oxd-kong)    
+    gluu-gateway installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/gluu-gateway)    
+
+## Installation using Setup script
+
+1. Install GLUU-GATEWAY Package
+
+2. Run setup-gluu-gateway.py
+
+    Configuration is completed by running the setup-gluu-gateway.py script. This generates certificates and renders configuration files.
+
+    ```
+    # python setup-gluu-gateway.py
+    ```
+    
+    You will be prompted to answer some questions. Just hit Enter to accept the default value specified in square brackets. The following table should help you answer the questions correctly.
+    
+    | Question | Explanation |
+    |----------|-------------|
+    
