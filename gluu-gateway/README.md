@@ -41,7 +41,7 @@ $ npm install gulp -g
 
 <pre>
 $ git clone https://github.com/GluuFederation/kong-plugins
-$ cd oxd-kong
+$ cd gluu-gateway
 $ npm install
 $ npm bower-deps
 </pre>
@@ -65,7 +65,7 @@ $ npm start
 Konga GUI will be available at `https://localhost:1337`
 
 #### Login
-You need to make self sign certificate file i:e key.pem and cert.pem and put them in /oxd-kong folder for run application on https.
+You need to make self sign certificate file i:e key.pem and cert.pem and put them in /gluu-gateway folder for run application on https.
 
 Also need to make client with `https://localhost:1337` authorization url using oxd-https-extension.
 
