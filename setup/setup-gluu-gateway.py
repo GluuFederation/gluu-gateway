@@ -28,8 +28,8 @@ class KongSetup(object):
         self.system_folder = './system'
         self.osDefault = '/etc/default'
 
-        self.logError = 'oxd-kong-setup_error.log'
-        self.log = 'oxd-kong-setup.log'
+        self.logError = 'gluu-gateway-setup_error.log'
+        self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
         self.kongCustomPlugins = 'kong-uma-rs'
@@ -59,27 +59,28 @@ class KongSetup(object):
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
 
         self.distFolder = '/opt'
-        self.distOxdKongFolder = '%s/gluu-gateway/konga' % self.distFolder
-        self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
-        self.distOxdKongConfigFile = '%s/config/local.js' % self.distOxdKongFolder
+        self.distGluuGatewayFolder = '%s/gluu-gateway' % self.distFolder
+        self.distKongaFolder = '%s/konga' % self.distGluuGatewayFolder
+        self.distKongaConfigPath = '%s/config' % self.distKongaFolder
+        self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.distFolder
         self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
         self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
         self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
 
-        self.oxdKongService = "oxd-kong"
+        self.KongaService = "gluu-gateway"
 
         # oxd kong Property values
-        self.oxdKongPort = '1338'
-        self.oxdKongPolicyType = 'uma_rpt_policy'
-        self.oxdKongOxdId = ''
-        self.oxdKongOPHost = ''
-        self.oxdKongClientId = ''
-        self.oxdKongClientSecret = ''
-        self.oxdKongOxdWeb = ''
-        self.oxdKongKongAdminWebURL = ''
-        self.oxdKongOxdVersion = 'Version 3.1.1'
+        self.kongaPort = '1338'
+        self.kongaPolicyType = 'uma_rpt_policy'
+        self.kongaOxdId = ''
+        self.kongaOPHost = ''
+        self.kongaClientId = ''
+        self.kongaClientSecret = ''
+        self.kongaOxdWeb = ''
+        self.kongaKongAdminWebURL = ''
+        self.kongaOxdVersion = 'Version 3.1.1'
 
         # oxd licence configuration
         self.oxdServerLicenseId = ''
@@ -96,27 +97,29 @@ class KongSetup(object):
     def configurePostgres(self):
         print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
         self.pgPwd = self.getPrompt('Enter password')
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+        os.system(
+            'sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
 
     def configureOxd(self):
         self.installOxd = self.makeBoolean(self.getPrompt(
             'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
         if self.installOxd:
-            self.oxdKongOPHost = self.getPrompt('OP(OpenId provider) server')
-            self.oxdServerOPDiscoveryPath = self.oxdKongOPHost + '/.well-known/openid-configuration'
+            self.kongaOPHost = self.getPrompt('OP(OpenId provider) server')
+            self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
             self.oxdServerLicenseId = self.getPrompt('License Id')
             self.oxdServerPublicKey = self.getPrompt('Public key')
             self.oxdServerPublicPassword = self.getPrompt('Public password')
             self.oxdServerLicensePassword = self.getPrompt('License password')
-            self.oxdServerAuthorizationRedirectUri = self.getPrompt('Authorization redirect uri', 'https://' + self.hostname + ':' + self.oxdKongPort)
+            self.oxdServerAuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
+                                                                    'https://' + self.hostname + ':' + self.kongaPort)
 
             self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
-            self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder, self.distOxdServerConfigPath)
+            self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
+                                     self.distOxdServerConfigPath)
 
         self.run([self.cmd_sudo, '/etc/init.d/oxd-server', 'start'])
         self.run([self.cmd_sudo, '/etc/init.d/oxd-https-extension', 'start'])
-
 
     def detectHostname(self):
         detectedHostname = None
@@ -203,9 +206,9 @@ class KongSetup(object):
         return ''.join(random.choice(chars) for _ in range(size))
 
     def genKongSslCertificate(self):
-        self.gen_cert('oxd-kong', self.getPW())
-        self.kongSslCert = os.path.join(self.cert_folder, 'oxd-kong.crt')
-        self.kongSslKey = os.path.join(self.cert_folder, 'oxd-kong.key')
+        self.gen_cert('gluu-gateway', self.getPW())
+        self.kongSslCert = self.distGluuGatewayFolder + '/setup/output/gluu-gateway.crt'
+        self.kongSslKey = self.distGluuGatewayFolder + '/setup/output/gluu-gateway.key'
 
     def get_ip(self):
         testIP = None
@@ -254,14 +257,14 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
 
-    def configOxdKong(self):
-        print "Installing oxd-kong packages..."
+    def configKonga(self):
+        print "Installing konga packages..."
         self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
-        self.run([self.cmd_sudo, 'npm', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
-        self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distOxdKongFolder, os.environ.copy(), True)
+        self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
+        self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         print 'The next few questions are used to configure kong API Gateway'
-        self.oxdKongOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
+        self.kongaOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
             'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
         if flag:
@@ -269,36 +272,38 @@ class KongSetup(object):
             AuthorizationRedirectUri = ''
 
             if self.installOxd:
-                OPHost = self.getPrompt('OP(OpenId provider) server', self.oxdKongOPHost)
-                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri', self.oxdServerAuthorizationRedirectUri)
+                OPHost = self.getPrompt('OP(OpenId provider) server', self.kongaOPHost)
+                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
+                                                          self.oxdServerAuthorizationRedirectUri)
             else:
                 OPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
-                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri', 'https://' + self.hostname + ':' + self.oxdKongPort)
+                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
+                                                          'https://' + self.hostname + ':' + self.kongaPort)
 
             payload = {
                 'op_host': OPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'scope': ['openid', 'email', 'profile', 'uma_protection'],
                 'grant_types': ['authorization_code'],
-                'client_name': 'oxd_kong_client'
+                'client_name': 'konga_client'
             }
             print 'Making client...'
-            res = requests.post(self.oxdKongOxdWeb + '/setup-client', data=json.dumps(payload),
+            res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload),
                                 headers={'content-type': 'application/json'})
             resJson = json.loads(res.text)
-            self.oxdKongOxdId = resJson['data']['oxd_id']
-            self.oxdKongClientSecret = resJson['data']['client_secret']
-            self.oxdKongClientId = resJson['data']['client_id']
+            self.kongaOxdId = resJson['data']['oxd_id']
+            self.kongaClientSecret = resJson['data']['client_secret']
+            self.kongaClientId = resJson['data']['client_id']
         else:
-            self.oxdKongOxdId = self.getPrompt('oxd_id')
-            self.oxdKongClientId = self.getPrompt('client_id')
-            self.oxdKongClientSecret = self.getPrompt('client_secret')
+            self.kongaOxdId = self.getPrompt('oxd_id')
+            self.kongaClientId = self.getPrompt('client_id')
+            self.kongaClientSecret = self.getPrompt('client_secret')
 
-        self.oxdKongKongAdminWebURL = self.getPrompt('Kong Admin URL', 'http://' + self.hostname + ':8001')
+        self.kongaKongAdminWebURL = self.getPrompt('Kong Admin URL', 'http://' + self.hostname + ':8001')
         # Render kongAPI property
-        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distOxdKongConfigFile)[-1]],
-                 self.distOxdKongConfigPath, os.environ.copy(), True)
-        self.renderTemplateInOut(self.distOxdKongConfigFile, self.template_folder, self.distOxdKongConfigPath)
+        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
+                 self.distKongaConfigPath, os.environ.copy(), True)
+        self.renderTemplateInOut(self.distKongaConfigFile, self.template_folder, self.distKongaConfigPath)
 
     def isIP(self, address):
         try:
@@ -372,25 +377,25 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        self.run([self.cmd_sudo, "kong", "start", "-c", os.path.join(self.output_folder, 'kong.conf')])
+        self.run([self.cmd_sudo, "kong", "start"])
 
     def stopKong(self):
         self.run([self.cmd_sudo, "kong", "stop"])
 
     def migrateKong(self):
-        self.run([self.cmd_sudo, "kong", "migrations", "up", "-c", os.path.join(self.output_folder, 'kong.conf')])
+        self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
     def installKongaService(self):
-        self.logIt("Installing node service %s..." % self.oxdKongService)
+        self.logIt("Installing node service %s..." % self.kongaService)
 
-        self.copyFile(os.path.join(self.template_folder, self.oxdKongService), self.osDefault)
-        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.oxdKongService)])
+        self.copyFile(os.path.join(self.template_folder, self.kongaService), self.osDefault)
+        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongaService)])
 
         self.run([
             self.cmd_ln,
             '-sf',
-            os.path.join(self.system_folder, self.oxdKongService),
-            '/etc/init.d/%s' % self.oxdKongService])
+            os.path.join(self.system_folder, self.kongaService),
+            '/etc/init.d/%s' % self.kongaService])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -411,14 +416,14 @@ if __name__ == "__main__":
         kongSetup.promptForProperties()
         kongSetup.configurePostgres()
         kongSetup.configureOxd()
-        kongSetup.configOxdKong()
+        kongSetup.configKonga()
         kongSetup.genKongSslCertificate()
         kongSetup.renderKongConfigure()
         kongSetup.installSample()
         kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
-        # kongSetup.installOxdKongService()
+        # kongSetup.installKongaService()
         # kongSetup.configureRedis()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
