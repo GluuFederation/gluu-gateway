@@ -57,7 +57,7 @@ class KongSetup(object):
         self.admin_email = ''
 
         self.distFolder = '/opt'
-        self.distOxdKongFolder = '%s/kong-plugins/gluu-gateway' % self.distFolder
+        self.distOxdKongFolder = '%s/gluu-gateway/konga' % self.distFolder
         self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
         self.distOxdKongConfigFile = '%s/config/local.js' % self.distOxdKongFolder
 

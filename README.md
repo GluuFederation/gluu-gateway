@@ -56,9 +56,9 @@
     ```
     Detail description [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 
-5. Install gluu-gateway
+5. Install konga
 
-    gluu-gateway installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/gluu-gateway)    
+    konga installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/konga)    
 
 ## Installation using Setup script
 
