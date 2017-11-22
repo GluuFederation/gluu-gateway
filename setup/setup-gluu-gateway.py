@@ -263,10 +263,10 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
-        print 'The next few questions are used to configure kong API Gateway'
+        print 'The next few questions are used to configure konga'
         self.kongaOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
-            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)'))
+            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)', 'y'))
         if flag:
             OPHost = ''
             AuthorizationRedirectUri = ''

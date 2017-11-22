@@ -62,9 +62,15 @@
 
 ## Installation using Setup script
 
-1. Install GLUU-GATEWAY Package
+1. [Install kong](https://getkong.org/install) Version: 0.11.0
+    
+    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
 
-2. Run setup-gluu-gateway.py
+    !! Note: kong supports two databases Postgres and Cassandr
+
+2. Install GLUU-GATEWAY Package
+
+3. Run setup-gluu-gateway.py
 
     Configuration is completed by running the setup-gluu-gateway.py script. This generates certificates and renders configuration files.
 
@@ -76,4 +82,16 @@
     
     | Question | Explanation |
     |----------|-------------|
+    | Enter IP Address | IP Address |
+    | Enter Kong hostname | Internet-facing hostname, FQDN, or CNAME whichever your organization follows to be used to generate certificates and metadata. Do not use an IP address or localhost. |
+    | Country | Used to generate certificates |
+    | State | Used to generate certificates |
+    | City | Used to generate certificates |
+    | Organization | Used to generate certificates |
+    | email | Used to generate certificates |
+    | Enter password | Used for postgres database configuration.If you have already postgres user password then enter existing password otherwise enter new password. |
+    | Would you like to configure oxd-server? | Default is yes. You can configured oxd server or skip it. 
+    | oxd web URL | Used to set oxd-https-extensions. which used to create OpenID client for konga.
+    | Would you like to generate client_id/client_secret? | Default is yes. You can make new OpenID Client or enter manually.
+     
     
