@@ -38,7 +38,6 @@ class KongSetup(object):
 
         self.kongSslCert = ''
         self.kongSslKey = ''
-        self.templates = {'/etc/kong/kong.conf': True}
         self.pgPwd = 'admin'
 
         self.cmd_mkdir = '/bin/mkdir'
@@ -56,6 +55,9 @@ class KongSetup(object):
         self.orgName = ''
         self.admin_email = ''
 
+        self.distKongConfigFolder = '/etc/kong'
+        self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
+
         self.distFolder = '/opt'
         self.distOxdKongFolder = '%s/gluu-gateway/konga' % self.distFolder
         self.distOxdKongConfigPath = '%s/config' % self.distOxdKongFolder
@@ -63,8 +65,8 @@ class KongSetup(object):
 
         self.distOxdServerFolder = '%s/oxd-server' % self.distFolder
         self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
-        self.distOxdServerConfigFile = '%s/conf/oxd-conf.json' % self.distOxdServerConfigPath
-        self.distOxdServerDefaultConfigFile = '%s/conf/oxd-default-site-config.json' % self.distOxdServerConfigPath
+        self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
+        self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
 
         self.oxdKongService = "oxd-kong"
 
@@ -339,18 +341,8 @@ class KongSetup(object):
         self.orgName = self.getPrompt('Organization')
         self.admin_email = self.getPrompt('email')
 
-    def renderTemplates(self):
-        self.logIt("Rendering templates")
-        # other property
-        for filePath in self.templates.keys():
-            try:
-                self.renderTemplate(filePath)
-            except:
-                self.logIt("Error writing template %s" % filePath, True)
-                self.logIt(traceback.format_exc(), True)
-
-    def renderTemplate(self, filePath):
-        self.renderTemplateInOut(filePath, self.template_folder, self.output_folder)
+    def renderKongConfigure(self):
+        self.renderTemplateInOut(self.distKongConfigFile, self.template_folder, self.distKongConfigFolder)
 
     def renderTemplateInOut(self, filePath, templateFolder, outputFolder):
         self.logIt("Rendering template %s" % filePath)
@@ -388,7 +380,7 @@ class KongSetup(object):
     def migrateKong(self):
         self.run([self.cmd_sudo, "kong", "migrations", "up", "-c", os.path.join(self.output_folder, 'kong.conf')])
 
-    def installOxdKongService(self):
+    def installKongaService(self):
         self.logIt("Installing node service %s..." % self.oxdKongService)
 
         self.copyFile(os.path.join(self.template_folder, self.oxdKongService), self.osDefault)
@@ -421,7 +413,7 @@ if __name__ == "__main__":
         kongSetup.configureOxd()
         kongSetup.configOxdKong()
         kongSetup.genKongSslCertificate()
-        kongSetup.renderTemplates()
+        kongSetup.renderKongConfigure()
         kongSetup.installSample()
         kongSetup.stopKong()
         kongSetup.migrateKong()
