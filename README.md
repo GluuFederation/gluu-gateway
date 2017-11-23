@@ -28,7 +28,7 @@
     
     Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
 
-    !! Note: kong supports two databases Postgres and Cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
+    !! Note: kong supports two databases Postgres 9.4 and Cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
 
 2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/) Version: 3.1.1
     
@@ -66,7 +66,7 @@
     
     Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
 
-    !! Note: kong supports two databases Postgres and Cassandr
+    !! Note: kong supports two databases Postgres 9.4 and Cassandr
 
 2. Install GLUU-GATEWAY Package
 

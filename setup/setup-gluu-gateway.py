@@ -207,8 +207,8 @@ class KongSetup(object):
 
     def genKongSslCertificate(self):
         self.gen_cert('gluu-gateway', self.getPW())
-        self.kongSslCert = self.distGluuGatewayFolder + '/setup/output/gluu-gateway.crt'
-        self.kongSslKey = self.distGluuGatewayFolder + '/setup/output/gluu-gateway.key'
+        self.kongSslCert = self.distGluuGatewayFolder + '/setup/certs/gluu-gateway.crt'
+        self.kongSslKey = self.distGluuGatewayFolder + '/setup/certs/gluu-gateway.key'
 
     def get_ip(self):
         testIP = None
@@ -252,6 +252,7 @@ class KongSetup(object):
 
     def installSample(self):
         # install lua rocks
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'stringy'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'lua-cjson'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
@@ -291,9 +292,14 @@ class KongSetup(object):
             res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload),
                                 headers={'content-type': 'application/json'})
             resJson = json.loads(res.text)
-            self.kongaOxdId = resJson['data']['oxd_id']
-            self.kongaClientSecret = resJson['data']['client_secret']
-            self.kongaClientId = resJson['data']['client_id']
+
+            if resJson['status'] == 'ok':
+                self.kongaOxdId = resJson['data']['oxd_id']
+                self.kongaClientSecret = resJson['data']['client_secret']
+                self.kongaClientId = resJson['data']['client_id']
+            else:
+                print 'Error: Please check oxd-server and oxd-https log'
+                sys.exit()
         else:
             self.kongaOxdId = self.getPrompt('oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
