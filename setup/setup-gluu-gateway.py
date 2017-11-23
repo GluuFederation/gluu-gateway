@@ -279,6 +279,7 @@ class KongSetup(object):
                                                           self.oxdServerAuthorizationRedirectUri)
             else:
                 OPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
+                self.kongaOPHost = OPHost
                 AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
                                                           'https://' + self.hostname + ':' + self.kongaPort)
 
