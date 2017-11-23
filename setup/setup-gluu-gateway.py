@@ -55,6 +55,7 @@ class KongSetup(object):
         self.orgName = ''
         self.admin_email = ''
 
+        self.kongAdminListenSsl = '8445'
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
 
