@@ -90,9 +90,18 @@
     | Organization | Used to generate certificates |
     | email | Used to generate certificates |
     | Enter password | Used for postgres database configuration.If you have already postgres user password then enter existing password otherwise enter new password. |
-    | Would you like to configure oxd-server? | Default is yes. You can configured oxd server or skip it. | 
+    | Would you like to configure oxd-server? | Default is yes. You can configured oxd server or skip it. If you select yes then next 6 properties will ask to enter details |
+    | OP(OpenId provider) server | Used to set your OpenID provider server for oxd-server |
+    | License Id | Used to set License Id for oxd-server |
+    | Public key | Used to set Public key for oxd-server |
+    | Public password | Used to set Public password for oxd-server |
+    | License password | Used to set License password for oxd-server |
+    | Authorization redirect uri | Used to set Authorization redirect uri for oxd-server default configuration |
     | oxd web URL | Used to set oxd-https-extensions. which used to create OpenID client for konga. |
     | Would you like to generate client_id/client_secret? | Default is yes. You can make new OpenID Client or enter manually. |
+    | oxd_id | Used to set oxd id for konga |
+    | client_id | Used to set client id for konga |
+    | client_secret | Used to set client secret for konga |
     | OP(OpenId provider) server | Used to set OpenId provider server for konga |
     | Authorization redirect uri | Used to set authorization redirect uri to authenticate konga |
     | Kong Admin URL | Used to set kong admin URL used by konga |
