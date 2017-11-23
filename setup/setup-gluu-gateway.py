@@ -421,10 +421,10 @@ if __name__ == "__main__":
     try:
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
+        kongSetup.genKongSslCertificate()
         kongSetup.configurePostgres()
         kongSetup.configureOxd()
         kongSetup.configKonga()
-        kongSetup.genKongSslCertificate()
         kongSetup.renderKongConfigure()
         kongSetup.installSample()
         kongSetup.stopKong()
