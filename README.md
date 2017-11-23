@@ -82,7 +82,7 @@
     
     | Question | Explanation |
     |----------|-------------|
-    | Enter IP Address | IP Address |
+    | Enter IP Address | IP Address for kong configuration |
     | Enter Kong hostname | Internet-facing hostname, FQDN, or CNAME whichever your organization follows to be used to generate certificates and metadata. Do not use an IP address or localhost. |
     | Country | Used to generate certificates |
     | State | Used to generate certificates |

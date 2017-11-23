@@ -31,7 +31,7 @@ module.exports = {
   /**
    * The default fallback URL to Kong's admin API.
    */
-  kong_admin_url: process.env.KONG_ADMIN_URL || '%(oxdKongKongAdminWebURL)s',
+  kong_admin_url: process.env.KONG_ADMIN_URL || '%(kongaKongAdminWebURL)s',
 
 
   connections: {
@@ -60,15 +60,15 @@ module.exports = {
     cert: fs.readFileSync('%(kongSslKey)s')
   },
 
-  port: process.env.PORT || %(oxdKongPort)s,
+  port: process.env.PORT || %(kongaPort)s,
   environment: 'development',
   log: {
     level: 'info'
   },
-  oxdWeb: '%(oxdKongOxdWeb)s',
-  opHost: '%(oxdKongOPHost)s',
-  oxdId: '%(oxdKongOxdId)s',
-  clientId: '%(oxdKongClientId)s',
-  clientSecret: '%(oxdKongClientSecret)s',
-  oxdVersion: '%(oxdKongOxdVersion)s'
+  oxdWeb: '%(kongaOxdWeb)s',
+  opHost: '%(kongaOPHost)s',
+  oxdId: '%(kongaOxdId)s',
+  clientId: '%(kongaClientId)s',
+  clientSecret: '%(kongaClientSecret)s',
+  oxdVersion: '%(kongaOxdVersion)s'
 };

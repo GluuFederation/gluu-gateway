@@ -1,5 +1,5 @@
 {
-    "server_name":"%(oxdKongOPHost)s",
+    "server_name":"%(kongaOPHost)s",
     "port":8099,
     "localhost_only":true,
     "time_out_in_seconds":0,
