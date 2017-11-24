@@ -56,8 +56,8 @@ module.exports = {
   },
 
   ssl: {
-    key: fs.readFileSync('%(kongSslCert)s'),
-    cert: fs.readFileSync('%(kongSslKey)s')
+    key: fs.readFileSync('%(kongSslKey)s'),
+    cert: fs.readFileSync('%(kongSslCert)s')
   },
 
   port: process.env.PORT || %(kongaPort)s,
