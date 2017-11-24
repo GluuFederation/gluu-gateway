@@ -98,9 +98,9 @@ class KongSetup(object):
     def configurePostgres(self):
         print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
         self.pgPwd = self.getPrompt('Enter password')
-        os.system(
-            'sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
 
     def configureOxd(self):
         self.installOxd = self.makeBoolean(self.getPrompt(
@@ -268,7 +268,8 @@ class KongSetup(object):
         print 'The next few questions are used to configure konga'
         self.kongaOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
-            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)', 'y'))
+            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)',
+            'y'))
         if flag:
             OPHost = ''
             AuthorizationRedirectUri = ''

@@ -41,7 +41,7 @@ module.exports = {
       user: process.env.DB_USER || 'postgres',
       password: process.env.DB_PASSWORD || '%(pgPwd)s',
       port: process.env.DB_PORT || 5432,
-      database: process.env.DB_DATABASE || 'oxd_kong_database',
+      database: process.env.DB_DATABASE || 'konga',
       poolSize: process.env.DB_POOLSIZE || 10,
       ssl: process.env.DB_SSL || false
     }
