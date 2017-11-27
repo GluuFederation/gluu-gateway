@@ -109,28 +109,30 @@
     | Kong Admin URL | Used to set kong admin URL used by konga |
 
 ## Start konga
-Hit url in browser.
+Login in konga
 
 ```
 https://your.domain.com:1338
 ```
 
+> Note: After login, Go to `connection` tab and create connections to Kong Nodes and select the one to use by clicking on the respective star icon.
+
 If you want to change the konga port then use configuration /opt/gluu-gateway/konga/config/local.js file.
 There are following properties which used to configure konga.
 
-    | Properties | Explanation |
-    |----------|-------------|
-    | kong_admin_url | Used to set default connection to kong admin url. |
-    | connections | Used to set the postgres connection porperties. |
-    | models | Used to set the database adapter for konga. By default is postgres. |
-    | session | Used to secret key for your JWT token. |
-    | ssl | Used to set ssl certificate path to run application on https. If you don't want https then comment this properties. |
-    | port | Used to set port number for run konga |
-    | environment | Used to set environment. By default is development. |
-    | log | Used to set konga log level. |
-    | oxdWeb | Used to set oxd-https-extensions url. |
-    | opHost | Used to set OpenId provider server for konga |
-    | oxdId | Used to set oxd id for konga |
-    | clientId | Used to set client id for konga |
-    | clientSecret | Used to set client secret for konga |
-    | oxdVersion | Used to set oxd server version |
+| Properties | Explanation |
+|----------|-------------|
+| kong_admin_url | Used to set default connection to kong admin url. |
+| connections | Used to set the postgres connection porperties. |
+| models | Used to set the database adapter for konga. By default is postgres. |
+| session | Used to secret key for your JWT token. |
+| ssl | Used to set ssl certificate path to run application on https. If you don't want https then comment this properties. |
+| port | Used to set port number for run konga |
+| environment | Used to set environment. By default is development. |
+| log | Used to set konga log level. |
+| oxdWeb | Used to set oxd-https-extensions url. |
+| opHost | Used to set OpenId provider server for konga |
+| oxdId | Used to set oxd id for konga |
+| clientId | Used to set client id for konga |
+| clientSecret | Used to set client secret for konga |
+| oxdVersion | Used to set oxd server version |
