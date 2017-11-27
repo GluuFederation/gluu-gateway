@@ -106,7 +106,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
             "email": "admin@some.domain",
             "firstName": "Arnold",
             "lastName": "Administrator",
-            "node_id": "http://gluu.local.org:8001",
+            "node_id": sails.config.kong_admin_url,
             "admin": true,
             "active" : true
         },
@@ -115,7 +115,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
             "email": "demo@some.domain",
             "firstName": "John",
             "lastName": "Doe",
-            "node_id": "http://gluu.local.org:8001",
+            "node_id": sails.config.kong_admin_url,
             "admin": false,
             "active" : true
         }

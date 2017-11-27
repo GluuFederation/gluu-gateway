@@ -84,7 +84,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
   seedData : [
     {
       "name" : "default",
-      "kong_admin_url": "http://gluu.local.org:8001",
+      "kong_admin_url": sails.config.kong_admin_url,
       "active": true
     }
   ]
