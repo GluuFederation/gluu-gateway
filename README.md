@@ -1,17 +1,17 @@
-# oxd-kong
+# gluu-gateway
 
 ## Introduction
 
-* The oxd-kong is the platform for protecting resources(Web application or API application) using the [Kong](https://getkong.org) plugins and proxy. This provides kong-GUI to registered the resources, add resource protection plugins, make custom UMA RPT policy script and provide a kong proxy to protect the resources using the registered plugin in resources. 
+* The gluu-gateway is the platform for protecting resources(Web application or API application) using the [Kong](https://getkong.org) plugins and proxy. This provides kong-GUI to registered the resources, add resource protection plugins, make custom UMA RPT policy script and provide a kong proxy to protect the resources using the registered plugin in resources.
 
-* Functions provided by oxd-kong 
+* Functions provided by gluu-gateway 
     1. Add Resources(API) in kong
     2. Config and add plugins in registered resources(API)
     3. Provide kong proxy endpoint to access and protect resources
     4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
  
 
-* oxd-kong has three components
+* gluu-gateway has three components
     1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
 
     2. **Plugins**: There are two Gluu Kong plugins for resource protection. 
@@ -20,7 +20,7 @@
  
         2. **[kong-uma-rs](/kong-uma-rs)**: kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
 
-    3. **[oxd-kong](https://github.com/GluuFederation/kong-plugins/tree/master/oxd-kong)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
+    3. **[gluu-gateway](https://github.com/GluuFederation/kong-plugins/tree/master/gluu-gateway)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
 
 ## Manually Installation
 
@@ -42,6 +42,8 @@
         It also required some luarocks packages. you need to install those package also.
         
         `luarocks install kong-uma-rs`
+
+        `luarocks install stringy`
         
         `luarocks install oxd-web-lua`
         
@@ -105,3 +107,30 @@
     | OP(OpenId provider) server | Used to set OpenId provider server for konga |
     | Authorization redirect uri | Used to set authorization redirect uri to authenticate konga |
     | Kong Admin URL | Used to set kong admin URL used by konga |
+
+## Start konga
+Hit url in browser.
+
+```
+https://your.domain.com:1338
+```
+
+If you want to change the konga port then use configuration /opt/gluu-gateway/konga/config/local.js file.
+There are following properties which used to configure konga.
+
+    | Properties | Explanation |
+    |----------|-------------|
+    | kong_admin_url | Used to set default connection to kong admin url. |
+    | connections | Used to set the postgres connection porperties. |
+    | models | Used to set the database adapter for konga. By default is postgres. |
+    | session | Used to secret key for your JWT token. |
+    | ssl | Used to set ssl certificate path to run application on https. If you don't want https then comment this properties. |
+    | port | Used to set port number for run konga |
+    | environment | Used to set environment. By default is development. |
+    | log | Used to set konga log level. |
+    | oxdWeb | Used to set oxd-https-extensions url. |
+    | opHost | Used to set OpenId provider server for konga |
+    | oxdId | Used to set oxd id for konga |
+    | clientId | Used to set client id for konga |
+    | clientSecret | Used to set client secret for konga |
+    | oxdVersion | Used to set oxd server version |
