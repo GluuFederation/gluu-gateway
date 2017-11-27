@@ -2,7 +2,7 @@
 
 ## Introduction
 
-* The gluu-gateway is the platform for protecting resources(Web application or API application) using the [Kong](https://getkong.org) plugins and proxy. This provides kong-GUI to registered the resources, add resource protection plugins, make custom UMA RPT policy script and provide a kong proxy to protect the resources using the registered plugin in resources.
+* The gluu-gateway is the platform for protecting resources(Web application or API application) using the [Kong](https://getkong.org) plugins and proxy with konga GUI.
 
 * Functions provided by gluu-gateway 
     1. Add Resources(API) in kong
@@ -20,7 +20,7 @@
  
         2. **[kong-uma-rs](/kong-uma-rs)**: kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
 
-    3. **[gluu-gateway](https://github.com/GluuFederation/kong-plugins/tree/master/gluu-gateway)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
+    3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
 
 ## Manually Installation
 
