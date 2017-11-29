@@ -394,7 +394,7 @@ class KongSetup(object):
     def migrateKong(self):
         self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
-    def installKongaService(self):
+    def startKongaService(self):
         self.logIt("Starting gluu-gateway %s..." % self.kongaService)
         self.run([self.cmd_sudo, "/etc/init.d/gluu-gateway", "start"])
 
@@ -424,10 +424,10 @@ if __name__ == "__main__":
         kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
-        kongSetup.installKongaService()
+        kongSetup.startKongaService()
         # kongSetup.configureRedis()
         # kongSetup.test()
-        # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
+        print "\n\n  gluu-gateway installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname + ":" + kongSetup.kongaPort
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
