@@ -1,0 +1,8 @@
+#kongGUI /opt/kong-gateway
+konga /opt/gluu-gateway
+#kong-openid-rp /opt/gluu-gateway
+#kong-uma-rs /opt/gluu-gateway
+#kongAPIGateway /opt/kong-pluings
+#oxd-kong /opt/kong-gateway
+setup /opt/gluu-gateway
+#doc /usr/share/docs/
