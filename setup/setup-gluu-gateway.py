@@ -395,16 +395,8 @@ class KongSetup(object):
         self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
     def installKongaService(self):
-        self.logIt("Installing node service %s..." % self.kongaService)
-
-        self.copyFile(os.path.join(self.template_folder, self.kongaService), self.osDefault)
-        self.run([self.cmd_chown, 'root:root', '%s/%s' % (self.osDefault, self.kongaService)])
-
-        self.run([
-            self.cmd_ln,
-            '-sf',
-            os.path.join(self.system_folder, self.kongaService),
-            '/etc/init.d/%s' % self.kongaService])
+        self.logIt("Starting gluu-gateway %s..." % self.kongaService)
+        self.run([self.cmd_sudo, "/etc/init.d/gluu-gateway", "start"])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -432,7 +424,7 @@ if __name__ == "__main__":
         kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
-        # kongSetup.installKongaService()
+        kongSetup.installKongaService()
         # kongSetup.configureRedis()
         # kongSetup.test()
         # print "\n\n  oxd Kong installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname
