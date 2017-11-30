@@ -21,7 +21,20 @@
         2. **[kong-uma-rs](/kong-uma-rs)**: kong-uma-rs is the Gluu UMA RS kong plugin. This allows you to protect your Resources(API) with the [UMA](https://kantarainitiative.org/confluence/display/uma/Home) OAuth-based access management protocol.
 
     3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
-
+    
+## Package Installation
+1. add our gluu repo:
+   \# echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
+   \# curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
+2. add openjdk-8 PPA:
+   \# add-apt-repository ppa:openjdk-r/ppa
+3. add Postgresql repo:
+   \# echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
+   \# wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+4. update your system and install the package:
+    \# apt-get update
+    \# apt-get install gluu-gateway
+    
 ## Manually Installation
 
 1. [Install kong](https://getkong.org/install) Version: 0.11.0
