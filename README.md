@@ -11,7 +11,7 @@
 
 * Gluu Gateway has four components:
 1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
-2. **UMA Plugin**: Turns your Kong server into an UMA RS
+2. **[UMA Plugin](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Turns your Kong server into an UMA RS
 3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin GUI for Kong--calls [Kong API's](https://getkong.org/docs/0.11.x/admin-api/)
 4. **[oxd](https://oxd.gluu.org)**: Optional OAuth client service--can be run locally or you can use an existing oxd server which is available via HTTPS.
 
@@ -32,3 +32,38 @@
    # apt-get update
    # apt-get install gluu-gateway
 ```
+
+
+## Run Setup script
+
+```
+# cd /opt/gluu-gateway/setup
+# python setup-gluu-gateway.py
+```
+
+You will be prompted to answer some questions. Just hit Enter to accept the default value, specified in square brackets. The following table should help you answer the questions correctly.
+
+| Question | Explanation |
+|----------|-------------|
+| Enter IP Address | IP Address for kong configuration |
+| Enter Kong hostname | Internet-facing hostname, FQDN, or CNAME whichever your organization follows to be used to generate certificates and metadata. Do not use an IP address or localhost. |
+| Country | Used to generate X.509 certificate for ____ |
+| State | Used to generate certificate for ____ |
+| City | Used to generate certificate for ____ |
+| Organization | Used to generate certificate for ____ |
+| email | Used to generate certificate for ____ |
+| Enter password | Used for postgres database configuration.If you have already postgres user password then enter existing password otherwise enter new password. |
+| Would you like to configure oxd-server? | If you have a pre-registered client, you can enter it here |
+| OP hostname | The hostname of your Gluu Sever (i.e. `your.domain.com`) |
+| License Id | For oxd-server |
+| Public key | For oxd-server |
+| Public password | For oxd-server |
+| License password | For oxd-server |
+| oxd web URL | Used to configure konga for the oxd-https-extension |
+| Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter manually enter existing client creds. |
+| client_id | Used to manually set client id for konga |
+| client_secret | Used to manually set client secret for konga |
+
+When you're done, point your browser to https://your.domain.com:1338
+
+> Note: After login, Go to `connection` tab and create connections to Kong Nodes and select the one to use by clicking on the respective star icon.

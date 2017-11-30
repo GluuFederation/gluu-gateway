@@ -38,59 +38,7 @@
 
     konga installation [click here](https://github.com/GluuFederation/kong-plugins/tree/master/konga)    
 
-## Installation using Setup script
-
-1. [Install kong](https://getkong.org/install) Version: 0.11.0
-
-    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
-
-    !! Note: kong supports two databases Postgres 9.4 and Cassandr
-
-2. Install GLUU-GATEWAY Package
-
-3. Run setup-gluu-gateway.py
-
-    Configuration is completed by running the setup-gluu-gateway.py script. This generates certificates and renders configuration files.
-
-    ```
-    # python setup-gluu-gateway.py
-    ```
-
-    You will be prompted to answer some questions. Just hit Enter to accept the default value specified in square brackets. The following table should help you answer the questions correctly.
-
-    | Question | Explanation |
-    |----------|-------------|
-    | Enter IP Address | IP Address for kong configuration |
-    | Enter Kong hostname | Internet-facing hostname, FQDN, or CNAME whichever your organization follows to be used to generate certificates and metadata. Do not use an IP address or localhost. |
-    | Country | Used to generate certificates |
-    | State | Used to generate certificates |
-    | City | Used to generate certificates |
-    | Organization | Used to generate certificates |
-    | email | Used to generate certificates |
-    | Enter password | Used for postgres database configuration.If you have already postgres user password then enter existing password otherwise enter new password. |
-    | Would you like to configure oxd-server? | Default is yes. You can configured oxd server or skip it. If you select yes then next 6 properties will ask to enter details |
-    | OP(OpenId provider) server | Used to set your OpenID provider server for oxd-server |
-    | License Id | Used to set License Id for oxd-server |
-    | Public key | Used to set Public key for oxd-server |
-    | Public password | Used to set Public password for oxd-server |
-    | License password | Used to set License password for oxd-server |
-    | Authorization redirect uri | Used to set Authorization redirect uri for oxd-server default configuration |
-    | oxd web URL | Used to set oxd-https-extensions. which used to create OpenID client for konga. |
-    | Would you like to generate client_id/client_secret? | Default is yes. You can make new OpenID Client or enter manually. |
-    | oxd_id | Used to set oxd id for konga |
-    | client_id | Used to set client id for konga |
-    | client_secret | Used to set client secret for konga |
-    | OP(OpenId provider) server | Used to set OpenId provider server for konga |
-    | Authorization redirect uri | Used to set authorization redirect uri to authenticate konga |
-    | Kong Admin URL | Used to set kong admin URL used by konga |
-
-4. Start konga
-
-    ```
-    https://your.domain.com:1338
-    ```
-
-    > Note: After login, Go to `connection` tab and create connections to Kong Nodes and select the one to use by clicking on the respective star icon.
+## Konga config
 
     If you want to change the konga port then use configuration /opt/gluu-gateway/konga/config/local.js file.
     There are following properties which used to configure konga.
