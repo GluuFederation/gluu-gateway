@@ -22,7 +22,7 @@
 
     3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  This provides GUI for communicating with [kong Admin API](https://getkong.org/docs/0.11.x/admin-api/) to add resources(API), add a plugin, UMA RPT policy script and add this script into the scopes.
     
-## Package Installation
+## Package Installation using Gluu repo
 1. add our gluu repo:
    \# echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
    \# curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
