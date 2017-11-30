@@ -70,7 +70,7 @@ class KongSetup(object):
         self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
         self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
 
-        self.KongaService = "gluu-gateway"
+        self.kongaService = "gluu-gateway"
 
         # oxd kong Property values
         self.kongaPort = '1338'
@@ -395,8 +395,8 @@ class KongSetup(object):
         self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
     def startKongaService(self):
-        self.logIt("Starting gluu-gateway %s..." % self.kongaService)
-        self.run([self.cmd_sudo, "/etc/init.d/gluu-gateway", "start"])
+        self.logIt("Starting %s..." % self.kongaService)
+        self.run([self.cmd_sudo, "/etc/init.d/%s" % self.kongaService, "start"])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -405,9 +405,6 @@ class KongSetup(object):
         except:
             self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
             self.logIt(traceback.format_exc(), True)
-
-    def test(self):
-        return True
 
 
 if __name__ == "__main__":
@@ -425,9 +422,7 @@ if __name__ == "__main__":
         kongSetup.migrateKong()
         kongSetup.startKong()
         kongSetup.startKongaService()
-        # kongSetup.configureRedis()
-        # kongSetup.test()
-        print "\n\n  gluu-gateway installation successful! Point your browser to https://%s\n\n" % kongSetup.hostname + ":" + kongSetup.kongaPort
+        print "\n\n  gluu-gateway installation successful! Point your browser to https://%s\n\n" % (kongSetup.hostname + ":" + kongSetup.kongaPort)
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
