@@ -11,6 +11,7 @@ import string
 import shutil
 import requests
 import json
+import getpass
 
 
 class KongSetup(object):
@@ -97,7 +98,7 @@ class KongSetup(object):
 
     def configurePostgres(self):
         print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
-        self.pgPwd = self.getPrompt('Enter password')
+        self.pgPwd = getpass.getpass()
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
@@ -112,8 +113,6 @@ class KongSetup(object):
             self.oxdServerPublicKey = self.getPrompt('Public key')
             self.oxdServerPublicPassword = self.getPrompt('Public password')
             self.oxdServerLicensePassword = self.getPrompt('License password')
-            self.oxdServerAuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
-                                                                    'https://' + self.hostname + ':' + self.kongaPort)
 
             self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
             self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
@@ -276,14 +275,11 @@ class KongSetup(object):
 
             if self.installOxd:
                 OPHost = self.getPrompt('OP(OpenId provider) server', self.kongaOPHost)
-                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
-                                                          self.oxdServerAuthorizationRedirectUri)
             else:
                 OPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
                 self.kongaOPHost = OPHost
-                AuthorizationRedirectUri = self.getPrompt('Authorization redirect uri',
-                                                          'https://' + self.hostname + ':' + self.kongaPort)
 
+            AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
                 'op_host': OPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
@@ -292,16 +288,21 @@ class KongSetup(object):
                 'client_name': 'konga_client'
             }
             print 'Making client...'
-            res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload),
-                                headers={'content-type': 'application/json'})
-            resJson = json.loads(res.text)
+            try:
+                res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'})
+                resJson = json.loads(res.text)
 
-            if resJson['status'] == 'ok':
-                self.kongaOxdId = resJson['data']['oxd_id']
-                self.kongaClientSecret = resJson['data']['client_secret']
-                self.kongaClientId = resJson['data']['client_id']
-            else:
-                print 'Error: Please check oxd-server and oxd-https log'
+                if resJson['status'] == 'ok':
+                    self.kongaOxdId = resJson['data']['oxd_id']
+                    self.kongaClientSecret = resJson['data']['client_secret']
+                    self.kongaClientId = resJson['data']['client_id']
+                else:
+                    self.logIt('Error: Please check oxd-server and oxd-https log')
+                    self.logIt('OXD Error %s' % resJson)
+                    sys.exit()
+            except requests.exceptions.HTTPError as e:
+                self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb)
+                self.logIt('%s' % e)
                 sys.exit()
         else:
             self.kongaOxdId = self.getPrompt('oxd_id')
@@ -347,7 +348,7 @@ class KongSetup(object):
 
     def promptForProperties(self):
         self.ip = self.get_ip()
-        self.hostname = self.getPrompt('Enter Kong hostname', self.detectHostname())
+        self.hostname = self.getPrompt('Enter hostname', self.detectHostname())
         print 'The next few questions are used to generate the Kong self-signed certificate'
         self.countryCode = self.getPrompt('Country')
         self.state = self.getPrompt('State')
