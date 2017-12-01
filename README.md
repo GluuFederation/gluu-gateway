@@ -31,7 +31,10 @@
    # echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
    # wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
-4. Update your system and install the package:
+4. Add Kong repo:
+   # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
+   
+5. Update your system and install the package:
    # apt-get update
    # apt-get install gluu-gateway
 ```
