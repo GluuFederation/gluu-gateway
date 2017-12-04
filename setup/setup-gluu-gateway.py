@@ -265,23 +265,22 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         print 'The next few questions are used to configure konga'
+
+        if not self.installOxd:
+            self.kongaOPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
+
         self.kongaOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
             'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)',
             'y'))
+
         if flag:
             OPHost = ''
             AuthorizationRedirectUri = ''
 
-            if self.installOxd:
-                OPHost = self.getPrompt('OP(OpenId provider) server', self.kongaOPHost)
-            else:
-                OPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
-                self.kongaOPHost = OPHost
-
             AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
-                'op_host': OPHost,
+                'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'scope': ['openid', 'email', 'profile', 'uma_protection'],
                 'grant_types': ['authorization_code'],
