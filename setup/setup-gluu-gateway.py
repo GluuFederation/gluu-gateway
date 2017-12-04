@@ -97,7 +97,7 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        print '(Note: If you already have postgres user with password then enter existing password otherwise enter new password)'
+        print '(Note: If you already have user(i:e postgres) with password then enter existing password otherwise enter new password)'
         self.pgPwd = getpass.getpass()
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
