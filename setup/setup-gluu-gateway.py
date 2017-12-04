@@ -264,7 +264,7 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
-        print 'The next few questions are used to configure konga'
+        print 'The next few questions are used to configure konga. (Note: Make sure oxd web url(oxd-https-extension) is in running state. If not started then start it manually)'
 
         if not self.installOxd:
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
@@ -275,9 +275,6 @@ class KongSetup(object):
             'y'))
 
         if flag:
-            OPHost = ''
-            AuthorizationRedirectUri = ''
-
             AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
