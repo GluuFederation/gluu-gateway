@@ -70,4 +70,47 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 
 When you're done, point your browser to https://your.domain.com:1338
 
-> Note: After login, Go to `connection` tab and create connections to Kong Nodes and select the one to use by clicking on the respective star icon.
+> Note: After login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
+
+## Configuration
+
+### Configure kong
+* You can configure kong by using kong.conf file.
+
+```
+/etc/kong/kong.conf
+```
+* Start/Stop/Restart
+```
+ # kong [restart|stop|restart]
+```
+
+### Configure konga
+* You can configure konga by setting properties in local.js file. This is used to set port, oxd, OP and client settings.
+```
+/opt/gluu-gateway/konga/config/local.js
+```
+* Start/Stop/Restart/Status
+```
+ # /etc/init.d/gluu-gateway [start|stop|restart|status]
+```
+
+### Configure oxd
+
+* Configure oxd-server
+```
+/opt/oxd-server/conf/oxd-conf.json
+```
+* Start/Stop/Restart/Status oxd-server
+```
+ # /etc/init.d/oxd-server [start|stop|restart|status]
+```
+
+* Configure oxd-https-extension
+```
+/opt/oxd-https-extension/lib/oxd-https.yml
+```
+* Start/Stop/Restart/Status oxd-https-extension
+```
+ # /etc/init.d/oxd-https-extension [start|stop|restart|status]
+```
