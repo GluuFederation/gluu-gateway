@@ -27,9 +27,17 @@ get_pid() {
 	fi
 }
 
+start_dependencies () {
+        service postgresql start
+        service kong start
+        service oxd-server start
+        service oxd-https-extension start
+}
+
 do_start () {        
 	PID_NUM=`get_pid`
-        if [ "x$PID_NUM" = "x" ]; then                
+        if [ "x$PID_NUM" = "x" ]; then         
+                start_dependencies
                 echo "Starting $SERVICE_NAME ..."                
 
 		cd $BASEDIR
