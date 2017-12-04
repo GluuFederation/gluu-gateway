@@ -97,7 +97,7 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        print '(Note: If you have already postgres user password then enter existing password otherwise enter new password)'
+        print '(Note: If you already have postgres user with password then enter existing password otherwise enter new password)'
         self.pgPwd = getpass.getpass()
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
@@ -107,7 +107,7 @@ class KongSetup(object):
         self.installOxd = self.makeBoolean(self.getPrompt(
             'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
         if self.installOxd:
-            self.kongaOPHost = self.getPrompt('OP(OpenId provider) server')
+            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
             self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
             self.oxdServerLicenseId = self.getPrompt('License Id')
             self.oxdServerPublicKey = self.getPrompt('Public key')
@@ -267,9 +267,9 @@ class KongSetup(object):
         print 'The next few questions are used to configure konga'
 
         if not self.installOxd:
-            self.kongaOPHost = self.getPrompt('OP(OpenId provider) server', 'https://' + self.hostname)
+            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
-        self.kongaOxdWeb = self.getPrompt('oxd web URL', 'http://%s:8080' % self.hostname)
+        self.kongaOxdWeb = self.getPrompt('oxd web url', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
             'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)',
             'y'))
@@ -308,7 +308,7 @@ class KongSetup(object):
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
-        self.kongaKongAdminWebURL = self.getPrompt('Kong Admin URL', 'http://' + self.hostname + ':8001')
+        self.kongaKongAdminWebURL = 'http://' + self.hostname + ':8001'
         # Render kongAPI property
         self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
                  self.distKongaConfigPath, os.environ.copy(), True)
@@ -347,13 +347,13 @@ class KongSetup(object):
 
     def promptForProperties(self):
         self.ip = self.get_ip()
-        self.hostname = self.getPrompt('Enter hostname', self.detectHostname())
+        self.hostname = self.getPrompt('Enter kong hostname', self.detectHostname())
         print 'The next few questions are used to generate the Kong self-signed certificate'
         self.countryCode = self.getPrompt('Country')
         self.state = self.getPrompt('State')
         self.city = self.getPrompt('City')
         self.orgName = self.getPrompt('Organization')
-        self.admin_email = self.getPrompt('email')
+        self.admin_email = self.getPrompt('Email')
 
     def renderKongConfigure(self):
         self.renderTemplateInOut(self.distKongConfigFile, self.template_folder, self.distKongConfigFolder)
