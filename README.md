@@ -15,9 +15,6 @@
 3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin GUI for Kong--calls [Kong API's](https://getkong.org/docs/0.11.x/admin-api/)
 4. **[oxd](https://oxd.gluu.org)**: Optional OAuth client service--can be run locally or you can use an existing oxd server which is available via HTTPS.
 
-## Prerequisites
-- [Kong installation](https://getkong.org/)
-
 ## Package Installation using Gluu repo
 ```
 1. Add Gluu repo:
