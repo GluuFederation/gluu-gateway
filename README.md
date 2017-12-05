@@ -1,12 +1,12 @@
-## Introduction
+## Gluu Gateway
 
 * The Gluu Gateway is the platform for protecting resources (Web application or API application) using the [Kong](https://getkong.org) plugins and proxy with konga GUI.
 
 * Functions provided by gluu-gateway
-    1. Add Resources(API) in kong
-    2. Config and add plugins in registered resources(API)
-    3. Provide kong proxy endpoint to access and protect resources
-    4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
+1. Add Resources(API) in kong
+2. Config and add plugins in registered resources(API)
+3. Provide kong proxy endpoint to access and protect resources
+4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
 
 
 * Gluu Gateway has four components:
@@ -56,7 +56,7 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 | Organization | Used to generate certificate for kong and konga. |
 | Email | Used to generate certificate for kong and konga. |
 | Password | Used for postgres database configuration. If you have already database user(i:e postgres) with password then enter existing password otherwise enter new password. |
-| Would you like to configure oxd-server? | If you have a pre-registered client, you can enter it here. |
+| Would you like to configure oxd-server? | If you have already have oxd-server and oxd-https-extension then skip this configuration. |
 | OP hostname | The hostname of your Gluu Sever (i.e. `your.domain.com`). |
 | License Id | For oxd-server |
 | Public key | For oxd-server |
