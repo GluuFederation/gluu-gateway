@@ -31,7 +31,7 @@ check_service_running () {
         if [ "$1" = "postgresql" ]; then
                 PID=`cat /var/run/postgresql/10-main.pid`
         else
-                PID=`service $1 status|tail -1 |tr -d "\^Ma-zA-Z:[]()/\.\- "`
+                PID=`service $1 status|tail -1 |tr -d "a-zA-Z:[]()/\.\- "`
         fi
         if [ "x$PID" = "x" ]; then
                 echo "Service $1 failed to start..."
