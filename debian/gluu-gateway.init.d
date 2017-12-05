@@ -27,11 +27,34 @@ get_pid() {
 	fi
 }
 
+check_service_running () {
+        if [ "$1" = "postgresql" ]; then
+                PID=`cat /var/run/postgresql/10-main.pid`
+        else
+                PID=`service $1 status|tail -1 |tr -d "\^Ma-zA-Z:[]()/\.\- "`
+        fi
+        if [ "x$PID" = "x" ]; then
+                echo "Service $1 failed to start..."
+                echo "Exiting..."
+                exit 255
+        else
+                echo "Service $1 started successfully..."
+                echo "PID: [$PID]"
+        fi
+}
+
 start_dependencies () {
-        service postgresql start
-        service kong start
-        service oxd-server start
-        service oxd-https-extension start
+        service postgresql start > /dev/null 2>&1
+        check_service_running postgresql
+
+        service kong start > /dev/null 2>&1
+        check_service_running kong
+
+        service oxd-server start > /dev/null 2>&1
+        check_service_running oxd-server
+
+        service oxd-https-extension start > /dev/null 2>&1
+        check_service_running oxd-https-extension
 }
 
 do_start () {        
