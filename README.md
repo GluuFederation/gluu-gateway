@@ -82,7 +82,7 @@ When you're done, point your browser to https://your.domain.com:1338
 ```
 * Start/Stop/Restart
 ```
- # kong [restart|stop|restart]
+ # service kong [restart|stop|restart|status]
 ```
 
 ### Configure konga
@@ -92,7 +92,7 @@ When you're done, point your browser to https://your.domain.com:1338
 ```
 * Start/Stop/Restart/Status
 ```
- # /etc/init.d/gluu-gateway [start|stop|restart|status]
+ # service gluu-gateway [start|stop|restart|status]
 ```
 
 ### Configure oxd
@@ -103,7 +103,7 @@ When you're done, point your browser to https://your.domain.com:1338
 ```
 * Start/Stop/Restart/Status oxd-server
 ```
- # /etc/init.d/oxd-server [start|stop|restart|status]
+ # service oxd-server [start|stop|restart|status]
 ```
 
 * Configure oxd-https-extension
@@ -112,5 +112,5 @@ When you're done, point your browser to https://your.domain.com:1338
 ```
 * Start/Stop/Restart/Status oxd-https-extension
 ```
- # /etc/init.d/oxd-https-extension [start|stop|restart|status]
+ # service oxd-https-extension [start|stop|restart|status]
 ```
