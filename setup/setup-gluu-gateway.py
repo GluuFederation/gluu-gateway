@@ -81,7 +81,7 @@ class KongSetup(object):
         self.kongaClientId = ''
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
-        self.kongaKongAdminWebURL = ''
+        self.kongaKongAdminWebURL = 'http://localhost:8001'
         self.kongaOxdVersion = 'Version 3.1.1'
 
         # oxd licence configuration
@@ -97,7 +97,9 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        print '(Note: If you already have user(i:e postgres) with password then enter existing password otherwise enter new password)'
+        msg = """'If you already have a postgres user and database in the
+        Postgres DB, then enter existing password, otherwise enter new password: """
+        print msg
         pg = self.getPW()
         self.pgPwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
@@ -265,16 +267,17 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
-        print 'The next few questions are used to configure konga. (Note: Make sure oxd web url(oxd-https-extension) is in running state. If not started then start it manually)'
-
+        msg = """The next few questions are used to configure Konga.
+        If you are connecting to an existing oxd-https server on the network,
+        make sure it's available from this server.
+        """
+        print msg
         if not self.installOxd:
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd web url', 'http://%s:8080' % self.hostname)
         flag = self.makeBoolean(self.getPrompt(
-            'Would you like to generate client_id/client_secret? (y - generate, n - enter client_id and client_secret manually)',
-            'y'))
-
+            "Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)', 'y'))
         if flag:
             AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
@@ -284,7 +287,7 @@ class KongSetup(object):
                 'grant_types': ['authorization_code'],
                 'client_name': 'konga_client'
             }
-            print 'Making client...'
+            self.logIt('Creating konga oxd client used to call oxd-https endpoints')
             try:
                 res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'})
                 resJson = json.loads(res.text)
@@ -294,19 +297,21 @@ class KongSetup(object):
                     self.kongaClientSecret = resJson['data']['client_secret']
                     self.kongaClientId = resJson['data']['client_id']
                 else:
-                    self.logIt('Error: Please check oxd-server and oxd-https log')
-                    self.logIt('OXD Error %s' % resJson)
+                    msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
+                    Please check oxd-server and oxd-https logs."""
+                    pring msg
+                    self.logIt(msg, True)
+                    self.logIt('OXD Error %s' % resJson, True)
                     sys.exit()
             except requests.exceptions.HTTPError as e:
-                self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb)
-                self.logIt('%s' % e)
+                self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb, True)
+                self.logIt('%s' % e, True)
                 sys.exit()
         else:
             self.kongaOxdId = self.getPrompt('oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
-        self.kongaKongAdminWebURL = 'http://' + self.hostname + ':8001'
         # Render kongAPI property
         self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
                  self.distKongaConfigPath, os.environ.copy(), True)
@@ -346,7 +351,7 @@ class KongSetup(object):
     def promptForProperties(self):
         self.ip = self.get_ip()
         self.hostname = self.getPrompt('Enter kong hostname', self.detectHostname())
-        print 'The next few questions are used to generate the Kong self-signed certificate'
+        print 'The next few questions are used to generate the Kong self-signed HTTPS certificate'
         self.countryCode = self.getPrompt('Country')
         self.state = self.getPrompt('State')
         self.city = self.getPrompt('City')
@@ -420,7 +425,8 @@ if __name__ == "__main__":
         kongSetup.migrateKong()
         kongSetup.startKong()
         kongSetup.startKongaService()
-        print "\n\n  gluu-gateway installation successful! Point your browser to https://%s\n\n" % (kongSetup.hostname + ":" + kongSetup.kongaPort)
+        print """\n\nGluu Gateway configuration successful!!!
+            Point your browser to %s\n\n""" % self.kongaKongAdminWebURL
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
