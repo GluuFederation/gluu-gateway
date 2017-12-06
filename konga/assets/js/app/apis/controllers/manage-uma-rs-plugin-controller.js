@@ -27,7 +27,7 @@
               conditions: [
                 {
                   httpMethods: [{text: 'GET'}, {text: 'POST'}],
-                  scopes: [
+                  scope_expression: [
                     {text: 'http://example.com/dev/actions'}
                   ],
                   ticketScopes: []
@@ -128,7 +128,7 @@
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
-                scopes: [
+                scope_expression: [
                   {text: 'http://example.com/view'}
                 ],
                 ticketScopes: []
@@ -199,17 +199,20 @@
         function makeJSON(data) {
           try {
             var model = angular.copy(data);
+            var dIndex = 0;
+            var sData = [];
             model.config.protection_document.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
                 var str = '{%s}'
                 for (var i = 1; i <= parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
                   var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val()
                   var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
-                    return o.text;
+                    sData.push(o.text);
+                    return {"var": dIndex++};
                   });
                   var s = ""
                   scopes.forEach(function (item) {
-                    s += "\"" + item + "\"" + ","
+                    s +=  JSON.stringify(item) + ","
                   });
                   str = str.replace('%s', `"${op}":[${s} {%s}]`);
 
@@ -221,8 +224,8 @@
                 cond.httpMethods = cond.httpMethods.map(function (o) {
                   return o.text;
                 });
-                str = str.replace(', {%s}', '')
-                cond.scopes = JSON.parse(str);
+                str = str.replace(', {%s}', '');
+                cond.scopes = {rule: JSON.parse(str), data: sData};
 
                 if (cond.ticketScopes.length > 0) {
                   cond.ticketScopes = cond.ticketScopes.map(function (o) {
