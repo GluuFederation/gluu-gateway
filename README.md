@@ -32,7 +32,7 @@
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 
 5. Add node repo:
-   #curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+   # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
    
 6. Update your system and install the package:
    # apt-get update
