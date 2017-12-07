@@ -2,18 +2,41 @@
 
 * The Gluu Gateway is the platform for protecting resources (Web application or API application) using the [Kong](https://getkong.org) plugins and proxy with konga GUI.
 
-* Functions provided by gluu-gateway
-1. Add Resources(API) in kong
-2. Config and add plugins in registered resources(API)
-3. Provide kong proxy endpoint to access and protect resources
-4. Make [custom UMA RPT Policy](https://gluu.org/docs/ce/3.1.1/admin-guide/uma/#uma-rpt-authorization-policies)
-
-
 * Gluu Gateway has four components:
 1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
 2. **[UMA Plugin](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Protect your resources by using UMA resource protection.
 3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin GUI for calls [Kong admin API's](https://getkong.org/docs/0.11.x/admin-api/)
 4. **[oxd](https://oxd.gluu.org)**: (optional) OAuth client service. It can be run locally or you can use an existing oxd server which is available via HTTPS.
+
+## Features
+
+1. Gluu-Gateway uses kong as the proxy gateway. So, It inherits all the features of kong.
+
+![Orchestrate Common Functionality](doc/kong-feature.png)
+
+| Legacy Architecture | Kong Architecture |
+|---------------------|-------------------|
+| :x: Common functionality is duplicated across multiple services | :white_check_mark: Kong centralizes and unifies functionality into one place |
+| :x: Systems tend to be monolithic and hard to maintain | :white_check_mark: Build efficient distributed architectures ready to scale |
+| :x: Difficult to expand without impacting other services | :white_check_mark: Expand functionality from one place with a simple command |
+| :x: Productivity is inefficient because of system constraints | :white_check_mark: Your team is focused on the product, Kong does the REST |
+
+2. Gluu gateway provides KONGA GUI to operates kong very easily.
+
+![konga](doc/konga.png)
+
+- Manage all Kong Admin API Objects.
+- OAuth 2.0 authentication.
+- Import Consumers from remote sources (Databases, files, APIs etc.).
+- Manage multiple Kong Nodes.
+- Backup, restore and migrate Kong Nodes using Snapshots.
+- Monitor Node and API states using health checks.
+- Allow to configure kong-uma-rs plugin.
+
+3. Gluu-Gateway provides custom kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to registere and validate the resources.
+
+4. Gluu-Gateway uses oxd-server to dealing with OP server for authentication and resource management.
+
 
 ## Package Installation using Gluu repo
 ```

@@ -97,7 +97,7 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        msg = """'If you already have a postgres user and database in the
+        msg = """If you already have a postgres user and database in the
         Postgres DB, then enter existing password, otherwise enter new password: """
         print msg
         pg = self.getPW()
@@ -276,8 +276,7 @@ class KongSetup(object):
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd web url', 'http://%s:8080' % self.hostname)
-        flag = self.makeBoolean(self.getPrompt(
-            "Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)', 'y'))
+        flag = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
         if flag:
             AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
@@ -299,7 +298,7 @@ class KongSetup(object):
                 else:
                     msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
                     Please check oxd-server and oxd-https logs."""
-                    pring msg
+                    print msg
                     self.logIt(msg, True)
                     self.logIt('OXD Error %s' % resJson, True)
                     sys.exit()
@@ -426,7 +425,7 @@ if __name__ == "__main__":
         kongSetup.startKong()
         kongSetup.startKongaService()
         print """\n\nGluu Gateway configuration successful!!!
-            Point your browser to %s\n\n""" % self.kongaKongAdminWebURL
+            Point your browser to https://%s\n\n""" % (kongSetup.hostname + ":" + kongSetup.kongaPort)
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
