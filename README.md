@@ -30,8 +30,11 @@
 
 4. Add Kong repo:
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
+
+5. Add node repo:
+   #curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
    
-5. Update your system and install the package:
+6. Update your system and install the package:
    # apt-get update
    # apt-get install gluu-gateway
 ```
