@@ -424,8 +424,7 @@ if __name__ == "__main__":
         kongSetup.migrateKong()
         kongSetup.startKong()
         kongSetup.startKongaService()
-        print """\n\nGluu Gateway configuration successful!!!
-            Point your browser to https://%s\n\n""" % (kongSetup.hostname + ":" + kongSetup.kongaPort)
+        print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
