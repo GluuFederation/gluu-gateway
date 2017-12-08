@@ -94,7 +94,10 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 | client_id | Used to manually set client id for konga. |
 | client_secret | Used to manually set client secret for konga. |
 
-When you're done, point your browser to https://your.domain.com:1338
+```
+Gluu Gateway configuration successful!!! https://localhost:1338
+```
+When you got this above message that means installation done successful. Next, process is to make tunnel to `https://localhost:1338` and use konga.
 
 > Note: After login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
 
