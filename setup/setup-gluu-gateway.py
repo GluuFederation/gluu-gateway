@@ -257,7 +257,7 @@ class KongSetup(object):
         # install lua rocks
         self.run([self.cmd_sudo, 'luarocks', 'install', 'stringy'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'lua-cjson'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'lua-cjson2'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
 
