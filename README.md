@@ -97,7 +97,7 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 ```
 Gluu Gateway configuration successful!!! https://localhost:1338
 ```
-When you got this above message that means installation done successful. Next, process is to make tunnel to `https://localhost:1338` and use konga.
+When you got this above message that means installation done successful. Next, process is to make tunnel to `https://localhost:1338` and use konga. If your port is open then you use konga directly in browser i:e `https://hostname:1338`.
 
 > Note: After login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
 
