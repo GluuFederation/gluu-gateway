@@ -390,9 +390,6 @@ class KongSetup(object):
     def startKong(self):
         self.run([self.cmd_sudo, "kong", "start"])
 
-    def stopKong(self):
-        self.run([self.cmd_sudo, "kong", "stop"])
-
     def migrateKong(self):
         self.run([self.cmd_sudo, "kong", "migrations", "up"])
 
@@ -420,7 +417,6 @@ if __name__ == "__main__":
         kongSetup.configKonga()
         kongSetup.renderKongConfigure()
         kongSetup.installSample()
-        kongSetup.stopKong()
         kongSetup.migrateKong()
         kongSetup.startKong()
         kongSetup.startKongaService()
