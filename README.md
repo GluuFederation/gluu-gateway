@@ -12,8 +12,6 @@
 
 1. Gluu-Gateway uses kong as the proxy gateway. So, It inherits all the features of kong.
 
-![Orchestrate Common Functionality](doc/kong-feature.png)
-
 | Legacy Architecture | Kong Architecture |
 |---------------------|-------------------|
 | :x: Common functionality is duplicated across multiple services | :white_check_mark: Kong centralizes and unifies functionality into one place |
