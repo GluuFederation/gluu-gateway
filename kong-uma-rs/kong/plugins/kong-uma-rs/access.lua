@@ -1,13 +1,12 @@
 local oxd = require "kong.plugins.kong-uma-rs.helper"
 local responses = require "kong.tools.responses"
-local stringy = require "stringy"
 
 local function isempty(s)
   return s == nil or s == ''
 end
 
 local function removeBearer(authorization)
-  if authorization ~= nil and not isempty(authorization) and stringy.startswith(authorization, "Bearer ") then
+  if authorization ~= nil and not isempty(authorization) and (string.sub(authorization, 0, 8) == "Bearer ") then
     return string.sub(authorization, 8)
   end
   return ""

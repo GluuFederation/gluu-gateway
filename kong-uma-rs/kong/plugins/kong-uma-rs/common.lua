@@ -1,6 +1,5 @@
 local cjson = require "cjson"
 local json = require "JSON"
-local stringy = require "stringy"
 local _M = {}
 
 function _M.isempty(s)
@@ -21,7 +20,7 @@ function _M.isHttps(url)
         return false
     end
 
-    if not stringy.startswith(url, "https://") then
+    if not (string.sub(url, 0, 7) == "https://") then
         ngx.log(ngx.ERR, "Invalid " .. url .. ". It does not start from 'https://', value: " .. url)
         return false
     end

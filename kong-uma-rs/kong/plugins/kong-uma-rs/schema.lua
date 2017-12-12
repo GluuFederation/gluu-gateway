@@ -1,4 +1,3 @@
-local stringy = require "stringy"
 local oxd = require "kong.plugins.kong-uma-rs.helper"
 
 local function isempty(s)
@@ -41,7 +40,7 @@ local function uma_server_host_validator(given_value, given_config)
         return false
     end
 
-    if not stringy.startswith(given_value, "https://") then
+    if not (string.sub(given_value, 0, 7) == "https://") then
         ngx.log(ngx.ERROR, "Invalid uma_server_host. It does not start from 'https://', value: " .. given_value)
         return false
     end
