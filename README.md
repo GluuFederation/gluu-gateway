@@ -145,7 +145,7 @@ When you got this above message that means installation done successful. Next, p
 
 ## KONGA Guide
 
-> Note: After login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
+> Note: After installation and first time login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
 
 ### 1. Dashboard
 
