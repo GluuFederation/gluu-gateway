@@ -15,25 +15,26 @@
 | Legacy Architecture | Kong Architecture |
 |---------------------|-------------------|
 | :x: Common functionality is duplicated across multiple services | :white_check_mark: Kong centralizes and unifies functionality into one place |
-| :x: Systems tend to be monolithic and hard to maintain | :white_check_mark: Build efficient distributed architectures ready to scale |
+| :x: Systems tend to be monolithic and hard to maintain | :white_check_mark: Build efficiently distributed architectures ready to scale |
 | :x: Difficult to expand without impacting other services | :white_check_mark: Expand functionality from one place with a simple command |
 | :x: Productivity is inefficient because of system constraints | :white_check_mark: Your team is focused on the product, Kong does the REST |
 
 2. Gluu gateway provides KONGA GUI to operates kong very easily.
-
 ![konga](doc/konga.png)
 
-- Manage all Kong Admin API Objects.
-- OAuth 2.0 authentication.
-- Import Consumers from remote sources (Databases, files, APIs etc.).
-- Manage multiple Kong Nodes.
-- Backup, restore and migrate Kong Nodes using Snapshots.
-- Monitor Node and API states using health checks.
-- Allow to configure kong-uma-rs plugin.
-
-3. Gluu-Gateway provides custom kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to registere and validate the resources.
-
-4. Gluu-Gateway uses oxd-server to dealing with OP server for authentication and resource management.
+3. Dashboard to show all application configuration details in one
+4. Add API(APIs which user want to protect by using kong plugins)
+5. Protect API by kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to register and validate the resources.
+6. Protect API by kong's default plugins. Example: basic-auth, key-auth, etc.
+7. Manage all Kong Admin API Objects.
+8. Access API by kong proxy and authenticated by security plugins
+9. OAuth 2.0 authentication.
+10. Import Consumers from remote sources (Databases, files, APIs etc.).
+11. Manage multiple Kong Nodes.
+12. Backup, restore and migrate Kong Nodes using Snapshots.
+13. Monitor Node and API states using health checks.
+14. Allow to configure kong-uma-rs plugin.
+15. Gluu-Gateway uses oxd-server to dealing with OP server for authentication and resource management.
 
 
 ## Package Installation using Gluu repo
@@ -141,3 +142,74 @@ When you got this above message that means installation done successful. Next, p
 ```
  # service oxd-https-extension [start|stop|restart|status]
 ```
+
+## KONGA Guide
+
+> Note: After login, Go to `connection` tab and select the one to use by clicking on the respective star icon.
+
+### 1. Dashboard
+
+Dashboard section shows all application configuration details. You can see oxd and client details used by konga.
+![dashboard](doc/1_dashboard.png)
+
+### 2. Info
+
+Info section shows generic details about the kong node.
+![info](doc/2_info.png)
+
+### 3. APIS
+
+The API object describes an API that's being exposed by Kong. Kong needs to know how to retrieve the API when a consumer is calling it from the Proxy port. Each API object must specify a request host, a request path or both. Kong will proxy all requests to the API to the specified upstream URL.
+![apis](doc/3_apis.png)
+
+Add your API by using `+ ADD NEW API` button. Add form shows details of every field.
+![api_add](doc/3_api_add.png)
+
+For Add UMA RS plugin click on `SECURITY` option in apis list.
+![api_uma_rs](doc/3_add_uma_rs.png)
+
+### 4. Consumers
+
+The Consumer object represents a consumer - or a user - of an API. You can either rely on Kong as the primary datastore, or you can map the consumer list with your database to keep consistency between Kong and your existing primary datastore.
+![consumers](doc/4_consumers.png)
+
+Add consumers by using `+ CREATE CONSUMER` button. Add form shows details of every field.
+![consumers_add](doc/4_customer_add.png)
+
+### 5. Plugins
+
+A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong, like Authentication or Rate Limiting for example.
+![plugins](doc/5_plugins.png)
+
+Add Plugins by using `+ ADD GLOBAL PLUGINS` button.
+![plugins_add](doc/5_plugins_add.png)
+
+### 6. Upstreams
+
+The upstream object represents a virtual hostname and can be used to loadbalance incoming requests over multiple services (targets). So for example an upstream named service.v1.xyz with an API object created with an upstream_url=https://service.v1.xyz/some/path. Requests for this API would be proxied to the targets defined within the upstream.
+![upstreams](doc/6_upstream.png)
+
+Add Plugins by using `+ CREATE UPSTREAM` button.
+![plugins_add](doc/6_upstream_add.png)
+
+### 7. CERTIFICATE
+
+A certificate object represents a public certificate/private key pair for an SSL certificate. These objects are used by Kong to handle SSL/TLS termination for encrypted requests. Certificates are optionally associated with SNI objects to tie a cert/key pair to one or more hostnames.
+![cert](doc/7_cert.png)
+
+Add Plugins by using `+ CREATE CERTIFICATE` button.
+![cert_add](doc/7_cert_add.png)
+
+### 8. Connections
+
+Create connections to Kong Nodes and select the one to use by clicking on the respective star icon.
+![conn](doc/8_conn.png)
+
+Add Plugins by using `+ NEW CONNECTION` button.
+![conn_add](doc/8_conn_add.png)
+
+### 9. Snapshots
+
+Take snapshots of currently active nodes.
+All APIs, Plugins, Consumers, Upstreams and Targetswill be saved and available for later import.
+![snapshot](doc/9_snapshot.png)
