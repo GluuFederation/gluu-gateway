@@ -87,7 +87,7 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 | Public key | For oxd-server |
 | Public password | For oxd-server |
 | License password | For oxd-server |
-| oxd web url | Used to configure konga for the oxd-https-extension. Make sure oxd web url(oxd-https-extension) is in the running state, if not then start it manually. |
+| oxd https url | Used to configure konga for the oxd-https-extension. Make sure oxd web url(oxd-https-extension) is in the running state, if not then start it manually. |
 | Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter manually enter existing client credentials. If you choose 'y' then make sure oxd web url(oxd-https-extension) is in the running state otherwise it does not allow to make new client. |
 | oxd_id | Used to manually set oxd id for konga. |
 | client_id | Used to manually set client id for konga. |
@@ -102,6 +102,23 @@ When you got this above message that means installation done successful. Next, p
 
 ## Configuration
 
+### Configure gluu-gateway
+Gluu-gateway service used to manage all the gluu-gateway componets(konga, kong, postgres, oxd-server, oxd-https).
+* Start/Restart/Status
+```
+ # service gluu-gateway [start|restart|status]
+```
+
+### Configure konga
+* You can configure konga by setting properties in local.js file. This is used to set port, oxd, OP and client settings.
+```
+/opt/gluu-gateway/konga/config/local.js
+```
+* Start/Stop/Restart/Status
+```
+ # service konga [start|stop|restart|status]
+```
+
 ### Configure kong
 * You can configure kong by using kong.conf file.
 
@@ -113,15 +130,6 @@ When you got this above message that means installation done successful. Next, p
  # service kong [restart|stop|restart|status]
 ```
 
-### Configure konga
-* You can configure konga by setting properties in local.js file. This is used to set port, oxd, OP and client settings.
-```
-/opt/gluu-gateway/konga/config/local.js
-```
-* Start/Stop/Restart/Status
-```
- # service gluu-gateway [start|stop|restart|status]
-```
 
 ### Configure oxd
 

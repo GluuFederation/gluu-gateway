@@ -22,6 +22,7 @@ class KongSetup(object):
         self.installPostgress = True
         self.installRedis = True
         self.installOxd = True
+        self.generateClient = True
 
         self.cert_folder = './certs'
         self.template_folder = './templates'
@@ -97,26 +98,14 @@ class KongSetup(object):
         return True
 
     def configurePostgres(self):
-        msg = """If you already have a postgres user and database in the
-        Postgres DB, then enter existing password, otherwise enter new password: """
-        print msg
-        pg = self.getPW()
-        self.pgPwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
+        self.logIt('Configuring postgres...')
+        print 'Configuring postgres...'
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
 
     def configureOxd(self):
-        self.installOxd = self.makeBoolean(self.getPrompt(
-            'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
         if self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-            self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
-            self.oxdServerLicenseId = self.getPrompt('License Id')
-            self.oxdServerPublicKey = self.getPrompt('Public key')
-            self.oxdServerPublicPassword = self.getPrompt('Public password')
-            self.oxdServerLicensePassword = self.getPrompt('License password')
-
             self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
             self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
                                      self.distOxdServerConfigPath)
@@ -254,28 +243,19 @@ class KongSetup(object):
             return None
 
     def installSample(self):
-        # install lua rocks
+        self.logIt('Installing luarocks packages...')
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
 
     def configKonga(self):
-        print "Installing konga packages..."
+        self.logIt('Installing konga node packages...')
+        print 'Installing konga node packages...'
         self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
-        msg = """The next few questions are used to configure Konga.
-        If you are connecting to an existing oxd-https server on the network,
-        make sure it's available from this server.
-        """
-        print msg
-        if not self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-
-        self.kongaOxdWeb = self.getPrompt('oxd web url', 'http://%s:8080' % self.hostname)
-        flag = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
-        if flag:
+        if self.generateClient:
             AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
@@ -284,7 +264,8 @@ class KongSetup(object):
                 'grant_types': ['authorization_code'],
                 'client_name': 'konga_client'
             }
-            self.logIt('Creating konga oxd client used to call oxd-https endpoints')
+            self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
+            print 'Creating konga oxd client used to call oxd-https endpoints...'
             try:
                 res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'})
                 resJson = json.loads(res.text)
@@ -304,12 +285,8 @@ class KongSetup(object):
                 self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb, True)
                 self.logIt('%s' % e, True)
                 sys.exit()
-        else:
-            self.kongaOxdId = self.getPrompt('oxd_id')
-            self.kongaClientId = self.getPrompt('client_id')
-            self.kongaClientSecret = self.getPrompt('client_secret')
 
-        # Render kongAPI property
+        # Render konga property
         self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
                  self.distKongaConfigPath, os.environ.copy(), True)
         self.renderTemplateInOut(self.distKongaConfigFile, self.template_folder, self.distKongaConfigPath)
@@ -346,14 +323,51 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def promptForProperties(self):
+        # Certificate configuration
         self.ip = self.get_ip()
         self.hostname = self.getPrompt('Enter kong hostname', self.detectHostname())
         print 'The next few questions are used to generate the Kong self-signed HTTPS certificate'
-        self.countryCode = self.getPrompt('Country')
-        self.state = self.getPrompt('State')
-        self.city = self.getPrompt('City')
-        self.orgName = self.getPrompt('Organization')
-        self.admin_email = self.getPrompt('Email')
+        self.countryCode = self.getPrompt('Enter two letter Country Code')
+        self.state = self.getPrompt('Enter two letter State Code')
+        self.city = self.getPrompt('Enter your city or locality')
+        self.orgName = self.getPrompt('Enter Organization name')
+        self.admin_email = self.getPrompt('Enter email address')
+
+        # Postgres configuration
+        msg = """If you already have a postgres user and database in the
+            Postgres DB, then enter existing password, otherwise enter new password: """
+        print msg
+        pg = self.getPW()
+        self.pgPwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
+
+        # OXD Configuration
+        self.installOxd = self.makeBoolean(self.getPrompt(
+            'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
+        if self.installOxd:
+            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+            self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
+            self.oxdServerLicenseId = self.getPrompt('License Id')
+            self.oxdServerPublicKey = self.getPrompt('Public key')
+            self.oxdServerPublicPassword = self.getPrompt('Public password')
+            self.oxdServerLicensePassword = self.getPrompt('License password')
+
+        # Konga Configuration
+        msg = """The next few questions are used to configure Konga.
+            If you are connecting to an existing oxd-https server on the network,
+            make sure it's available from this server.
+            """
+        print msg
+
+        if not self.installOxd:
+            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+
+        self.kongaOxdWeb = self.getPrompt('oxd https url', 'http://%s:8080' % self.hostname)
+        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
+
+        if not self.generateClient:
+            self.kongaOxdId = self.getPrompt('oxd_id')
+            self.kongaClientId = self.getPrompt('client_id')
+            self.kongaClientSecret = self.getPrompt('client_secret')
 
     def renderKongConfigure(self):
         self.renderTemplateInOut(self.distKongConfigFile, self.template_folder, self.distKongConfigFolder)
@@ -409,16 +423,48 @@ if __name__ == "__main__":
     try:
         kongSetup.makeFolders()
         kongSetup.promptForProperties()
-        kongSetup.genKongSslCertificate()
-        kongSetup.configurePostgres()
-        kongSetup.configureOxd()
-        kongSetup.configKonga()
-        kongSetup.renderKongConfigure()
-        kongSetup.installSample()
-        kongSetup.migrateKong()
-        kongSetup.startKong()
-        kongSetup.startKongaService()
-        print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+        print "\n"
+        print "-----------------------".ljust(30) + "-----------------------".rjust(35) + "\n"
+        cnf = 'hostname'.ljust(30) + kongSetup.hostname.rjust(35) + "\n" \
+              + 'orgName'.ljust(30) + kongSetup.orgName.rjust(35) + "\n" \
+              + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
+              + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
+              + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
+              + 'Configure oxd-server'.ljust(30) + repr(kongSetup.installOxd).rjust(35) + "\n" \
+              + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n"
+
+        if kongSetup.installOxd:
+            cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
+                  + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
+                  + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
+                  + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
+                  + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
+        else:
+            cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
+
+        if not kongSetup.generateClient:
+            cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
+                  + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
+                  + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
+        else:
+            cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
+
+        print cnf
+        proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values(Y|n)', 'Y'))
+
+        if proceed:
+            kongSetup.genKongSslCertificate()
+            kongSetup.configurePostgres()
+            kongSetup.configureOxd()
+            kongSetup.configKonga()
+            kongSetup.renderKongConfigure()
+            kongSetup.installSample()
+            kongSetup.migrateKong()
+            kongSetup.startKong()
+            kongSetup.startKongaService()
+            print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+        else:
+            print "Exit"
     except:
         kongSetup.logIt("***** Error caught in main loop *****", True)
         kongSetup.logIt(traceback.format_exc(), True)
