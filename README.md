@@ -1,43 +1,31 @@
 ## Gluu Gateway
 
-* The Gluu Gateway is the platform for protecting resources (Web application or API application) using the [Kong](https://getkong.org) plugins and proxy with konga GUI.
+The Gluu Gateway is a package which can be used to quickly deploy an OAuth protected API gateway with four components:
 
-* Gluu Gateway has four components:
-1. **[kong](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
-2. **[UMA Plugin](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Protect your resources by using UMA resource protection.
-3. **[konga](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin GUI for calls [Kong admin API's](https://getkong.org/docs/0.11.x/admin-api/)
-4. **[oxd](https://oxd.gluu.org)**: (optional) OAuth client service. It can be run locally or you can use an existing oxd server which is available via HTTPS.
+1. **[Kong Community Edition](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
+2. **[Gluu Kong plugin for UMA](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Protect your resources by using UMA resource protection.
+3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin user interface that calls the [Kong admin API's](https://getkong.org/docs/0.11.x/admin-api/)
+4. **[oxd](https://oxd.gluu.org)**: (optional) OAuth client service required by the Kong and Admin UI. If you already have and oxd-web sever available on your network, you don't need to install oxd again.
 
 ## Features
 
-1. Gluu-Gateway uses kong as the proxy gateway. So, It inherits all the features of kong.
+1. Add | Edit | Delete API's
+1. Restict access to tokens with certain OAuth scopes
+1. API Dashboard to configure and monitor the health of your servers.
+1. Manage your api gateway cluster for high availability
+1. Backup, restore and migrate Kong instances using snapshots
+1. Leverages the security and upgradability of the oxd-server
 
-| Legacy Architecture | Kong Architecture |
-|---------------------|-------------------|
-| :x: Common functionality is duplicated across multiple services | :white_check_mark: Kong centralizes and unifies functionality into one place |
-| :x: Systems tend to be monolithic and hard to maintain | :white_check_mark: Build efficiently distributed architectures ready to scale |
-| :x: Difficult to expand without impacting other services | :white_check_mark: Expand functionality from one place with a simple command |
-| :x: Productivity is inefficient because of system constraints | :white_check_mark: Your team is focused on the product, Kong does the REST |
+## Installation
 
-2. Gluu gateway provides KONGA GUI to operates kong very easily.
-![konga](doc/konga.png)
+Installation is a three part process:
 
-3. Dashboard to show all application configuration details in one
-4. Add API(APIs which user want to protect by using kong plugins)
-5. Protect API by kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to register and validate the resources.
-6. Protect API by kong's default plugins. Example: basic-auth, key-auth, etc.
-7. Manage all Kong Admin API Objects.
-8. Access API by kong proxy and authenticated by security plugins
-9. OAuth 2.0 authentication.
-10. Import Consumers from remote sources (Databases, files, APIs etc.).
-11. Manage multiple Kong Nodes.
-12. Backup, restore and migrate Kong Nodes using Snapshots.
-13. Monitor Node and API states using health checks.
-14. Allow to configure kong-uma-rs plugin.
-15. Gluu-Gateway uses oxd-server to dealing with OP server for authentication and resource management.
+1. Add required third party repositories
+2. Install `gluu-gateway` package
+3. Run `setup-gluu-gateway.py`
 
+### Required Third Party repositories
 
-## Package Installation using Gluu repo
 ```
 1. Add Gluu repo:
    # echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
@@ -53,16 +41,20 @@
 4. Add Kong repo:
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 
-5. Add node repo:
+5. Add Node repo:
    # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
    
-6. Update your system and install the package:
+```
+
+### Install gluu-gateway pacakge
+   
+```
    # apt-get update
    # apt-get install gluu-gateway
 ```
 
 
-## Run Setup script
+### Run setup script
 
 ```
 # cd /opt/gluu-gateway/setup
