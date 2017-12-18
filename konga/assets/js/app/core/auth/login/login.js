@@ -80,7 +80,7 @@
               window.location = response.data.authURL;
             })
             .catch(function errorCallback(err) {
-              MessageService.error(err.data.message)
+              MessageService.error(err.data.message || 'OXD Error: Check oxd server log: ' + err.data.error.error_description);
               $scope.busy = false;
             });
         };
