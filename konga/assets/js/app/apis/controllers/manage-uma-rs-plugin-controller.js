@@ -27,9 +27,7 @@
               conditions: [
                 {
                   httpMethods: [{text: 'GET'}, {text: 'POST'}],
-                  scope_expression: [
-                    {text: 'http://example.com/dev/actions'}
-                  ],
+                  scope_expression: [],
                   ticketScopes: []
                 }]
             }]
@@ -91,9 +89,7 @@
           $scope.modelPlugin.config.protection_document[pathIndex].conditions.push(
             {
               httpMethods: [{text: 'GET'}],
-              scopes: [
-                {text: 'http://example.com/view'}
-              ],
+              scope_expression: [],
               ticketScopes: []
             });
         }
@@ -128,9 +124,7 @@
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
-                scope_expression: [
-                  {text: 'http://example.com/view'}
-                ],
+                scope_expression: [],
                 ticketScopes: []
               }
             ]
@@ -163,18 +157,17 @@
 
               if (err.data.customMessage) {
                 Object.keys(err.data.customMessage).forEach(function (key) {
-                  errors[key.replace('config.', '')] = err.data.customMessage[key]
-                  MessageService.error(key + " : " + err.data.customMessage[key])
+                  errors[key.replace('config.', '')] = err.data.customMessage[key];
+                  MessageService.error(key + " : " + err.data.customMessage[key]);
                 })
-              }
-
-              if (err.data.body) {
+              } else if (err.data.body) {
                 Object.keys(err.data.body).forEach(function (key) {
-                  errors[key] = err.data.body[key]
-                  MessageService.error(key + " : " + err.data.body[key])
+                  errors[key] = err.data.body[key];
+                  MessageService.error(key + " : " + err.data.body[key]);
                 })
+              } else {
+                MessageService.error("Invalid UMA Resources");
               }
-              MessageService.error("Invalid UMA Resources");
               $scope.errors = errors
             }, function evt(event) {
               // Only used for ssl plugin certs upload
@@ -203,14 +196,16 @@
             var sData = [];
             model.config.protection_document.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
-                var str = '{%s}'
+                dIndex = 0;
+                sData = [];
+                var str = '{%s}';
                 for (var i = 1; i <= parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
-                  var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val()
+                  var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val();
                   var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
                     sData.push(o.text);
                     return {"var": dIndex++};
                   });
-                  var s = ""
+                  var s = "";
                   scopes.forEach(function (item) {
                     s +=  JSON.stringify(item) + ","
                   });
@@ -225,7 +220,7 @@
                   return o.text;
                 });
                 str = str.replace(', {%s}', '');
-                cond.scopes = {rule: JSON.parse(str), data: sData};
+                cond.scope_expression = {rule: JSON.parse(str), data: angular.copy(sData)};
 
                 if (cond.ticketScopes.length > 0) {
                   cond.ticketScopes = cond.ticketScopes.map(function (o) {

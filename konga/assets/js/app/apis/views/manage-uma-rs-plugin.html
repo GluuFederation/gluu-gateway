@@ -97,8 +97,7 @@
                     <div class="row" ng-repeat="cond in element.conditions">
                       <div class="row">
                         <div class="col-md-10">
-                          <div class="form-group has-feedback"
-                               ng-class="{'has-error': PluginForm.httpMethods.$invalid && (PluginForm.httpMethods.$dirty || PluginForm.$submitted)}">
+                          <div class="form-group has-feedback">
                             <tags-input ng-model="cond.httpMethods" data-ng-disabled="plugins.length > 0"
                                         id="httpMethods{{$parent.$index}}{{$index}}"
                                         add-from-autocomplete-only="true"
