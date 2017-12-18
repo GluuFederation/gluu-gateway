@@ -260,7 +260,7 @@ class KongSetup(object):
             payload = {
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
-                'scope': ['openid', 'email', 'profile'],
+                'scope': ['openid', 'email', 'profile', 'uma_protection'],
                 'grant_types': ['authorization_code'],
                 'client_name': 'konga_client'
             }
