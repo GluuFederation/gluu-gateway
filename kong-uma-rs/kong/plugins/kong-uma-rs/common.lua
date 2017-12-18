@@ -20,7 +20,7 @@ function _M.isHttps(url)
         return false
     end
 
-    if not (string.sub(url, 0, 7) == "https://") then
+    if not (string.sub(url, 0, 8) == "https://") then
         ngx.log(ngx.ERR, "Invalid " .. url .. ". It does not start from 'https://', value: " .. url)
         return false
     end

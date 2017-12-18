@@ -9,7 +9,7 @@ local function protection_document_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "protection_document_validator: given_value:" .. given_value)
 
     if isempty(given_value) then
-        ngx.log(ngx.ERROR, "Invalid protection_document. It is blank.")
+        ngx.log(ngx.ERR, "Invalid protection_document. It is blank.")
         return false
     end
 
@@ -20,7 +20,7 @@ local function host_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "host_validator: given_value:" .. given_value)
 
     if isempty(given_value) then
-        ngx.log(ngx.ERROR, "Invalid oxd_host. It is blank.")
+        ngx.log(ngx.ERR, "Invalid oxd_host. It is blank.")
         return false
     end
 
@@ -31,17 +31,17 @@ local function uma_server_host_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "uma_server_host_validator: given_value:" .. given_value)
 
     if isempty(given_value) then
-        ngx.log(ngx.ERROR, "Invalid uma_server_host. It is blank.")
+        ngx.log(ngx.ERR, "Invalid uma_server_host. It is blank.")
         return false
     end
 
     if isempty(given_value) then
-        ngx.log(ngx.ERROR, "Invalid uma_server_host. It is blank.")
+        ngx.log(ngx.ERR, "Invalid uma_server_host. It is blank.")
         return false
     end
 
-    if not (string.sub(given_value, 0, 7) == "https://") then
-        ngx.log(ngx.ERROR, "Invalid uma_server_host. It does not start from 'https://', value: " .. given_value)
+    if not (string.sub(given_value, 0, 8) == "https://") then
+        ngx.log(ngx.ERR, "Invalid uma_server_host. It does not start from 'https://', value: " .. given_value)
         return false
     end
 

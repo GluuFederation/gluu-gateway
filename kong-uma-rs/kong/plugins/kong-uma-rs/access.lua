@@ -6,7 +6,7 @@ local function isempty(s)
 end
 
 local function removeBearer(authorization)
-  if authorization ~= nil and not isempty(authorization) and (string.sub(authorization, 0, 8) == "Bearer ") then
+  if authorization ~= nil and not isempty(authorization) and (string.sub(authorization, 0, 7) == "Bearer ") then
     return string.sub(authorization, 8)
   end
   return ""
