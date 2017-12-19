@@ -80,7 +80,7 @@ You will be prompted to answer some questions. Just hit Enter to accept the defa
 | Public password | For oxd-server |
 | License password | For oxd-server |
 | oxd https url | Used to configure konga for the oxd-https-extension. Make sure oxd web url(oxd-https-extension) is in the running state, if not then start it manually. |
-| Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter manually enter existing client credentials. If you choose 'y' then make sure oxd web url(oxd-https-extension) is in the running state otherwise it does not allow to make new client. |
+| Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter manually enter existing client credentials. If you choose 'y' then make sure oxd web url(oxd-https-extension) is in the running state otherwise it does not allow to make new client. You need to take care of client by extending the client expiration date and enable "pre-authorization". |
 | oxd_id | Used to manually set oxd id for konga. |
 | client_id | Used to manually set client id for konga. |
 | client_secret | Used to manually set client secret for konga. |

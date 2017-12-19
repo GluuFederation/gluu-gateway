@@ -362,6 +362,10 @@ class KongSetup(object):
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'http://%s:8080' % self.hostname)
+
+        msg = """Note: You need to take care of client by extending the client expiration date and enable "pre-authorization"."""
+        print msg
+
         self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
 
         if not self.generateClient:
