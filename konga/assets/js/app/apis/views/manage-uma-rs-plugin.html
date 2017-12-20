@@ -70,7 +70,7 @@
                   href="https://gluu.org/docs/oxd/3.1.1/api/#uma-2-resource-server-apis"
                   target="_blank">more details...</a> </span>
               </div>
-              <div class="row" ng-repeat="element in modelPlugin.config.protection_document track by $index"
+              <div class="row" ng-repeat="element in modelPlugin.config.protection_document" ng-init="pIndex = $index"
                    style="border: 1px dotted;">
                 <hr/>
                 <div class="col-md-1" data-ng-if="plugins.length <= 0">
@@ -99,7 +99,7 @@
                         <div class="col-md-10">
                           <div class="form-group has-feedback">
                             <tags-input ng-model="cond.httpMethods" data-ng-disabled="plugins.length > 0"
-                                        id="httpMethods{{$parent.$index}}{{$index}}"
+                                        id="httpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
                                         placeholder="Enter http Methods">
                               <auto-complete source="loadMethods($query)"
@@ -116,22 +116,31 @@
                           </button>
                         </div>
                       </div>
-                      <div class="row">
-                        <input type="hidden" value="1" name="hdScopeCount{{$parent.$index}}{{$index}}"/>
+
+                      <!-- edit mode view start -->
+                      <div class="row" data-ng-if="plugins.length > 0">
+                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
+
+                        </div>
+                      </div>
+                      <!-- edit mode view end -->
+
+                      <div class="row" data-ng-if="plugins.length <= 0">
+                        <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
                         <div class="col-md-12">
-                          <input type="radio" value="or" name="condition{{$parent.$index}}{{$index}}1">or |
-                          <input type="radio" value="and" name="condition{{$parent.$index}}{{$index}}1">and |
-                          <input type="radio" value="not" name="condition{{$parent.$index}}{{$index}}1">not
+                          <input type="radio" value="or" name="condition{{pIndex}}{{$index}}1">or |
+                          <input type="radio" value="and" name="condition{{pIndex}}{{$index}}1">and |
+                          <input type="radio" value="not" name="condition{{pIndex}}{{$index}}1">not
                           <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                  data-ng-click="addGroup($parent.$index +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                                  data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
                             Add Group
                           </button>
-                          <input type="hidden" value="{{cond['scopes' + $parent.$index + $index + '1']}}"
-                                 name="hdScope{{$parent.$index}}{{$index}}1"/>
+                          <input type="hidden" value="{{cond['scopes' + pIndex + $index + '1']}}"
+                                 name="hdScope{{pIndex}}{{$index}}1"/>
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond['scopes' + $parent.$index + $index + '1']"
-                                        name="scope{{$parent.$index}}{{$index}}1" data-ng-disabled="plugins.length > 0"
-                                        id="scopes{{$parent.$index}}{{$index}}"
+                            <tags-input ng-model="cond['scopes' + pIndex + $index + '1']"
+                                        name="scope{{pIndex}}{{$index}}1" data-ng-disabled="plugins.length > 0"
+                                        id="scopes{{pIndex}}{{$index}}"
                                         placeholder="Enter scopes">
                               <auto-complete source="loadScopes($query)"
                                              min-length="0"
@@ -144,7 +153,7 @@
                               </div>
                             </script>
                           </div>
-                          <div class="col-md-12" id="dyScope{{$parent.$index}}{{$index}}1">
+                          <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
                           </div>
                         </div>
                       </div>
@@ -152,7 +161,7 @@
                         <div class="col-md-12">
                           <div class="form-group has-feedback">
                             <tags-input ng-model="cond.ticketScopes" data-ng-disabled="plugins.length > 0"
-                                        id="ticketScopes{{$parent.$index}}{{$index}}"
+                                        id="ticketScopes{{pIndex}}{{$index}}"
                                         placeholder="Enter ticket scopes"></tags-input>
                           </div>
                         </div>

@@ -34,7 +34,60 @@
           }
         };
         if ($scope.plugins.length > 0) {
-          $scope.modelPlugin.config.protection_document = JSON.parse($scope.plugins[0].config.protection_document)
+          $scope.ruleScope = {};
+          $scope.modelPlugin.config.protection_document = JSON.parse($scope.plugins[0].config.protection_document);
+          setTimeout(function () {
+            $scope.modelPlugin.config.protection_document.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                var pRule = cond.scope_expression.rule;
+                var op = '';
+                if (pRule['and']) {
+                  op = 'and'
+                } else if (pRule['or']) {
+                  op = 'or'
+                } else if (pRule['not']) {
+                  op = 'not'
+                }
+
+                _repeat(pRule[op], op, 1);
+
+                function _repeat(rule, op, id) {
+                  rule.forEach(function (oRule, oRuleIndex) {
+                    if (oRule['var'] == 0 || oRule['var']) {
+                      if (!$scope.ruleScope[`scope${pIndex}${cIndex}${id}`]) {
+                        $scope.ruleScope[`scope${pIndex}${cIndex}${id}`] = [];
+                      }
+
+                      $scope.ruleScope[`scope${pIndex}${cIndex}${id}`].push({text: cond.scope_expression.data[oRule['var']]});
+                    }
+
+                    if (rule.length - 1 == oRuleIndex) {
+                      // render template
+                      var htmlRender = `<input type="radio" value="${op}" checked>${op}
+                          <div class="form-group has-feedback">
+                           <tags-input ng-model="ruleScope['scope${pIndex}${cIndex}${id}']" 
+                           data-ng-disabled="plugins.length > 0" name="scope${pIndex}${cIndex}${id}" id="scope${pIndex}${cIndex}${id}">
+                            </tags-input>
+                          </div>
+                          <div class="col-md-12" id="dyScope${pIndex}${cIndex}${id + 1}">
+                          </div>`;
+                      $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                      $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                      // end
+                    }
+
+                    if (oRule['and']) {
+                      _repeat(oRule['and'], 'and', ++id);
+                    } else if (oRule['or']) {
+                      _repeat(oRule['or'], 'or', ++id);
+                    } else if (oRule['not']) {
+                      _repeat(oRule['not'], 'not', ++id);
+                    }
+                  });
+                }
+              });
+            });
+          }, 500);
         }
 
         /**
@@ -207,7 +260,7 @@
                   });
                   var s = "";
                   scopes.forEach(function (item) {
-                    s +=  JSON.stringify(item) + ","
+                    s += JSON.stringify(item) + ","
                   });
                   str = str.replace('%s', `"${op}":[${s} {%s}]`);
 
