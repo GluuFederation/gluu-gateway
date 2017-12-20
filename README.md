@@ -51,8 +51,8 @@ Installation is a three part process:
 ### Install gluu-gateway pacakge
    
 ```
-   # apt-get update
-   # apt-get install gluu-gateway
+   # apt update
+   # apt install gluu-gateway
 ```
 
 
