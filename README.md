@@ -1,3 +1,5 @@
+Licensed under the [GLUU SUPPORT LICENSE](./license). Copyright Gluu 2017.
+
 ## Gluu Gateway
 
 The Gluu Gateway is a package which can be used to quickly deploy an OAuth protected API gateway with four components:
