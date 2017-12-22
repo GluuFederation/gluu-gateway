@@ -111,7 +111,7 @@ var AuthController = {
       body: {
         client_id: sails.config.clientId,
         client_secret: sails.config.clientSecret,
-        scope: ['openid', 'email', 'profile', 'uma_protection'],
+        scope: ['openid', 'email', 'profile'],
         op_host: sails.config.opHost
       },
       resolveWithFullResponse: true,
@@ -275,7 +275,7 @@ var AuthController = {
             uri: sails.config.oxdWeb + '/get-authorization-url',
             body: {
               oxd_id: sails.config.oxdId,
-              scope: ['openid', 'email', 'profile', 'uma_protection']
+              scope: ['openid', 'email', 'profile']
             },
             resolveWithFullResponse: true,
             json: true
