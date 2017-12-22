@@ -104,10 +104,55 @@ var AuthController = {
    * @param   {Request}   request     Request object
    * @param   {Response}  response    Response object
    */
-  logout: function logout(request, response) {
-    request.logout();
+  logout: function logout(request, res) {
+    var option = {
+      method: 'POST',
+      uri: sails.config.oxdWeb + '/get-client-token',
+      body: {
+        client_id: sails.config.clientId,
+        client_secret: sails.config.clientSecret,
+        scope: ['openid', 'email', 'profile', 'uma_protection'],
+        op_host: sails.config.opHost
+      },
+      resolveWithFullResponse: true,
+      json: true
+    };
 
-    response.json(200, true);
+    return httpRequest(option)
+      .then(function (response) {
+        const tokenData = response.body;
+
+        if (tokenData.status === 'error') {
+          return Promise.reject(tokenData.data)
+        }
+
+        const option = {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer ' + tokenData.data.access_token
+          },
+          uri: sails.config.oxdWeb + '/get-logout-uri',
+          body: {
+            oxd_id: sails.config.oxdId
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      })
+      .then(function (response) {
+        const logoutURI = response.body;
+
+        if (logoutURI.status === 'error') {
+          return Promise.reject(logoutURI.data)
+        }
+        request.logout();
+        return res.send({ logoutUri: logoutURI.data.uri });
+      })
+      .catch(function (error) {
+        return res.status(500).send({error: error});
+      });
   },
 
   /**
