@@ -256,7 +256,7 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         if self.generateClient:
-            AuthorizationRedirectUri = 'https://' + self.hostname + ':' + self.kongaPort
+            AuthorizationRedirectUri = 'https://localhost:' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
