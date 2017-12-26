@@ -18,62 +18,61 @@
       <ul class="nav navbar-nav navbar-right">
         <li
           data-ui-sref-active="active"
-          data-ng-show="!auth.isAuthenticated()"
-        >
+          data-ng-show="!auth.isAuthenticated()">
           <a data-ui-sref="auth.login">Login</a>
         </li>
 
         <!-- NOTIFICATIONS DROPDOWN -->
         <!--<li data-ng-show="auth.isAuthenticated()" uib-dropdown auto-close="outsideClick" keyboard-nav>-->
-          <!--<a href uib-dropdown-toggle>-->
-            <!--<i class="mdi mdi-bell-outline"></i>-->
-            <!--<span class="badge badge-danger"-->
-                  <!--ng-show="notifications && notifications.length">{{notifications.length}}</span>-->
-          <!--</a>-->
-          <!--<ul class="dropdown-menu notifications-dropdown-menu animated fadeInDownShort go" uib-dropdown-menu-->
-              <!--role="menu" aria-labelledby="simple-btn-keyboard-nav">-->
+        <!--<a href uib-dropdown-toggle>-->
+        <!--<i class="mdi mdi-bell-outline"></i>-->
+        <!--<span class="badge badge-danger"-->
+        <!--ng-show="notifications && notifications.length">{{notifications.length}}</span>-->
+        <!--</a>-->
+        <!--<ul class="dropdown-menu notifications-dropdown-menu animated fadeInDownShort go" uib-dropdown-menu-->
+        <!--role="menu" aria-labelledby="simple-btn-keyboard-nav">-->
 
-            <!--<li role="menuitem" ng-if="!notifications.length">-->
-              <!--<a>-->
-                <!--There are no notifications at this point...-->
-              <!--</a>-->
-            <!--</li>-->
-            <!--<li role="menuitem" ng-repeat="notification in notifications">-->
-              <!--<a>-->
-                <!--<i class="mdi mdi-close pull-right clickable" ng-click="removeNotification($index)"></i>-->
-                <!--<i class="mdi mdi-18px text-info {{notification.icon || 'mdi-message'}}"></i>&nbsp;-->
-                <!--<span style="margin-right: 26px">{{notification.message}}</span>-->
+        <!--<li role="menuitem" ng-if="!notifications.length">-->
+        <!--<a>-->
+        <!--There are no notifications at this point...-->
+        <!--</a>-->
+        <!--</li>-->
+        <!--<li role="menuitem" ng-repeat="notification in notifications">-->
+        <!--<a>-->
+        <!--<i class="mdi mdi-close pull-right clickable" ng-click="removeNotification($index)"></i>-->
+        <!--<i class="mdi mdi-18px text-info {{notification.icon || 'mdi-message'}}"></i>&nbsp;-->
+        <!--<span style="margin-right: 26px">{{notification.message}}</span>-->
 
-              <!--</a>-->
-            <!--</li>-->
+        <!--</a>-->
+        <!--</li>-->
 
-          <!--</ul>-->
+        <!--</ul>-->
         <!--</li>-->
         <!-- END NOTIFICATIONS DROPDOWN -->
 
         <!-- PROFILE DROPDOWN -->
         <li data-ng-show="auth.isAuthenticated()" uib-dropdown keyboard-nav>
           <a class="nav-auth-img-container" uib-dropdown-toggle>
-            <img class="nav-auth-img" ng-src="images/user-icon.png"/>
+            <img class="nav-auth-img" ng-src="images/user-profile.png"/>
             &nbsp;
-            <span class="greeting visible-md-inline visible-lg-inline">Hello{{!!user().info.claims.email[0]? ', '+user().info.claims.email[0] : ''}}</span>
+            <span class="greeting visible-md-inline visible-lg-inline">Hello {{!!user().email ? ', ' + user().email : ''}}</span>
             <span class="caret"></span>
           </a>
           <ul class="dropdown-menu animated fadeInDownShort go" uib-dropdown-menu role="menu"
               aria-labelledby="simple-btn-keyboard-nav">
 
-            <!--<li role="menuitem">-->
-            <!--<a data-ui-sref="users.show({id:user().id})">-->
-            <!--<i class="mdi mdi-account-outline"></i>-->
-            <!--Profile-->
-            <!--</a>-->
-            <!--</li>-->
-            <!--<li role="menuitem" ng-if="user().admin">-->
-            <!--<a data-ui-sref="users">-->
-            <!--<i class="mdi mdi-account-multiple"></i>-->
-            <!--Users-->
-            <!--</a>-->
-            <!--</li>-->
+            <li role="menuitem">
+              <a data-ui-sref="users.show({id:user().id})">
+                <i class="mdi mdi-account-outline"></i>
+                Profile
+              </a>
+            </li>
+            <li role="menuitem" ng-if="user().admin">
+              <a data-ui-sref="users">
+                <i class="mdi mdi-account-multiple"></i>
+                Users
+              </a>
+            </li>
             <!--<li role="menuitem">-->
             <!--<a data-ui-sref="settings" ng-if="user().admin">-->
             <!--<i class="mdi mdi-settings"></i>-->

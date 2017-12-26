@@ -148,7 +148,7 @@ var AuthController = {
           return Promise.reject(logoutURI.data)
         }
         request.logout();
-        return res.send({ logoutUri: logoutURI.data.uri });
+        return res.send({logoutUri: logoutURI.data.uri});
       })
       .catch(function (error) {
         return res.status(500).send({error: error});
@@ -201,11 +201,10 @@ var AuthController = {
    * @param   {Response}  response    Response object
    */
   callback: function callback(req, res) {
-    req.body.identifier = 'admin';
-    req.body.password = 'adminadminadmin';
     sails.services.passport.callback(req, res, function callback(error, user) {
       if (!!req.body.code && !!req.body.state) {
         var clientToken = '';
+        var userInfo = null;
         return getClientAccessToken()
           .then(function (token) {
             clientToken = token;
@@ -245,20 +244,86 @@ var AuthController = {
             return httpRequest(option);
           })
           .then(function (response) {
-            const userInfo = response.body;
+            userInfo = response.body;
 
             if (userInfo.status === 'error') {
               return Promise.reject(userInfo.data)
             }
-            user.info = userInfo.data;
-            user.oxdWeb = sails.config.oxdWeb;
-            user.opHost = sails.config.opHost;
-            user.oxdId = sails.config.oxdId;
-            user.clientId = sails.config.clientId;
-            user.clientSecret = sails.config.clientSecret;
-            user.oxdVersion = sails.config.oxdVersion;
 
-            return res.send({user: user, token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)});
+            if (!userInfo.data.claims.email[0]) {
+              return Promise.reject({message: "Email not found"})
+            }
+
+            return new Promise(function (resolve, reject) {
+              sails.models.user
+                .findOne({email: userInfo.data.claims.email[0]})
+                .exec(function (err, user) {
+                  if (err) {
+                    return reject(err);
+                  }
+                  if (!user) {
+                    return sails.models.kongnode
+                      .find({})
+                      .exec(function (err, node) {
+                        if (err) return reject(err);
+
+                        if (!node[0].id) return reject({message: 'kong node not found'});
+
+                        return sails.models.user
+                          .create({
+                            username: userInfo.data.claims.email[0],
+                            email: userInfo.data.claims.email[0],
+                            firstName: userInfo.data.claims.given_name[0],
+                            lastName: userInfo.data.claims.given_name[0],
+                            node_id: sails.config.kong_admin_url,
+                            admin: true,
+                            active: true,
+                            node: node[0].id
+                          })
+                          .exec(function (err, user) {
+                            if (err) return reject(err);
+
+                            return sails.models.passport
+                              .create({
+                                protocol: "local",
+                                password: 'adminadmin',
+                                user: user.id
+                              })
+                              .exec(function (err, passport) {
+                                if (err) return reject(err);
+                                return resolve(user);
+                              })
+                          });
+                      });
+                  } else {
+                    user.email = userInfo.data.claims.email[0];
+                    return user.save(function (err, ouser) {
+                      if (err) {
+                        return reject(err);
+                      }
+                      return resolve(user);
+                    });
+                  }
+                });
+            });
+          })
+          .then(function (user) {
+            req.body.identifier = user.username;
+            req.body.password = 'adminadmin';
+            sails.services.passport.callback(req, res, function callback(error, user) {
+              user.info = userInfo.data;
+              user.oxdWeb = sails.config.oxdWeb;
+              user.opHost = sails.config.opHost;
+              user.oxdId = sails.config.oxdId;
+              user.clientId = sails.config.clientId;
+              user.clientSecret = sails.config.clientSecret;
+              user.oxdVersion = sails.config.oxdVersion;
+
+              return res.send({
+                user: user,
+                token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)
+              });
+            });
           })
           .catch(function (error) {
             return res.status(500).send({error: error});

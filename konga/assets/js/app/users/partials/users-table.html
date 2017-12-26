@@ -2,39 +2,33 @@
     <tr>
         <th width="{{item.width}}" class="text-nowrap"
             ng-if="!item.hide"
-            data-ng-repeat="item in titleItems | filter:titleFilter"
-        >
-            <a
-                    data-ng-show="item.column"
+            data-ng-repeat="item in titleItems | filter:titleFilter">
+            <a data-ng-show="item.column"
                     class="clickable"
                     data-ng-click="changeSort(item)"
-                    data-ng-bind-html="item.title.toUpperCase()"
-            ></a>
-            <span
-                    data-ng-show="!item.column"
-                    data-ng-bind-html="item.title.toUpperCase()"
-            ></span>
+                    data-ng-bind-html="item.title.toUpperCase()"></a>
+            <span data-ng-show="!item.column"
+                    data-ng-bind-html="item.title.toUpperCase()"></span>
 
             <i class="mdi"
                data-ng-show="sort.column == item.column"
-               data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"
-            ></i>
+               data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"></i>
         </th>
     </tr>
     <tr data-ng-repeat="item in items">
         <td>
             <i class="mdi" ng-class="{'text-warning mdi-crown': item.admin,'text-muted mdi-account-outline' : !item.admin}"></i></td>
-        <td><a data-ui-sref="users.show({id: item.id})">{{item.username}}</a></td>
+        <td><a data-ui-sref="users.show({id: item.id})">{{item.email}}</a></td>
         <td>{{item.firstName}}</td>
         <td>{{item.lastName}}</td>
-        <td>{{item.createdAt | date : "MMM d, y"}}</td>
-        <td>{{item.updatedAt | date : "MMM d, y"}}</td>
-        <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
-            <button type="button" ng-click="deleteUser($index,item)" class="btn btn-danger btn-link">
-                <i class="mdi mdi-delete"></i>
-                Delete
-            </button>
-        </td>
+        <td>{{item.createdAt | date : "MMM d, y HH:mm"}}</td>
+        <td>{{item.updatedAt | date : "MMM d, y HH:mm"}}</td>
+        <!--<td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">-->
+            <!--<button type="button" ng-click="deleteUser($index,item)" class="btn btn-danger btn-link">-->
+                <!--<i class="mdi mdi-delete"></i>-->
+                <!--Delete-->
+            <!--</button>-->
+        <!--</td>-->
     </tr>
 
     <tr data-ng-if="items.length === 0">
@@ -52,5 +46,4 @@
     data-items-per-page="itemsPerPage"
     data-max-size="10"
     data-boundary-links="true"
-    data-rotate="false"
-></ul>
+    data-rotate="false"></ul>
