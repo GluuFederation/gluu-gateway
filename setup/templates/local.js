@@ -70,5 +70,6 @@ module.exports = {
   oxdId: '%(kongaOxdId)s',
   clientId: '%(kongaClientId)s',
   clientSecret: '%(kongaClientSecret)s',
-  oxdVersion: '%(kongaOxdVersion)s'
+  oxdVersion: '%(kongaOxdVersion)s',
+  explicitHost: 'localhost'
 };
