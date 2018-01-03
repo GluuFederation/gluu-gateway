@@ -92,7 +92,7 @@ Gluu Gateway configuration successful!!! https://localhost:1338
 ```
 When you got this above message that means installation done successful. Next, process is to make tunnel to `https://localhost:1338` and use konga. If your port is open then you use konga directly in browser i:e `https://hostname:1338`.
 
-> Note: After login, Go to `connection` tab and select the one kong node to use by clicking on the respective star icon.
+> Note: The destination tunnel port must be 1338 because, during setup script installation, It creates the OpenId client with `https://localhost:1338` authorization redirect URI. Before setup, You can change the port in `setup-gluu-gateway.py` by setting `self.kongaPort` property.
 
 ## Configuration
 
@@ -146,8 +146,6 @@ Gluu-gateway service used to manage all the gluu-gateway componets(konga, kong, 
 ```
 
 ## KONGA Guide
-
-> Note: After installation and first time login, Go to `connection` tab and select the one kong node to use by clicking on the respective star icon.
 
 ### 1. Dashboard
 
