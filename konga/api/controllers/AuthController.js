@@ -250,8 +250,8 @@ var AuthController = {
               return Promise.reject(userInfo.data)
             }
 
-            if (!userInfo.data.claims.email[0]) {
-              return Promise.reject({message: "Email not found"})
+            if (!userInfo.data.claims.email || !userInfo.data.claims.email[0]) {
+              return Promise.reject({message: "Email not found in user info."})
             }
 
             return new Promise(function (resolve, reject) {

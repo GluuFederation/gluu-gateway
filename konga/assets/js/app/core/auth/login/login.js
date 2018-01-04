@@ -64,7 +64,7 @@
                 $scope.busy = false;
               })
             .catch(function errorCallback(err) {
-              MessageService.error(err.data.message)
+              MessageService.error(err.data.message || err.data.error.message);
               $scope.busy = false;
             });
 
