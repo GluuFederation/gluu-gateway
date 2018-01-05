@@ -426,74 +426,76 @@ class KongSetup(object):
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
-        kongSetup.makeFolders()
-        kongSetup.promptForProperties()
-        print "\n"
-        print "-----------------------".ljust(30) + "-----------------------".rjust(35) + "\n"
-        cnf = 'hostname'.ljust(30) + kongSetup.hostname.rjust(35) + "\n" \
-              + 'orgName'.ljust(30) + kongSetup.orgName.rjust(35) + "\n" \
-              + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
-              + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
-              + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
-              + 'Configure oxd-server'.ljust(30) + repr(kongSetup.installOxd).rjust(35) + "\n" \
-              + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n"
-
-        if kongSetup.installOxd:
-            cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
-                  + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
-                  + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
-                  + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
-                  + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
-        else:
-            cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
-
-        if not kongSetup.generateClient:
-            cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
-                  + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
-                  + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
-        else:
-            cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
-
-        print cnf
-        proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values(Y|n)', 'Y'))
+        msg = "------------------------------------------------------------------------------------- \n" \
+              + "The Gluu Support License (GLUU-SUPPORT) \n\n" \
+              + "Copyright (c) 2017 Gluu \n\n" \
+              + "Permission is hereby granted to any person obtaining a copy \n" \
+              + "of this software and associated documentation files (the 'Software'), to deal \n" \
+              + "in the Software without restriction, including without limitation the rights \n" \
+              + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
+              + "copies of the Software, and to permit persons to whom the Software is \n" \
+              + "furnished to do so, subject to the following conditions: \n\n" \
+              + "The above copyright notice and this permission notice shall be included in all \n" \
+              + "copies or substantial portions of the Software. \n\n" \
+              + "The person using this software has an active support subscription while the software \n" \
+              + "is in use. \n\n" \
+              + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
+              + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
+              + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
+              + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
+              + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
+              + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
+              + "SOFTWARE. \n" \
+              + "------------------------------------------------------------------------------------- \n"
+        print msg
         licence = False
+        licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the GLUU-SUPPORT license?(y|N)', 'N'))
 
-        if proceed:
-            msg = "------------------------------------------------------------------------------------- \n" \
-                  + "The Gluu Support License (GLUU-SUPPORT) \n\n" \
-                  + "Copyright (c) 2017 Gluu \n\n" \
-                  + "Permission is hereby granted to any person obtaining a copy \n" \
-                  + "of this software and associated documentation files (the 'Software'), to deal \n" \
-                  + "in the Software without restriction, including without limitation the rights \n" \
-                  + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
-                  + "copies of the Software, and to permit persons to whom the Software is \n" \
-                  + "furnished to do so, subject to the following conditions: \n\n" \
-                  + "The above copyright notice and this permission notice shall be included in all \n" \
-                  + "copies or substantial portions of the Software. \n\n" \
-                  + "The person using this software has an active support subscription while the software \n" \
-                  + "is in use. \n\n" \
-                  + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
-                  + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
-                  + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
-                  + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
-                  + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
-                  + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
-                  + "SOFTWARE. \n" \
-                  + "------------------------------------------------------------------------------------- \n"
-            print msg
-            licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the GLUU-SUPPORT license?(y|N)', 'N'))
+        if licence:
+            kongSetup.makeFolders()
+            kongSetup.promptForProperties()
+            print "\n"
+            print "-----------------------".ljust(30) + "-----------------------".rjust(35) + "\n"
+            cnf = 'hostname'.ljust(30) + kongSetup.hostname.rjust(35) + "\n" \
+                  + 'orgName'.ljust(30) + kongSetup.orgName.rjust(35) + "\n" \
+                  + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
+                  + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
+                  + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
+                  + 'Configure oxd-server'.ljust(30) + repr(kongSetup.installOxd).rjust(35) + "\n" \
+                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n"
 
-        if proceed and licence:
-            kongSetup.genKongSslCertificate()
-            kongSetup.configurePostgres()
-            kongSetup.configureOxd()
-            kongSetup.configKonga()
-            kongSetup.renderKongConfigure()
-            kongSetup.installSample()
-            kongSetup.migrateKong()
-            kongSetup.startKong()
-            kongSetup.startKongaService()
-            print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+            if kongSetup.installOxd:
+                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
+                      + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
+                      + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
+                      + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
+                      + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
+            else:
+                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
+
+            if not kongSetup.generateClient:
+                cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
+                      + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
+                      + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
+            else:
+                cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
+
+            print cnf
+            proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values(Y|n)', 'Y'))
+
+            if proceed:
+                kongSetup.genKongSslCertificate()
+                kongSetup.configurePostgres()
+                kongSetup.configureOxd()
+                kongSetup.configKonga()
+                kongSetup.renderKongConfigure()
+                kongSetup.installSample()
+                kongSetup.migrateKong()
+                kongSetup.startKong()
+                kongSetup.startKongaService()
+                print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+            else:
+                print "Exit"
         else:
             print "Exit"
     except:
