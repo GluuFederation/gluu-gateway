@@ -212,12 +212,12 @@
 
                                 }
                             },
-                            // {
-                            //     name: "Custom",
-                            //     description: "Custom Plugins",
-                            //     icon: "mdi-account-box-outline",
-                            //     plugins: {}
-                            // }
+                            {
+                                name: "Custom",
+                                description: "Custom Plugins",
+                                icon: "mdi-account-box-outline",
+                                plugins: {}
+                            }
                         ]
                     }
 
