@@ -18,17 +18,9 @@
     <tr data-ng-repeat="item in items">
         <td>
             <i class="mdi" ng-class="{'text-warning mdi-crown': item.admin,'text-muted mdi-account-outline' : !item.admin}"></i></td>
-        <td><a data-ui-sref="users.show({id: item.id})">{{item.email}}</a></td>
-        <td>{{item.firstName}}</td>
-        <td>{{item.lastName}}</td>
+        <td><a data-ui-sref="users.show({id: item.id})">{{item.username}}</a></td>
         <td>{{item.createdAt | date : "MMM d, y HH:mm"}}</td>
         <td>{{item.updatedAt | date : "MMM d, y HH:mm"}}</td>
-        <!--<td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">-->
-            <!--<button type="button" ng-click="deleteUser($index,item)" class="btn btn-danger btn-link">-->
-                <!--<i class="mdi mdi-delete"></i>-->
-                <!--Delete-->
-            <!--</button>-->
-        <!--</td>-->
     </tr>
 
     <tr data-ng-if="items.length === 0">

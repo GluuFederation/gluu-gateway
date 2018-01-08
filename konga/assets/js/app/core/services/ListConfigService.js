@@ -207,24 +207,8 @@
               width: 1
             },
             {
-              title: 'email',
-              column: 'email',
-              searchable: true,
-              sortable: true,
-              inSearch: true,
-              inTitle: true
-            },
-            {
-              title: 'first name',
-              column: 'firstName',
-              searchable: true,
-              sortable: true,
-              inSearch: true,
-              inTitle: true
-            },
-            {
-              title: 'last name',
-              column: 'lastName',
+              title: 'User Id',
+              column: 'username',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -236,7 +220,7 @@
               sortable: true,
             },
             {
-              title: 'updated',
+              title: 'Last Login',
               column: 'updatedAt',
               sortable: true,
             },
