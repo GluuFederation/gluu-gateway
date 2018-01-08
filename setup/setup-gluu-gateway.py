@@ -261,7 +261,7 @@ class KongSetup(object):
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
-                'scope': ['openid', 'email', 'profile', 'uma_protection'],
+                'scope': ['openid', 'uma_protection'],
                 'grant_types': ['authorization_code'],
                 'client_name': 'konga_client'
             }
@@ -450,7 +450,7 @@ if __name__ == "__main__":
         print msg
         licence = False
         licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the GLUU-SUPPORT license?(y|N)', 'N'))
-
+        print ""
         if licence:
             kongSetup.makeFolders()
             kongSetup.promptForProperties()
