@@ -56,10 +56,6 @@
                   <th>Client Id</th>
                   <td>{{plugins[0].config.client_id}}</td>
                 </tr>
-                <tr>
-                  <th>Client Secret</th>
-                  <td>{{plugins[0].config.client_secret}}</td>
-                </tr>
                 </thead>
               </table>
             </div>
@@ -67,7 +63,7 @@
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>UMA Resources</label>
                 <span class="help-block error-block basic-block">Register a protected resource using below tool. For <a
-                  href="https://gluu.org/docs/oxd/3.1.1/api/#uma-2-resource-server-apis"
+                  href="https://gluu.org/docs/oxd/3.1.2/api/#uma-2-resource-server-apis"
                   target="_blank">more details...</a> </span>
               </div>
               <div class="row" ng-repeat="element in modelPlugin.config.protection_document" ng-init="pIndex = $index"
