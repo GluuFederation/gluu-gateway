@@ -111,7 +111,7 @@ var AuthController = {
       body: {
         client_id: sails.config.clientId,
         client_secret: sails.config.clientSecret,
-        scope: ['openid', 'email', 'profile'],
+        scope: ['openid'],
         op_host: sails.config.opHost
       },
       resolveWithFullResponse: true,
@@ -250,13 +250,11 @@ var AuthController = {
               return Promise.reject(userInfo.data)
             }
 
-            if (!userInfo.data.claims.email || !userInfo.data.claims.email[0]) {
-              return Promise.reject({message: "Email not found in user info."})
-            }
+            var sub = userInfo.data.claims.sub[0] || uuid.v4();
 
             return new Promise(function (resolve, reject) {
               sails.models.user
-                .findOne({email: userInfo.data.claims.email[0]})
+                .findOne({username: sub})
                 .exec(function (err, user) {
                   if (err) {
                     return reject(err);
@@ -271,10 +269,10 @@ var AuthController = {
 
                         return sails.models.user
                           .create({
-                            username: userInfo.data.claims.email[0],
-                            email: userInfo.data.claims.email[0],
-                            firstName: userInfo.data.claims.given_name[0],
-                            lastName: userInfo.data.claims.given_name[0],
+                            username: sub,
+                            email: sub + '@gluu.org',
+                            firstName: sub,
+                            lastName: sub,
                             node_id: sails.config.kong_admin_url,
                             admin: true,
                             active: true,
@@ -285,7 +283,7 @@ var AuthController = {
 
                             return sails.models.passport
                               .create({
-                                protocol: "local",
+                                protocol: 'local',
                                 password: 'adminadmin',
                                 user: user.id
                               })
@@ -296,7 +294,7 @@ var AuthController = {
                           });
                       });
                   } else {
-                    user.email = userInfo.data.claims.email[0];
+                    user.username = sub;
                     return user.save(function (err, ouser) {
                       if (err) {
                         return reject(err);
@@ -340,7 +338,7 @@ var AuthController = {
             uri: sails.config.oxdWeb + '/get-authorization-url',
             body: {
               oxd_id: sails.config.oxdId,
-              scope: ['openid', 'email', 'profile']
+              scope: ['openid']
             },
             resolveWithFullResponse: true,
             json: true
@@ -368,7 +366,7 @@ var AuthController = {
           body: {
             client_id: sails.config.clientId,
             client_secret: sails.config.clientSecret,
-            scope: ['openid', 'email', 'profile', 'uma_protection'],
+            scope: ['openid', 'uma_protection'],
             op_host: sails.config.opHost
           },
           resolveWithFullResponse: true,
