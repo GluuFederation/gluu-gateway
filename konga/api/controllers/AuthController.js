@@ -5,7 +5,7 @@ var _ = require('lodash');
 var uuid = require('node-uuid');
 var httpRequest = require('request-promise');
 var UserSignUp = require("../events/user-events")
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 /**
  * Authentication Controller
  */

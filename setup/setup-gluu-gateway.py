@@ -268,7 +268,7 @@ class KongSetup(object):
             self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
             print 'Creating konga oxd client used to call oxd-https endpoints...'
             try:
-                res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'})
+                res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
 
                 if resJson['status'] == 'ok':
@@ -362,7 +362,7 @@ class KongSetup(object):
         if not self.installOxd:
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
-        self.kongaOxdWeb = self.getPrompt('oxd https url', 'http://%s:8080' % self.hostname)
+        self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
 
         msg = """Note: You need to take care of client by extending the client expiration date and enable "pre-authorization"."""
         print msg
