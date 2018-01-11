@@ -7,7 +7,7 @@ The Gluu Gateway is a package which can be used to quickly deploy an OAuth prote
 1. **[Kong Community Edition](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
 2. **[Gluu Kong plugin for UMA](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Protect your resources by using UMA resource protection.
 3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin user interface that calls the [Kong admin API's](https://getkong.org/docs/0.11.x/admin-api/)
-4. **[oxd](https://oxd.gluu.org)**: OAuth client service required by the Kong and Admin UI. 
+4. **[oxd](https://oxd.gluu.org)**: OAuth client software required to integrate Gluu Gateway with the Gluu Server.  
 
 ## Features
 
