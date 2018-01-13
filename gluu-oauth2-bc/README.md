@@ -83,6 +83,24 @@ $ curl -X POST \
     -d 'name=gluu-oauth2-bc&config.op_host=https://gluu.local.org'
 ```
 
+Response
+```
+{
+    "created_at": 1515849176000,
+    "config": {
+        "client_id": "@!AAE6.6B30.1597.B32C!0001!0F67.C348!0008!A906.CD80.85A9.76DC",
+        "token_endpoint": "https://gluu.local.org/oxauth/restv1/token",
+        "op_host": "https://gluu.local.org",
+        "client_secret": "ba13e6c3-43c7-4f84-bb94-3c7f7404bc5f",
+        "introspection_endpoint": "https://gluu.local.org/oxauth/restv1/introspection"
+    },
+    "id": "8e5b8063-07a4-4465-9f57-9ad2785e13a7",
+    "name": "gluu-oauth2-bc",
+    "api_id": "68a8153f-e15f-4b6e-8fe1-264f7474ba42",
+    "enabled": true
+}
+```
+
 ### Verify that your API is protected by gluu-oauth2-bc
 You need to pass basic token.
 
