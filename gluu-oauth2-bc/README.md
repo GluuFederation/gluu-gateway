@@ -96,7 +96,7 @@ new Buffer('client_id' + ':' + 'client_secret').toString('base64');
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
     -H 'authorization: Basic QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
-    -H 'host: jsonplaceholder.typicode.com'
+    -H 'host: your.api.server.com'
 ```
 
 If your toke is not valid then you failer message.
@@ -112,7 +112,7 @@ If your toke is not valid then you failer message.
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
     -H 'authorization: Basic QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
-    -H 'host: jsonplaceholder.typicode.com'
+    -H 'host: your.api.server.com'
 ```
 
 ## References
