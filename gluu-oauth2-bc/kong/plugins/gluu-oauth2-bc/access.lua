@@ -1,7 +1,6 @@
 local responses = require "kong.tools.responses"
 local http = require "resty.http"
 local helper = require "kong.plugins.gluu-oauth2-bc.helper"
-local json = require "JSON"
 
 local _M = {}
 
