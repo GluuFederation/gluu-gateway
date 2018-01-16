@@ -6,23 +6,23 @@ Table of Contents
  * [Installation](#installation)
  * [Configuration](#configuration)
  * [Protect your API](#protect-your-api)
-   * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
-   * [Enable gluu-oauth2-bc protection](#enable-gluu-oauth2-bc-protection)
-   * [Verify that your API is protected by gluu-oauth2-bc](#verify-that-your-api-is-protected-by-gluu-oauth2-bc)
+   * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis)
+   * [Enable gluu-oauth2-client-auth protection](#enable-gluu-oauth2-client-auth-protection)
+   * [Verify that your API is protected by gluu-oauth2-client-auth](#verify-that-your-api-is-protected-by-gluu-oauth2-client-auth)
    * [Verify that your API can be accessed with valid basic token](#verify-that-your-api-can-be-accessed-with-valid-basic-token)
  * [References](#references)
 
 ## Installation
 
 1. [Install Kong](https://getkong.org/install/)
-2. Install gluu-oauth2-bc
+2. Install gluu-oauth2-client-auth
     1. Stop kong : `kong stop`
-    2. Copy `gluu-oauth2-bc/kong/plugins/gluu-oauth2-bc` Lua sources to kong plugins folder `/usr/local/share/lua/<version>/kong/plugins/gluu-oauth2-bc`
+    2. Copy `gluu-oauth2-client-auth/kong/plugins/gluu-oauth2-client-auth` Lua sources to kong plugins folder `/usr/local/share/lua/<version>/kong/plugins/gluu-oauth2-client-auth`
             
     3. Enable plugin in your `kong.conf` (typically located at `/etc/kong/kong.conf`) and start kong `kong start`.
     
     ```
-        custom_plugins = gluu-oauth2-bc
+        custom_plugins = gluu-oauth2-client-auth
     ```
 
 ## Configuration
@@ -74,13 +74,13 @@ $ curl -i -X GET \
   --header 'Host: your.api.server.com'
 ```
 
-### Enable gluu-oauth2-bc protection
+### Enable gluu-oauth2-client-auth protection
 
 ```
 $ curl -X POST \
     http://localhost:8001/apis/68a8153f-e15f-4b6e-8fe1-264f7474ba42/plugins/ \
     -H 'content-type: application/x-www-form-urlencoded' \
-    -d 'name=gluu-oauth2-bc&config.op_host=https://gluu.local.org'
+    -d 'name=gluu-oauth2-client-auth&config.op_host=https://gluu.local.org'
 ```
 
 Response
@@ -95,13 +95,13 @@ Response
         "introspection_endpoint": "https://gluu.local.org/oxauth/restv1/introspection"
     },
     "id": "8e5b8063-07a4-4465-9f57-9ad2785e13a7",
-    "name": "gluu-oauth2-bc",
+    "name": "gluu-oauth2-client-auth",
     "api_id": "68a8153f-e15f-4b6e-8fe1-264f7474ba42",
     "enabled": true
 }
 ```
 
-### Verify that your API is protected by gluu-oauth2-bc
+### Verify that your API is protected by gluu-oauth2-client-auth
 You need to pass basic token.
 
 Basic token is base64 encoded token. Below is node js sample to make base64 encoded token.

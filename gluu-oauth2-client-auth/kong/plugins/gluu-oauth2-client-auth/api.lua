@@ -1,20 +1,20 @@
 local crud = require "kong.api.crud_helpers"
 local responses = require "kong.tools.responses"
-local helper = require "kong.plugins.gluu-oauth2-bc.helper"
+local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local http = require "resty.http"
 local json = require "JSON"
 
 return {
-    ["/consumers/:username_or_id/gluu-oauth2-bc/"] = {
+    ["/consumers/:username_or_id/gluu-oauth2-client-auth/"] = {
         before = function(self, dao_factory, helpers)
             crud.find_consumer_by_username_or_id(self, dao_factory, helpers)
             self.params.consumer_id = self.consumer.id
         end,
         GET = function(self, dao_factory)
-            crud.paginated_set(self, dao_factory.oxds)
+            crud.paginated_set(self, dao_factory.gluu_oauth2_client_auth_credentials)
         end,
         PUT = function(self, dao_factory)
-            crud.put(self.params, dao_factory.oxds)
+            crud.put(self.params, dao_factory.gluu_oauth2_client_auth_credentials)
         end,
         POST = function(self, dao_factory)
             if (helper.isempty(self.params.op_host)) then
@@ -52,13 +52,6 @@ return {
                 regData["grant_types"] = self.params.grant_types
             end
 
-            -- Default: client_name - kong_oauth2_bc_client
-            if (helper.isempty(self.params.client_name)) then
-                client_name = "kong_oauth2_bc_client"
-            else
-                client_name = self.params.client_name
-            end
-
             -- http request
             local httpc = http.new()
             helper.print_table(self.params)
@@ -89,7 +82,10 @@ return {
                     redirect_uris = redirect_uris,
                     scope = scope,
                     grant_types = grant_types,
-                    client_name = client_name
+                    client_name = self.params.client_name or "kong_oauth2_bc_client",
+                    jwks_uri = self.params.jwks_uri or "",
+                    token_endpoint_auth_method = self.params.token_endpoint_auth_method or "",
+                    token_endpoint_auth_signing_alg = self.params.token_endpoint_auth_signing_alg or ""
                 }),
                 headers = headers,
                 ssl_verify = false
@@ -106,16 +102,55 @@ return {
 
             local regData = {
                 scope = scope,
-                client_name = client_name,
+                client_name = self.params.client_name or "kong_oauth2_bc_client",
                 client_id = regClientResponseBody.client_id,
                 client_secret = regClientResponseBody.client_secret,
                 token_endpoint = opResposebody.token_endpoint,
                 introspection_endpoint = opResposebody.introspection_endpoint,
-                op_host = opResposebody.self.params.op_host,
+                op_host = self.params.op_host,
                 consumer_id = self.params.consumer_id,
+                jwks_uri = self.params.jwks_uri or "",
+                token_endpoint_auth_method = self.params.token_endpoint_auth_method or "",
+                token_endpoint_auth_signing_alg = self.params.token_endpoint_auth_signing_alg or "",
+                jwks_file = self.params.jwks_file or ""
             }
 
-            crud.post(regData, dao_factory.gluu_oauth2_bc_credentials)
+            crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
+        end
+    },
+
+    ["/consumers/:username_or_id/gluu-oauth2-client-auth/:clientid_or_id"] = {
+        before = function(self, dao_factory, helpers)
+            crud.find_consumer_by_username_or_id(self, dao_factory, helpers)
+            self.params.consumer_id = self.consumer.id
+
+            local credentials, err = crud.find_by_id_or_field(
+                dao_factory.gluu_oauth2_client_auth_credentials,
+                { consumer_id = self.params.consumer_id },
+                self.params.clientid_or_id,
+                "client_id"
+            )
+
+            if err then
+                return helpers.yield_error(err)
+            elseif next(credentials) == nil then
+                return helpers.responses.send_HTTP_NOT_FOUND()
+            end
+            self.params.clientid_or_id = nil
+
+            self.gluu_oauth2_client_auth_credential = credentials[1]
+        end,
+
+        GET = function(self, dao_factory, helpers)
+            return helpers.responses.send_HTTP_OK(self.gluu_oauth2_client_auth_credential)
+        end,
+
+        PATCH = function(self, dao_factory)
+            crud.patch(self.params, dao_factory.gluu_oauth2_client_auth_credentials, self.gluu_oauth2_client_auth_credential)
+        end,
+
+        DELETE = function(self, dao_factory)
+            crud.delete(self.gluu_oauth2_client_auth_credential, dao_factory.gluu_oauth2_client_auth_credentials)
         end
     }
 }

@@ -1,6 +1,6 @@
-local GLUU_OAUTH2_BC_CREDENTIALS_SCHEMA = {
+local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
     primary_key = { "id" },
-    table = "gluu_oauth2_bc_credentials",
+    table = "gluu_oauth2_client_auth_credentials",
     fields = {
         id = { type = "id", dao_insert_value = true },
         consumer_id = { type = "id", required = true, foreign = "consumers:id" },
@@ -13,6 +13,10 @@ local GLUU_OAUTH2_BC_CREDENTIALS_SCHEMA = {
         client_secret = { type = "string", required = true },
         token_endpoint = { type = "string", required = true },
         introspection_endpoint = { type = "string", required = true },
+        jwks_uri = { type = "string" },
+        jwks_file = { type = "string" },
+        token_endpoint_auth_method = { type = "string" },
+        token_endpoint_auth_signing_alg = { type = "string" },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true },
     },
     marshall_event = function(self, t)
@@ -20,4 +24,4 @@ local GLUU_OAUTH2_BC_CREDENTIALS_SCHEMA = {
     end
 }
 
-return { gluu_oauth2_bc_credentials = GLUU_OAUTH2_BC_CREDENTIALS_SCHEMA }
+return { gluu_oauth2_client_auth_credentials = GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA }
