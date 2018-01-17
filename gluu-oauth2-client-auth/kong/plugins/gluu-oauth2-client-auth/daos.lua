@@ -24,4 +24,26 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
     end
 }
 
-return { gluu_oauth2_client_auth_credentials = GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA }
+local GLUU_OAUTH2_CLIENT_AUTH_TOKENS_SCHEMA = {
+    primary_key = {"id"},
+    table = "gluu_oauth2_client_auth_tokens",
+    cache_key = { "access_token" },
+    fields = {
+        id = { type = "id", dao_insert_value = true },
+        api_id = { type = "id", required = false, foreign = "apis:id" },
+        credential_id = { type = "id", required = true, foreign = "gluu_oauth2_client_auth_credentials:id" },
+        token_type = { type = "string", required = true },
+        expires_in = { type = "number", required = true },
+        access_token = { type = "string", required = false, unique = true },
+        scope = { type = "string" },
+        created_at = { type = "timestamp", immutable = true, dao_insert_value = true }
+    },
+    marshall_event = function(self, t)
+        return { id = t.id, credential_id = t.credential_id, access_token = t.access_token }
+    end
+}
+
+return {
+    gluu_oauth2_client_auth_credentials = GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA,
+    gluu_oauth2_client_auth_tokens = GLUU_OAUTH2_CLIENT_AUTH_TOKENS_SCHEMA
+}

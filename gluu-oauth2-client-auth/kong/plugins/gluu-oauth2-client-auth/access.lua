@@ -3,10 +3,33 @@ local utils = require "kong.tools.utils"
 local singletons = require "kong.singletons"
 local responses = require "kong.tools.responses"
 local constants = require "kong.constants"
+local cache = require "kong.cache"
 
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 
 local _M = {}
+local ACCESS_TOKEN = "accesstoken"
+
+local function generate_token(api, credential, access_token, scope, expiration)
+    local token, err = singletons.dao.oauth2_tokens:insert({
+        api_id = api.id,
+        credential_id = credential.id,
+        expires_in = expiration,
+        token_type = "bearer",
+        access_token = access_token,
+        scope = scope
+    }, {ttl = expiration > 0 and 1209600 or nil}) -- Access tokens are being permanently deleted after 14 days (1209600 seconds)
+
+    if err then
+        return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
+    end
+
+    return {
+        access_token = token.access_token,
+        token_type = "bearer",
+        expires_in = expiration > 0 and token.expires_in or nil,
+    }
+end
 
 -- Fast lookup for credential retrieval depending on the type of the authentication
 --
@@ -73,23 +96,86 @@ local function load_credential_from_db(client_id)
     return credential
 end
 
-local function validate_credentials(config, basicToken)
-    ngx.log(ngx.DEBUG, "In validate_credentials")
+local function load_token_into_memory(api, access_token)
+    local credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, access_token = access_token }
+    local result
+    if err then
+        return nil, err
+    elseif #credentials > 0 then
+        result = credentials[1]
+    end
+    return result
+end
+
+local function retrieve_token(conf, access_token)
+    local token, err
+    if access_token then
+        local token_cache_key = singletons.dao.gluu_oauth2_client_auth_tokens:cache_key(access_token)
+        token, err = singletons.cache:get(token_cache_key, nil,
+            load_token_into_memory, conf, ngx.ctx.api,
+            access_token)
+        if err then
+            return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
+        end
+    end
+    return token
+end
+
+local function validate_credentials(credential, basicToken)
     -- http request
     local httpc = http.new()
 
-    -- Request to OP and get openid-configuration
-    local tokenRespose, err = httpc:request_uri(config.token_endpoint, {
+    -- check token in cache
+    local cacheToken = retrieve_token(credential.client_id)
+
+    local access_token
+    if helper.isempty(cacheToken) then
+        -- Request to OP and get access-token
+        local accessTokenRespose, err = httpc:request_uri(credential.token_endpoint, {
+            method = "POST",
+            ssl_verify = false,
+            headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded",
+                ["Authorization"] = basicToken
+            },
+            body = "grant_type=client_credentials&scope=uma_protection clientinfo"
+        })
+
+        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth Request : " .. credential.token_endpoint)
+
+        if not pcall(helper.decode, accessTokenRespose.body) then
+            ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
+            return false
+        end
+
+        local accessTokenResposeBody = helper.decode(accessTokenRespose.body)
+
+        ngx.log(ngx.DEBUG, helper.print_table(accessTokenResposeBody))
+
+        if helper.isempty(accessTokenResposeBody["access_token"]) then
+            return false
+        end
+
+        access_token = accessTokenResposeBody["access_token"]
+
+        -- Insert token
+        generate_token(ngx.ctx.api, credential, access_token, accessTokenResposeBody["scope"] or "", accessTokenResposeBody["expires_in"] or 299)
+    else
+        access_token = cacheToken
+    end
+
+    -- Request to OP and get introspect the access_token
+    local tokenRespose, err = httpc:request_uri(credential.introspection_endpoint, {
         method = "POST",
         ssl_verify = false,
         headers = {
             ["Content-Type"] = "application/x-www-form-urlencoded",
-            ["Authorization"] = basicToken
+            ["Authorization"] = "Bearer " .. access_token
         },
-        body = "grant_type=client_credentials&scope=uma_protection clientinfo"
+        body = "token=" .. access_token
     })
 
-    ngx.log(ngx.DEBUG, "Request : " .. config.token_endpoint)
+    ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth Request : " .. credential.token_endpoint)
 
     if not pcall(helper.decode, tokenRespose.body) then
         ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
@@ -100,11 +186,11 @@ local function validate_credentials(config, basicToken)
 
     ngx.log(ngx.DEBUG, helper.print_table(tokenResposeBody))
 
-    if helper.isempty(tokenResposeBody["access_token"]) then
+    if helper.isempty(tokenResposeBody["active"]) then
         return false
     end
 
-    return true;
+    return tokenResposeBody["active"]
 end
 
 local function load_consumer_into_memory(consumer_id, anonymous)
