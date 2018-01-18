@@ -1,6 +1,6 @@
 return {
     {
-        name = "2017-01-17557_init_gluu_oauth2_client_auth_credentials",
+        name = "2017-01-17600_init_gluu_oauth2_client_auth_credentials",
         up = [[
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_credentials(
         id uuid,
@@ -32,11 +32,12 @@ return {
         token_type text,
         expires_in int,
         scope text,
+        ip_address text,
         created_at timestamp,
         PRIMARY KEY (id)
       );
 
-      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(access_token);
+      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(ip_address);
       CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(credential_id);
     ]],
         down = [[
