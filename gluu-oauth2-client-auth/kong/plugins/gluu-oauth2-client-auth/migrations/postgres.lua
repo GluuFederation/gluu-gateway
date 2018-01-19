@@ -1,6 +1,6 @@
 return {
     {
-        name = "2017-01-17600_init_gluu_oauth2_client_auth_credentials",
+        name = "2017-01-17557_init_gluu_oauth2_client_auth_credentials",
         up = [[
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_credentials(
         id uuid,
@@ -36,20 +36,17 @@ return {
 
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,
-        credential_id uuid REFERENCES gluu_oauth2_client_auth_credentials (id) ON DELETE CASCADE,
-        access_token text,
-        ip_address text UNIQUE,
-        token_type text,
+        client_id text,
+        access_token text UNIQUE,
         expires_in int,
-        scope text,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
 
       DO $$
       BEGIN
-        IF (SELECT to_regclass('gluu_oauth2_client_auth_ip_address_idx')) IS NULL THEN
-          CREATE INDEX gluu_oauth2_client_auth_ip_address_idx ON gluu_oauth2_client_auth_tokens(ip_address);
+        IF (SELECT to_regclass('gluu_oauth2_client_auth_accesstoken_idx')) IS NULL THEN
+          CREATE INDEX gluu_oauth2_client_auth_accesstoken_idx ON gluu_oauth2_client_auth_tokens(access_token);
         END IF;
 
       END$$;
@@ -60,7 +57,7 @@ return {
     ]]
     },
     {
-        name = "2017-01-17600-gluu_oauth2_client_auth_api_id",
+        name = "2017-01-17557-gluu_oauth2_client_auth_api_id",
         up = [[
       ALTER TABLE gluu_oauth2_client_auth_tokens ADD COLUMN api_id uuid REFERENCES apis (id) ON DELETE CASCADE;
     ]],
