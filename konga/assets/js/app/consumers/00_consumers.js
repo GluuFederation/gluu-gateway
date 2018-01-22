@@ -88,11 +88,11 @@
                                             return ConsumerService.loadCredentials($stateParams.id,'basic-auth')
                                         }
                                     ],
-                                    _oauth2_credentials : [
+                                    _gluu_oauth2_client_auth_credentials : [
                                         'ConsumerService',
                                         '$stateParams',
                                         function(ConsumerService,$stateParams){
-                                            return ConsumerService.loadCredentials($stateParams.id,'oauth2')
+                                            return ConsumerService.loadCredentials($stateParams.id,'gluu-oauth2-client-auth')
                                         }
                                     ],
                                     _hmac_auth_credentials : [
