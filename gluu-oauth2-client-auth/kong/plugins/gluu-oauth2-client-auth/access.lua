@@ -87,11 +87,12 @@ local function load_token_into_memory(api, access_token)
     return result
 end
 
-local function retrieve_token_cache(access_token)
+local function retrieve_token_cache(access_token, exp_sec)
     local token, err
     if access_token then
         local token_cache_key = singletons.dao.gluu_oauth2_client_auth_tokens:cache_key(access_token)
-        token, err = singletons.cache:get(token_cache_key, nil,
+
+        token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, ngx.ctx.api,
             access_token)
         if err then
@@ -109,7 +110,7 @@ local function validate_credentials(config, req_access_token)
     local httpc = http.new()
 
     -- check token in cache
-    local access_token = retrieve_token_cache(req_access_token)
+    local access_token = retrieve_token_cache(req_access_token, 0)
 
     -- If token is exist in cache the allow
     if not helper.isempty(access_token) then
@@ -117,6 +118,7 @@ local function validate_credentials(config, req_access_token)
         access_token.active = true
         return access_token
     end
+
     ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
     -- Request to OP and get introspect the access_token
     local tokenRespose, err = httpc:request_uri(config.introspection_endpoint, {
@@ -151,9 +153,13 @@ local function validate_credentials(config, req_access_token)
     ngx.log(ngx.DEBUG, "introspection_endpoint response: ")
     helper.print_table(tokenResposeBody)
 
+    -- count expire time in second
     local exp_sec = (tokenResposeBody.exp - tokenResposeBody.iat)
+
     ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResposeBody.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
     generate_token(ngx.ctx.api, tokenResposeBody.client_id, req_access_token, exp_sec)
+
+    retrieve_token_cache(req_access_token, exp_sec)
 
     return tokenResposeBody
 end

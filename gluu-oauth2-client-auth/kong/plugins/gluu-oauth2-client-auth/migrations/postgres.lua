@@ -1,10 +1,11 @@
 return {
     {
-        name = "2017-01-17557_init_gluu_oauth2_client_auth_credentials",
+        name = "2017-01-22557_init_gluu_oauth2_client_auth_credentials",
         up = [[
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_credentials(
         id uuid,
         consumer_id uuid REFERENCES consumers (id) ON DELETE CASCADE,
+        name text,
         redirect_uris text,
         scope text,
         grant_types text,
@@ -57,7 +58,7 @@ return {
     ]]
     },
     {
-        name = "2017-01-17557-gluu_oauth2_client_auth_api_id",
+        name = "2017-01-22557-gluu_oauth2_client_auth_api_id",
         up = [[
       ALTER TABLE gluu_oauth2_client_auth_tokens ADD COLUMN api_id uuid REFERENCES apis (id) ON DELETE CASCADE;
     ]],

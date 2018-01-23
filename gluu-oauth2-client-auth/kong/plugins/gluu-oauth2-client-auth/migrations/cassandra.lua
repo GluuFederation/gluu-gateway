@@ -1,10 +1,11 @@
 return {
     {
-        name = "2017-01-17557_init_gluu_oauth2_client_auth_credentials",
+        name = "2017-01-22557_init_gluu_oauth2_client_auth_credentials",
         up = [[
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_credentials(
         id uuid,
         consumer_id uuid,
+        name text,
         redirect_uris text,
         scope text,
         grant_types text,

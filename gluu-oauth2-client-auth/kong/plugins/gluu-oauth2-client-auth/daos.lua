@@ -4,6 +4,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
     fields = {
         id = { type = "id", dao_insert_value = true },
         consumer_id = { type = "id", required = true, foreign = "consumers:id" },
+        name = { type = "string", required = true },
         redirect_uris = { type = "string" },
         scope = { type = "string" },
         grant_types = { type = "string" },

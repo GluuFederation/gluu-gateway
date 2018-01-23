@@ -101,6 +101,7 @@ return {
             local regClientResponseBody = helper.decode(regClientResponse.body)
 
             local regData = {
+                name = self.params.name,
                 scope = scope,
                 client_name = self.params.client_name or "kong_oauth2_bc_client",
                 client_id = regClientResponseBody.client_id,
