@@ -24,14 +24,16 @@
 
         $scope.pluginOptions = pluginOptions
         new KongPluginsService().makePluginGroups().then(function (groups) {
-          delete groups[groups.findIndex(function (x) {
-            return x.name == "Custom"
-          }) || 7];
           $scope.pluginGroups = groups
           $log.debug("Plugin Groups", $scope.pluginGroups)
 
           $scope.pluginGroups.forEach(function (group) {
+            console.log(group.plugins);
             for (var key in group.plugins) {
+              if (key == "kong-uma-rs") {
+                delete group.plugins[key];
+                continue;
+              }
               if (!plugins_available[key]) delete group.plugins[key]
             }
           })

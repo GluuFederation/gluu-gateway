@@ -132,7 +132,7 @@
 
         function ShowPluginController($uibModalInstance, $scope, modelPlugin) {
           $scope.model = angular.copy(modelPlugin);
-          $scope.model.config.protection_document = JSON.parse($scope.model.config.protection_document)
+         // $scope.model.config.protection_document = JSON.parse($scope.model.config.protection_document)
         }
 
         /**

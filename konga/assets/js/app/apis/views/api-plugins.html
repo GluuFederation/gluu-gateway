@@ -3,15 +3,14 @@
     <h4>
       <i class="mdi mdi-plug"></i>
       Assigned plugins
-
     </h4>
   </div>
-  <!--<div class="col-md-6 text-right">-->
-  <!--<button class="btn btn-primary btn-flat" style="margin-top: 5px" ng-click="onAddPlugin()">-->
-  <!--<i class="mdi mdi-plus"></i>-->
-  <!--add plugin-->
-  <!--</button>-->
-  <!--</div>-->
+  <div class="col-md-6 text-right">
+    <button class="btn btn-primary btn-flat" style="margin-top: 5px" ng-click="onAddPlugin()">
+      <i class="mdi mdi-plus"></i>
+      add plugin
+    </button>
+  </div>
 </div>
 
 <div class="col-md-12 bg-light-grey padding">
@@ -49,10 +48,12 @@
         switch-size="mini">
     </td>
     <td>
-      <a href data-ng-click="showPluginDetail(item)"><i uib-tooltip="Raw view" class="mdi mdi-eye-outline"></i></a>
+      <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a href data-ng-click="showPluginDetail(item)">{{item.name}}</a>
+      <a href  ng-click="onEditPlugin(item)">
+        {{item.name}}
+      </a>
     </th>
     <td>{{item.created_at | date : format : timezone}}</td>
     <td>
