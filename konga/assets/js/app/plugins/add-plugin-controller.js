@@ -10,12 +10,12 @@
     .controller('AddPluginController', [
       '_', '$scope', '$rootScope', '$log', '$state', 'ListConfig', 'ApiService',
       'MessageService', 'ConsumerModel', 'SocketHelperService', 'PluginHelperService',
-      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_api', '_consumer',
+      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_api', '_consumer', '$localStorage',
       function controller(_, $scope, $rootScope, $log, $state, ListConfig, ApiService,
                           MessageService, ConsumerModel, SocketHelperService, PluginHelperService,
-                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _api, _consumer) {
+                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _api, _consumer, $localStorage) {
 
-
+        $scope.globalInfo = $localStorage.credentials.user;
         $scope.api = _api
         $scope.consumer = _consumer;
         $log.debug("API", $scope.api)
@@ -42,6 +42,7 @@
           if (_pluginName == "gluu-oauth2-client-auth") {
             delete $scope.data.fields.introspection_endpoint;
             delete $scope.data.fields.token_endpoint;
+
           }
 
           // Define general modal window content
@@ -59,6 +60,9 @@
           // Assign extra properties from options to data fields
           PluginHelperService.assignExtraProperties(options, $scope.data.fields);
 
+          if (_pluginName == "gluu-oauth2-client-auth") {
+            $scope.data.fields.op_host.value = $scope.globalInfo.opHost;
+          }
           console.log("Extra properties added to fields =>", $scope.data.fields);
         }
 

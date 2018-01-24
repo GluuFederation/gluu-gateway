@@ -104,7 +104,7 @@
                             </select>
                         </div>
                         <div data-ng-if="!value.enum">
-                            <input type="text" ng-model="value.value" class="form-control">
+                            <input type="text" ng-model="value.value" class="form-control" data-ng-disabled="(pluginName == 'gluu-oauth2-client-auth')">
                         </div>
                     </div>
                     <div ng-switch-when="array">
