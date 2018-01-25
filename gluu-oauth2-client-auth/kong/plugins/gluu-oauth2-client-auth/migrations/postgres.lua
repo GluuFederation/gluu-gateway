@@ -6,19 +6,16 @@ return {
         id uuid,
         consumer_id uuid REFERENCES consumers (id) ON DELETE CASCADE,
         name text,
-        redirect_uris text,
+        oxd_id text,
+        oxd_http_url text,
         scope text,
-        grant_types text,
-        client_name text,
         op_host text,
         client_id text UNIQUE,
         client_secret text,
-        token_endpoint text,
-        introspection_endpoint text,
-        jwks_uri text,
+        client_jwks_uri text,
         jwks_file text,
-        token_endpoint_auth_method text,
-        token_endpoint_auth_signing_alg text,
+        client_token_endpoint_auth_method text,
+        client_token_endpoint_auth_signing_alg text,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
@@ -30,14 +27,14 @@ return {
         IF (SELECT to_regclass('gluu_oauth2_client_auth_credentials_client_idx')) IS NULL THEN
           CREATE INDEX gluu_oauth2_client_auth_credentials_client_idx ON gluu_oauth2_client_auth_credentials(client_id);
         END IF;
-        IF (SELECT to_regclass('gluu_oauth2_client_auth_credentials_secret_idx')) IS NULL THEN
-          CREATE INDEX gluu_oauth2_client_auth_credentials_secret_idx ON gluu_oauth2_client_auth_credentials(client_secret);
+        IF (SELECT to_regclass('gluu_oauth2_client_auth_credentials_oxd_idx')) IS NULL THEN
+          CREATE INDEX gluu_oauth2_client_auth_credentials_oxd_idx ON gluu_oauth2_client_auth_credentials(oxd_id);
         END IF;
       END$$;
 
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,
-        client_id text,
+        credential_id uuid REFERENCES gluu_oauth2_client_auth_credentials (id) ON DELETE CASCADE,
         access_token text UNIQUE,
         expires_in int,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),

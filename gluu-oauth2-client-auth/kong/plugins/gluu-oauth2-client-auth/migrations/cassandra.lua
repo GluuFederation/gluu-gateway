@@ -6,25 +6,22 @@ return {
         id uuid,
         consumer_id uuid,
         name text,
-        redirect_uris text,
+        oxd_id text,
+        oxd_http_url text,
         scope text,
-        grant_types text,
-        client_name text,
         op_host text,
         client_id text,
         client_secret text,
-        token_endpoint text,
-        introspection_endpoint text,
-        jwks_uri text,
+        client_jwks_uri text,
         jwks_file text,
-        token_endpoint_auth_method text,
-        token_endpoint_auth_signing_alg text,
+        client_token_endpoint_auth_method text,
+        client_token_endpoint_auth_signing_alg text,
         created_at timestamp,
         PRIMARY KEY (id)
       );
       CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_credentials(consumer_id);
       CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_credentials(client_id);
-      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_credentials(client_secret);
+      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_credentials(oxd_id);
 
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,

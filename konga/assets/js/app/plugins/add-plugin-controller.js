@@ -38,21 +38,14 @@
           // Initialize plugin fields data
           $scope.data = _.merge(options.fields, $scope.schema)
 
-          // If gluu-oauth2-client-auth plugin. Removed extra fields
-          if (_pluginName == "gluu-oauth2-client-auth") {
-            delete $scope.data.fields.introspection_endpoint;
-            delete $scope.data.fields.token_endpoint;
-
-          }
-
           // Define general modal window content
-            $scope.description = $scope.data.meta ? $scope.data.meta.description
-              : 'Configure the Plugin.'
+          $scope.description = $scope.data.meta ? $scope.data.meta.description
+            : 'Configure the Plugin.'
 
           // Remove unwanted data fields that start with "_"
-            Object.keys($scope.data.fields).forEach(function (key) {
-              if (key.startsWith("_")) delete $scope.data.fields[key]
-            })
+          Object.keys($scope.data.fields).forEach(function (key) {
+            if (key.startsWith("_")) delete $scope.data.fields[key]
+          })
 
           // Customize data fields according to plugin
           PluginHelperService.customizeDataFieldsForPlugin(_pluginName, $scope.data.fields)
@@ -60,9 +53,6 @@
           // Assign extra properties from options to data fields
           PluginHelperService.assignExtraProperties(options, $scope.data.fields);
 
-          if (_pluginName == "gluu-oauth2-client-auth") {
-            $scope.data.fields.op_host.value = $scope.globalInfo.opHost;
-          }
           console.log("Extra properties added to fields =>", $scope.data.fields);
         }
 

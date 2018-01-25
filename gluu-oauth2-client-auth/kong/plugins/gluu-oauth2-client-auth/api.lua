@@ -1,7 +1,7 @@
+local oxd = require "oxdweb"
 local crud = require "kong.api.crud_helpers"
 local responses = require "kong.tools.responses"
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
-local http = require "resty.http"
 local json = require "JSON"
 
 return {
@@ -21,102 +21,71 @@ return {
                 return responses.send_HTTP_BAD_REQUEST("op_host is required")
             end
 
+            if (helper.isempty(self.params.oxd_http_url)) then
+                return responses.send_HTTP_BAD_REQUEST("oxd_http_url is required")
+            end
+
             local redirect_uris
             local scope
             local grant_types
             local client_name
-            local regData = {}
 
             -- Default: redirect uri - https://localhost
             if (helper.isempty(self.params.redirect_uris)) then
                 redirect_uris = helper.split("https://localhost", ",")
-                regData["redirect_uris"] = "https://localhost"
             else
                 redirect_uris = helper.split(self.params.redirect_uris, ",")
-                regData["redirect_uris"] = self.params.redirect_uris
             end
 
             -- Default: scope - client_credentials
             if (helper.isempty(self.params.scope)) then
-                scope = "clientinfo uma_protection"
+                scope = helper.split("clientinfo,uma_protection", ",")
             else
-                scope = self.params.scope:gsub(",", " ")
+                scope = helper.split(self.params.scope, ",")
             end
 
             -- Default: grant_types - client_credentials
             if (helper.isempty(self.params.grant_types)) then
                 grant_types = helper.split("client_credentials", ",")
-                regData["grant_types"] = "client_credentials"
             else
                 grant_types = helper.split(self.params.grant_types, ",")
-                regData["grant_types"] = self.params.grant_types
             end
 
-            -- http request
-            local httpc = http.new()
-            helper.print_table(self.params)
-            -- Request to OP and get openid-configuration
-            local opRespose, err = httpc:request_uri(self.params.op_host .. "/.well-known/openid-configuration", {
-                method = "GET",
-                ssl_verify = false
-            })
-
-            ngx.log(ngx.DEBUG, "Request : " .. self.params.op_host .. "/.well-known/openid-configuration")
-            ngx.log(ngx.DEBUG, (not pcall(helper.decode, opRespose.body)))
-
-            if not pcall(helper.decode, opRespose.body) then
-                ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
-                return false
-            end
-
-            local opResposebody = helper.decode(opRespose.body)
-
-            -- Request for client registration
-            local headers = {
-                ["Content-Type"] = "application/json"
-            }
-
-            local regClientResponse, err = httpc:request_uri(opResposebody.registration_endpoint, {
-                method = "POST",
-                body = json:encode({
-                    redirect_uris = redirect_uris,
-                    scope = scope,
-                    grant_types = grant_types,
-                    client_name = self.params.client_name or "kong_oauth2_bc_client",
-                    jwks_uri = self.params.jwks_uri or "",
-                    token_endpoint_auth_method = self.params.token_endpoint_auth_method or "",
-                    token_endpoint_auth_signing_alg = self.params.token_endpoint_auth_signing_alg or ""
-                }),
-                headers = headers,
-                ssl_verify = false
-            })
-
-            ngx.log(ngx.DEBUG, "Request : " .. opResposebody.registration_endpoint)
-
-            if not pcall(helper.decode, regClientResponse.body) then
-                ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
-                return false
-            end
-
-            local regClientResponseBody = helper.decode(regClientResponse.body)
-
-            local regData = {
-                name = self.params.name,
-                scope = scope,
-                client_name = self.params.client_name or "kong_oauth2_bc_client",
-                client_id = regClientResponseBody.client_id,
-                client_secret = regClientResponseBody.client_secret,
-                token_endpoint = opResposebody.token_endpoint,
-                introspection_endpoint = opResposebody.introspection_endpoint,
+            local body = {
+                oxd_host = self.params.oxd_http_url,
                 op_host = self.params.op_host,
-                consumer_id = self.params.consumer_id,
-                jwks_uri = self.params.jwks_uri or "",
-                token_endpoint_auth_method = self.params.token_endpoint_auth_method or "",
-                token_endpoint_auth_signing_alg = self.params.token_endpoint_auth_signing_alg or "",
-                jwks_file = self.params.jwks_file or ""
+                authorization_redirect_uri = redirect_uris[1],
+                redirect_uris = redirect_uris,
+                scope = scope,
+                grant_types = grant_types,
+                client_name = self.params.client_name or "kong_oauth2_bc_client",
+                client_jwks_uri = self.params.client_jwks_uri or "",
+                client_token_endpoint_auth_method = self.params.client_token_endpoint_auth_method or "",
+                client_token_endpoint_auth_signing_alg = self.params.client_token_endpoint_auth_signing_alg or ""
             }
 
-            crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
+            local regClientResponseBody = oxd.setup_client(body)
+
+            if regClientResponseBody.status == "ok" then
+                local regData = {
+                    consumer_id = self.params.consumer_id,
+                    name = self.params.name,
+                    oxd_id = regClientResponseBody.data.oxd_id,
+                    oxd_http_url = self.params.oxd_http_url,
+                    scope = self.params.scope,
+                    op_host = self.params.op_host,
+                    client_id = regClientResponseBody.data.client_id,
+                    client_secret = regClientResponseBody.data.client_secret,
+                    client_jwks_uri = body.client_jwks_uri,
+                    jwks_file = self.params.jwks_file or "",
+                    client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
+                    client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or ""
+                }
+
+                crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
+            else
+                return responses.send_HTTP_BAD_REQUEST("Client registration failed. Check oxd-http and oxd-server log")
+            end
         end
     },
 

@@ -904,10 +904,10 @@
               meta: {
                 description: 'Add an OAuth 2.0 authentication layer with the <a href="https://tools.ietf.org/html/rfc6749#section-4.4" target="_blank">Client Credentials</a>. Then use consumer to register client and authentication.'
               },
-              'op_host': {
-                type: 'text',
-                value: 'https://',
-                help: 'Open ID connect provider. Example: https://example.op.com'
+              'hide_credentials': {
+                type: 'boolean',
+                value: false,
+                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
               }
             }
           };

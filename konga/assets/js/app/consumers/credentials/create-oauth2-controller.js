@@ -16,7 +16,8 @@
         $scope.consumer = _consumer;
         $scope.create = create;
         $scope.data = {
-          op_host: $scope.globalInfo.opHost
+          op_host: $scope.globalInfo.opHost,
+          oxd_http_url: $scope.globalInfo.oxdWeb
         };
 
         $scope.close = function () {
@@ -57,14 +58,14 @@
             $log.debug('OAuth2 generated', resp);
             $rootScope.$broadcast('consumer.oauth2.created');
             $uibModalInstance.dismiss();
-            prompt(resp.data.client_id, resp.data.client_secret);
+            prompt(resp.data.client_id, resp.data.oxd_id, resp.data.client_secret);
           }).catch(function (err) {
             $log.error(err)
             $scope.errors = err.data.body || err.data.customMessage || {}
           })
         }
 
-        function prompt(client_id, client_secret) {
+        function prompt(client_id, oxd_id, client_secret) {
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -78,12 +79,16 @@
             '<table class="table table-bordered">' +
             '<tbody>' +
             '<tr>' +
+            '<td>OXD Id</td>' +
+            '<td>' + oxd_id + ' </td>' +
+            '</tr>' +
+            '<tr>' +
             '<td>Client ID</td>' +
             '<td>' + client_id + '</td>' +
             '</tr>' +
             '<tr>' +
             '<td>Client Secret</td>' +
-            '<td>' + client_secret + ' </td>' +
+            '<td>' + client_secret + '</td>' +
             '</tr>' +
             '</tbody>' +
             '</table>' +
