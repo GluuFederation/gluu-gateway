@@ -247,6 +247,7 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
