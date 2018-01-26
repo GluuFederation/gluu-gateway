@@ -438,7 +438,7 @@ if __name__ == "__main__":
               + "The above copyright notice and this permission notice shall be included in all \n" \
               + "copies or substantial portions of the Software. \n\n" \
               + "The person using this software has an active support subscription while the software \n" \
-              + "is in use. \n\n" \
+              + "is in non-development use. \n\n" \
               + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
               + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
               + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
