@@ -61,7 +61,8 @@
             prompt(resp.data.client_id, resp.data.oxd_id, resp.data.client_secret);
           }).catch(function (err) {
             $log.error(err)
-            $scope.errors = err.data.body || err.data.customMessage || {}
+            $scope.errors = err.data.message || err.data.customMessage || {};
+            MessageService.error(err.data.body && err.data.body.message || err.data.customMessage || {});
           })
         }
 

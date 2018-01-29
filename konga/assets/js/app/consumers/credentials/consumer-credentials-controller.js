@@ -209,6 +209,7 @@
             templateUrl: 'js/app/consumers/credentials/create-oauth2-modal.html',
             controller: 'CreateOAuth2Controller',
             controllerAs: '$ctrl',
+            size: 'lg',
             resolve: {
               _consumer: function () {
                 return $scope.consumer

@@ -52,30 +52,50 @@ return {
             end
 
             local body = {
+                client_id = self.params.client_id or "",
+                client_secret = self.params.client_secret or "",
                 oxd_host = self.params.oxd_http_url,
                 op_host = self.params.op_host,
                 authorization_redirect_uri = redirect_uris[1],
                 redirect_uris = redirect_uris,
                 scope = scope,
                 grant_types = grant_types,
-                client_name = self.params.client_name or "kong_oauth2_bc_client",
+                client_name = self.params.client_name or self.params.name or "kong_oauth2_bc_client",
                 client_jwks_uri = self.params.client_jwks_uri or "",
                 client_token_endpoint_auth_method = self.params.client_token_endpoint_auth_method or "",
                 client_token_endpoint_auth_signing_alg = self.params.client_token_endpoint_auth_signing_alg or ""
             }
 
-            local regClientResponseBody = oxd.setup_client(body)
+            local regClientResponseBody
+            local regData
+            -- setup client
+            if helper.isempty(body.client_id) and helper.isempty(body.client_id) then
+                regClientResponseBody = oxd.setup_client(body)
+            else
+                -- Register site or update
+                local tokenResponse = oxd.get_client_token(body)
+                if tokenResponse.status == "ok" then
+                    if not helper.isempty(self.params.oxd_id) then
+                        body.oxd_id = self.params.oxd_id
+                        regClientResponseBody = oxd.update_site(body, tokenResponse.data.access_token)
+                    else
+                        regClientResponseBody = oxd.register_site(body, tokenResponse.data.access_token)
+                    end
+                else
+                    return responses.send_HTTP_BAD_REQUEST("Register site: failed to fetch client token")
+                end
+            end
 
             if regClientResponseBody.status == "ok" then
-                local regData = {
+                regData = {
                     consumer_id = self.params.consumer_id,
-                    name = self.params.name,
+                    name = self.params.name or "gluu-oauth2-client-auth",
                     oxd_id = regClientResponseBody.data.oxd_id,
                     oxd_http_url = self.params.oxd_http_url,
                     scope = self.params.scope,
                     op_host = self.params.op_host,
-                    client_id = regClientResponseBody.data.client_id,
-                    client_secret = regClientResponseBody.data.client_secret,
+                    client_id = regClientResponseBody.data.client_id or self.params.client_id,
+                    client_secret = regClientResponseBody.data.client_secret or self.params.client_secret,
                     client_jwks_uri = body.client_jwks_uri,
                     jwks_file = self.params.jwks_file or "",
                     client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
