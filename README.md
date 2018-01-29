@@ -172,6 +172,16 @@ Add your API by using `+ ADD NEW API` button. Add form shows details of every fi
 For Add UMA RS plugin click on `SECURITY` option in apis list.
 ![api_uma_rs](doc/3_add_uma_rs.png)
 
+#### Manage plugins in APIS.
+
+You need to go in manage mode in api section by click on pencil icon in apis list.
+
+API's Plugin list
+![api_plugin_list](doc/3_2_api_plugin_list.png)
+
+Add Plugin in API
+![api_uma_rs](doc/3_1_add_plugin_api.png)
+
 ### 4. Consumers
 
 The Consumer object represents a consumer - or a user - of an API. You can either rely on Kong as the primary datastore, or you can map the consumer list with your database to keep consistency between Kong and your existing primary datastore.
