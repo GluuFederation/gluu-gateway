@@ -13,7 +13,6 @@ import requests
 import json
 import getpass
 
-
 class KongSetup(object):
     def __init__(self):
         self.hostname = ''
@@ -83,7 +82,7 @@ class KongSetup(object):
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
         self.kongaKongAdminWebURL = 'http://localhost:8001'
-        self.kongaOxdVersion = 'Version 3.1.1'
+        self.kongaOxdVersion = 'Version 3.1.2'
 
         # oxd licence configuration
         self.oxdServerLicenseId = ''
@@ -364,10 +363,6 @@ class KongSetup(object):
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-
-        msg = """Note: You need to take care of client by extending the client expiration date and enable "pre-authorization"."""
-        print msg
-
         self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
 
         if not self.generateClient:

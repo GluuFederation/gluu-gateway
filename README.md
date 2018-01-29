@@ -14,7 +14,7 @@ The Gluu Gateway is a package which can be used to quickly deploy an OAuth prote
 1. Add | Edit | Delete API's
 1. Restict access to tokens with certain OAuth scopes
 1. API Dashboard to configure and monitor the health of your servers.
-1. Manage your api gateway cluster for high availability
+1. Manage your API gateway cluster for high availability
 1. Backup, restore and migrate Kong instances using snapshots
 1. Leverages the security and upgradability of the oxd-server
 
@@ -53,16 +53,16 @@ Installation is a three part process:
    # echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
    # wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
-4. Add Kong repo: 
+4. Add Kong repo:
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 
 5. Add Node repo:
    # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-   
+
 ```
 
 ### Install gluu-gateway pacakge
-   
+
 ```
    # apt update
    # apt install gluu-gateway
@@ -178,12 +178,12 @@ The API object describes an API that's being exposed by Kong. Kong needs to know
 Add your API by using `+ ADD NEW API` button. Add form shows details of every field.
 ![api_add](doc/3_api_add.png)
 
-For Add UMA RS plugin click on `SECURITY` option in apis list.
+For Add UMA RS plugin click on `SECURITY` option in API's list.
 ![api_uma_rs](doc/3_add_uma_rs.png)
 
 #### Manage plugins in APIS.
 
-You need to go in manage mode in api section by click on pencil icon in apis list.
+You need to go in manage mode in API section by click on pencil icon in API's list.
 
 API's Plugin list
 ![api_plugin_list](doc/3_2_api_plugin_list.png)
