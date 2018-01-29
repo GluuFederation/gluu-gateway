@@ -2,12 +2,20 @@ Licensed under the [GLUU SUPPORT LICENSE](./LICENSE). Copyright Gluu 2017.
 
 ## Gluu Gateway
 
-The Gluu Gateway is a package which can be used to quickly deploy an OAuth protected API gateway with four components:
+The Gluu Gateway is a package which can be used to quickly deploy an
+OAuth protected API gateway with the following components:
 
-1. **[Kong Community Edition](https://getkong.org/)**: The open-source API Gateway and Microservices Management Layer, delivering high performance and reliability.
-2. **[Gluu Kong plugin for UMA](https://github.com/GluuFederation/gluu-gateway/tree/master/kong-uma-rs)**: Protect your resources by using UMA resource protection.
-3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  An admin user interface that calls the [Kong admin API's](https://getkong.org/docs/0.11.x/admin-api/)
-4. **[oxd](https://oxd.gluu.org)**: OAuth client software required to integrate Gluu Gateway with the Gluu Server.  
+1. **[Kong Community Edition](https://getkong.org/)**: The open-source API
+Gateway and Microservices Management Layer, delivering high performance and
+reliability.
+2. **[Gluu Kong plugins](https://github.com/GluuFederation/gluu-gateway/)**:  
+User a Gluu Server to authenticate OAuth2 clients or to control access to
+upstream API's.
+3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  
+An web administration portal, based on [Konga](https://github.com/pantsel/konga),
+that makes it easier to manage your Gluu Gateway.
+4. **[oxd](https://oxd.gluu.org)**: OpenID Connect and UMA middleware service
+used for client credential management and cryptographic validation.
 
 ## Features
 
@@ -61,7 +69,7 @@ Installation is a three part process:
 
 ```
 
-### Install gluu-gateway pacakge
+### Install gluu-gateway package
 
 ```
    # apt update
@@ -76,48 +84,61 @@ Installation is a three part process:
 # python setup-gluu-gateway.py
 ```
 
-You will be prompted to answer some questions. Just hit Enter to accept the default value, specified in square brackets. The following table should help you answer the questions correctly.
+You will be prompted to answer some questions. Just hit Enter to accept the
+default value, specified in square brackets.
 
 | Question | Explanation |
 |----------|-------------|
-| Enter IP Address | IP Address for kong configuration. |
-| Enter Kong hostname | Internet-facing hostname, FQDN, or CNAME whichever your organization follows to be used to generate certificates and metadata. Do not use an IP address or localhost. |
-| Country | Used to generate X.509 certificate for kong and konga. |
-| State | Used to generate certificate for kong and konga. |
-| City | Used to generate certificate for kong and konga. |
-| Organization | Used to generate certificate for kong and konga. |
-| Email | Used to generate certificate for kong and konga. |
-| Password | Used for postgres database configuration. If you have already database user(i:e postgres) with password then enter existing password otherwise enter new password. |
-| Would you like to configure oxd-server? | If you have already have oxd-server and oxd-https-extension then skip this configuration. |
-| OP hostname | The hostname of your Gluu Sever (i.e. `your.domain.com`). |
-| License Id | For oxd-server |
-| Public key | For oxd-server |
-| Public password | For oxd-server |
-| License password | For oxd-server |
-| oxd https url | Used to configure konga for the oxd-https-extension. Make sure oxd web url(oxd-https-extension) is in the running state, if not then start it manually. |
-| Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter manually enter existing client credentials. If you choose 'y' then make sure oxd web url(oxd-https-extension) is in the running state otherwise it does not allow to make new client. You need to take care of client by extending the client expiration date and enable "pre-authorization". |
-| oxd_id | Used to manually set oxd id for konga. |
-| client_id | Used to manually set client id for konga. |
-| client_secret | Used to manually set client secret for konga. |
+| Enter IP Address | IP Address of your API gateway  |
+| Enter Kong hostname | Internet-facing FQDN to generate certificates and
+metadata. Do not use an IP address or localhost. |
+| Country | Used to generate web X.509 certificates |
+| State | Used to generate web X.509 certificates |
+| City | Used to generate web X.509 certificates |
+| Organization | Used to generate web X.509 certificates |
+| Email | Used to generate web X.509 certificates |
+| Password | If you already have a database password for user `postgres`, enter
+it here, otherwise enter a new password. |
+| Would you like to configure oxd-server? | If you already have
+ oxd-web on the network, skip this configuration. |
+| OP hostname | Used to configure the oxd default OP hostname. Many deployments
+use a single domain's OP service, so it makes sense to set it as the default. |
+| License Id | From [oxd-server license](https://oxd.gluu.org/#pricing) |
+| Public key | From [oxd-server license](https://oxd.gluu.org/#pricing) |
+| Public password | From [oxd-server license](https://oxd.gluu.org/#pricing) |
+| License password | From [oxd-server license](https://oxd.gluu.org/#pricing) |
+| oxd https url | Make sure oxd-https-extension is running. |
+| Would you like to generate client_id/client_secret for konga? | You can
+register a new OpenID Client or enter manually enter existing client credentials.
+You may want to extend the client expiration date if on the Gluu Server if you
+plan to use this service more then one day.|
+| oxd_id | Used to manually set oxd id. |
+| client_id | Used to manually set client id. |
+| client_secret | Used to manually set client secret. |
 
 ```
 Gluu Gateway configuration successful!!! https://localhost:1338
 ```
-When you got this above message that means installation done successful. Next, process is to make tunnel to `https://localhost:1338` and use konga. If your port is open then you use konga directly in browser i:e `https://hostname:1338`.
-
-> Note: The destination tunnel port must be 1338 because, during setup script installation, It creates the OpenId client with `https://localhost:1338` authorization redirect URI. Before setup, You can change the port in `setup-gluu-gateway.py` by setting `self.kongaPort` property.
+If you see the above message it means installation was successful. To login
+to the Gluu Gateway admin portal, make an ssh tunnel on port 1338 from your
+workstation to the Gluu Gateway server, and point your browser at
+`https://localhost:1338`
 
 ## Configuration
 
-### Configure gluu-gateway
-Gluu-gateway service used to manage all the gluu-gateway componets(konga, kong, postgres, oxd-server, oxd-https).
+### Configure Gluu Gateway
+
+The Gluu Gateway service used to manage all the gluu-gateway components (konga,
+kong, postgres, oxd-server, oxd-https).
+
 * Start/Restart/Status
 ```
  # service gluu-gateway [start|restart|status]
 ```
 
 ### Configure konga
-* You can configure konga by setting properties in local.js file. This is used to set port, oxd, OP and client settings.
+* You can configure konga by setting properties in local.js file. This is used
+to set port, oxd, OP and client settings.
 ```
 /opt/gluu-gateway/konga/config/local.js
 ```
