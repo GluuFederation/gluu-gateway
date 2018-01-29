@@ -18,6 +18,10 @@ The Gluu Gateway is a package which can be used to quickly deploy an OAuth prote
 1. Backup, restore and migrate Kong instances using snapshots
 1. Leverages the security and upgradability of the oxd-server
 
+## Pre-requisite
+
+1. Gluu server >= v3.1.2
+
 ## Installation
 
 Installation is a three part process:
@@ -29,21 +33,21 @@ Installation is a three part process:
 ### Required Third Party repositories
 
 ```
-1. Add Gluu repo:
+1. Add Gluu repo: It use to install oxd server(v3.1.2) and oxd https extension(v3.1.2)
    # echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
    # curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
 
 2. Add openjdk-8 PPA:
    # add-apt-repository ppa:openjdk-r/ppa
 
-3. Add Postgresql repo:
+3. Add Postgresql-10 repo:
    # echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
    # wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
 
-4. Add Kong repo:
+4. Add Kong repo: It use to install kong >= v0.11.x
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 
-5. Add Node repo:
+5. Add Node repo: It use to install nodejs(v8.9.4) and npm(v5.6.0)
    # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
    
 ```

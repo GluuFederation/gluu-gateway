@@ -1,16 +1,10 @@
 # Gluu OAuth 2.0 Back channel authentication
 
-Table of Contents
-=================
-
- * [Installation](#installation)
- * [Configuration](#configuration)
- * [Protect your API](#protect-your-api)
-   * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis)
-   * [Enable gluu-oauth2-client-auth protection](#enable-gluu-oauth2-client-auth-protection)
-   * [Verify that your API is protected by gluu-oauth2-client-auth](#verify-that-your-api-is-protected-by-gluu-oauth2-client-auth)
-   * [Verify that your API can be accessed with valid basic token](#verify-that-your-api-can-be-accessed-with-valid-basic-token)
- * [References](#references)
+## Terminology
+* `api`: your upstream service placed behind Kong, for which Kong proxies requests to.
+* `plugin`: a plugin executing actions inside Kong before or after a request has been proxied to the upstream API.
+* `consumer`: a developer or service using the api. When using Kong, a Consumer only communicates with Kong which proxies every call to the said, upstream api.
+* `credential`: in the gluu-aouth2-client-auth plugin context, a openId client is registered with consumer and client id is used to identify the credential.
 
 ## Installation
 
@@ -18,18 +12,15 @@ Table of Contents
 2. Install gluu-oauth2-client-auth
     1. Stop kong : `kong stop`
     2. Copy `gluu-oauth2-client-auth/kong/plugins/gluu-oauth2-client-auth` Lua sources to kong plugins folder `/usr/local/share/lua/<version>/kong/plugins/gluu-oauth2-client-auth`
-            
+         or
+       `luarocks install gluu-oauth2-client-auth`
     3. Enable plugin in your `kong.conf` (typically located at `/etc/kong/kong.conf`) and start kong `kong start`.
-    
+
     ```
         custom_plugins = gluu-oauth2-client-auth
     ```
 
 ## Configuration
-
- - op_host - OPTIONAL, OAuth OpenId provider server. Example: https://idp.gluu.org
-
-## Protect your API
 
 ### Add your API server to kong /apis
 
@@ -77,59 +68,115 @@ $ curl -i -X GET \
 ### Enable gluu-oauth2-client-auth protection
 
 ```
-$ curl -X POST \
-    http://localhost:8001/apis/68a8153f-e15f-4b6e-8fe1-264f7474ba42/plugins/ \
-    -H 'content-type: application/x-www-form-urlencoded' \
-    -d 'name=gluu-oauth2-client-auth&config.op_host=https://gluu.local.org'
+curl -X POST http://kong:8001/apis/{api}/plugins \
+    --data "name=gluu-oauth2-client-auth" \
+    --data "config.hide_credentials=true"
 ```
 
-Response
+*api*: The `id` or `name` of the API that this plugin configuration will target
+
+Once applied, any user with a valid credential can access the service/API.
+
+| FORM PARAMETER | DEFAULT | DESCRIPTION |
+|----------------|---------|-------------|
+| name | | The name of the plugin to use, in this case: gluu-oauth2-client-auth. |
+| config.hide_credentials(optional) | false | An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request. |
+
+## Usage
+
+In order to use the plugin, you first need to create a Consumer to associate one or more credentials to. The Consumer represents a developer using the final service/API.
+
+### Create a Consumer
+
+You need to associate a credential to an existing [Consumer](https://getkong.org/docs/latest/admin-api/#consumer-object) object, that represents a user consuming the API. To create a Consumer you can execute the following request:
+
 ```
+$ curl -X POST http://localhost:8001/consumers/ \
+    --data "username=<USERNAME>" \
+    --data "custom_id=<CUSTOM_ID>"
+HTTP/1.1 201 Created
+
 {
-    "created_at": 1515849176000,
-    "config": {
-        "client_id": "@!AAE6.6B30.1597.B32C!0001!0F67.C348!0008!A906.CD80.85A9.76DC",
-        "token_endpoint": "https://gluu.local.org/oxauth/restv1/token",
-        "op_host": "https://gluu.local.org",
-        "client_secret": "ba13e6c3-43c7-4f84-bb94-3c7f7404bc5f",
-        "introspection_endpoint": "https://gluu.local.org/oxauth/restv1/introspection"
-    },
-    "id": "8e5b8063-07a4-4465-9f57-9ad2785e13a7",
-    "name": "gluu-oauth2-client-auth",
-    "api_id": "68a8153f-e15f-4b6e-8fe1-264f7474ba42",
-    "enabled": true
+    "username":"<USERNAME>",
+    "custom_id": "<CUSTOM_ID>",
+    "created_at": 1472604384000,
+    "id": "7f853474-7b70-439d-ad59-2481a0a9a904"
 }
 ```
 
-### Verify that your API is protected by gluu-oauth2-client-auth
-You need to pass basic token.
+| PARAMETER | DEFAULT | DESCRIPTION |
+|----------------|---------|-------------|
+| username(semi-optional) | | The username of the Consumer. Either this field or ``custom_id` must be specified. |
+| custom_id(semi-optional) | | A custom identifier used to map the Consumer to another database. Either this field or `username` must be specified. |
 
-Basic token is base64 encoded token. Below is node js sample to make base64 encoded token.
+### Register OpenId client
+
+This process registers OpenId client with oxd. You can provision new credentials by making the following HTTP request:
+
+```
+curl -X POST \
+  http://localhost:8001/consumers/{consumer}/gluu-oauth2-client-auth/ \
+  -d name=<name>
+  -d op_host=<op_host>
+  -d oxd_http_url=<oxd_http_url>
+
+RESPONSE :
+{
+  "created_at": 1517216795000,
+  "id": "e1b1e30d-94fa-4764-835d-4fae0f8ff668",
+  "name": <name>,
+  "client_secret": <client_secret>,
+  "client_jwks_uri": "",
+  "client_token_endpoint_auth_method": "",
+  "oxd_id": <oxd_id>,
+  "op_host": <op_host>,
+  "client_token_endpoint_auth_signing_alg": "",
+  "client_id": <client_id>,
+  "oxd_http_url": <oxd_http_url>,
+  "consumer_id": "81ae39fa-d08e-4978-a6af-be0127b9fb99"
+}
+```
+
+| FORM PARAMETER | DEFAULT | DESCRIPTION |
+|----------------|---------|-------------|
+| name | | The name to associate to the credential. In OAuth 2.0 this would be the application name. |
+| op_host | | Open Id connect provider. Example: https://gluu.example.org |
+| oxd_http_url | | OXD https extenstion url. |
+| client_name(optional) | kong_oauth2_bc_client | An optional string value for client name. |
+| client_jwks_uri(optional) | | An optional string value for client jwks uri. |
+| client_token_endpoint_auth_method(optional) | | An optional string value for client token endpoint auth method. |
+| client_token_endpoint_auth_signing_alg(optional) | | An optional string value for client token endpoint auth signing alg. |
+
+### Verify that your API is protected by gluu-oauth2-client-auth
+
+You need to pass bearer token. which is Base64 encoded combination of client_id and access_token. client_id is used to identify the consumer credential and access_token is used to authenticate the request.
+
+Below is node js sample to make base64 encoded token.
 
 ```Node JS
-new Buffer('client_id' + ':' + 'client_secret').toString('base64');
+new Buffer('client_id' + ':' + 'access_token').toString('base64');
 ```
 
 ```
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
-    -H 'authorization: Basic QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
+    -H 'authorization: Bearer QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
     -H 'host: your.api.server.com'
 ```
 
-If your toke is not valid then you failer message.
+If your toke is not valid or time expired then you failer message.
 
 ```
-{"message":"Failed to allow grant"}
+{"message":"Invalid authentication credentials - Token is not active"}
 ```
 
 ### Verify that your API can be accessed with valid basic token
-(This sample assumes that below basic token is valid and grant by OP server).
+(This sample assumes that below bearer token is valid and grant by OP server).
 
 ```
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
-    -H 'authorization: Basic QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
+    -H 'authorization: Bearer QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
     -H 'host: your.api.server.com'
 ```
 
