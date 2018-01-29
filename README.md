@@ -190,6 +190,11 @@ The Consumer object represents a consumer - or a user - of an API. You can eithe
 Add consumers by using `+ CREATE CONSUMER` button. Add form shows details of every field.
 ![consumers_add](doc/4_customer_add.png)
 
+#### Consumer credential configuration
+
+Some plugins are consumer based. It store the some plugin configuration in consumer credential. You need to go in consumer credential section by clicking on consumer `username`.
+![consumer_credential_list](doc/4_1_consumer_credential_list.png)
+
 ### 5. Plugins
 
 A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong, like Authentication or Rate Limiting for example.
