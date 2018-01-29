@@ -42,7 +42,7 @@ Installation is a three part process:
 ### Required Third Party repositories
 
 ```
-1. Add Gluu repo
+1. Add Gluu repo:
    # echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
    # curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
 
@@ -56,7 +56,7 @@ Installation is a three part process:
 4. Add Kong repo: 
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 
-5. Add Node repo: It use to install nodejs(v8.9.4) and npm(v5.6.0)
+5. Add Node repo:
    # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
    
 ```
