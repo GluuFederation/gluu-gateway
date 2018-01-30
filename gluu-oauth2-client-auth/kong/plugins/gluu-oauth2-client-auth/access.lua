@@ -1,3 +1,4 @@
+local oxd = require "oxdweb"
 local utils = require "kong.tools.utils"
 local http = require "resty.http"
 local singletons = require "kong.singletons"
@@ -16,7 +17,7 @@ local function generate_token(api, credential, access_token, expiration)
         credential_id = credential.id,
         expires_in = expiration,
         access_token = access_token
-    }, {ttl = expiration or nil}) -- Access tokens are being permanently deleted after 14 days (1209600 seconds)
+    }, { ttl = expiration or nil }) -- Access tokens are being permanently deleted after 14 days (1209600 seconds)
 
     if err then
         return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
@@ -55,7 +56,7 @@ local function retrieve_header_token(request)
 end
 
 local function load_credential_into_memory(client_id)
-    local credentials, err = singletons.dao.gluu_oauth2_client_auth_credentials:find_all {client_id = client_id}
+    local credentials, err = singletons.dao.gluu_oauth2_client_auth_credentials:find_all { client_id = client_id }
     if err then
         return nil, err
     end
@@ -68,7 +69,7 @@ local function load_credential_from_db(client_id)
     end
 
     local credential_cache_key = singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(client_id)
-    local credential, err      = singletons.cache:get(credential_cache_key, nil,
+    local credential, err = singletons.cache:get(credential_cache_key, nil,
         load_credential_into_memory,
         client_id)
     if err then
@@ -122,46 +123,21 @@ local function validate_credentials(credential, req_access_token)
 
     ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
 
-    -- Request to OP and get openid-configuration
-    local opRespose, err = httpc:request_uri(credential.op_host .. "/.well-known/openid-configuration", {
-        method = "GET",
-        ssl_verify = false
-    })
+    -- Decode token body -- string to lua object
+    local tokenBody = {
+        oxd_host = credential.oxd_http_url,
+        oxd_id = credential.oxd_id,
+        access_token = req_access_token
+    }
 
-    ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth Request : " .. credential.op_host .. "/.well-known/openid-configuration")
-    ngx.log(ngx.DEBUG, (not pcall(helper.decode, opRespose.body)))
+    local tokenResposeBody = oxd.introspect_access_token(tokenBody)
 
-    if not pcall(helper.decode, opRespose.body) then
-        ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
-        return false
-    end
-
-    local opResposebody = helper.decode(opRespose.body)
-
-    -- Request to OP and get introspect the access_token
-    local tokenRespose, err = httpc:request_uri(opResposebody.introspection_endpoint, {
-        method = "POST",
-        ssl_verify = false,
-        headers = {
-            ["Content-Type"] = "application/x-www-form-urlencoded",
-            ["Authorization"] = "Bearer " .. req_access_token
-        },
-        body = "token=" .. req_access_token
-    })
-
-    ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth Request : " .. opResposebody.introspection_endpoint)
-
-    -- Exception handling for check response body is parse properly or not
-    if not pcall(helper.decode, tokenRespose.body) then
-        ngx.log(ngx.DEBUG, "Error : " .. helper.print_table(err))
+    if helper.isempty(tokenResposeBody.status) or tokenResposeBody.status == "error" then
         return { active = false }
     end
 
-    -- Decode token body -- string to lua object
-    local tokenResposeBody = helper.decode(tokenRespose.body)
-
     -- If tokne is not active the return false
-    if helper.isempty(tokenResposeBody.active) and not tokenResposeBody.active then
+    if not tokenResposeBody.data.active then
         ngx.log(ngx.DEBUG, "Introspect token: false")
         return { active = false }
     end
@@ -172,14 +148,14 @@ local function validate_credentials(credential, req_access_token)
     helper.print_table(tokenResposeBody)
 
     -- count expire time in second
-    local exp_sec = (tokenResposeBody.exp - tokenResposeBody.iat)
+    local exp_sec = (tokenResposeBody.data.exp - tokenResposeBody.data.iat)
 
-    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResposeBody.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
+    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResposeBody.data.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
     generate_token(ngx.ctx.api, credential, req_access_token, exp_sec)
 
     retrieve_token_cache(req_access_token, exp_sec)
 
-    return tokenResposeBody
+    return tokenResposeBody.data
 end
 
 local function load_consumer_into_memory(consumer_id, anonymous)
@@ -278,7 +254,7 @@ function _M.execute(config)
 
     -- Retrieve consumer
     local consumer_cache_key = singletons.dao.consumers:cache_key(credential.consumer_id)
-    local consumer, err      = singletons.cache:get(consumer_cache_key, nil,
+    local consumer, err = singletons.cache:get(consumer_cache_key, nil,
         load_consumer_into_memory,
         credential.consumer_id)
     if err then
