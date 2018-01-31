@@ -19,7 +19,7 @@ module.exports.issue = function issue(payload) {
 
   return jwt.sign(
     payload, // This is the payload we want to put inside the token
-    process.env.TOKEN_SECRET || "oursecret" // Secret string which will be used to sign the token
+    process.env.TOKEN_SECRET || sails.config.clientSecret || "oursecret" // Secret string which will be used to sign the token
   );
 };
 
@@ -36,7 +36,7 @@ module.exports.verify = function verify(token, next) {
 
   return jwt.verify(
     token, // The token to be verified
-    process.env.TOKEN_SECRET || "oursecret", // The secret we used to sign it.
+    process.env.TOKEN_SECRET || sails.config.clientSecret || "oursecret", // The secret we used to sign it.
     {}, // Options, none in this case
     next // The callback to be call when the verification is done.
   );
