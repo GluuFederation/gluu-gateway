@@ -39,6 +39,9 @@ case $1 in
     start)
             do_start
     ;;
+    stop)
+            do_stop
+    ;;
     restart)
             do_stop
             do_start
@@ -47,7 +50,7 @@ case $1 in
 	    do_status
     ;;
     *)
-        echo "Usage: $0 {start|status|restart}"
+        echo "Usage: $0 {start|stop|status|restart}"
         RETVAL=2
     ;;
 esac 
