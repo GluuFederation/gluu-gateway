@@ -218,7 +218,7 @@
                 icon: "mdi-account-box-outline",
                 plugins: {
                   "gluu-oauth2-client-auth": {
-                    description: "Add an OAuth 2.0 client(Back-channel) authentication to your APIs"
+                    description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
                   }
                 }
               }
@@ -902,7 +902,7 @@
             },
             "gluu-oauth2-client-auth": {
               meta: {
-                description: 'Add an OAuth 2.0 authentication layer with the <a href="https://tools.ietf.org/html/rfc6749#section-4.4" target="_blank">Client Credentials</a>. Then use consumer to register client and authentication.'
+                description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
               },
               'hide_credentials': {
                 type: 'boolean',
