@@ -33,7 +33,7 @@
                 </tbody>
               </table>
               <br/>
-              <table data-ng-if="plugins.length > 0" class="table table-bordered">
+              <table data-ng-if="isKongUMARSPluginAdded" class="table table-bordered">
                 <thead>
                 <tr>
                   <th colspan="2">Plugin details</th>
@@ -42,19 +42,19 @@
                 <thead>
                 <tr>
                   <th>OXD Id</th>
-                  <td>{{plugins[0].config.oxd_id}}</td>
+                  <td>{{::pluginConfig.oxd_id}}</td>
                 </tr>
                 <tr>
-                  <th>UMA Server</th>
-                  <td>{{plugins[0].config.uma_server_host}}</td>
+                  <th>UMA RS Server</th>
+                  <td>{{::pluginConfig.uma_server_host}}</td>
                 </tr>
                 <tr>
                   <th>OXD Host</th>
-                  <td>{{plugins[0].config.oxd_host}}</td>
+                  <td>{{::pluginConfig.oxd_host}}</td>
                 </tr>
                 <tr>
                   <th>Client Id</th>
-                  <td>{{plugins[0].config.client_id}}</td>
+                  <td>{{::pluginConfig.client_id}}</td>
                 </tr>
                 </thead>
               </table>
@@ -69,7 +69,7 @@
               <div class="row" ng-repeat="element in modelPlugin.config.protection_document" ng-init="pIndex = $index"
                    style="border: 1px dotted;">
                 <hr/>
-                <div class="col-md-1" data-ng-if="plugins.length <= 0">
+                <div class="col-md-1" data-ng-if="!isKongUMARSPluginAdded">
                   <button type="button" title="Delete path" class="btn btn-danger"
                           ng-click="modelPlugin.config.protection_document.splice($index,1)">
                     <i class="mdi mdi-close"></i>
@@ -86,7 +86,7 @@
                            title="Enter path"
                            placeholder="/path"
                            ng-model="element.path"
-                           ng-required="true" data-ng-disabled="plugins.length > 0"/>
+                           ng-required="true" data-ng-disabled="isKongUMARSPluginAdded"/>
                     <span class="help-block error-block basic-block">The path which you want to protected by UMA</span>
                   </div>
                   <div class="col-md-12">
@@ -94,7 +94,7 @@
                       <div class="row">
                         <div class="col-md-10">
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond.httpMethods" data-ng-disabled="plugins.length > 0"
+                            <tags-input ng-model="cond.httpMethods" data-ng-disabled="isKongUMARSPluginAdded"
                                         id="httpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
                                         placeholder="Enter http Methods">
@@ -105,7 +105,7 @@
                             <span class="help-block error-block basic-block"></span>
                           </div>
                         </div>
-                        <div class="col-md-2" data-ng-if="plugins.length <= 0">
+                        <div class="col-md-2" data-ng-if="!isKongUMARSPluginAdded">
                           <button type="button" title="Delete condition" class="btn btn-danger"
                                   ng-click="element.conditions.splice($index,1)">
                             <i class="mdi mdi-close"></i>
@@ -114,14 +114,14 @@
                       </div>
 
                       <!-- edit mode view start -->
-                      <div class="row" data-ng-if="plugins.length > 0">
+                      <div class="row" data-ng-if="isKongUMARSPluginAdded">
                         <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
 
                         </div>
                       </div>
                       <!-- edit mode view end -->
 
-                      <div class="row" data-ng-if="plugins.length <= 0">
+                      <div class="row" data-ng-if="!isKongUMARSPluginAdded">
                         <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
                         <div class="col-md-12">
                           <input type="radio" value="or" name="condition{{pIndex}}{{$index}}1">or |
@@ -135,7 +135,7 @@
                                  name="hdScope{{pIndex}}{{$index}}1"/>
                           <div class="form-group has-feedback">
                             <tags-input ng-model="cond['scopes' + pIndex + $index + '1']"
-                                        name="scope{{pIndex}}{{$index}}1" data-ng-disabled="plugins.length > 0"
+                                        name="scope{{pIndex}}{{$index}}1" data-ng-disabled="isKongUMARSPluginAdded"
                                         id="scopes{{pIndex}}{{$index}}"
                                         placeholder="Enter scopes">
                               <auto-complete source="loadScopes($query)"
@@ -156,7 +156,7 @@
                       <div class="row">
                         <div class="col-md-12">
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond.ticketScopes" data-ng-disabled="plugins.length > 0"
+                            <tags-input ng-model="cond.ticketScopes" data-ng-disabled="isKongUMARSPluginAdded"
                                         id="ticketScopes{{pIndex}}{{$index}}"
                                         placeholder="Enter ticket scopes"></tags-input>
                           </div>
@@ -166,7 +166,7 @@
                     </div>
                     <div class="row">
                       <button type="button" class="btn btn-info" ng-click="addNewCondition($index)"
-                              data-ng-if="plugins.length <= 0">
+                              data-ng-if="!isKongUMARSPluginAdded">
                         <i class="mdi mdi-plus"></i> Add Condition
                       </button>
                     </div>
@@ -175,11 +175,11 @@
                 </div>
               </div>
               <hr/>
-              <button type="button" class="btn btn-info" ng-click="addNewPath()" data-ng-if="plugins.length <= 0">
+              <button type="button" class="btn btn-info" ng-click="addNewPath()" data-ng-if="!isKongUMARSPluginAdded">
                 <i class="mdi mdi-plus"></i> Add path
               </button>
               <button type="button" class="btn btn-primary" ng-click="showResourceJSON()"
-                      data-ng-if="plugins.length <= 0">
+                      data-ng-if="!isKongUMARSPluginAdded">
                 <i class="mdi mdi-information"></i> View Resource Json
               </button>
             </div>
@@ -187,7 +187,7 @@
           <div class="row">
             <hr/>
             <button type="submit" class="btn btn-primary" ng-click="addPlugin(PluginForm.$valid)"
-                    data-ng-if="plugins.length <= 0">
+                    data-ng-if="!isKongUMARSPluginAdded">
               <i class="mdi mdi-check"></i> Add
             </button>
           </div>
