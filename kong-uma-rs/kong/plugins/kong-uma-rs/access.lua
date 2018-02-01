@@ -52,7 +52,7 @@ function _M.execute(conf)
   if response["status"] == "error" then
     ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. rpt .. ", path: " .. path)
     ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
-    return
+    return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
   end
 
   if response["status"] == "ok" then
