@@ -90,28 +90,21 @@ default value, specified in square brackets.
 | Question | Explanation |
 |----------|-------------|
 | Enter IP Address | IP Address of your API gateway  |
-| Enter Kong hostname | Internet-facing FQDN to generate certificates and
-metadata. Do not use an IP address or localhost. |
+| Enter Kong hostname | Internet-facing FQDN to generate certificates and metadata. Do not use an IP address or localhost. |
 | Country | Used to generate web X.509 certificates |
 | State | Used to generate web X.509 certificates |
 | City | Used to generate web X.509 certificates |
 | Organization | Used to generate web X.509 certificates |
 | Email | Used to generate web X.509 certificates |
-| Password | If you already have a database password for user `postgres`, enter
-it here, otherwise enter a new password. |
-| Would you like to configure oxd-server? | If you already have
- oxd-web on the network, skip this configuration. |
-| OP hostname | Used to configure the oxd default OP hostname. Many deployments
-use a single domain's OP service, so it makes sense to set it as the default. |
+| Password | If you already have a database password for user `postgres`, enter it here, otherwise enter a new password. |
+| Would you like to configure oxd-server? | If you already have oxd-web on the network, skip this configuration. |
+| OP hostname | Used to configure the oxd default OP hostname. Many deployments use a single domain's OP service, so it makes sense to set it as the default. |
 | License Id | From [oxd-server license](https://oxd.gluu.org/#pricing) |
 | Public key | From [oxd-server license](https://oxd.gluu.org/#pricing) |
 | Public password | From [oxd-server license](https://oxd.gluu.org/#pricing) |
 | License password | From [oxd-server license](https://oxd.gluu.org/#pricing) |
 | oxd https url | Make sure oxd-https-extension is running. |
-| Would you like to generate client_id/client_secret for konga? | You can
-register a new OpenID Client or enter manually enter existing client credentials.
-You may want to extend the client expiration date if on the Gluu Server if you
-plan to use this service more then one day.|
+| Would you like to generate client_id/client_secret for konga? | You can register a new OpenID Client or enter existing client credentials manually. You may want to extend the client expiration date if on the Gluu Server if you plan to use this service more then one day. If you enter existing client details then your client must have `https://localhost:1338` URL entry in Redirect Login URIs and Post Logout Redirect URIs. |
 | oxd_id | Used to manually set oxd id. |
 | client_id | Used to manually set client id. |
 | client_secret | Used to manually set client secret. |
