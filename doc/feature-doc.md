@@ -11,7 +11,7 @@
 | :x: Difficult to expand without impacting other services | :white_check_mark: Expand functionality from one place with a simple command |
 | :x: Productivity is inefficient because of system constraints | :white_check_mark: Your team is focused on the product, Kong does the REST |
 
-2. Gluu gateway provides KONGA GUI to operates kong very easily.
+2. Gluu gateway provides KONGA GUI to operate kong very easily.
 
 ![konga](konga.png)
 
@@ -21,8 +21,8 @@
 - Manage multiple Kong Nodes.
 - Backup, restore and migrate Kong Nodes using Snapshots.
 - Monitor Node and API states using health checks.
-- Allow to configure kong-uma-rs plugin.
+- Allow configuration of kong-uma-rs plugin.
 
-3. Gluu-Gateway provides custom kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to registere and validate the resources.
+3. Gluu-Gateway provides custom kong-uma-rs plugin. kong-uma-rs plugin dealing with UMA Resource server to register and validate the resources.
 
 4. Gluu-Gateway uses oxd-server dealing with OP server for authentication and resource management.
