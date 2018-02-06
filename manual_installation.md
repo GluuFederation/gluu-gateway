@@ -2,9 +2,10 @@
 
 1. [Install kong](https://getkong.org/install) Version: 0.11.0
 
-    Kong provides several packages as per different platform. [Here kong installation](https://getkong.org/install) Version: 0.11.0 guide as per platform.
-
-    !! Note: kong supports two databases Postgres 9.4 and Cassandra. [Here](https://getkong.org/docs/0.11.x/configuration/#datastore-section) is the configuration detail.
+    Kong is available to install in multiple operating environments.
+	
+    *Note: kong supports two databases Postgres 9.4 and Cassandra.*
+    [Configuration details can be found here](https://getkong.org/docs/0.11.x/configuration/#datastore-section).
 
 2. [oxd (oxd-server and oxd-https-extension)](https://gluu.org/docs/oxd/3.1.1/) Version: 3.1.1
 
@@ -15,7 +16,7 @@
     2.
         Using luarocks `luarocks install kong-uma-rs`.
 
-        It also required some luarocks packages. you need to install those package also.
+        kong requires some additional luarocks packages.
 
         `luarocks install kong-uma-rs`
 
@@ -32,7 +33,7 @@
     ```
         custom_plugins = kong-uma-rs
     ```
-    Detail description [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
+    Detailed description [click here](https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs)
 
 5. Install konga
 
@@ -41,7 +42,7 @@
 ## Konga config
 
     If you want to change the konga port then use configuration /opt/gluu-gateway/konga/config/local.js file.
-    There are following properties which used to configure konga.
+    The following properties can be used to configure konga.
 
     | Properties | Explanation |
     |----------|-------------|
