@@ -33,6 +33,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_TOKENS_SCHEMA = {
         credential_id = { type = "id", required = true, foreign = "gluu_oauth2_client_auth_credentials:id" },
         expires_in = { type = "number", required = true },
         access_token = { type = "string", required = false, unique = true },
+        rpt_token = { type = "string", required = false },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true }
     },
     marshall_event = function(self, t)

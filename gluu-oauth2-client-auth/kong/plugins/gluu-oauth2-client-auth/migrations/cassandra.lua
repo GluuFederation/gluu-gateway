@@ -26,6 +26,7 @@ return {
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,
         access_token text,
+        rpt_token text,
         client_id text,
         expires_in int,
         created_at timestamp,

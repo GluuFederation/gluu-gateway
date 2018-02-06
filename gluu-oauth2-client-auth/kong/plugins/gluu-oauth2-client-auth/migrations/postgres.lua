@@ -36,6 +36,7 @@ return {
         id uuid,
         credential_id uuid REFERENCES gluu_oauth2_client_auth_credentials (id) ON DELETE CASCADE,
         access_token text UNIQUE,
+        rpt_token text,
         expires_in int,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
