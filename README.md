@@ -9,10 +9,10 @@ OAuth protected API gateway with the following components:
 Gateway and Microservices Management Layer, delivering high performance and
 reliability.
 2. **[Gluu Kong plugins](https://github.com/GluuFederation/gluu-gateway/)**:  
-User a Gluu Server to authenticate OAuth2 clients or to control access to
+Use a Gluu Server to authenticate OAuth2 clients or to control access to
 upstream API's.
 3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  
-An web administration portal, based on [Konga](https://github.com/pantsel/konga),
+A web administration portal, based on [Konga](https://github.com/pantsel/konga),
 that makes it easier to manage your Gluu Gateway.
 4. **[oxd](https://oxd.gluu.org)**: OpenID Connect and UMA middleware service
 used for client credential management and cryptographic validation.
@@ -20,7 +20,7 @@ used for client credential management and cryptographic validation.
 ## Features
 
 1. Add | Edit | Delete API's
-1. Restict access to tokens with certain OAuth scopes
+1. Restrict access to tokens with certain OAuth scopes
 1. API Dashboard to configure and monitor the health of your servers.
 1. Manage your API gateway cluster for high availability
 1. Backup, restore and migrate Kong instances using snapshots
@@ -113,7 +113,7 @@ default value, specified in square brackets.
 Gluu Gateway configuration successful!!! https://localhost:1338
 ```
 If you see the above message it means installation was successful. To login
-to the Gluu Gateway admin portal, make an ssh tunnel on port 1338 from your
+to the Gluu Gateway admin portal, create an ssh tunnel on port 1338 from your
 workstation to the Gluu Gateway server, and point your browser at
 `https://localhost:1338`
 
@@ -215,7 +215,7 @@ Add consumers by using `+ CREATE CONSUMER` button. Add form shows details of eve
 
 #### Consumer credential configuration
 
-Some plugins are consumer based. It store the some plugin configuration in consumer credential. You need to go in consumer credential section by clicking on consumer `username`.
+Some plugins are consumer based. It stores some plugin configuration in consumer credential. You need to go in consumer credential section by clicking on consumer `username`.
 ![consumer_credential_list](doc/4_1_consumer_credential_list.png)
 
 ### 5. Plugins
@@ -253,5 +253,5 @@ Add Plugins by using `+ NEW CONNECTION` button.
 ### 9. Snapshots
 
 Take snapshots of currently active nodes.
-All APIs, Plugins, Consumers, Upstreams and Targetswill be saved and available for later import.
+All APIs, Plugins, Consumers, Upstreams and Targets will be saved and available for later import.
 ![snapshot](doc/9_snapshot.png)
