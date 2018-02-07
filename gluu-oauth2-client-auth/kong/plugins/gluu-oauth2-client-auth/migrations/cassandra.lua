@@ -27,6 +27,8 @@ return {
         id uuid,
         access_token text,
         rpt_token text,
+        path text,
+        method text,
         client_id text,
         expires_in int,
         created_at timestamp,
@@ -34,6 +36,8 @@ return {
       );
 
       CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(access_token);
+      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(method);
+      CREATE INDEX IF NOT EXISTS ON gluu_oauth2_client_auth_tokens(path);
     ]],
         down = [[
       DROP TABLE gluu_oauth2_client_auth_credential;

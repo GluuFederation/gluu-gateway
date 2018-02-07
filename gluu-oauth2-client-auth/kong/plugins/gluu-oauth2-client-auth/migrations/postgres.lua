@@ -35,8 +35,10 @@ return {
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,
         credential_id uuid REFERENCES gluu_oauth2_client_auth_credentials (id) ON DELETE CASCADE,
-        access_token text UNIQUE,
+        access_token text,
         rpt_token text,
+        path text,
+        method text,
         expires_in int,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
@@ -44,9 +46,6 @@ return {
 
       DO $$
       BEGIN
-        IF (SELECT to_regclass('gluu_oauth2_client_auth_accesstoken_idx')) IS NULL THEN
-          CREATE INDEX gluu_oauth2_client_auth_accesstoken_idx ON gluu_oauth2_client_auth_tokens(access_token);
-        END IF;
 
       END$$;
     ]],

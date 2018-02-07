@@ -21,13 +21,15 @@ local function getPath()
     return path
 end
 
-local function generate_token(api, credential, access_token, rpt_token, expiration)
+local function generate_token(api, credential, access_token, rpt_token, expiration, method, path)
     local token, err = singletons.dao.gluu_oauth2_client_auth_tokens:insert({
         api_id = api.id,
         credential_id = credential.id,
         expires_in = expiration,
         access_token = access_token,
-        rpt_token = rpt_token
+        rpt_token = rpt_token,
+        path = path,
+        method = method
     }, { ttl = expiration or nil }) -- Access tokens are being permanently deleted after 14 days (1209600 seconds)
 
     if err then
@@ -38,7 +40,9 @@ local function generate_token(api, credential, access_token, rpt_token, expirati
         credential_id = credential.id,
         access_token = token.access_token,
         expires_in = expiration or nil,
-        rpt_token = rpt_token
+        rpt_token = rpt_token,
+        path = path,
+        method = method
     }
 end
 
@@ -65,25 +69,27 @@ local function load_credential_from_db(client_id)
     return credential
 end
 
-local function load_token_into_memory(api, access_token)
-    local credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, access_token = access_token }
+local function load_token_into_memory(api, access_token, method, path)
+    local credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, access_token = access_token, path = path, method = method }
     local result
+    ngx.log(ngx.DEBUG, "Before DB cred" .. api.id .. access_token .. method .. path)
     if err then
         return nil, err
     elseif #credentials > 0 then
         result = credentials[1]
     end
+    ngx.log(ngx.DEBUG, "After DB cred" .. api.id .. access_token .. method .. path)
     return result
 end
 
-local function retrieve_token_cache(access_token, exp_sec)
+local function retrieve_token_cache(access_token, method, path, exp_sec)
     local token, err
     if access_token then
-        local token_cache_key = singletons.dao.gluu_oauth2_client_auth_tokens:cache_key(access_token)
-
+        local token_cache_key = singletons.dao.gluu_oauth2_client_auth_tokens:cache_key(access_token, method, path)
+        ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, ngx.ctx.api,
-            access_token)
+            access_token, method, path)
         if err then
             return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
         end
@@ -98,70 +104,90 @@ local function validate_credentials(credential, req_access_token)
     -- http request
     local httpc = http.new()
 
+    -- Method and path
+    local httpMethod = ngx.req.get_method()
+    local path = getPath()
+    local tokenResposeBody
     -- check token in cache
-    local access_token = retrieve_token_cache(req_access_token, 0)
+    local access_token = retrieve_token_cache(req_access_token, httpMethod, path, nil)
 
     -- If token is exist in cache the allow
     if not helper.isempty(access_token) then
-        ngx.log(ngx.DEBUG, "access_token found in cache")
+        ngx.log(ngx.DEBUG, "In cache: access_token found")
+
+        -- *---- uma-rs-check-access ----* After
+        ngx.log(ngx.DEBUG, "In cache: Request RPT token to uma-rs-check-access")
+        local umaRsCheckAccessRequest = {
+            oxd_host = credential.oxd_http_url,
+            oxd_id = credential.oxd_id,
+            rpt = access_token.rpt_token,
+            http_method = httpMethod,
+            path = path
+        }
+
+        local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, req_access_token)
+
+        if helper.isempty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" or umaRsCheckAccessResponse.access == "denied" then
+            ngx.log(ngx.DEBUG, "In cache: Request failed in uma-rs-check-access")
+            return { active = false }
+        end
+
         access_token.active = true
         return access_token
+    else
+        ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
+
+        -- *---- Introspect access token ----*
+        local tokenBody = {
+            oxd_host = credential.oxd_http_url,
+            oxd_id = credential.oxd_id,
+            access_token = req_access_token
+        }
+
+        tokenResposeBody = oxd.introspect_access_token(tokenBody)
+
+        if helper.isempty(tokenResposeBody.status) or tokenResposeBody.status == "error" then
+            return { active = false }
+        end
+
+        -- If tokne is not active the return false
+        if not tokenResposeBody.data.active then
+            ngx.log(ngx.DEBUG, "Introspect token: false")
+            return { active = false }
+        end
+
+        ngx.log(ngx.DEBUG, "Introspect token: true")
     end
+    --    -- *---- Get client token ----*
+    --    local tokenRequestBody = {
+    --        client_id = credential.client_id,
+    --        client_secret = credential.client_secret,
+    --        oxd_host = credential.oxd_http_url,
+    --        op_host = credential.op_host
+    --    }
+    --    local tokenResponse = oxd.get_client_token(tokenRequestBody)
+    --
+    --    if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
+    --        return responses.send_HTTP_BAD_REQUEST("Failed to fetch client token.")
+    --    end
 
-    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
-
-    -- Decode token body -- string to lua object
-    local tokenBody = {
-        oxd_host = credential.oxd_http_url,
-        oxd_id = credential.oxd_id,
-        access_token = req_access_token
-    }
-
-    local tokenResposeBody = oxd.introspect_access_token(tokenBody)
-
-    if helper.isempty(tokenResposeBody.status) or tokenResposeBody.status == "error" then
-        return { active = false }
-    end
-
-    -- If tokne is not active the return false
-    if not tokenResposeBody.data.active then
-        ngx.log(ngx.DEBUG, "Introspect token: false")
-        return { active = false }
-    end
-
-    ngx.log(ngx.DEBUG, "Introspect token: true")
-
-    -- If token is active then insert token in db and cache it.
-
-    local tokenRequestBody = {
-        client_id = credential.client_id,
-        client_secret = credential.client_secret,
-        oxd_host = credential.oxd_http_url,
-        op_host = credential.op_host
-    }
-    local tokenResponse = oxd.get_client_token(tokenRequestBody)
-
-    if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
-        return responses.send_HTTP_BAD_REQUEST("Failed to fetch client token.")
-    end
-
-    -- Request **before RPT token to uma-rs-check-access
+    -- *---- uma-rs-check-access ----* Before
     ngx.log(ngx.DEBUG, "Request **before RPT token to uma-rs-check-access")
     local umaRsCheckAccessRequest = {
         oxd_host = credential.oxd_http_url,
         oxd_id = credential.oxd_id,
         rpt = "",
-        http_method = ngx.req.get_method(),
-        path = getPath()
+        http_method = httpMethod,
+        path = path
     }
 
-    local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, tokenResponse.data.access_token)
+    local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, req_access_token)
 
     if helper.isempty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" then
         return { active = false }
     end
 
-    -- Request to uma-rp-get-rpt
+    -- *---- uma-rp-get-rpt ----*
     ngx.log(ngx.DEBUG, "Request to uma-rp-get-rpt")
     local umaRpGetRptRequest = {
         oxd_host = credential.oxd_http_url,
@@ -169,37 +195,38 @@ local function validate_credentials(credential, req_access_token)
         ticket = umaRsCheckAccessResponse.data.ticket
     }
 
-    local umaRpGetRptRequest = oxd.uma_rp_get_rpt(umaRpGetRptRequest, tokenResponse.data.access_token)
+    local umaRpGetRptRequest = oxd.uma_rp_get_rpt(umaRpGetRptRequest, req_access_token)
 
     if helper.isempty(umaRpGetRptRequest.status) or umaRpGetRptRequest.status == "error" then
         return { active = false }
     end
 
-    -- Request **After RPT token to uma-rs-check-access
+    -- *---- uma-rs-check-access ----* After
     ngx.log(ngx.DEBUG, "Request **After RPT token to uma-rs-check-access")
     local umaRsCheckAccessRequest = {
         oxd_host = credential.oxd_http_url,
         oxd_id = credential.oxd_id,
         rpt = umaRpGetRptRequest.data.access_token,
-        http_method = ngx.req.get_method(),
-        path = getPath()
+        http_method = httpMethod,
+        path = path
     }
 
-    local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, tokenResponse.data.access_token)
+    local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, req_access_token)
 
     if helper.isempty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" or umaRsCheckAccessResponse.access == "denied" then
         return { active = false }
     end
 
-    -- count expire time in second
-    local exp_sec = (tokenResposeBody.data.exp - tokenResposeBody.data.iat)
-
-    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResposeBody.data.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
-    generate_token(ngx.ctx.api, credential, req_access_token, umaRpGetRptRequest.data.access_token, exp_sec)
-
-    retrieve_token_cache(req_access_token, exp_sec)
-
-    return tokenResposeBody.data
+    if not helper.isempty(access_token) then
+        return access_token
+    else
+        -- count expire time in second
+        local exp_sec = (tokenResposeBody.data.exp - tokenResposeBody.data.iat)
+        ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResposeBody.data.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
+        generate_token(ngx.ctx.api, credential, req_access_token, umaRpGetRptRequest.data.access_token, exp_sec, httpMethod, path)
+        retrieve_token_cache(req_access_token, httpMethod, path, exp_sec)
+        return tokenResposeBody.data
+    end
 end
 
 local function load_consumer_into_memory(consumer_id, anonymous)
@@ -292,8 +319,8 @@ function _M.execute(config)
 
     ngx.log(ngx.DEBUG, "Check Valid token response : ")
     if not validToken.active then
-        ngx.log(ngx.DEBUG, "Invalid authentication credentials - Token is not active")
-        return responses.send_HTTP_UNAUTHORIZED("Invalid authentication credentials. Token is expired")
+        ngx.log(ngx.DEBUG, "Unauthorized")
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
     -- Retrieve consumer
