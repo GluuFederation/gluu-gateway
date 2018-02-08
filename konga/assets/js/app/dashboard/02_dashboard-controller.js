@@ -9,9 +9,9 @@
   angular.module('frontend.dashboard')
     .controller('DashboardController', [
       '$scope', '$rootScope', '$log', '$state', '$q', 'InfoService', '$localStorage', 'HttpTimeout',
-      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver',
+      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', '$window',
       function controller($scope, $rootScope, $log, $state, $q, InfoService, $localStorage, HttpTimeout,
-                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver) {
+                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, $window) {
 
         $scope.globalInfo = $localStorage.credentials.user;
         var loadTime = $rootScope.KONGA_CONFIG.info_polling_interval,
@@ -189,8 +189,9 @@
                     msg: 'You have to setup and activate a node in order to connect to Kong\'s admin API. You can do that in <a href="/admin/settings"><strong>settings</strong></a>',
                     type: 'warning'
                   }
+                  $window.localStorage.clear();
+                  window.location = '/';
                 }
-
               })
         }
 
