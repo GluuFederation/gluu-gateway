@@ -174,7 +174,7 @@ to set port, oxd, OP and client settings.
 
 ### Restore KONG to factory default
 
-Execute below following command in sequence
+* Execute below following command in sequence
 
 ```
 # kong stop
