@@ -172,6 +172,26 @@ to set port, oxd, OP and client settings.
  # service oxd-https-extension [start|stop|restart|status]
 ```
 
+### Restore KONG to factory default
+
+Execute below following command in sequence
+
+```
+# kong stop
+```
+
+```
+# kong migrations reset
+```
+
+```
+# kong migrations up
+```
+
+```
+# kong start
+```
+
 ## KONGA Guide
 
 ### 1. Dashboard
