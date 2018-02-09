@@ -49,10 +49,12 @@ function _M.execute(conf)
     return responses.send_HTTP_FORBIDDEN("UMA Authorization Server Unreachable")
   end
 
-  if response["status"] == "error" then
+  if response["status"] == "error" or isempty(response["status"]["data"]) then
+      return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+  elseif response["status"]["data"]["error"] == "invalid_request" then
     ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. rpt .. ", path: " .. path)
     ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
-    return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+    return -- ACCESS GRANTED with UMA-Warning header
   end
 
   if response["status"] == "ok" then
@@ -75,4 +77,3 @@ function _M.execute(conf)
 end
 
 return _M
-
