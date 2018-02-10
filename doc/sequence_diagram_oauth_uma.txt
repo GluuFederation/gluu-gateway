@@ -68,11 +68,11 @@ opt HTTP response 401
     opt bearer token is AT
         Kong oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
     end
-    opt SUCCESS
+    opt SUCCESS getting RPT
         Kong oauth2-plugin->Kong-Cache: write "RPT": {"access_token":"..."}
         Kong oauth2-plugin->Kong-Cache: add "rpt":"RPT" to AT JSON and write to cache
     end
-    opt FAIL
+    opt FAIL getting RPT
        Kong oauth2-plugin->client: Forbidden 403
     end
 end
@@ -93,6 +93,6 @@ opt RPT present
         Kong uma-rs-plugin->Kong proxy: 401 Unauthorized
     end
     opt acess is denied without ticket
-        Kong uma-rs-plugin->Kong Proxy: 403 Forbidden
+        Kong uma-rs-plugin->client: 403 Forbidden
     end
 end
