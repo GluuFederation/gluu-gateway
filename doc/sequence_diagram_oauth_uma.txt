@@ -42,16 +42,25 @@ end
 Kong Proxy->oauth2-plugin: call "access" event for Kong plugin priority 998
 oauth2-plugin->Kong-Cache: Lookup AT
 Kong-Cache->oauth2-plugin: AT JSON
-opt __ ( | (expires < now) (AT not in kong-cache) )  __
-    oauth2-plugin->oxd-web: Introspect the AT token
-    oxd-web->oauth2-plugin: AT JSON
-    opt AT active=false
-        oauth2-plugin->client: Unauthorized 401
+oauth2-plugin->oxd-web: Introspect the AT token
+
+opt is_oauth_token
+    opt __ (  |  (expires < now) (AT not in kong-cache)  )  __
+        oxd-web->oauth2-plugin: AT JSON
+        opt AT active=false
+            oauth2-plugin->client: Unauthorized 401
+        end
+        oauth2-plugin<->Kong-Cache: Write: {"AT":{"cliend_id":"", "consumer": "foo", "expires":"..."}, "type": "oauth", "rpt":"RPT"}
+        opt RPT present
+            oauth2-plugin->oauth2-plugin: REPLACE Header | Authorization: Bearer RPT
+        end
     end
-    oauth2-plugin<->Kong-Cache: Write: {"AT":{"cliend_id":"", "consumer": "foo", "expires":"..."}, "rpt":"RPT"}
-    opt RPT present
-        oauth2-plugin->oauth2-plugin: REPLACE Header | Authorization: Bearer RPT
-    end
+end
+
+note over oauth2-plugin, Kong-Cache: client may handle UMA directly
+opt is_uma_rpt_token
+    oauth2-plugin->oauth2-plugin: Lookup consumer for client_id
+    oauth2-plugin<->Kong-Cache: Write: {"RPT":{"cliend_id":"", "consumer": "bar", "expires":"..."}, "type": "uma"}
 end
 
 Kong Proxy->oauth2-plugin: call "header_filter" event for Kong plugin priority 998
@@ -61,19 +70,25 @@ opt HTTP response 401
     oauth2-plugin-> oauth2-plugin: Get claim_token and format Claim_token header
     oauth2-plugin->Kong-Cache: Lookup bearer token
     opt bearer token is RPT
-        oauth2-plugin->Kong-Cache: Lookup AT
-        Kong-Cache->oauth2-plugin: AT JSON
-        oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
+        opt Kong is acting as UMA client
+            oauth2-plugin->Kong-Cache: Use RPT JSON claims to lookup associated AT
+            Kong-Cache->oauth2-plugin: AT JSON
+            oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
+        end
+        opt Client is UMA client
+            oauth2-plugin->oxd-web: introspect_rpt("RPT")
+            oauth2-plugin->Kong-Cache: Write RPT JSON
+        end
     end
     opt bearer token is AT
         oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
-    end
-    opt SUCCESS getting RPT
-        oauth2-plugin->Kong-Cache: write "RPT": {"access_token":"..."}
-        oauth2-plugin->Kong-Cache: add "rpt":"RPT" to AT JSON and write to cache
-    end
-    opt FAIL getting RPT
-       oauth2-plugin->client: Forbidden 403
+        opt SUCCESS getting RPT
+            oauth2-plugin->Kong-Cache: write "RPT": {"access_token":"..."}
+            oauth2-plugin->Kong-Cache: add "rpt":"RPT" to AT JSON and write to cache
+        end
+        opt FAIL getting RPT
+           oauth2-plugin->client: Forbidden 403
+        end
     end
 end
 
