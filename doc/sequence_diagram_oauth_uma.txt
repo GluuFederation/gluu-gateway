@@ -8,7 +8,7 @@ konga->kong Admin API: Request /api endpoint to add API
 kong Admin API->konga: Return api_id
 konga->admin:  Display API details
 
-admin->konga: Request to add gluu-oauth2-client-auth
+admin->konga: Add gluu-oauth2-client-auth plugin
 konga->kong Admin API: Request /api/api_id/plugin endpoint to add gluu-oauth2-client-auth plugin
 kong Admin API->konga: Return api_plugin_id
 konga->admin:  Display plugin details
@@ -25,6 +25,7 @@ admin->konga: Create oauth2-consumer with above consumer id
 konga->kong Admin API: Request /gluu-oauth2-consumer/[consumer_id] endpoint
 kong Admin API->oauth2-plugin: Request /gluu-aouth2-consumer/[consumer_id]
 oauth2-plugin->oxd-web: setup_client
+oxd-web<->OP: client reg
 oxd-web->oauth2-plugin: success:oxd_id, client_id and client_secret
 oauth2-plugin->oauth2-plugin: Add oxd_id, client_id, client_secret data in oauth2-consumer
 oauth2-plugin->kong Admin API: success
@@ -37,77 +38,100 @@ client->OP: request token (client credential grant)
 OP->client: token AT
 client->Kong Proxy: call API  with header Authorization: Bearer AT
 opt push claim tokens
-    client->Kong Proxy: Add Header Claim_token: {"claim_token":"...","claim_token_format":"..."}
+    client->Kong Proxy: Add Header "UMA Data": {"claim_token":"...","claim_token_format":"..."}
 end
-Kong Proxy->oauth2-plugin: call "access" event for Kong plugin priority 998
-oauth2-plugin->Kong-Cache: Lookup AT
-Kong-Cache->oauth2-plugin: AT JSON
-oauth2-plugin->oxd-web: Introspect the AT token
+Kong Proxy->oauth2-plugin: *****  call "access" event for Kong plugin priority 998 *****
+oauth2-plugin->Kong-Cache: Lookup value of Authorization Header bearer token
+Kong-Cache->oauth2-plugin: token JSON {"consumer": "foo", ...}
 
-opt is_oauth_token
-    opt __ (  |  (expires < now) (AT not in kong-cache)  )  __
-        oxd-web->oauth2-plugin: AT JSON
-        opt AT active=false
+opt AT not in kong-cache
+    oauth2-plugin->oxd-web: Introspect AT at OAuth Introspection endpoint
+    oxd-web<->OP:
+    OPT AT not found
+        oauth2-plugin->oxd-web: Introspect RPT at token introspection endpoint
+        oauth2-plugin<->Kong-Cache: Write: {"RPT":{"cliend_id":"", "consumer": "bar", "expires":"..."}, "type": "uma"}
+    end
+    opt token still not found
+       oauth2-plugin->client: Unauthorized 401
+    end
+    oxd-web->oauth2-plugin: AT JSON
+    opt is_oauth_token
+        opt active
+            oauth2-plugin<->Kong-Cache: Write: {"AT":{"cliend_id":"", "consumer": "foo", "oxd-id": "...", "expires":"..."}, "type": "oauth", "rpt":"RPT"}
+        end
+        opt inactive
             oauth2-plugin->client: Unauthorized 401
         end
-        oauth2-plugin<->Kong-Cache: Write: {"AT":{"cliend_id":"", "consumer": "foo", "expires":"..."}, "type": "oauth", "rpt":"RPT"}
-        opt RPT present
-            oauth2-plugin->oauth2-plugin: REPLACE Header | Authorization: Bearer RPT
-        end
     end
 end
 
-note over oauth2-plugin, Kong-Cache: client may handle UMA directly
-opt is_uma_rpt_token
-    oauth2-plugin->oauth2-plugin: Lookup consumer for client_id
-    oauth2-plugin<->Kong-Cache: Write: {"RPT":{"cliend_id":"", "consumer": "bar", "expires":"..."}, "type": "uma"}
+opt kong_acts_as_uma_client Enabled and RPT Present
+    oauth2-plugin->oauth2-plugin: REPLACE Header | Authorization: Bearer RPT
 end
 
-Kong Proxy->oauth2-plugin: call "header_filter" event for Kong plugin priority 998
-opt HTTP response 401
-    oauth2-plugin-> oauth2-plugin: Get Bearer token from Authorization header
-    oauth2-plugin-> oauth2-plugin: Get ticket from WWW-Authenticate header
-    oauth2-plugin-> oauth2-plugin: Get claim_token and format Claim_token header
-    oauth2-plugin->Kong-Cache: Lookup bearer token
-    opt bearer token is RPT
-        opt Kong is acting as UMA client
-            oauth2-plugin->Kong-Cache: Use RPT JSON claims to lookup associated AT
-            Kong-Cache->oauth2-plugin: AT JSON
-            oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
-        end
-        opt Client is UMA client
-            oauth2-plugin->oxd-web: introspect_rpt("RPT")
-            oauth2-plugin->Kong-Cache: Write RPT JSON
-        end
-    end
-    opt bearer token is AT
-        oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
-        opt SUCCESS getting RPT
-            oauth2-plugin->Kong-Cache: write "RPT": {"access_token":"..."}
-            oauth2-plugin->Kong-Cache: add "rpt":"RPT" to AT JSON and write to cache
-        end
-        opt FAIL getting RPT
-           oauth2-plugin->client: Forbidden 403
-        end
+opt kong_acts_as_uma_client Disabled
+    opt AT token expiration < now
+        oauth2-plugin->client: Unauthorized 401
     end
 end
 
-Kong Proxy->uma-rs-plugin: call "access" event for Kong plugin priority 999
+Kong Proxy->uma-rs-plugin: ***** call "access" event for Kong plugin priority 999  *****
 uma-rs-plugin->uma-rs-plugin: Get RPT from Authorization Header
-opt No RPT present
+opt no token present
     uma-rs-plugin->Kong Proxy: 401 unauthorized / Permission Ticket
 end
-opt RPT present
-    uma-rs-plugin->oxd-web: check_access(RPT)
-    opt access is granted
+opt token present
+    uma-rs-plugin->Kong-Cache: Lookup bearer token
+    Kong-Cache->uma-rs-plugin: JSON
+
+    opt token in cache, but is OAuth2 AT
+        uma-rs-plugin->Kong Proxy: 401 unauthorized / Permission Ticket
+    end
+
+    opt token not found in cache
+        uma-rs-plugin->oxd-web: call check_access(token)
+        oxd-web<->OP:
+        opt check_access granted
+            uma-rs-plugin->Kong-Cache: {"RPT": {"path":"/profile", "methods": ["GET", "POST"]}
+        end
+        opt check_access denied
+            uma-rs-plugin->client: 401/Unauthorized
+        end
+    end
+
+    opt RPT token in cache, RPT has already been issued for this path/method
         Kong Proxy->API: Send request
         API->Kong Proxy: Content
         Kong Proxy->client: Content
     end
-    opt access is denied with ticket
-        uma-rs-plugin->Kong Proxy: 401 Unauthorized
+
+end
+
+Kong Proxy->oauth2-plugin: *****  call "header_filter" event for Kong plugin priority 998 *****
+opt HTTP response 401
+    opt kong_acts_as_uma_client disabled
+       oauth2-plugin->client: 401 Unauthorized
     end
-    opt acess is denied without ticket
-        uma-rs-plugin->client: 403 Forbidden
+
+    oauth2-plugin-> oauth2-plugin: Get ticket from WWW-Authenticate header
+    oauth2-plugin-> oauth2-plugin: Get Bearer token from Reqest Authorization header
+    oauth2-plugin-> oauth2-plugin: Extract claim_token and format from Request UMA_DATA header
+    oauth2-plugin->Kong-Cache: Lookup bearer token
+    opt token found
+        opt token is RPT
+            oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
+        end
+        opt token is AT
+            oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
+        end
+
+        oxd-web<->OP:
+        opt oxd-web returns RPT
+            oauth2-plugin->Kong-Cache: write "RPT": {"access_token":"..."}
+        end
+        opt oxd-web returns anything other then RPT
+            oauth2-plugin->client: 403 Forbidden (add descriptive error msg to new header KONG_UMA_ERROR)
+        end
+
     end
 end
