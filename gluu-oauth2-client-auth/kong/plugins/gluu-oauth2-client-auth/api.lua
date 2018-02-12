@@ -68,20 +68,16 @@ return {
 
             local regClientResponseBody
             local regData
-            local tokenResponse
-
-            -- ------------------- Setup client -----------------------------------
+            -- setup client
             if helper.isempty(body.client_id) and helper.isempty(body.client_id) then
                 regClientResponseBody = oxd.setup_client(body)
             else
-                -- client token
-                tokenResponse = oxd.get_client_token(body)
-
+                -- Register site or update
+                local tokenResponse = oxd.get_client_token(body)
                 if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
                     return responses.send_HTTP_BAD_REQUEST("Register site: failed to fetch client token")
                 end
 
-                -- Register site or update
                 if not helper.isempty(self.params.oxd_id) then
                     body.oxd_id = self.params.oxd_id
                     regClientResponseBody = oxd.update_site(body, tokenResponse.data.access_token)
@@ -91,33 +87,7 @@ return {
             end
 
             if helper.isempty(regClientResponseBody.status) or regClientResponseBody.status == "error" then
-                return responses.send_HTTP_BAD_REQUEST("Client registration failed. Check oxd-http and oxd-server log.")
-            end
-
-            if helper.isempty(tokenResponse) then
-                local tokenRequestBody = {
-                    client_id = regClientResponseBody.data.client_id,
-                    client_secret = regClientResponseBody.data.client_secret,
-                    oxd_host = self.params.oxd_http_url,
-                    op_host = self.params.op_host
-                }
-                tokenResponse = oxd.get_client_token(tokenRequestBody)
-                if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
-                    return responses.send_HTTP_BAD_REQUEST("Register site: failed to fetch client token.")
-                end
-            end
-
-            -- --------------- UMA-RS Protect ----------------------------------
-            local umaRSRequest = {
-                oxd_host = self.params.oxd_http_url,
-                oxd_id = regClientResponseBody.data.oxd_id,
-                resources = json:decode(self.params.protection_document)
-            }
-
-            local umaRSResponse = oxd.uma_rs_protect(umaRSRequest, tokenResponse.data.access_token)
-
-            if helper.isempty(umaRSResponse.status) or umaRSResponse.status == "error" then
-                return responses.send_HTTP_BAD_REQUEST("UMA RS Resource registration failed. Check oxd-http and oxd-server log.")
+                return responses.send_HTTP_BAD_REQUEST("Client registration failed. Check oxd-http and oxd-server log")
             end
 
             regData = {

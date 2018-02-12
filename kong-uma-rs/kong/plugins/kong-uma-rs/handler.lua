@@ -2,7 +2,7 @@ local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.kong-uma-rs.access"
 
 local Handler = BasePlugin:extend()
-
+Handler.PRIORITY = 999
 function Handler:new()
   Handler.super.new(self, "kong-uma-rs")
 end

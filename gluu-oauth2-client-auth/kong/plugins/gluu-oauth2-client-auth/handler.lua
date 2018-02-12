@@ -2,7 +2,7 @@ local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-oauth2-client-auth.access"
 
 local Handler = BasePlugin:extend()
-
+Handler.PRIORITY = 998
 function Handler:new()
     Handler.super.new(self, "gluu-oauth2-client-auth")
 end

@@ -158,18 +158,6 @@ local function validate_credentials(credential, req_access_token)
 
         ngx.log(ngx.DEBUG, "Introspect token: true")
     end
-    --    -- *---- Get client token ----*
-    --    local tokenRequestBody = {
-    --        client_id = credential.client_id,
-    --        client_secret = credential.client_secret,
-    --        oxd_host = credential.oxd_http_url,
-    --        op_host = credential.op_host
-    --    }
-    --    local tokenResponse = oxd.get_client_token(tokenRequestBody)
-    --
-    --    if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
-    --        return responses.send_HTTP_BAD_REQUEST("Failed to fetch client token.")
-    --    end
 
     -- *---- uma-rs-check-access ----* Before
     ngx.log(ngx.DEBUG, "Request **before RPT token to uma-rs-check-access")
@@ -213,7 +201,7 @@ local function validate_credentials(credential, req_access_token)
 
     local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, req_access_token)
 
-    if helper.isempty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" or umaRsCheckAccessResponse.access == "denied" then
+    if helper.isempty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" or umaRsCheckAccessResponse.data.access == "denied" then
         return { active = false }
     end
 
