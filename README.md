@@ -26,9 +26,9 @@ used for client credential management and cryptographic validation.
 1. Backup, restore and migrate Kong instances using snapshots
 1. Leverages the security and upgradability of the oxd-server
 
-## Versions
+## Components
 
-These instructions use the following versions:
+Gluu Gateway uses the following components and versions:
 
 1. Gluu server 3.1.2
 1. oxd-server 3.1.2
