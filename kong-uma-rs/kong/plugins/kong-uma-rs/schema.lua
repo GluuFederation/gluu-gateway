@@ -1,11 +1,6 @@
-local oxd = require "kong.plugins.kong-uma-rs.helper"
-
-local function isempty(s)
-    return s == nil or s == ''
-end
+local helper = require "kong.plugins.kong-uma-rs.helper"
 
 local function protection_document_validator(given_value, given_config)
-
     ngx.log(ngx.DEBUG, "protection_document_validator: given_value:" .. given_value)
 
     if isempty(given_value) then
@@ -30,12 +25,12 @@ end
 local function uma_server_host_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "uma_server_host_validator: given_value:" .. given_value)
 
-    if isempty(given_value) then
+    if helper.is_empty(given_value) then
         ngx.log(ngx.ERR, "Invalid uma_server_host. It is blank.")
         return false
     end
 
-    if isempty(given_value) then
+    if helper.is_empty(given_value) then
         ngx.log(ngx.ERR, "Invalid uma_server_host. It is blank.")
         return false
     end
@@ -56,10 +51,10 @@ return {
         protection_document = { required = true, type = "string", func = protection_document_validator },
     },
     self_check = function(schema, plugin_t, dao, is_updating)
-        if not isempty(plugin_t.oxd_id) then
+        if not helper.is_empty(plugin_t.oxd_id) then
             return true
         end
 
-        return oxd.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
+        return helper.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
     end
 }
