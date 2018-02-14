@@ -10,7 +10,10 @@ konga->admin:  Display API details
 
 admin->konga: Add gluu-oauth2-client-auth plugin
 konga->kong Admin API: Request /api/api_id/plugin endpoint to add gluu-oauth2-client-auth plugin
-kong Admin API->konga: Return api_plugin_id
+kong Admin API->oxdweb: Create client using setup_client
+oxdweb->kong Admin API: Return oxd_id, client_id, client_secret
+kong Admin API->kong Admin API: Store oxd_id, client_id, client_secret in gluu-oauth2-client-auth global config
+kong Admin API->konga: Return api_plugin_id, oxd_id, client_id, client_secret
 konga->admin:  Display plugin details
 
 admin->konga: Create new consumer
@@ -45,16 +48,17 @@ oauth2-plugin->Kong-Cache: Lookup value of Authorization Header bearer token
 Kong-Cache->oauth2-plugin: token JSON {"consumer": "foo", ...}
 
 opt AT not in kong-cache
-    oauth2-plugin->oxd-web: Introspect AT at OAuth Introspection endpoint
+    oauth2-plugin->oxd-web: Introspect AT at OAuth Introspection endpoint using global oxd_id
     oxd-web<->OP:
     OPT AT not found
-        oauth2-plugin->oxd-web: Introspect RPT at token introspection endpoint
+        oauth2-plugin->oxd-web: Introspect RPT at token introspection endpoint using global oxd_id
         oauth2-plugin<->Kong-Cache: Write: {"RPT":{"cliend_id":"", "consumer": "bar", "expires":"..."}, "type": "uma"}
     end
     opt token still not found
        oauth2-plugin->client: Unauthorized 401
     end
     oxd-web->oauth2-plugin: AT JSON
+    oauth2-plugin->oauth2-plugin: Fetch oauth2-consumer using above AT JSON(client_id)
     opt is_oauth_token
         opt active
             oauth2-plugin<->Kong-Cache: Write: {"AT":{"cliend_id":"", "consumer": "foo", "oxd-id": "...", "expires":"..."}, "type": "oauth", "rpt":"RPT"}
