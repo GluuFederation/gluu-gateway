@@ -3,11 +3,16 @@ local json = require "JSON"
 
 local _M = {}
 
-
+--- Check value of the variable is empty or not
+-- @param s: any value
+-- @return boolean
 function _M.is_empty(s)
     return s == nil or s == ''
 end
 
+--- Register OP client using oxd setup_client
+-- @param conf: plugin global values
+-- @return response: response of setup_client
 function _M.register(conf)
     ngx.log(ngx.DEBUG, "Registering on oxd ... ")
 
@@ -78,6 +83,9 @@ function _M.register(conf)
     -- -----------------------------------------------------------------
 end
 
+--- Check rpt token - /uma-rs-check-access
+-- @param conf: plugin global values
+-- @return response: response of /uma-rs-check-access
 function _M.check_access(conf, rpt, path, httpMethod)
     -- ------------------GET Client Token-------------------------------
     local tokenRequest = {
@@ -109,6 +117,9 @@ function _M.check_access(conf, rpt, path, httpMethod)
     return umaAccessResponse;
 end
 
+--- Introspect to rpt token /introspect_rpt
+-- @param conf: plugin global values
+-- @return response: response of /introspect_rpt
 function _M.introspect_rpt(conf, rpt)
     local introspectRequest = {
         oxd_host = conf.oxd_host,
@@ -132,6 +143,8 @@ function _M.introspect_rpt(conf, rpt)
     return introspectResponse;
 end
 
+--- Used to print table values in log
+-- @param node: table type values
 function _M.print_table(node)
     -- to make output beautiful
     local function tab(amt)

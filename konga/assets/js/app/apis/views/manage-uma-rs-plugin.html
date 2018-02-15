@@ -54,7 +54,11 @@
                 </tr>
                 <tr>
                   <th>Client Id</th>
-                  <td>{{::pluginConfig.client_id}}</td>
+                  <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href data-ng-click="isShowClientId = !isShowClientId" title="{{isShowClientId ? 'Hide': 'Show'}}"><i class="mdi mdi-eye"></i></a> </td>
+                </tr>
+                <tr>
+                  <th>Client Secret</th>
+                  <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href data-ng-click="isShowClientSecret = !isShowClientSecret" title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i class="mdi mdi-eye"></i></a></td>
                 </tr>
                 </thead>
               </table>

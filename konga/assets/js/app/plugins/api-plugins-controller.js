@@ -15,6 +15,7 @@
 
 
         $scope.plugins = _plugins.data
+        $scope.api_id = $stateParams.api_id
         $scope.onAddPlugin = onAddPlugin
         $scope.onEditPlugin = onEditPlugin
         $scope.deletePlugin = deletePlugin

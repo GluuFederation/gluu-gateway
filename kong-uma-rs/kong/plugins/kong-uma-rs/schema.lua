@@ -1,27 +1,8 @@
 local helper = require "kong.plugins.kong-uma-rs.helper"
 
-local function protection_document_validator(given_value, given_config)
-    ngx.log(ngx.DEBUG, "protection_document_validator: given_value:" .. given_value)
-
-    if isempty(given_value) then
-        ngx.log(ngx.ERR, "Invalid protection_document. It is blank.")
-        return false
-    end
-
-    return true
-end
-
-local function host_validator(given_value, given_config)
-    ngx.log(ngx.DEBUG, "host_validator: given_value:" .. given_value)
-
-    if isempty(given_value) then
-        ngx.log(ngx.ERR, "Invalid oxd_host. It is blank.")
-        return false
-    end
-
-    return true
-end
-
+--- Check uma_server_host is must https and not empty
+-- @param given_value: Value of uma_server_host
+-- @param given_config: whole config values including uma_server_host
 local function uma_server_host_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "uma_server_host_validator: given_value:" .. given_value)
 
@@ -43,12 +24,27 @@ local function uma_server_host_validator(given_value, given_config)
     return true
 end
 
+--- Check unprotected_path_cache_time_sec is must be >= 0
+-- @param given_value: Value of uma_server_host
+-- @param given_config: whole config values including uma_server_host
+local function path_time_validator(given_value, given_config)
+    ngx.log(ngx.DEBUG, "path_time_validator: given_value:" .. given_value)
+
+    if given_value < 0 then
+        ngx.log(ngx.ERR, "Invalid unprotected_path_time_sec. It must be >= 0.")
+        return false
+    end
+
+    return true
+end
+
 return {
     no_consumer = true,
     fields = {
-        oxd_host = { required = true, type = "string", func = host_validator },
+        oxd_host = { required = true, type = "string" },
         uma_server_host = { required = true, type = "string", func = uma_server_host_validator },
-        protection_document = { required = true, type = "string", func = protection_document_validator },
+        protection_document = { required = true, type = "string" },
+        unprotected_path_cache_time_sec = { default = 3600, type = "number", func = path_time_validator }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         if not helper.is_empty(plugin_t.oxd_id) then
