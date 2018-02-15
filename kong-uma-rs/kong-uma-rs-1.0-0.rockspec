@@ -18,7 +18,6 @@ build = {
   type = "builtin",
   modules = {
     ["kong.plugins.kong-uma-rs.access"] = "access.lua",
-    ["kong.plugins.kong-uma-rs.common"] = "common.lua",
     ["kong.plugins.kong-uma-rs.handler"] = "handler.lua",
     ["kong.plugins.kong-uma-rs.helper"] = "helper.lua",
     ["kong.plugins.kong-uma-rs.schema"] = "schema.lua"
