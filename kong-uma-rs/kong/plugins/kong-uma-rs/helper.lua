@@ -29,7 +29,8 @@ function _M.register(conf)
 
     local response = oxd.setup_client(siteRequest)
 
-    if response.status == "error" then
+    if _M.is_empty(response.status) or response.status == "error" then
+        ngx.log(ngx.ERR, "kong-uma-rs: Error in setup_client")
         return false
     end
 
@@ -37,8 +38,6 @@ function _M.register(conf)
     if _M.is_empty(data) then
         return false
     end
-
-    ngx.log(ngx.DEBUG, "Registered successfully.")
 
     -- -----------------------------------------------------------------
 
@@ -55,8 +54,8 @@ function _M.register(conf)
     };
     local token = oxd.get_client_token(tokenRequest)
 
-    if token.status == "error" then
-        ngx.log(ngx.ERR, "Error in get_client_token")
+    if _M.is_empty(token.status) or token.status == "error" then
+        ngx.log(ngx.ERR, "kong-uma-rs: Error in get_client_token")
         return false
     end
     -- -----------------------------------------------------------------
@@ -70,16 +69,16 @@ function _M.register(conf)
 
     response = oxd.uma_rs_protect(umaRSRequest, token.data.access_token)
 
-    if response.status == "ok" then
-        ngx.log(ngx.ERR, "Registered resources : " .. data.oxd_id)
-        conf.oxd_id = data.oxd_id
-        conf.client_id = data.client_id
-        conf.client_secret = data.client_secret
-
-        return true
-    else
+    if _M.is_empty(response.status) or response.status == "error" then
+        ngx.log(ngx.ERR, "kong-uma-rs: Error in uma_rs_protect")
         return false
     end
+
+    conf.oxd_id = data.oxd_id
+    conf.client_id = data.client_id
+    conf.client_secret = data.client_secret
+
+    return true
     -- -----------------------------------------------------------------
 end
 
@@ -99,7 +98,7 @@ function _M.check_access(conf, rpt, path, httpMethod)
     local token = oxd.get_client_token(tokenRequest)
 
     if _M.is_empty(token.status) or token.status == "error" then
-        ngx.log(ngx.DEBUG, "Failed to get client_token")
+        ngx.log(ngx.DEBUG, "kong-uma-rs: Failed to get client_token")
         return false
     end
     -- -----------------------------------------------------------------
