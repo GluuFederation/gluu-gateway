@@ -17,6 +17,7 @@ describe("kong-uma-rs plugin", function()
         end
         assert(helpers.dao.plugins:insert {
             name = "kong-uma-rs",
+            api_id = api1.id,
             config = {
                 oxd_host = "http://localhost:8553",
                 uma_server_host = "https://gluu.local.org",
@@ -48,6 +49,50 @@ describe("kong-uma-rs plugin", function()
         if proxy_client then
             proxy_client:close()
         end
+    end)
+
+    describe("Unauthorized", function()
+        it("401 Unauthorized with permission ticket when token is not present", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/posts",
+                headers = {
+                    ["Host"] = "mock.org"
+                }
+            })
+            local wwwAuthenticate = res.headers["WWW-Authenticate"]
+            assert.is_truthy(string.find(wwwAuthenticate, "ticket"))
+            assert.res_status(401, res)
+        end)
+
+        it("401 Unauthorized with permission ticket when token is present but invalid or oauth2 AT", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/posts",
+                headers = {
+                    ["Host"] = "mock.org",
+                    ["Authorization"] = "Bearer dfdff5654tryhgfht",
+                }
+            })
+            local wwwAuthenticate = res.headers["WWW-Authenticate"]
+            assert.is_truthy(string.find(wwwAuthenticate, "ticket"))
+            assert.res_status(401, res)
+        end)
+
+        it("200 Authorized with UMA-Warning header from upstream URL when path is not protected by UMA-RS", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/todos", -- Unprotected path
+                headers = {
+                    ["Host"] = "mock.org",
+                    ["Authorization"] = "Bearer dfdff5654tryhgfht",
+                }
+            })
+            local UMAWarning = res.headers["UMA-Warning"]
+            print(UMAWarning)
+            assert.equals(true, UMAWarning ~= nil)
+            assert.res_status(200, res)
+        end)
     end)
 end)
 
