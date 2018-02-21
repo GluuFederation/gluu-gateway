@@ -1,3 +1,4 @@
+local oxd = require "oxdweb"
 local cjson = require "cjson"
 local json = require "JSON"
 local _M = {}
@@ -7,8 +8,12 @@ function _M.decode(string_data)
     return response
 end
 
-function _M.isempty(s)
+function _M.is_empty(s)
     return s == nil or s == ''
+end
+
+function _M.ternary(cond, T, F)
+    if cond then return T else return F end
 end
 
 function _M.split(str, sep)
@@ -122,12 +127,82 @@ function _M.print_table(node)
 end
 
 function _M.set_header(oxd, user_info)
-    ngx.req.set_header("X-OXD",json:encode(oxd))
+    ngx.req.set_header("X-OXD", json:encode(oxd))
     if type(user_info) == "string" then
         ngx.req.set_header("X-USER-INFO", user_info)
     else
         ngx.req.set_header("X-USER-INFO", cjson.encode(user_info))
     end
+end
+
+--- Register OP client using oxd setup_client
+-- @param conf: plugin global values
+-- @return response: response of setup_client
+function _M.register(conf)
+    ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Registering on oxd ... ")
+
+    -- ------------------Register Site----------------------------------
+    local setupClientRequest = {
+        oxd_host = conf.oxd_http_url,
+        scope = { "openid", "uma_protection" },
+        op_host = conf.op_server,
+        authorization_redirect_uri = "https://client.example.com/cb",
+        client_name = "gluu-oauth2-introspect-client",
+        grant_types = { "client_credentials" }
+    }
+
+    local setupClientResponse = oxd.setup_client(setupClientRequest)
+
+    if _M.is_empty(setupClientResponse.status) or setupClientResponse.status == "error" then
+        return false
+    end
+
+    conf.oxd_id = setupClientResponse.data.oxd_id
+    return true
+end
+
+--- Used to introspect OAuth2 access token
+-- @param conf: plugin global values
+-- @param token: requested oAuth2 access token token for introspect
+-- @return response: response of introspect_access_token
+function _M.introspect_access_token(conf, token)
+    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
+    local tokenBody = {
+        oxd_host = conf.oxd_http_url,
+        oxd_id = conf.oxd_id,
+        access_token = token
+    }
+
+    local tokenResponse = oxd.introspect_access_token(tokenBody)
+
+    if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
+        ngx.log(ngx.DEBUG, "introspect_access_token active: false")
+        return { active = false }
+    end
+
+    return tokenResponse.data
+end
+
+--- Used to introspect RPT token
+-- @param conf: plugin global values
+-- @param token: requested RPT token for introspect
+-- @return response: response of introspect_rpt
+function _M.introspect_rpt(conf, token)
+    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
+    local tokenBody = {
+        oxd_host = conf.oxd_http_url,
+        oxd_id = conf.oxd_id,
+        rpt = token
+    }
+
+    local tokenResponse = oxd.introspect_rpt(tokenBody)
+
+    if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
+        ngx.log(ngx.DEBUG, "introspect_rpt active: false")
+        return { active = false }
+    end
+
+    return tokenResponse.data
 end
 
 return _M
