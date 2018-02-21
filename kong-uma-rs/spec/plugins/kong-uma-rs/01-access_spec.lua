@@ -1,30 +1,44 @@
 local helpers = require "spec.helpers"
+local oxd = require "oxdweb"
+
+local function is_empty(s)
+    return s == nil or s == ''
+end
 
 describe("kong-uma-rs plugin", function()
     local proxy_client
     local admin_client
+    local plugin
     local timeout = 6000
 
     setup(function()
-        local api1 = assert(helpers.dao.apis:insert {
-            name = "mock",
-            upstream_url = "http://mockbin.com",
-            hosts = { "mock.org" }
+        local api = assert(helpers.dao.apis:insert {
+            name = "json",
+            upstream_url = "https://jsonplaceholder.typicode.com",
+            hosts = { "jsonplaceholder.typicode.com" }
         })
         print("Api created:")
-        for k, v in pairs(api1) do
+        for k, v in pairs(api) do
             print(k, ": ", v)
         end
-        assert(helpers.dao.plugins:insert {
+        plugin = assert(helpers.dao.plugins:insert {
             name = "kong-uma-rs",
-            api_id = api1.id,
+            api_id = api.id,
             config = {
                 oxd_host = "http://localhost:8553",
                 uma_server_host = "https://gluu.local.org",
                 protection_document = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"rule\":{\"or\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"rule\":{\"and\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]}]"
             }
         })
-
+        print("\nPlugin configured")
+        for k, v in pairs(plugin) do
+            print(k, ": ", v)
+            if k == 'config' then
+                for sk, sv in pairs(v) do
+                    print(sk, ": ", sv)
+                end
+            end
+        end
         -- start Kong with your testing Kong configuration (defined in "spec.helpers")
         assert(helpers.start_kong())
         print("Kong started")
@@ -57,7 +71,7 @@ describe("kong-uma-rs plugin", function()
                 method = "GET",
                 path = "/posts",
                 headers = {
-                    ["Host"] = "mock.org"
+                    ["Host"] = "jsonplaceholder.typicode.com"
                 }
             })
             local wwwAuthenticate = res.headers["WWW-Authenticate"]
@@ -70,7 +84,7 @@ describe("kong-uma-rs plugin", function()
                 method = "GET",
                 path = "/posts",
                 headers = {
-                    ["Host"] = "mock.org",
+                    ["Host"] = "jsonplaceholder.typicode.com",
                     ["Authorization"] = "Bearer dfdff5654tryhgfht",
                 }
             })
@@ -84,13 +98,69 @@ describe("kong-uma-rs plugin", function()
                 method = "GET",
                 path = "/todos", -- Unprotected path
                 headers = {
-                    ["Host"] = "mock.org",
+                    ["Host"] = "jsonplaceholder.typicode.com",
                     ["Authorization"] = "Bearer dfdff5654tryhgfht",
                 }
             })
             local UMAWarning = res.headers["UMA-Warning"]
-            print(UMAWarning)
             assert.equals(true, UMAWarning ~= nil)
+            assert.res_status(200, res)
+        end)
+
+        it("200 Authorized with successful response from upstream URL when token is valid", function()
+            -- ------------------GET Client Token-------------------------------
+            local tokenRequest = {
+                oxd_host = plugin.config.oxd_host,
+                client_id = plugin.config.client_id,
+                client_secret = plugin.config.client_secret,
+                scope = { "openid", "uma_protection" },
+                op_host = plugin.config.uma_server_host
+            };
+
+            local token = oxd.get_client_token(tokenRequest)
+
+            if is_empty(token.status) or token.status == "error" then
+                print("kong-uma-rs: Failed to get client_token")
+            end
+            local req_access_token = token.data.access_token
+            -- *---- uma-rs-check-access ----* Before
+            ngx.log(ngx.DEBUG, "Request **before RPT token to uma-rs-check-access")
+            local umaRsCheckAccessRequest = {
+                oxd_host = plugin.config.oxd_host,
+                oxd_id = plugin.config.oxd_id,
+                rpt = "",
+                http_method = 'GET',
+                path = '/posts'
+            }
+
+            local umaRsCheckAccessResponse = oxd.uma_rs_check_access(umaRsCheckAccessRequest, req_access_token)
+
+            if is_empty(umaRsCheckAccessResponse.status) or umaRsCheckAccessResponse.status == "error" then
+                print("kong-uma-rs: Failed uma_rs_check_access")
+            end
+
+            -- *---- uma-rp-get-rpt ----*
+            ngx.log(ngx.DEBUG, "Request to uma-rp-get-rpt")
+            local umaRpGetRptRequest = {
+                oxd_host = plugin.config.oxd_host,
+                oxd_id = plugin.config.oxd_id,
+                ticket = umaRsCheckAccessResponse.data.ticket
+            }
+
+            local umaRpGetRptRequest = oxd.uma_rp_get_rpt(umaRpGetRptRequest, req_access_token)
+
+            if is_empty(umaRpGetRptRequest.status) or umaRpGetRptRequest.status == "error" then
+                print("kong-uma-rs: Failed to get uma_rp_get_rpt")
+            end
+
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/todos", -- Unprotected path
+                headers = {
+                    ["Host"] = "jsonplaceholder.typicode.com",
+                    ["Authorization"] = "Bearer " .. umaRpGetRptRequest.data.access_token,
+                }
+            })
             assert.res_status(200, res)
         end)
     end)
