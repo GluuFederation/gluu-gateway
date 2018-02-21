@@ -112,7 +112,7 @@ describe("gluu-oauth2-client-auth plugin", function()
 
             local res = assert(proxy_client:send {
                 method = "GET",
-                path = "/posts", -- Unprotected path
+                path = "/posts",
                 headers = {
                     ["Host"] = "jsonplaceholder.typicode.com",
                     ["Authorization"] = "Bearer " .. req_access_token,

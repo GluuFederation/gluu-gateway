@@ -14,6 +14,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         client_secret = { type = "string", required = true },
         client_jwks_uri = { type = "string" },
         jwks_file = { type = "string" },
+        kong_acts_as_uma_client = { type = "boolean" },
         client_token_endpoint_auth_method = { type = "string" },
         client_token_endpoint_auth_signing_alg = { type = "string" },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true },
@@ -30,7 +31,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_TOKENS_SCHEMA = {
     fields = {
         id = { type = "id", dao_insert_value = true },
         api_id = { type = "id", required = false, foreign = "apis:id" },
-        credential_id = { type = "id", required = true, foreign = "gluu_oauth2_client_auth_credentials:id" },
+        client_id = { type = "string", required = false },
         expires_in = { type = "number", required = true },
         access_token = { type = "string", required = false },
         rpt_token = { type = "string", required = false },
@@ -39,7 +40,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_TOKENS_SCHEMA = {
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true }
     },
     marshall_event = function(self, t)
-        return { id = t.id, credential_id = t.credential_id, access_token = t.access_token, method = t.method, path = t.path }
+        return { id = t.id, access_token = t.access_token, method = t.method, path = t.path }
     end
 }
 

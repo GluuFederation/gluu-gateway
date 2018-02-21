@@ -1,6 +1,42 @@
+local helper = require "kong.plugins.kong-uma-rs.helper"
+
+--- Check op_server_validator is must https and not empty
+-- @param given_value: Value of op_server_validator
+-- @param given_config: whole config values including op_server_validator
+local function op_server_validator(given_value, given_config)
+    ngx.log(ngx.DEBUG, "op_server_validator: given_value:" .. given_value)
+
+    if helper.is_empty(given_value) then
+        ngx.log(ngx.ERR, "Invalid op_server_validator. It is blank.")
+        return false
+    end
+
+    if helper.is_empty(given_value) then
+        ngx.log(ngx.ERR, "Invalid op_server_validator. It is blank.")
+        return false
+    end
+
+    if not (string.sub(given_value, 0, 8) == "https://") then
+        ngx.log(ngx.ERR, "Invalid op_server_validator. It does not start from 'https://', value: " .. given_value)
+        return false
+    end
+
+    return true
+end
+
 return {
     no_consumer = true,
     fields = {
-        hide_credentials = { type = "boolean", default = false }
-    }
+        hide_credentials = { type = "boolean", default = false },
+        oxd_id = { type = "string" },
+        op_server = { required = true, type = "string", func = op_server_validator },
+        oxd_http_url = { required = true, type = "string" }
+    },
+    self_check = function(schema, plugin_t, dao, is_updating)
+        if not helper.is_empty(plugin_t.oxd_id) then
+            return true
+        end
+
+        return helper.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
+    end
 }

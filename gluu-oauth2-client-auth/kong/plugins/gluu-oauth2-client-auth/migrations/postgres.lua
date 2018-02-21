@@ -16,6 +16,7 @@ return {
         jwks_file text,
         client_token_endpoint_auth_method text,
         client_token_endpoint_auth_signing_alg text,
+        kong_acts_as_uma_client boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
@@ -34,7 +35,7 @@ return {
 
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
         id uuid,
-        credential_id uuid REFERENCES gluu_oauth2_client_auth_credentials (id) ON DELETE CASCADE,
+        client_id text,
         access_token text,
         rpt_token text,
         path text,
