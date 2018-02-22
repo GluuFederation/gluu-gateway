@@ -40,6 +40,7 @@ local function generate_token(api, client_id, access_token, rpt_token, expiratio
         client_id = client_id,
         access_token = token.access_token,
         expires_in = expiration or nil,
+        access_token = access_token,
         rpt_token = rpt_token,
         path = path,
         method = method
@@ -111,39 +112,56 @@ local function validate_credentials(conf, req_access_token)
 
     -- If token is exist in cache the allow
     if not helper.is_empty(access_token) then
+        ngx.log(ngx.DEBUG, "access_token found in cache")
+        print("access_token found in cache")
+        credential = load_credential_from_cache(access_token.client_id)
+        access_token.credential = credential
         access_token.active = true
         return access_token
     end
 
+    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
+    print("access_token not found in cache, so goes to introspect it")
     -- *---- Introspect token ----*
     local tokenResponse = helper.introspect_access_token(conf, req_access_token);
 
-    if tokenResponse.active then
+    if tokenResponse.data.active then
         tokenResponse.isOAuth = true
     else
         tokenResponse = helper.introspect_rpt(conf, req_access_token);
         tokenResponse.isUMA = true
     end
 
-    if not tokenResponse.active then
+    if not tokenResponse.data.active then
+        tokenResponse.active = false;
         return tokenResponse
     end
 
+    if pcall(function () print("Client Id: " .. tokenResponse.data.client_id) end) then
+        ngx.log(ngx.DEBUG, "Client Id: " .. tokenResponse.data.client_id)
+    else
+        ngx.log(ngx.DEBUG, "Failed to fetch client id from introspect token")
+        return { active = false }
+    end
+
     ngx.log(ngx.DEBUG, "Introspect token isOAuth: " .. helper.ternary(tokenResponse.isOAuth, "true", "false") .. " isUMA: " .. helper.ternary(tokenResponse.isUMA, "true", "false"))
-    credential = load_credential_from_cache(tokenResponse.data.clientId)
+    credential = load_credential_from_cache(tokenResponse.data.client_id)
 
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
     ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
     generate_token(ngx.ctx.api,
-        credential,
+        tokenResponse.data.client_id,
         helper.ternary(tokenResponse.isOAuth, req_access_token, ''),
         helper.ternary(tokenResponse.isUMA, req_access_token, ''),
         exp_sec,
         httpMethod,
         path)
     retrieve_token_cache(req_access_token, httpMethod, path, exp_sec)
-    return tokenResposeBody
+
+    tokenResponse.active = true;
+    tokenResponse.credential = credential
+    return tokenResponse
 end
 
 local function load_consumer_into_memory(consumer_id, anonymous)
@@ -209,6 +227,7 @@ function _M.execute(config)
     local responseValidCredential = validate_credentials(config, accessToken)
 
     ngx.log(ngx.DEBUG, "Check Valid token response : ")
+
     if not responseValidCredential.active then
         ngx.log(ngx.DEBUG, "Unauthorized")
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")

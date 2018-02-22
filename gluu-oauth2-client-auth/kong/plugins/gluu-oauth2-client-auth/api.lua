@@ -2,7 +2,6 @@ local oxd = require "oxdweb"
 local crud = require "kong.api.crud_helpers"
 local responses = require "kong.tools.responses"
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
-local json = require "JSON"
 
 return {
     ["/consumers/:username_or_id/gluu-oauth2-client-auth/"] = {
@@ -17,11 +16,11 @@ return {
             crud.put(self.params, dao_factory.gluu_oauth2_client_auth_credentials)
         end,
         POST = function(self, dao_factory)
-            if (helper.isempty(self.params.op_host)) then
+            if (helper.is_empty(self.params.op_host)) then
                 return responses.send_HTTP_BAD_REQUEST("op_host is required")
             end
 
-            if (helper.isempty(self.params.oxd_http_url)) then
+            if (helper.is_empty(self.params.oxd_http_url)) then
                 return responses.send_HTTP_BAD_REQUEST("oxd_http_url is required")
             end
 
@@ -31,21 +30,21 @@ return {
             local client_name
 
             -- Default: redirect uri - https://localhost
-            if (helper.isempty(self.params.redirect_uris)) then
+            if (helper.is_empty(self.params.redirect_uris)) then
                 redirect_uris = helper.split("https://localhost", ",")
             else
                 redirect_uris = helper.split(self.params.redirect_uris, ",")
             end
 
             -- Default: scope - client_credentials
-            if (helper.isempty(self.params.scope)) then
+            if (helper.is_empty(self.params.scope)) then
                 scope = helper.split("clientinfo,uma_protection", ",")
             else
                 scope = helper.split(self.params.scope, ",")
             end
 
             -- Default: grant_types - client_credentials
-            if (helper.isempty(self.params.grant_types)) then
+            if (helper.is_empty(self.params.grant_types)) then
                 grant_types = helper.split("client_credentials", ",")
             else
                 grant_types = helper.split(self.params.grant_types, ",")
@@ -69,16 +68,16 @@ return {
             local regClientResponseBody
             local regData
             -- setup client
-            if helper.isempty(body.client_id) and helper.isempty(body.client_id) then
+            if helper.is_empty(body.client_id) and helper.is_empty(body.client_id) then
                 regClientResponseBody = oxd.setup_client(body)
             else
                 -- Register site or update
                 local tokenResponse = oxd.get_client_token(body)
-                if helper.isempty(tokenResponse.status) or tokenResponse.status == "error" then
+                if helper.is_empty(tokenResponse.status) or tokenResponse.status == "error" then
                     return responses.send_HTTP_BAD_REQUEST("Register site: failed to fetch client token")
                 end
 
-                if not helper.isempty(self.params.oxd_id) then
+                if not helper.is_empty(self.params.oxd_id) then
                     body.oxd_id = self.params.oxd_id
                     regClientResponseBody = oxd.update_site(body, tokenResponse.data.access_token)
                 else
@@ -86,7 +85,7 @@ return {
                 end
             end
 
-            if helper.isempty(regClientResponseBody.status) or regClientResponseBody.status == "error" then
+            if helper.is_empty(regClientResponseBody.status) or regClientResponseBody.status == "error" then
                 return responses.send_HTTP_BAD_REQUEST("Client registration failed. Check oxd-http and oxd-server log")
             end
 

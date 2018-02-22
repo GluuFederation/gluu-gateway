@@ -1,4 +1,4 @@
-local helper = require "kong.plugins.kong-uma-rs.helper"
+local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 
 --- Check op_server_validator is must https and not empty
 -- @param given_value: Value of op_server_validator
@@ -33,6 +33,7 @@ return {
         oxd_http_url = { required = true, type = "string" }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
+        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth oxd_id: " .. tostring(helper.is_empty(plugin_t.oxd_id)))
         if not helper.is_empty(plugin_t.oxd_id) then
             return true
         end

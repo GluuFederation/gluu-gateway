@@ -166,7 +166,6 @@ end
 -- @param token: requested oAuth2 access token token for introspect
 -- @return response: response of introspect_access_token
 function _M.introspect_access_token(conf, token)
-    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
     local tokenBody = {
         oxd_host = conf.oxd_http_url,
         oxd_id = conf.oxd_id,
@@ -177,10 +176,10 @@ function _M.introspect_access_token(conf, token)
 
     if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
         ngx.log(ngx.DEBUG, "introspect_access_token active: false")
-        return { active = false }
+        return { data = { active = false } }
     end
 
-    return tokenResponse.data
+    return tokenResponse
 end
 
 --- Used to introspect RPT token
@@ -188,7 +187,6 @@ end
 -- @param token: requested RPT token for introspect
 -- @return response: response of introspect_rpt
 function _M.introspect_rpt(conf, token)
-    ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
     local tokenBody = {
         oxd_host = conf.oxd_http_url,
         oxd_id = conf.oxd_id,
@@ -199,10 +197,10 @@ function _M.introspect_rpt(conf, token)
 
     if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
         ngx.log(ngx.DEBUG, "introspect_rpt active: false")
-        return { active = false }
+        return { data = { active = false } }
     end
 
-    return tokenResponse.data
+    return tokenResponse
 end
 
 return _M
