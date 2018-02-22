@@ -908,6 +908,11 @@
                 type: 'boolean',
                 value: false,
                 help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
+              },
+              'oxd_id': {
+                type: 'text',
+                value: '',
+                help: 'Used to introspect the token. This above is oxd_id from Konga config. You can also enter any other oxd_id. If you leave it as blank then plugin creates new client itself.'
               }
             }
           };

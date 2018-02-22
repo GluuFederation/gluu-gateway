@@ -53,6 +53,12 @@
           // Assign extra properties from options to data fields
           PluginHelperService.assignExtraProperties(options, $scope.data.fields);
 
+          if (_pluginName == "gluu-oauth2-client-auth") {
+            $scope.data.fields.oxd_id.value = $scope.globalInfo.oxdId
+            delete $scope.data.fields.op_server
+            delete $scope.data.fields.oxd_http_url
+          }
+
           console.log("Extra properties added to fields =>", $scope.data.fields);
         }
 
@@ -108,6 +114,11 @@
           Object.keys(request_data).forEach(function (key) {
             if (!request_data[key]) delete request_data[key]
           })
+
+          if (_pluginName == "gluu-oauth2-client-auth") {
+            request_data['config.op_server'] = $scope.globalInfo.opHost;
+            request_data['config.oxd_http_url'] = $scope.globalInfo.oxdWeb;
+          }
 
           console.log("REQUEST DATA =>", request_data)
 

@@ -17,7 +17,8 @@
         $scope.create = create;
         $scope.data = {
           op_host: $scope.globalInfo.opHost,
-          oxd_http_url: $scope.globalInfo.oxdWeb
+          oxd_http_url: $scope.globalInfo.oxdWeb,
+          kong_acts_as_uma_client: false
         };
 
         $scope.close = function () {
