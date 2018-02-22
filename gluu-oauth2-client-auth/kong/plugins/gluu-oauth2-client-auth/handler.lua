@@ -9,7 +9,7 @@ end
 
 function Handler:access(conf)
     Handler.super.access(self)
-    local response = access.execute(conf)
+    local response = access.execute_access(conf)
     if response ~= nil then
         return response
     end

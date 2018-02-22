@@ -70,27 +70,33 @@ local function load_credential_from_cache(client_id)
     return credential
 end
 
-local function load_token_into_memory(api, access_token, method, path)
-    local credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, access_token = access_token, path = path, method = method }
+local function load_token_into_memory(api, token, method, path, isOAuth)
+    ngx.log(ngx.DEBUG, "isAoth" .. tostring(isOAuth))
+    local credentials, err
+    if isOAuth then
+        credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, access_token = token, path = path, method = method }
+    else
+        credentials, err = singletons.dao.gluu_oauth2_client_auth_tokens:find_all { api_id = api.id, rpt_token = token, path = path, method = method }
+    end
     local result
-    ngx.log(ngx.DEBUG, "Before DB cred" .. api.id .. access_token .. method .. path)
+    ngx.log(ngx.DEBUG, "Before DB cred" .. api.id .. token .. method .. path)
     if err then
         return nil, err
     elseif #credentials > 0 then
         result = credentials[1]
     end
-    ngx.log(ngx.DEBUG, "After DB cred" .. api.id .. access_token .. method .. path)
+    ngx.log(ngx.DEBUG, "After DB cred" .. api.id .. token .. method .. path)
     return result
 end
 
-local function retrieve_token_cache(access_token, method, path, exp_sec)
+local function retrieve_token_cache(req_token, method, path, exp_sec, isOAuth)
     local token, err
-    if access_token then
-        local token_cache_key = singletons.dao.gluu_oauth2_client_auth_tokens:cache_key(access_token, method, path)
+    if req_token then
+        local token_cache_key = req_token .. method .. path
         ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, ngx.ctx.api,
-            access_token, method, path)
+            req_token, method, path, isOAuth)
         if err then
             return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
         end
@@ -100,15 +106,15 @@ end
 
 --- validate the access_token in request. If it's active then cache it and allow for request
 -- @param credential: client and plugin info
--- @param req_access_token: token comes in req header
-local function validate_credentials(conf, req_access_token)
+-- @param req_token: token comes in req header
+local function validate_credentials(conf, req_token)
     -- Method and path
     local httpMethod = ngx.req.get_method()
     local path = getPath()
     local tokenResposeBody
     local credential
     -- check token in cache
-    local access_token = retrieve_token_cache(req_access_token, httpMethod, path, nil)
+    local access_token = retrieve_token_cache(req_token, httpMethod, path, nil, false)
 
     -- If token is exist in cache the allow
     if not helper.is_empty(access_token) then
@@ -123,12 +129,12 @@ local function validate_credentials(conf, req_access_token)
     ngx.log(ngx.DEBUG, "access_token not found in cache, so goes to introspect it")
     print("access_token not found in cache, so goes to introspect it")
     -- *---- Introspect token ----*
-    local tokenResponse = helper.introspect_access_token(conf, req_access_token);
+    local tokenResponse = helper.introspect_access_token(conf, req_token);
 
     if tokenResponse.data.active then
         tokenResponse.isOAuth = true
     else
-        tokenResponse = helper.introspect_rpt(conf, req_access_token);
+        tokenResponse = helper.introspect_rpt(conf, req_token);
         tokenResponse.isUMA = true
     end
 
@@ -149,15 +155,19 @@ local function validate_credentials(conf, req_access_token)
 
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
-    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_access_token: " .. req_access_token .. ", Token exp: " .. tostring(exp_sec))
-    generate_token(ngx.ctx.api,
+    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " kong_acts_as_uma_client: " .. tostring(credential.kong_acts_as_uma_client))
+    tokenResponse = generate_token(ngx.ctx.api,
         tokenResponse.data.client_id,
-        helper.ternary(tokenResponse.isOAuth, req_access_token, ''),
-        helper.ternary(tokenResponse.isUMA, req_access_token, ''),
+        helper.ternary(tokenResponse.isOAuth, req_token, ''),
+        helper.ternary(tokenResponse.isUMA, req_token, ''),
         exp_sec,
         httpMethod,
         path)
-    retrieve_token_cache(req_access_token, httpMethod, path, exp_sec)
+
+    -- Invalidate(clear) the cache if exist
+    singletons.cache:invalidate(req_token .. httpMethod .. path)
+
+    retrieve_token_cache(req_token, httpMethod, path, exp_sec, not helper.is_empty(tokenResponse.access_token))
 
     tokenResponse.active = true;
     tokenResponse.credential = credential
@@ -216,7 +226,7 @@ local function retrieve_token(request, conf, header_name)
     end
 end
 
-function _M.execute(config)
+function _M.execute_access(config)
     -- Fetch basic token from header
     local accessToken = retrieve_token(ngx.req, config, "authorization")
 
@@ -233,7 +243,8 @@ function _M.execute(config)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
-    if config.kong_acts_as_uma_client and responseValidCredential.isRPT then
+    if responseValidCredential.credential.kong_acts_as_uma_client and not helper.is_empty(responseValidCredential.rpt_token) then
+        ngx.log(ngx.DEBUG, "Passed rpt in authorization header")
         ngx.header["Authorization"] = "Bearer " .. accessToken
     end
 
