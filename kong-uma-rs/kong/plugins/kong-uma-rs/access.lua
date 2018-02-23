@@ -2,6 +2,8 @@ local helper = require "kong.plugins.kong-uma-rs.helper"
 local responses = require "kong.tools.responses"
 local singletons = require "kong.singletons"
 local ngx_re_gmatch = ngx.re.gmatch
+local PLUGINNAME = "kong-uma-rs"
+local ngx_set_header = ngx.req.set_header
 
 --- Retrieve a RPT token in the `Authorization` header.
 -- @param request ngx request object
@@ -59,7 +61,7 @@ end
 local function get_set_token_cache(rpt, method, path, isPathProtected, exp_sec)
     local token, err
     if rpt then
-        local token_cache_key = rpt .. method .. path
+        local token_cache_key = PLUGINNAME .. rpt .. method .. path
         ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, rpt, method, path, isPathProtected, exp_sec)
@@ -97,7 +99,7 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
         if umaRSResponse.data.access == "denied" then
             local ticket = umaRSResponse.data.ticket
             if not helper.is_empty(ticket) and not helper.is_empty(umaRSResponse.data["www-authenticate_header"]) then
-                ngx.header["WWW-Authenticate"] = umaRSResponse.data["www-authenticate_header"]
+                ngx_set_header("WWW-Authenticate", umaRSResponse.data["www-authenticate_header"])
                 return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
             end
 
@@ -144,7 +146,7 @@ function _M.execute(conf)
 
     if checkUMARsResponse.access == true then
         -- Invalidate(clear) the cache if exist
-        singletons.cache:invalidate((rpt or ip) .. httpMethod .. path)
+        singletons.cache:invalidate(PLUGINNAME .. (rpt or ip) .. httpMethod .. path)
 
         -- If path is protected the cache rpt with token expiration time otherwise cache using ip address
         if checkUMARsResponse.isPathProtected then

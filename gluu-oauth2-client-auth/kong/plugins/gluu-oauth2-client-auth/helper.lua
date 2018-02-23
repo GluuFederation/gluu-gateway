@@ -203,4 +203,14 @@ function _M.introspect_rpt(conf, token)
     return tokenResponse
 end
 
+function _M.get_ticket_from_www_authenticate_header(wwwAuth)
+    local ticket = ''
+    for k, v in wwwAuth:gmatch'(%w+)="([^"]*)"' do
+        if k == "ticket" then
+            ticket = v
+        end
+    end
+    return ticket
+end
+
 return _M

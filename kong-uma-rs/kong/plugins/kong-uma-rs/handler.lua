@@ -3,7 +3,7 @@ local access = require "kong.plugins.kong-uma-rs.access"
 
 local Handler = BasePlugin:extend()
 
-Handler.PRIORITY = 999
+Handler.PRIORITY = 998
 
 --- Instanciate plugin itself with a name
 function Handler:new()

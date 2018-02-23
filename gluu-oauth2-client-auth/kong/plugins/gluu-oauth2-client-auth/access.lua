@@ -8,6 +8,7 @@ local constants = require "kong.constants"
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local ngx_re_gmatch = ngx.re.gmatch
 local ngx_set_header = ngx.req.set_header
+local PLUGINNAME = "gluu-oauth2-client-auth"
 
 local _M = {}
 
@@ -92,7 +93,7 @@ end
 local function retrieve_token_cache(req_token, method, path, exp_sec, isOAuth)
     local token, err
     if req_token then
-        local token_cache_key = req_token .. method .. path
+        local token_cache_key = PLUGINNAME .. req_token .. method .. path
         ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, ngx.ctx.api,
@@ -165,7 +166,7 @@ local function validate_credentials(conf, req_token)
         path)
 
     -- Invalidate(clear) the cache if exist
-    singletons.cache:invalidate(req_token .. httpMethod .. path)
+    singletons.cache:invalidate(PLUGINNAME .. req_token .. httpMethod .. path)
 
     retrieve_token_cache(req_token, httpMethod, path, exp_sec, not helper.is_empty(tokenResponse.access_token))
 
@@ -244,8 +245,8 @@ function _M.execute_access(config)
     end
 
     if responseValidCredential.credential.kong_acts_as_uma_client and not helper.is_empty(responseValidCredential.rpt_token) then
-        ngx.log(ngx.DEBUG, "Passed rpt in authorization header")
-        ngx.header["Authorization"] = "Bearer " .. accessToken
+        ngx.log(ngx.DEBUG, "Set RPT token in req authorization header")
+        ngx_set_header("Authorization", "Bearer " .. accessToken)
     end
 
     -- Retrieve consumer
@@ -260,6 +261,32 @@ function _M.execute_access(config)
     set_consumer(consumer, responseValidCredential.credential)
 
     return -- ACCESS GRANTED
+end
+
+function _M.execute_header_filter(config)
+    if ngx.status ~= 401 then
+        ngx.log(ngx.DEBUG, "Not get 401/Unauthtorized")
+        return -- ACCESS GRANTED
+    end
+    local accessToken = retrieve_token(ngx.req, config, "authorization")
+    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized" .. accessToken)
+
+    local responseValidCredential = validate_credentials(config, accessToken)
+    if not responseValidCredential.credential.kong_acts_as_uma_client then
+        ngx.log(ngx.DEBUG, "kong_acts_as_uma_client" .. tostring(responseValidCredential.credential.kong_acts_as_uma_client))
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+    end
+
+    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.req.get_headers()["www-authenticate"])
+    ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
+
+    local plugins, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
+    if err then
+        ngx.log(ngx.DEBUG, "Error in getting kong uma rs data")
+        return nil, err
+    end
+
+    return true -- ACCESS GRANTED
 end
 
 return _M
