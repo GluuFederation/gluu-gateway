@@ -67,7 +67,7 @@ class KongSetup(object):
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.distFolder
-        self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
+        self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
         self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
         self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
 
@@ -82,7 +82,7 @@ class KongSetup(object):
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
         self.kongaKongAdminWebURL = 'http://localhost:8001'
-        self.kongaOxdVersion = 'Version 3.1.2'
+        self.kongaOxdVersion = '3.1.2'
 
         # oxd licence configuration
         self.oxdServerLicenseId = ''
