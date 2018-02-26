@@ -87,8 +87,11 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     elseif umaRSResponse.data.error == "invalid_request" then
         ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. ", path: " .. path)
-        ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
+        ngx_set_header("UMA-Warning", "Path is not protected by UMA. Please check protection_document.")
         return { access = true, isPathProtected = false }
+    else
+        ngx.log(ngx.DEBUG, "kong-uma-rs : Unknown internal server error occurs. Check oxd-server log")
+        return responses.send_HTTP_INTERNAL_SERVER_ERROR("Unknown internal server error occurs. Check oxd-server log")
     end
 
     if umaRSResponse.status == "ok" then
@@ -130,7 +133,7 @@ function _M.execute(conf)
         -- If path is not protected then send header with UMA-Wanrning
         if not cacheToken.isPathProtected then
             ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
-            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
+            ngx_set_header("UMA-Warning", "Path is not protected by UMA. Please check protection_document.")
         end
 
         return -- ACCESS GRANTED
