@@ -174,20 +174,20 @@ to set port, oxd, OP and client settings.
 
 ### Restore KONG to factory default
 
-* Execute below following command in sequence
-
+Execute below following command in sequence.
+1. Stop the kong.
 ```
 # kong stop
 ```
-
+2. `reset` option is used to reset the configured database. It deleted all the table and data of the configured database.
 ```
 # kong migrations reset
 ```
-
+3. `up` option is used to create the table in the configured database. Also, execute all missing migrations up to the latest available.
 ```
 # kong migrations up
 ```
-
+4. Start kong
 ```
 # kong start
 ```
