@@ -1,4 +1,3 @@
-Licensed under the [GLUU SUPPORT LICENSE](./LICENSE). Copyright Gluu 2018.
 
 ## Gluu Gateway
 
