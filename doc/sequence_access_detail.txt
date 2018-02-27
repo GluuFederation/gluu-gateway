@@ -1,0 +1,48 @@
+client->kong Proxy: call API  with header Authorization: Bearer Token
+kong Proxy->oauth2-plugin: *****  call "access" event for Kong plugin priority 999 *****
+alt token in cache
+    oauth2-plugin<->kong-cache: Lookup token
+    alt isUMA
+      oauth2-plugin->oauth2-plugin: Replace Authorization header with UMA access token
+      oauth2-plugin->kong Proxy: Success with upstream_api response
+    end
+    alt isOauth
+      oauth2-plugin->kong Proxy: Success with upstream_api response
+    end
+end
+
+oauth2-plugin->oxd-web: Introspect oauth2 access_token
+alt AT active=true
+    oauth2-plugin->oauth2-plugin: set flag IsOAuth=true
+end
+
+alt AT not found
+    oauth2-plugin->oxd-web: Introspect rpt token
+    oauth2-plugin->oauth2-plugin:set flag IsUMA=true
+end
+
+alt isUMA
+  oauth2-plugin->kong_db: Get oxd_id, client_id, client_secret of uma-rs plugin
+  kong_db->oauth2-plugin: return oxd_id, client_id, client_secret
+  oauth2-plugin<->oxd-web: request get-client-token and get token
+  oauth2-plugin<->oxd-web: request uma-rs-check-access and get permission ticket
+  oauth2-plugin<->oxd-web: request uma-rp-get-rpt and get rpt token
+  oauth2-plugin<->oxd-web: request uma-rs-check-access and check grant
+
+  alt check access=granted
+    oauth2-plugin->kong-cache: Cache RPT {rpt:"...", client_id:"...", consumer:"..."}
+    oauth2-plugin->kong Proxy: Success with upstream_api response
+  else check access=denied
+    oauth2-plugin->kong Proxy: 401/Unauthorized
+  end
+end
+
+oauth2-plugin->kong-cache: access=granted Cache AT {AT:"...", client_id:"...", consumer:"..."}
+
+kong Proxy->uma-rs: *****  call "access" event for Kong plugin priority 998 *****
+uma-rs->kong-cache: request oauth2-plugin cache with RPT
+alt cache found
+    uma-rs->kong Proxy: Success with upstream_api response
+end
+
+note over uma-rs: Remaining flow will be execute as well
