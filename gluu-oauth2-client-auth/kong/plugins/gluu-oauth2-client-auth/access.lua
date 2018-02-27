@@ -14,7 +14,7 @@ local _M = {}
 
 local function getPath()
     local path = ngx.var.request_uri
-    ngx.log(ngx.DEBUG, "request_uri " .. path);
+    ngx.log(ngx.DEBUG, "request_uri " .. path)
     local indexOf = string.find(path, "?")
     if indexOf ~= nil then
         return string.sub(path, 1, (indexOf - 1))
@@ -114,6 +114,7 @@ local function validate_credentials(conf, req_token)
     local path = getPath()
     local tokenResposeBody
     local credential
+    local rpt
     -- check token in cache
     local access_token = retrieve_token_cache(req_token, httpMethod, path, nil, false)
 
@@ -137,6 +138,7 @@ local function validate_credentials(conf, req_token)
     else
         tokenResponse = helper.introspect_rpt(conf, req_token);
         tokenResponse.isUMA = true
+        rpt = req_token
     end
 
     if not tokenResponse.data.active then
@@ -144,7 +146,7 @@ local function validate_credentials(conf, req_token)
         return tokenResponse
     end
 
-    if pcall(function () print("Client Id: " .. tokenResponse.data.client_id) end) then
+    if pcall(function() print("Client Id: " .. tokenResponse.data.client_id) end) then
         ngx.log(ngx.DEBUG, "Client Id: " .. tokenResponse.data.client_id)
     else
         ngx.log(ngx.DEBUG, "Failed to fetch client id from introspect token")
@@ -154,13 +156,37 @@ local function validate_credentials(conf, req_token)
     ngx.log(ngx.DEBUG, "Introspect token isOAuth: " .. helper.ternary(tokenResponse.isOAuth, "true", "false") .. " isUMA: " .. helper.ternary(tokenResponse.isUMA, "true", "false"))
     credential = load_credential_from_cache(tokenResponse.data.client_id)
 
+    -- If kong_acts_as_uma_client
+    local umaPlugin, err
+    if credential.kong_acts_as_uma_client then
+        umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
+        if err then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is not configured")
+            umaPlugin = nil
+        else
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is configured")
+            umaPlugin = umaPlugin[1]
+        end
+        -- Check UMA-RS access -> oxd
+        local umaRSResponse = helper.check_access(conf, path, httpMethod)
+        if not umaRSResponse or umaRSResponse.data.access == "denied" then
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        end
+        rpt = umaRSResponse.data.rpt
+
+        if helper.is_empty(rpt) then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " RPT not found")
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        end
+    end
+
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
     ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " kong_acts_as_uma_client: " .. tostring(credential.kong_acts_as_uma_client))
     tokenResponse = generate_token(ngx.ctx.api,
         tokenResponse.data.client_id,
         helper.ternary(tokenResponse.isOAuth, req_token, ''),
-        helper.ternary(tokenResponse.isUMA, req_token, ''),
+        helper.ternary(tokenResponse.isUMA, rpt, ''),
         exp_sec,
         httpMethod,
         path)
@@ -261,32 +287,6 @@ function _M.execute_access(config)
     set_consumer(consumer, responseValidCredential.credential)
 
     return -- ACCESS GRANTED
-end
-
-function _M.execute_header_filter(config)
-    if ngx.status ~= 401 then
-        ngx.log(ngx.DEBUG, "Not get 401/Unauthtorized")
-        return -- ACCESS GRANTED
-    end
-    local accessToken = retrieve_token(ngx.req, config, "authorization")
-    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized" .. accessToken)
-
-    local responseValidCredential = validate_credentials(config, accessToken)
-    if not responseValidCredential.credential.kong_acts_as_uma_client then
-        ngx.log(ngx.DEBUG, "kong_acts_as_uma_client" .. tostring(responseValidCredential.credential.kong_acts_as_uma_client))
-        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
-    end
-
-    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.req.get_headers()["www-authenticate"])
-    ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
-
-    local plugins, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
-    if err then
-        ngx.log(ngx.DEBUG, "Error in getting kong uma rs data")
-        return nil, err
-    end
-
-    return true -- ACCESS GRANTED
 end
 
 return _M

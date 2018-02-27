@@ -5,6 +5,8 @@ local ngx_re_gmatch = ngx.re.gmatch
 local PLUGINNAME = "kong-uma-rs"
 local ngx_set_header = ngx.req.set_header
 
+local GLUU_OAUTH2_PLUGINNAME = "gluu-oauth2-client-auth"
+
 --- Retrieve a RPT token in the `Authorization` header.
 -- @param request ngx request object
 -- @param conf Plugin configuration
@@ -87,11 +89,14 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     elseif umaRSResponse.data.error == "invalid_request" then
         ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. ", path: " .. path)
-        ngx_set_header("UMA-Warning", "Path is not protected by UMA. Please check protection_document.")
+        ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
         return { access = true, isPathProtected = false }
-    else
+    elseif umaRSResponse.data.error == "internal_error" then
         ngx.log(ngx.DEBUG, "kong-uma-rs : Unknown internal server error occurs. Check oxd-server log")
-        return responses.send_HTTP_INTERNAL_SERVER_ERROR("Unknown internal server error occurs. Check oxd-server log")
+        ngx.status = 500
+        ngx.header.content_type = "application/json; charset=utf-8"
+        ngx.say([[{ "message": "Unknown internal server error occurs. Check oxd-server log" }]])
+        return ngx.exit(500)
     end
 
     if umaRSResponse.status == "ok" then
@@ -102,7 +107,7 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
         if umaRSResponse.data.access == "denied" then
             local ticket = umaRSResponse.data.ticket
             if not helper.is_empty(ticket) and not helper.is_empty(umaRSResponse.data["www-authenticate_header"]) then
-                ngx_set_header("WWW-Authenticate", umaRSResponse.data["www-authenticate_header"])
+                ngx.header["WWW-Authenticate"] = umaRSResponse.data["www-authenticate_header"]
                 return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
             end
 
@@ -124,6 +129,15 @@ function _M.execute(conf)
 
     ngx.log(ngx.DEBUG, "kong-uma-rs : Access - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
 
+    -- Check gluu-oauth2-client-auth plugin cache with RPT
+    local gluuOAuthCacheKey = GLUU_OAUTH2_PLUGINNAME .. (rpt or ip) .. httpMethod .. path
+    local gluuOAuthCache, err = singletons.cache:get(gluuOAuthCacheKey, nil, function() end)
+
+    if not helper.is_empty(gluuOAuthCache) and not helper.is_empty(gluuOAuthCache.rpt_token) then
+        ngx.log(ngx.DEBUG, "Got RPT cache from gluu-oauth2-client-auth plugin")
+        return -- Grant access
+    end
+
     -- Check token in cache
     local cacheToken = get_set_token_cache(rpt or ip, httpMethod, path, false, nil)
 
@@ -133,7 +147,7 @@ function _M.execute(conf)
         -- If path is not protected then send header with UMA-Wanrning
         if not cacheToken.isPathProtected then
             ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
-            ngx_set_header("UMA-Warning", "Path is not protected by UMA. Please check protection_document.")
+            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
         end
 
         return -- ACCESS GRANTED
