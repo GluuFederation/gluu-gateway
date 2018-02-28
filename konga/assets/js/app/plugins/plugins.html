@@ -57,7 +57,12 @@
           <td>
             <raw-view data-item="item"></raw-view>
           </td>
-          <th><a href ng-click="onEditPlugin(item)">{{item.name}}</a></th>
+          <th>
+            <a ui-sref="apis.uma-plugin({api_id: item.api_id})" data-ng-if="item.name == 'kong-uma-rs'">
+              {{item.name}}
+            </a>
+            <a href ng-click="onEditPlugin(item)" data-ng-if="item.name != 'kong-uma-rs'">{{item.name}}</a>
+          </th>
           <td>
             <a data-ng-if="item.api_id" data-ui-sref="apis.edit({api_id:item.api_id})">{{item.api_id}}</a>
             <span data-ng-if="!item.api_id">All APIs</span>

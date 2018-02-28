@@ -14,7 +14,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         client_secret = { type = "string", required = true },
         client_jwks_uri = { type = "string" },
         jwks_file = { type = "string" },
-        kong_acts_as_uma_client = { type = "boolean" },
+        native_uma_client = { type = "boolean" },
         client_token_endpoint_auth_method = { type = "string" },
         client_token_endpoint_auth_signing_alg = { type = "string" },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true },

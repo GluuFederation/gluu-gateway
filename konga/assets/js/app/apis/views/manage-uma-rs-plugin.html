@@ -66,7 +66,7 @@
             <div class="col-md-12">
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>UMA Resources</label>
-                <span class="help-block error-block basic-block">Register a protected resource using below tool. For <a
+                <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. For <a
                   href="https://gluu.org/docs/oxd/{{globalInfo.oxdVersion}}/api/#uma-2-resource-server-apis"
                   target="_blank">more details...</a> </span>
               </div>
@@ -91,7 +91,7 @@
                            placeholder="/path"
                            ng-model="element.path"
                            ng-required="true" data-ng-disabled="isKongUMARSPluginAdded"/>
-                    <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods.</span>
+                    <span class="help-block error-block basic-block">The path which you want to protected by UMA.</span>
                   </div>
                   <div class="col-md-12">
                     <div class="row" ng-repeat="cond in element.conditions">

@@ -129,15 +129,6 @@ function _M.execute(conf)
 
     ngx.log(ngx.DEBUG, "kong-uma-rs : Access - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
 
-    -- Check gluu-oauth2-client-auth plugin cache with RPT
-    local gluuOAuthCacheKey = GLUU_OAUTH2_PLUGINNAME .. (rpt or ip) .. httpMethod .. path
-    local gluuOAuthCache, err = singletons.cache:get(gluuOAuthCacheKey, nil, function() end)
-
-    if not helper.is_empty(gluuOAuthCache) and not helper.is_empty(gluuOAuthCache.rpt_token) then
-        ngx.log(ngx.DEBUG, "Got RPT cache from gluu-oauth2-client-auth plugin")
-        return -- Grant access
-    end
-
     -- Check token in cache
     local cacheToken = get_set_token_cache(rpt or ip, httpMethod, path, false, nil)
 

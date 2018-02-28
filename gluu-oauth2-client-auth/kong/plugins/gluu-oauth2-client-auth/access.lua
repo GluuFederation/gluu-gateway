@@ -14,7 +14,7 @@ local _M = {}
 
 local function getPath()
     local path = ngx.var.request_uri
-    ngx.log(ngx.DEBUG, "request_uri " .. path)
+    ngx.log(ngx.DEBUG, "request_uri " .. path);
     local indexOf = string.find(path, "?")
     if indexOf ~= nil then
         return string.sub(path, 1, (indexOf - 1))
@@ -71,7 +71,7 @@ local function load_credential_from_cache(client_id)
     return credential
 end
 
-local function load_token_into_memory(api, token, method, path, isOAuth)
+local function load_token_into_memory(api, token, method, path, isOAuth, umaPlugin)
     ngx.log(ngx.DEBUG, "isAoth" .. tostring(isOAuth))
     local credentials, err
     if isOAuth then
@@ -85,19 +85,20 @@ local function load_token_into_memory(api, token, method, path, isOAuth)
         return nil, err
     elseif #credentials > 0 then
         result = credentials[1]
+        result.umaPlugin = umaPlugin
     end
     ngx.log(ngx.DEBUG, "After DB cred" .. api.id .. token .. method .. path)
     return result
 end
 
-local function retrieve_token_cache(req_token, method, path, exp_sec, isOAuth)
+local function retrieve_token_cache(req_token, method, path, exp_sec, isOAuth, umaPlugin)
     local token, err
     if req_token then
         local token_cache_key = PLUGINNAME .. req_token .. method .. path
         ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, ngx.ctx.api,
-            req_token, method, path, isOAuth)
+            req_token, method, path, isOAuth, umaPlugin)
         if err then
             return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
         end
@@ -114,7 +115,6 @@ local function validate_credentials(conf, req_token)
     local path = getPath()
     local tokenResposeBody
     local credential
-    local rpt
     -- check token in cache
     local access_token = retrieve_token_cache(req_token, httpMethod, path, nil, false)
 
@@ -138,7 +138,6 @@ local function validate_credentials(conf, req_token)
     else
         tokenResponse = helper.introspect_rpt(conf, req_token);
         tokenResponse.isUMA = true
-        rpt = req_token
     end
 
     if not tokenResponse.data.active then
@@ -156,9 +155,23 @@ local function validate_credentials(conf, req_token)
     ngx.log(ngx.DEBUG, "Introspect token isOAuth: " .. helper.ternary(tokenResponse.isOAuth, "true", "false") .. " isUMA: " .. helper.ternary(tokenResponse.isUMA, "true", "false"))
     credential = load_credential_from_cache(tokenResponse.data.client_id)
 
-    -- If kong_acts_as_uma_client
+    -- count expire time in second
+    local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
+    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " native_uma_client: " .. tostring(credential.native_uma_client))
+    tokenResponse = generate_token(ngx.ctx.api,
+        tokenResponse.data.client_id,
+        helper.ternary(tokenResponse.isOAuth, req_token, ''),
+        helper.ternary(tokenResponse.isUMA, req_token, ''),
+        exp_sec,
+        httpMethod,
+        path)
+
+    -- Invalidate(clear) the cache if exist
+    singletons.cache:invalidate(PLUGINNAME .. req_token .. httpMethod .. path)
+
+    -- If native_uma_client
     local umaPlugin, err
-    if credential.kong_acts_as_uma_client then
+    if credential.native_uma_client then
         umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
         if err then
             ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is not configured")
@@ -167,37 +180,13 @@ local function validate_credentials(conf, req_token)
             ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is configured")
             umaPlugin = umaPlugin[1]
         end
-        -- Check UMA-RS access -> oxd
-        local umaRSResponse = helper.check_access(conf, path, httpMethod)
-        if not umaRSResponse or umaRSResponse.data.access == "denied" then
-            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
-        end
-        rpt = umaRSResponse.data.rpt
-
-        if helper.is_empty(rpt) then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " RPT not found")
-            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
-        end
     end
 
-    -- count expire time in second
-    local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
-    ngx.log(ngx.DEBUG, "API: " .. ngx.ctx.api.id .. ", Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " kong_acts_as_uma_client: " .. tostring(credential.kong_acts_as_uma_client))
-    tokenResponse = generate_token(ngx.ctx.api,
-        tokenResponse.data.client_id,
-        helper.ternary(tokenResponse.isOAuth, req_token, ''),
-        helper.ternary(tokenResponse.isUMA, rpt, ''),
-        exp_sec,
-        httpMethod,
-        path)
-
-    -- Invalidate(clear) the cache if exist
-    singletons.cache:invalidate(PLUGINNAME .. req_token .. httpMethod .. path)
-
-    retrieve_token_cache(req_token, httpMethod, path, exp_sec, not helper.is_empty(tokenResponse.access_token))
+    retrieve_token_cache(req_token, httpMethod, path, exp_sec, not helper.is_empty(tokenResponse.access_token), umaPlugin or nil)
 
     tokenResponse.active = true;
     tokenResponse.credential = credential
+
     return tokenResponse
 end
 
@@ -270,7 +259,7 @@ function _M.execute_access(config)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
-    if responseValidCredential.credential.kong_acts_as_uma_client and not helper.is_empty(responseValidCredential.rpt_token) then
+    if responseValidCredential.credential.native_uma_client and not helper.is_empty(responseValidCredential.rpt_token) then
         ngx.log(ngx.DEBUG, "Set RPT token in req authorization header")
         ngx_set_header("Authorization", "Bearer " .. accessToken)
     end
@@ -287,6 +276,32 @@ function _M.execute_access(config)
     set_consumer(consumer, responseValidCredential.credential)
 
     return -- ACCESS GRANTED
+end
+
+function _M.execute_header_filter(config)
+    if ngx.status ~= 401 then
+        ngx.log(ngx.DEBUG, "Not get 401/Unauthtorized")
+        return -- ACCESS GRANTED
+    end
+    local accessToken = retrieve_token(ngx.req, config, "authorization")
+    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized" .. accessToken)
+
+    local responseValidCredential = validate_credentials(config, accessToken)
+    if not responseValidCredential.credential.native_uma_client then
+        ngx.log(ngx.DEBUG, "native_uma_client" .. tostring(responseValidCredential.credential.native_uma_client))
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+    end
+
+    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.header["www-authenticate"])
+    ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
+    local umaPlugin = responseValidCredential.umaPlugin
+    helper.print_table(umaPlugin)
+    ngx.status = 205
+    -- return
+    ngx.exit(205)
+--    ngx.header.content_type = "application/json; charset=utf-8"
+--    ngx.say([[{ "message": "Unknown internal server error occurs. Check oxd-server log" }]])
+    -- return true -- ACCESS GRANTED
 end
 
 return _M

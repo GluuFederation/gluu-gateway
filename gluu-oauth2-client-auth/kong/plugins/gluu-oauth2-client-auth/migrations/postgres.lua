@@ -1,6 +1,6 @@
 return {
     {
-        name = "2017-01-22557_init_gluu_oauth2_client_auth_credentials",
+        name = "2017-01-22558_init_gluu_oauth2_client_auth_credentials",
         up = [[
       CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_credentials(
         id uuid,
@@ -16,7 +16,7 @@ return {
         jwks_file text,
         client_token_endpoint_auth_method text,
         client_token_endpoint_auth_signing_alg text,
-        kong_acts_as_uma_client boolean,
+        native_uma_client boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
@@ -56,7 +56,7 @@ return {
     ]]
     },
     {
-        name = "2017-01-22557-gluu_oauth2_client_auth_api_id",
+        name = "2017-01-22558-gluu_oauth2_client_auth_api_id",
         up = [[
       ALTER TABLE gluu_oauth2_client_auth_tokens ADD COLUMN api_id uuid REFERENCES apis (id) ON DELETE CASCADE;
     ]],

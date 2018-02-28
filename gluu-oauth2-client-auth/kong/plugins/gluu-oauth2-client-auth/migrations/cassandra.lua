@@ -16,7 +16,7 @@ return {
         jwks_file text,
         client_token_endpoint_auth_method text,
         client_token_endpoint_auth_signing_alg text,
-        kong_acts_as_uma_client boolean,
+        native_uma_client boolean,
         created_at timestamp,
         PRIMARY KEY (id)
       );
