@@ -43,7 +43,7 @@ oauth2-plugin->Kong Proxy:
 
 Kong Proxy->oauth2-plugin: *****  call "header_filter" event for Kong plugin priority 998 *****
 
-opt &(HTTP response 401)(kong_acts_as_uma_client enabled)
+opt &(HTTP response 401)(native_uma_client enabled)
     oauth2-plugin-> oauth2-plugin: Get ticket from WWW-Authenticate header
     oauth2-plugin-> oauth2-plugin: Get token from Request Authorization header
     oauth2-plugin-> oauth2-plugin: Extract claim tokens from UMA_CLAIM_TOKENS header
