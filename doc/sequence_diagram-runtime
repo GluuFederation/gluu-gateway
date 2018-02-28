@@ -54,13 +54,12 @@ opt &(HTTP response 401)(native_uma_client enabled)
     oauth2-plugin<->oxd-web: request get-client-token and get token
     oauth2-plugin<->oxd-web: request uma-rs-check-access and get permission ticket
     oauth2-plugin<->oxd-web: request uma-rp-get-rpt and get rpt token
-    oauth2-plugin<->oxd-web: request uma-rs-check-access and check grant
 
-    opt oxd-web returns RPT and access=Granted
+    opt oxd-web returns RPT
         oauth2-plugin->kong-cache: write RPT token; update OAuth token (add RPT reference)
         oauth2-plugin->Kong Proxy: 205 Reset Content
     end
-    opt oxd-web returns anything other then RPT or access=denied
+    opt oxd-web returns anything other then RPT
         oauth2-plugin->client: 403 Forbidden (add descriptive error msg to new header KONG_UMA_ERROR)
     end
 end
