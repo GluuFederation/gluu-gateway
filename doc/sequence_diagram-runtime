@@ -14,29 +14,29 @@ oauth2-plugin->kong-cache: Lookup token in cache
 opt token not in cache
     oauth2-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
     opt OAuth token introspection fails
-        opt native_uma_client enabled
-            oauth2-plugin<->oxd-web: Introspect RPT at token introspection endpoint
-            opt RPT token introspection fails
-                oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
-            end
-        end
-        opt native_uma_client disabled
+        oauth2-plugin<->oxd-web: Introspect RPT at token introspection endpoint
+        opt RPT token introspection fails
             oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
         end
     end
-    opt token != active | token expired
-        oauth2-plugin->client: Unauthorized 401 - token expired
+    opt still token not found
+        oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
     end
     oauth2-plugin->kong-cache: write "token": {token JSON}
 end
 
-kong-cache->oauth2-plugin: return token JSON
-
-opt &(token_type == OAuth)(handleUMA == true)
+kong-cache->oauth2-plugin: return token JSON {active: true, client_id:"..."}
+oauth2-plugin->kong_db: fetch oauth2 consumer details using client_id
+kong_db->oauth2-plugin: return oauth2 consumer details {oxd_id:'...',client_id:'...',client_secret:'...',native_uma_client:[true|false]}
+opt &(token_type == OAuth)(native_uma_client == true)
     oauth2-plugin->kong-cache: lookup associated RPT JSON
     opt RPT found
         oauth2-plugin->oauth2-plugin: replace Authoriation Header with associated UMA token
     end
+end
+
+opt token != active | token expired
+    oauth2-plugin->client: Unauthorized 401 - token expired
 end
 
 oauth2-plugin->Kong Proxy:
@@ -48,17 +48,19 @@ opt &(HTTP response 401)(native_uma_client enabled)
     oauth2-plugin-> oauth2-plugin: Get token from Request Authorization header
     oauth2-plugin-> oauth2-plugin: Extract claim tokens from UMA_CLAIM_TOKENS header
     oauth2-plugin->kong-cache: Lookup token
-    opt token is OAuth AT
-        oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
-    end
-    opt token is UMA RPT
-        oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
-    end
-    opt oxd-web returns RPT
+
+    oauth2-plugin->kong_db: Get oxd_id, client_id, client_secret of uma-rs plugin
+    kong_db->oauth2-plugin: return oxd_id, client_id, client_secret
+    oauth2-plugin<->oxd-web: request get-client-token and get token
+    oauth2-plugin<->oxd-web: request uma-rs-check-access and get permission ticket
+    oauth2-plugin<->oxd-web: request uma-rp-get-rpt and get rpt token
+    oauth2-plugin<->oxd-web: request uma-rs-check-access and check grant
+
+    opt oxd-web returns RPT and access=Granted
         oauth2-plugin->kong-cache: write RPT token; update OAuth token (add RPT reference)
         oauth2-plugin->Kong Proxy: 205 Reset Content
     end
-    opt oxd-web returns anything other then RPT
+    opt oxd-web returns anything other then RPT or access=denied
         oauth2-plugin->client: 403 Forbidden (add descriptive error msg to new header KONG_UMA_ERROR)
     end
 end
