@@ -27,6 +27,7 @@ opt token not in cache
     opt token != active | token expired
         oauth2-plugin->client: Unauthorized 401 - token expired
     end
+    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id
     oauth2-plugin->kong-cache: write "token": {token JSON}
 end
 
