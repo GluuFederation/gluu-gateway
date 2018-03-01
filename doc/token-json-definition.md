@@ -10,3 +10,5 @@
 | iss | string | issuer of the toekn |
 | permissions | Object | [UMA RPT permission claims](https://docs.kantarainitiative.org/uma/wg/rec-oauth-uma-federated-authz-2.0.html#uma-bearer-token-profile) |
 | iat | string | timestamp when this token was originally issued |
+| associated_rpt | string | token value of an RPT token that is being substituted for this OAuth token for the purpose of upstream management |
+| associated_oauth_token | string | token value of an OAuth token that is associated with this RPT |
