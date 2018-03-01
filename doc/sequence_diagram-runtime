@@ -32,7 +32,7 @@ end
 
 kong-cache->oauth2-plugin: return token JSON
 
-opt &(token_type == OAuth)(handleUMA == true)
+opt &(token_type == OAuth)(kong_acts_as_uma_client == true)
     oauth2-plugin->kong-cache: lookup associated RPT JSON
     opt RPT found
         oauth2-plugin->oauth2-plugin: replace Authoriation Header with associated UMA token
