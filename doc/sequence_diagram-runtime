@@ -14,11 +14,9 @@ oauth2-plugin->kong-cache: Lookup token in cache
 opt token not in cache
     oauth2-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
     opt OAuth token introspection fails
-        opt native_uma_client enabled
-            oauth2-plugin<->oxd-web: Introspect RPT at token introspection endpoint
-            opt RPT token introspection fails
-                oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
-            end
+        oauth2-plugin<->oxd-web: Introspect token at UMA introspection endpoint
+        opt RPT token introspection fails
+            oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
         end
         opt native_uma_client disabled
             oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
@@ -27,6 +25,7 @@ opt token not in cache
     opt token != active | token expired
         oauth2-plugin->client: Unauthorized 401 - token expired
     end
+    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id
     oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id
     oauth2-plugin->kong-cache: write "token": {token JSON}
 end
@@ -57,6 +56,7 @@ opt &(HTTP response 401)(kong_acts_as_uma_client enabled)
     end
     opt oxd-web returns RPT
         oauth2-plugin->kong-cache: write RPT token; update OAuth token (add RPT reference)
+        oauth2-plugin->Kong Proxy: 205 Reset Content
         oauth2-plugin->Kong Proxy: 205 Reset Content
     end
     opt oxd-web returns anything other then RPT
