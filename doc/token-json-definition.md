@@ -12,3 +12,5 @@
 | iat | string | timestamp when this token was originally issued |
 | associated_rpt | string | token value of an RPT token that is being substituted for this OAuth token for the purpose of upstream management |
 | associated_oauth_token | string | token value of an OAuth token that is associated with this RPT |
+| pct | string | value of a PCT token |
+| claim_tokens | Array of string | A list of tokens pushed with the original request |
