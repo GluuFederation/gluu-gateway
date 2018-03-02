@@ -18,15 +18,14 @@ opt token not in cache
         opt RPT token introspection fails
             oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
         end
-        opt native_uma_client disabled
-            oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
-        end
     end
     opt token != active | token expired
         oauth2-plugin->client: Unauthorized 401 - token expired
     end
-    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id
-    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id
+    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id {id:'..', oxd_id:'..', ..., kong_act_as_uma_client:[t|f], native_uma_client:[t|f] }
+    opt &(tokenType == UMA)(native_uma_client == false)
+            oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
+    end
     oauth2-plugin->kong-cache: write "token": {token JSON}
 end
 
@@ -43,7 +42,7 @@ oauth2-plugin->Kong Proxy:
 
 Kong Proxy->oauth2-plugin: *****  call "header_filter" event for Kong plugin priority 998 *****
 
-opt &(HTTP response 401)(kong_acts_as_uma_client enabled)
+opt &(HTTP response 401)(kong_acts_as_uma_client == true)
     oauth2-plugin-> oauth2-plugin: Get ticket from WWW-Authenticate header
     oauth2-plugin-> oauth2-plugin: Get token from Request Authorization header
     oauth2-plugin-> oauth2-plugin: Extract claim tokens from UMA_CLAIM_TOKENS header
@@ -56,7 +55,6 @@ opt &(HTTP response 401)(kong_acts_as_uma_client enabled)
     end
     opt oxd-web returns RPT
         oauth2-plugin->kong-cache: write RPT token; update OAuth token (add RPT reference)
-        oauth2-plugin->Kong Proxy: 205 Reset Content
         oauth2-plugin->Kong Proxy: 205 Reset Content
     end
     opt oxd-web returns anything other then RPT
