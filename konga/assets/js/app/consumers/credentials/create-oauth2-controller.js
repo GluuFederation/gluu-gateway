@@ -18,7 +18,8 @@
         $scope.data = {
           op_host: $scope.globalInfo.opHost,
           oxd_http_url: $scope.globalInfo.oxdWeb,
-          native_uma_client: false
+          native_uma_client: false,
+          kong_acts_as_uma_client: false
         };
 
         $scope.close = function () {
@@ -55,6 +56,11 @@
         ];
 
         function create() {
+          if ($scope.data.native_uma_client && $scope.data.kong_acts_as_uma_client) {
+            MessageService.error("kong acts as uma client and Native UMA Client, Both flags cannot be “YES” at the same time.");
+            return;
+          }
+
           ConsumerService.addCredential($scope.consumer.id, 'gluu-oauth2-client-auth', $scope.data).then(function (resp) {
             $log.debug('OAuth2 generated', resp);
             $rootScope.$broadcast('consumer.oauth2.created');

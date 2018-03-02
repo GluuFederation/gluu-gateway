@@ -102,7 +102,8 @@ return {
                 jwks_file = self.params.jwks_file or "",
                 client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
                 client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or "",
-                native_uma_client = self.params.native_uma_client or false
+                native_uma_client = self.params.native_uma_client or false,
+                kong_acts_as_uma_client = self.kong_acts_as_uma_client or false
             }
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)

@@ -5,8 +5,6 @@ local ngx_re_gmatch = ngx.re.gmatch
 local PLUGINNAME = "kong-uma-rs"
 local ngx_set_header = ngx.req.set_header
 
-local GLUU_OAUTH2_PLUGINNAME = "gluu-oauth2-client-auth"
-
 --- Retrieve a RPT token in the `Authorization` header.
 -- @param request ngx request object
 -- @param conf Plugin configuration

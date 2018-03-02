@@ -206,7 +206,7 @@ end
 --- Check rpt token - /uma-rs-check-access
 -- @param conf: plugin global values
 -- @return response: response of /uma-rs-check-access
-function _M.check_access(conf, path, httpMethod)
+function _M.get_rpt(conf, path, httpMethod)
     -- ------------------GET Client Token-------------------------------
     local tokenRequest = {
         oxd_host = conf.oxd_host,
@@ -258,25 +258,8 @@ function _M.check_access(conf, path, httpMethod)
         ngx.log(ngx.DEBUG, "kong-uma-rs: Failed to get uma_rp_get_rpt")
         return false
     end
-    -- -----------------------------------------------------------------
 
-    -- ------------------GET check_access-------------------------------
-    local umaAccessRequest2 = {
-        oxd_host = conf.oxd_host,
-        oxd_id = conf.oxd_id,
-        rpt = umaGetRPTResponse.data.access_token,
-        path = path,
-        http_method = httpMethod
-    }
-    local umaAccessResponse2 = oxd.uma_rs_check_access(umaAccessRequest2, token.data.access_token)
-
-    if _M.is_empty(umaAccessResponse2.status) or umaAccessResponse2.status == "error" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs: 2. Failed to get uma_rs_check_access")
-        return false
-    end
-
-    umaAccessRequest2.data.rpt = umaGetRPTResponse.data.access_token
-    return umaAccessRequest2
+    return umaGetRPTResponse.data.access_token
 end
 
 function _M.get_ticket_from_www_authenticate_header(wwwAuth)

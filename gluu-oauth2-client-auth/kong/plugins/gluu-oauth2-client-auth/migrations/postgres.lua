@@ -17,6 +17,7 @@ return {
         client_token_endpoint_auth_method text,
         client_token_endpoint_auth_signing_alg text,
         native_uma_client boolean,
+        kong_acts_as_uma_client boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
@@ -32,36 +33,9 @@ return {
           CREATE INDEX gluu_oauth2_client_auth_credentials_oxd_idx ON gluu_oauth2_client_auth_credentials(oxd_id);
         END IF;
       END$$;
-
-      CREATE TABLE IF NOT EXISTS gluu_oauth2_client_auth_tokens(
-        id uuid,
-        client_id text,
-        access_token text,
-        rpt_token text,
-        path text,
-        method text,
-        expires_in int,
-        created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
-        PRIMARY KEY (id)
-      );
-
-      DO $$
-      BEGIN
-
-      END$$;
     ]],
         down = [[
       DROP TABLE gluu_oauth2_client_auth_credentials;
-      DROP TABLE gluu_oauth2_client_auth_tokens;
     ]]
-    },
-    {
-        name = "2017-01-22558-gluu_oauth2_client_auth_api_id",
-        up = [[
-      ALTER TABLE gluu_oauth2_client_auth_tokens ADD COLUMN api_id uuid REFERENCES apis (id) ON DELETE CASCADE;
-    ]],
-        down = [[
-      ALTER TABLE gluu_oauth2_client_auth_tokens DROP COLUMN api_id;
-    ]]
-    },
+    }
 }
