@@ -50,8 +50,6 @@ opt &(HTTP response 401)(kong_acts_as_uma_client == true)
 
     oauth2-plugin->kong_db: Get oxd_id, client_id, client_secret of uma-rs plugin
     kong_db->oauth2-plugin: return oxd_id, client_id, client_secret
-    oauth2-plugin<->oxd-web: request get-client-token and get token
-    oauth2-plugin<->oxd-web: request uma-rs-check-access and get permission ticket
     oauth2-plugin<->oxd-web: request uma-rp-get-rpt and get rpt token
 
     opt oxd-web returns RPT
