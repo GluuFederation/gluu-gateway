@@ -4,6 +4,7 @@
 | ----- | ---- | ------------|
 | client_id | string | Client identifier for the OAuth 2.0 client that requested this token.  |
 | exp | string | Integer timestamp, measured in the number of seconds since January 1 1970 UTC, indicating when this token will expire, as defined in JWT RFC7519  |
+| exp_sec | number | Cache expiration time in second. |
 | consumer_id | string | Kong consumer id |
 | token_type | string | "OAuth" or "UMA" |
 | scope | space seperated list of scopes | OAuth scopes (not present for an UMA RPT) |
