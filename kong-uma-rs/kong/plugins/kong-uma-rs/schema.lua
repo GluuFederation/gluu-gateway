@@ -44,7 +44,10 @@ return {
         oxd_host = { required = true, type = "string" },
         uma_server_host = { required = true, type = "string", func = uma_server_host_validator },
         protection_document = { required = true, type = "string" },
-        unprotected_path_cache_time_sec = { default = 3600, type = "number", func = path_time_validator }
+        unprotected_path_cache_time_sec = { default = 3600, type = "number", func = path_time_validator },
+        client_id = { type = "string" },
+        client_secret = { type = "string" },
+        oxd_id = { type = "string" }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         if not helper.is_empty(plugin_t.oxd_id) then

@@ -30,6 +30,7 @@ local function get_token_data(token)
         result = {
             client_id = token.client_id,
             exp = token.exp,
+            exp_sec = token.exp_sec,
             consumer_id = token.consumer_id,
             token_type = token.token_type,
             scope = token.scope,
@@ -177,7 +178,7 @@ local function validate_credentials(conf, req_token)
         cacheToken.credential = credential
 
         if cacheToken.token_type == "OAuth" and credential.kong_acts_as_uma_client then
-            ngx_set_header("Authorization", "Bearer " .. credential.associated_rpt)
+            ngx_set_header("Authorization", "Bearer " .. (cacheToken.associated_rpt or req_token))
         end
 
         return cacheToken
@@ -226,17 +227,6 @@ local function validate_credentials(conf, req_token)
         return tokenResponse
     end
 
-    if tokenType == "OAuth" and not credential.kong_acts_as_uma_client then
-        umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
-        if err then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is not configured")
-            umaPlugin = nil
-        else
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is configured")
-            umaPlugin = umaPlugin[1]
-        end
-    end
-
     -- Invalidate(clear) the cache if exist
     singletons.cache:invalidate(PLUGINNAME .. req_token .. httpMethod .. path)
 
@@ -256,6 +246,45 @@ local function validate_credentials(conf, req_token)
     return cacheTokenData
 end
 
+--- Get RPT and update cache with RPT token
+-- @param premature: it is a premature timer expiration or not
+-- @param reqToken: token from authrorization request header
+-- @param method: Requested http method
+-- @param path: Requested path
+-- @param cacheTokenData: Existing cache data
+-- @param ticket: permission ticket comes with www-authenticate
+-- @return set and update cache with associated RPT token
+local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ticket)
+    ngx.log(ngx.DEBUG, "Get RPT and update cache with RPT token")
+
+    -- Get kong-uma-rs credential
+    local umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
+    if err then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
+        umaPlugin = nil
+    else
+        umaPlugin = umaPlugin[1] or nil
+    end
+
+    if helper.is_empty(umaPlugin) then
+        ngx.log(ngx.DEBUG, "kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
+        return --
+    end
+
+    local rpt = helper.get_rpt(umaPlugin.config, ticket)
+
+    if rpt == false or helper.is_empty(rpt) then
+        ngx.log(ngx.DEBUG, "Failed to get RPT")
+        return --
+    end
+
+    --    Invalidate(clear) the cache if exist
+    singletons.cache:invalidate(PLUGINNAME .. reqToken .. httpMethod .. path)
+    cacheTokenData.associated_rpt = rpt
+    -- set token data in cache for exp_sec(time in second)
+    get_set_token_cache(reqToken, httpMethod, path, cacheTokenData)
+end
+
 --- Start execution. Call by handler.lua access event
 -- @param conf: Global configuration oxd_id, client_id and client_secret
 -- @return ACCESS GRANTED and Unauthorized
@@ -263,11 +292,11 @@ function _M.execute_access(config)
     -- Fetch basic token from header
     local token = retrieve_token(ngx.req, config, "authorization")
 
-    if helper.is_empty(token ) then
+    if helper.is_empty(token) then
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
-    local responseValidCredential = validate_credentials(config, token )
+    local responseValidCredential = validate_credentials(config, token)
 
     ngx.log(ngx.DEBUG, "Check Valid token response : ")
 
@@ -294,47 +323,56 @@ end
 -- @param conf: Global configuration oxd_id, client_id and client_secret
 -- @return ACCESS GRANTED and Unauthorized
 function _M.execute_header_filter(config)
+    -- Not Get 401/Unauthtorized
     if ngx.status ~= 401 then
-        ngx.log(ngx.DEBUG, "Not get 401/Unauthtorized")
+        ngx.log(ngx.DEBUG, "Not get 401/Unauthorized")
         return -- ACCESS GRANTED
     end
+
+    -- Get 401/Unauthtorized
+    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized")
+
     local httpMethod = ngx.req.get_method()
     local path = getPath()
     local reqToken = retrieve_token(ngx.req, config, "authorization")
 
+    -- Return 401/Unauthorized when token not found in header
     if helper.is_empty(reqToken) then
+        ngx.log(ngx.DEBUG, "Return 401/Unauthorized when token not found in header")
         return -- Return response comes from access method 401/Unauthorized
     end
 
-    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized" .. reqToken)
-
-    -- check token in cache
+    -- Return 401/Unauthorized when token is not valid and not cached
     local cacheTokenData = get_set_token_cache(reqToken, httpMethod, path, nil)
     if helper.is_empty(cacheTokenData) then
+        ngx.log(ngx.DEBUG, "Return 401/Unauthorized when token is not valid and not cached")
         return -- Return response comes from access method 401/Unauthorized
     end
 
+    -- Get oauth2-consumer data from cache
+    ngx.log(ngx.DEBUG, "Get oauth2-consumer data from cache")
     local credential = get_set_oauth2_consumer(cacheTokenData.client_id)
 
-    if not credential.kong_acts_as_uma_client then
-        ngx.log(ngx.DEBUG, "kong_acts_as_uma_client" .. tostring(credential.kong_acts_as_uma_client))
+    -- Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized
+    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.header["www-authenticate"])
+    if not credential.kong_acts_as_uma_client or helper.is_empty(ticket) then
+        ngx.log(ngx.DEBUG, "Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized")
+        ngx.log(ngx.DEBUG, "kong_acts_as_uma_client = " .. tostring(credential.kong_acts_as_uma_client))
         return -- Return response comes from access method 401/Unauthorized
     end
 
-    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.header["www-authenticate"])
     ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
---    local umaPlugin = responseValidCredential.umaPlugin
---    helper.print_table(umaPlugin)
---    local rpt = helper.get_rpt(umaPlugin.config)
+    local ok, err = ngx.timer.at(0, get_rpt, reqToken, httpMethod, path, cacheTokenData, ticket)
 
---    if helper.is_empty(rpt) then
---        return responses.send_HTTP_UNAUTHORIZED("Unauthorized! Forbidden")
---    end
-
---    Invalidate(clear) the cache if exist
---    singletons.cache:invalidate(PLUGINNAME .. accessToken .. httpMethod .. path)
-    ngx.status = 205
-    ngx.exit(205)
+    if ok then
+        ngx.log(ngx.DEBUG, "timer : ok")
+        ngx.status = 205
+        ngx.exit(205)
+    else
+        ngx.log(ngx.DEBUG, "timer : err")
+        ngx.status = 401
+        ngx.exit(401)
+    end
 end
 
 return _M

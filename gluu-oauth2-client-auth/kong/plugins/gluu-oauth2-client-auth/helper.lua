@@ -126,15 +126,6 @@ function _M.print_table(node)
     print(output_str)
 end
 
-function _M.set_header(oxd, user_info)
-    ngx.req.set_header("X-OXD", json:encode(oxd))
-    if type(user_info) == "string" then
-        ngx.req.set_header("X-USER-INFO", user_info)
-    else
-        ngx.req.set_header("X-USER-INFO", cjson.encode(user_info))
-    end
-end
-
 --- Register OP client using oxd setup_client
 -- @param conf: plugin global values
 -- @return response: response of setup_client
@@ -206,7 +197,7 @@ end
 --- Check rpt token - /uma-rs-check-access
 -- @param conf: plugin global values
 -- @return response: response of /uma-rs-check-access
-function _M.get_rpt(conf, path, httpMethod)
+function _M.get_rpt(conf, ticket)
     -- ------------------GET Client Token-------------------------------
     local tokenRequest = {
         oxd_host = conf.oxd_host,
@@ -219,27 +210,7 @@ function _M.get_rpt(conf, path, httpMethod)
     local token = oxd.get_client_token(tokenRequest)
 
     if _M.is_empty(token.status) or token.status == "error" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs: Failed to get client_token")
-        return false
-    end
-    -- -----------------------------------------------------------------
-
-    -- ------------------GET check_access-------------------------------
-    local umaAccessRequest = {
-        oxd_host = conf.oxd_host,
-        oxd_id = conf.oxd_id,
-        rpt = "",
-        path = path,
-        http_method = httpMethod
-    }
-    local umaAccessResponse = oxd.uma_rs_check_access(umaAccessRequest, token.data.access_token)
-
-    if _M.is_empty(umaAccessResponse.status) or umaAccessResponse.status == "error" then
-        if _M.is_empty(umaAccessResponse.data) or  umaAccessResponse.data.error == "invalid_request" then
-            ngx.log(ngx.DEBUG, "kong-uma-rs: 1. Path is not protected")
-            return true
-        end
-        ngx.log(ngx.DEBUG, "kong-uma-rs: 1. Failed to get uma_rs_check_access")
+        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Failed to get client_token")
         return false
     end
     -- -----------------------------------------------------------------
@@ -248,14 +219,12 @@ function _M.get_rpt(conf, path, httpMethod)
     local umaGetRPTRequest = {
         oxd_host = conf.oxd_host,
         oxd_id = conf.oxd_id,
-        rpt = "",
-        path = path,
-        http_method = httpMethod
+        ticket = ticket
     }
     local umaGetRPTResponse = oxd.uma_rp_get_rpt(umaGetRPTRequest, token.data.access_token)
 
     if _M.is_empty(umaGetRPTResponse.status) or umaGetRPTResponse.status == "error" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs: Failed to get uma_rp_get_rpt")
+        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Failed to get uma_rp_get_rpt")
         return false
     end
 
