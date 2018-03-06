@@ -6,19 +6,9 @@ local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local function op_server_validator(given_value, given_config)
     ngx.log(ngx.DEBUG, "op_server_validator: given_value:" .. given_value)
 
-    if helper.is_empty(given_value) then
-        ngx.log(ngx.ERR, "Invalid op_server_validator. It is blank.")
-        return false
-    end
-
-    if helper.is_empty(given_value) then
-        ngx.log(ngx.ERR, "Invalid op_server_validator. It is blank.")
-        return false
-    end
-
     if not (string.sub(given_value, 0, 8) == "https://") then
-        ngx.log(ngx.ERR, "Invalid op_server_validator. It does not start from 'https://', value: " .. given_value)
-        return false
+        ngx.log(ngx.DEBUG, "op_server must be 'https'")
+        return false, "op_server must be 'https'"
     end
 
     return true

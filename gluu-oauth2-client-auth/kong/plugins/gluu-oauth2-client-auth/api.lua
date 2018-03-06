@@ -24,6 +24,10 @@ return {
                 return responses.send_HTTP_BAD_REQUEST("oxd_http_url is required")
             end
 
+            if (self.params.native_uma_client and self.params.kong_acts_as_uma_client) then
+                return responses.send_HTTP_BAD_REQUEST("'Native uma client' and 'kong acts as uma client', Both flags cannot be 'YES' at the same time")
+            end
+
             local redirect_uris
             local scope
             local grant_types
