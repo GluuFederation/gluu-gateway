@@ -9,7 +9,7 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_both_flag_false
     local oauth2_consumer_with_native_uma_client
     local oauth2_consumer_with_kong_acts_as_uma_client
-
+    local api
     local plugin
     local timeout = 6000
     local op_server = "https://gluu.local.org"
@@ -17,7 +17,7 @@ describe("gluu-oauth2-client-auth plugin", function()
 
     setup(function()
         helpers.run_migrations()
-        local api = assert(helpers.dao.apis:insert {
+        api = assert(helpers.dao.apis:insert {
             name = "json",
             upstream_url = "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" }
@@ -143,39 +143,163 @@ describe("gluu-oauth2-client-auth plugin", function()
     end)
 
     describe("Unauthorized", function()
-        it("401 Unauthorized when token is not present", function()
-            local res = assert(proxy_client:send {
-                method = "GET",
-                path = "/posts",
-                headers = {
-                    ["Host"] = "jsonplaceholder.typicode.com"
-                }
-            })
-            assert.res_status(401, res)
+        describe("When oauth2-consumer is act only as OAuth client i:e both flag is false, native_uma_client = false and kong_acts_as_uma_client = false", function()
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("200 Authorized when token active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_both_flag_false.oxd_http_url,
+                    client_id = oauth2_consumer_both_flag_false.client_id,
+                    client_secret = oauth2_consumer_both_flag_false.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_both_flag_false.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+            end)
         end)
 
-        it("200 Authorized with successful response from upstream URL when token active = true and ", function()
-            -- ------------------GET Client Token-------------------------------
-            local tokenRequest = {
-                oxd_host = oauth2_consumer_both_flag_false.oxd_http_url,
-                client_id = oauth2_consumer_both_flag_false.client_id,
-                client_secret = oauth2_consumer_both_flag_false.client_secret,
-                scope = { "openid", "uma_protection" },
-                op_host = oauth2_consumer_both_flag_false.op_host
-            };
+        describe("When oauth2-consumer is act as kong_acts_as_uma_client = true", function()
+            local kong_uma_rs_plugin
+            setup(function()
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/apis/json/plugins",
+                    body = {
+                        name = "kong-uma-rs",
+                        config = {
+                            uma_server_host = op_server,
+                            oxd_host = oxd_http,
+                            protection_document = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"rule\":{\"or\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"rule\":{\"and\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]}]"
+                        },
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                assert.response(res).has.status(201)
+                kong_uma_rs_plugin = assert.response(res).has.jsonbody()
+            end)
 
-            local token = oxd.get_client_token(tokenRequest)
-            local req_access_token = token.data.access_token
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
 
-            local res = assert(proxy_client:send {
-                method = "GET",
-                path = "/posts",
-                headers = {
-                    ["Host"] = "jsonplaceholder.typicode.com",
-                    ["Authorization"] = "Bearer " .. req_access_token,
-                }
-            })
-            assert.res_status(200, res)
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("Get 205 status first time when token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                auth_helper.print_table(kong_uma_rs_plugin)
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_kong_acts_as_uma_client.oxd_http_url,
+                    client_id = oauth2_consumer_with_kong_acts_as_uma_client.client_id,
+                    client_secret = oauth2_consumer_with_kong_acts_as_uma_client.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_kong_acts_as_uma_client.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                print("req_access_token " .. req_access_token)
+                local body = assert.res_status(205, res)
+            end)
+
+            it("200 Authorized after handling 401, get status 205 and obtaining RPT", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_kong_acts_as_uma_client.oxd_http_url,
+                    client_id = oauth2_consumer_with_kong_acts_as_uma_client.client_id,
+                    client_secret = oauth2_consumer_with_kong_acts_as_uma_client.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_kong_acts_as_uma_client.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- First time get 205
+                print("First time get 205")
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(205, res)
+                print("In second request got 200")
+
+                -- In second request got 200
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+            end)
         end)
     end)
 end)

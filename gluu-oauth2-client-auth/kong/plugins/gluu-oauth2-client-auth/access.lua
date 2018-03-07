@@ -14,7 +14,7 @@ local _M = {}
 -- @return path
 local function getPath()
     local path = ngx.var.request_uri
-    ngx.log(ngx.DEBUG, "request_uri " .. path)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. " : request_uri " .. path)
     local indexOf = string.find(path, "?")
     if indexOf ~= nil then
         return string.sub(path, 1, (indexOf - 1))
@@ -88,7 +88,7 @@ local function get_set_token_cache(req_token, method, path, token)
     local result, err
     if req_token then
         local token_cache_key = PLUGINNAME .. req_token .. method .. path
-        ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " : Cache search: " .. token_cache_key)
 
         result, err = singletons.cache:get(token_cache_key, { ttl = (token and token.exp_sec) or nil },
             get_token_data, token)
@@ -173,18 +173,19 @@ local function validate_credentials(conf, req_token)
 
     -- If token is exist in cache the allow
     if not helper.is_empty(cacheToken) then
-        ngx.log(ngx.DEBUG, "token found in cache")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in cache")
         credential = get_set_oauth2_consumer(cacheToken.client_id)
         cacheToken.credential = credential
 
         if cacheToken.token_type == "OAuth" and credential.kong_acts_as_uma_client then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong_acts_as_uma_client = true rpt: " .. tostring(cacheToken.associated_rpt))
             ngx_set_header("Authorization", "Bearer " .. (cacheToken.associated_rpt or req_token))
         end
 
         return cacheToken
     end
 
-    ngx.log(ngx.DEBUG, "token not found in cache, so goes to introspect it")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not found in cache, so goes to introspect it")
     -- *---- Introspect token ----*
     local tokenResponse = helper.introspect_access_token(conf, req_token)
     local tokenType
@@ -204,20 +205,20 @@ local function validate_credentials(conf, req_token)
 
     -- check client_id is available in introspect response or not
     if pcall(function() print("Client Id: " .. tokenResponse.data.client_id) end) then
-        ngx.log(ngx.DEBUG, "Client Id: " .. tokenResponse.data.client_id)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Client Id: " .. tokenResponse.data.client_id)
     else
-        ngx.log(ngx.DEBUG, "Failed to fetch client id from introspect token")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to fetch client id from introspect token")
         return { active = false }
     end
 
-    ngx.log(ngx.DEBUG, "Introspect token type: " .. tokenType)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Introspect token type: " .. tokenType)
 
     -- Fetch oauth2-consumer using client_id
     credential = get_set_oauth2_consumer(tokenResponse.data.client_id)
 
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
-    ngx.log(ngx.DEBUG, "Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " native_uma_client: " .. tostring(credential.native_uma_client))
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " native_uma_client: " .. tostring(credential.native_uma_client))
 
     -- tokenType == "UMA" and native_uma_client=false so Unauthorized 401/token can't be validate
     local umaPlugin, err
@@ -255,26 +256,26 @@ end
 -- @param ticket: permission ticket comes with www-authenticate
 -- @return set and update cache with associated RPT token
 local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ticket)
-    ngx.log(ngx.DEBUG, "Get RPT and update cache with RPT token")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get RPT and update cache with RPT token")
 
     -- Get kong-uma-rs credential
     local umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
     if err then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. " kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
         umaPlugin = nil
     else
         umaPlugin = umaPlugin[1] or nil
     end
 
     if helper.is_empty(umaPlugin) then
-        ngx.log(ngx.DEBUG, "kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
         return --
     end
 
     local rpt = helper.get_rpt(umaPlugin.config, ticket)
 
     if rpt == false or helper.is_empty(rpt) then
-        ngx.log(ngx.DEBUG, "Failed to get RPT")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to get RPT")
         return --
     end
 
@@ -283,6 +284,7 @@ local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ti
     cacheTokenData.associated_rpt = rpt
     -- set token data in cache for exp_sec(time in second)
     get_set_token_cache(reqToken, httpMethod, path, cacheTokenData)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Finished with RPT in cache")
 end
 
 --- Start execution. Call by handler.lua access event
@@ -325,12 +327,12 @@ end
 function _M.execute_header_filter(config)
     -- Not Get 401/Unauthtorized
     if ngx.status ~= 401 then
-        ngx.log(ngx.DEBUG, "Not get 401/Unauthorized")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Not get 401/Unauthorized")
         return -- ACCESS GRANTED
     end
 
     -- Get 401/Unauthtorized
-    ngx.log(ngx.DEBUG, "Get 401/Unauthtorized")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get 401/Unauthtorized")
 
     local httpMethod = ngx.req.get_method()
     local path = getPath()
@@ -338,38 +340,39 @@ function _M.execute_header_filter(config)
 
     -- Return 401/Unauthorized when token not found in header
     if helper.is_empty(reqToken) then
-        ngx.log(ngx.DEBUG, "Return 401/Unauthorized when token not found in header")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Return 401/Unauthorized when token not found in header")
         return -- Return response comes from access method 401/Unauthorized
     end
 
     -- Return 401/Unauthorized when token is not valid and not cached
     local cacheTokenData = get_set_token_cache(reqToken, httpMethod, path, nil)
     if helper.is_empty(cacheTokenData) then
-        ngx.log(ngx.DEBUG, "Return 401/Unauthorized when token is not valid and not cached")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Return 401/Unauthorized when token is not valid and not cached")
         return -- Return response comes from access method 401/Unauthorized
     end
 
     -- Get oauth2-consumer data from cache
-    ngx.log(ngx.DEBUG, "Get oauth2-consumer data from cache")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get oauth2-consumer data from cache")
     local credential = get_set_oauth2_consumer(cacheTokenData.client_id)
 
     -- Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized
     local ticket = helper.get_ticket_from_www_authenticate_header(ngx.header["www-authenticate"])
     if not credential.kong_acts_as_uma_client or helper.is_empty(ticket) then
-        ngx.log(ngx.DEBUG, "Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized")
-        ngx.log(ngx.DEBUG, "kong_acts_as_uma_client = " .. tostring(credential.kong_acts_as_uma_client))
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong_acts_as_uma_client = " .. tostring(credential.kong_acts_as_uma_client))
         return -- Return response comes from access method 401/Unauthorized
     end
 
     ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
+
     local ok, err = ngx.timer.at(0, get_rpt, reqToken, httpMethod, path, cacheTokenData, ticket)
 
     if ok then
-        ngx.log(ngx.DEBUG, "timer : ok")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": timer : ok")
         ngx.status = 205
         ngx.exit(205)
     else
-        ngx.log(ngx.DEBUG, "timer : err")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": timer : err")
         ngx.status = 401
         ngx.exit(401)
     end
