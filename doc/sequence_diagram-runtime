@@ -48,9 +48,12 @@ opt &(HTTP response 401)(kong_acts_as_uma_client == true)
     oauth2-plugin-> oauth2-plugin: Extract claim tokens from UMA_CLAIM_TOKENS header
     oauth2-plugin->kong-cache: Lookup token
 
-    oauth2-plugin->kong_db: Get oxd_id, client_id, client_secret of uma-rs plugin
-    kong_db->oauth2-plugin: return oxd_id, client_id, client_secret
-    oauth2-plugin<->oxd-web: request uma-rp-get-rpt and get rpt token
+    opt token is OAuth AT
+      oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, claims_token, claims_token_format)
+    end
+    opt token is UMA RPT
+      oauth2-plugin->oxd-web: get_rpt(oxd-id, ticket, RPT, claims_token, claims_token_format)
+    end
 
     opt oxd-web returns RPT
         oauth2-plugin->kong-cache: write RPT token; update OAuth token (add RPT reference)
