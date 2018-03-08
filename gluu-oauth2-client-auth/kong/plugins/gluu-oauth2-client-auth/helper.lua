@@ -2,6 +2,7 @@ local oxd = require "oxdweb"
 local cjson = require "cjson"
 local json = require "JSON"
 local _M = {}
+local PLUGINNAME = "gluu-oauth2-client-auth"
 
 function _M.decode(string_data)
     local response = cjson.decode(string_data)
@@ -25,7 +26,7 @@ function _M.split(str, sep)
 end
 
 function _M.isHttps(url)
-    if _M.isempty(url) then
+    if _M.is_empty(url) then
         ngx.log(ngx.ERR, url .. ". It is blank.")
         return false
     end
@@ -130,7 +131,7 @@ end
 -- @param conf: plugin global values
 -- @return response: response of setup_client
 function _M.register(conf)
-    ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Registering on oxd ... ")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Registering on oxd ...")
 
     -- ------------------Register Site----------------------------------
     local setupClientRequest = {
@@ -145,6 +146,7 @@ function _M.register(conf)
     local setupClientResponse = oxd.setup_client(setupClientRequest)
 
     if _M.is_empty(setupClientResponse.status) or setupClientResponse.status == "error" then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to register client")
         return false
     end
 
@@ -166,7 +168,7 @@ function _M.introspect_access_token(conf, token)
     local tokenResponse = oxd.introspect_access_token(tokenBody)
 
     if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
-        ngx.log(ngx.DEBUG, "introspect_access_token active: false")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": introspect_access_token active: false")
         return { data = { active = false } }
     end
 
@@ -187,7 +189,7 @@ function _M.introspect_rpt(conf, token)
     local tokenResponse = oxd.introspect_rpt(tokenBody)
 
     if _M.is_empty(tokenResponse.status) or tokenResponse.status == "error" or not tokenResponse.data.active then
-        ngx.log(ngx.DEBUG, "introspect_rpt active: false")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": introspect_rpt active: false")
         return { data = { active = false } }
     end
 
@@ -196,35 +198,20 @@ end
 
 --- Check rpt token - /uma-rs-check-access
 -- @param conf: plugin global values
+-- @param access_token: protection access token
+-- @param ticket: permission ticket
 -- @return response: response of /uma-rs-check-access
-function _M.get_rpt(conf, ticket)
-    -- ------------------GET Client Token-------------------------------
-    local tokenRequest = {
-        oxd_host = conf.oxd_host,
-        client_id = conf.client_id,
-        client_secret = conf.client_secret,
-        scope = { "openid", "uma_protection" },
-        op_host = conf.uma_server_host
-    };
-
-    local token = oxd.get_client_token(tokenRequest)
-
-    if _M.is_empty(token.status) or token.status == "error" then
-        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Failed to get client_token")
-        return false
-    end
-    -- -----------------------------------------------------------------
-
+function _M.get_rpt(conf, access_token, ticket)
     -- ------------------GET rpt-------------------------------
     local umaGetRPTRequest = {
         oxd_host = conf.oxd_host,
         oxd_id = conf.oxd_id,
         ticket = ticket
     }
-    local umaGetRPTResponse = oxd.uma_rp_get_rpt(umaGetRPTRequest, token.data.access_token)
+    local umaGetRPTResponse = oxd.uma_rp_get_rpt(umaGetRPTRequest, access_token)
 
     if _M.is_empty(umaGetRPTResponse.status) or umaGetRPTResponse.status == "error" then
-        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth: Failed to get uma_rp_get_rpt")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to get uma_rp_get_rpt")
         return false
     end
 

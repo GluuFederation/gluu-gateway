@@ -254,25 +254,20 @@ end
 -- @param path: Requested path
 -- @param cacheTokenData: Existing cache data
 -- @param ticket: permission ticket comes with www-authenticate
+-- @param credential: oauth2-consumer credential {oxd_id: '...', client_id: '...', client_secret: '...'}
 -- @return set and update cache with associated RPT token
-local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ticket)
+local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ticket, credential)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get RPT and update cache with RPT token")
 
-    -- Get kong-uma-rs credential
-    local umaPlugin, err = singletons.dao.plugins:find_all { name = "kong-uma-rs" }
-    if err then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
-        umaPlugin = nil
-    else
-        umaPlugin = umaPlugin[1] or nil
-    end
-
-    if helper.is_empty(umaPlugin) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong-uma-rs is not configured yet. Configure it before use it in gluu-oauth2-client-auth plugin.")
-        return --
-    end
-
-    local rpt = helper.get_rpt(umaPlugin.config, ticket)
+    -- Get RPT
+    local config = {
+        oxd_host = credential.oxd_http_url,
+        op_host = credential.op_host,
+        client_id = credential.client_id,
+        client_secret = credential.client_secret,
+        oxd_id = credential.oxd_id
+    }
+    local rpt = helper.get_rpt(config, reqToken, ticket)
 
     if rpt == false or helper.is_empty(rpt) then
         ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to get RPT")
@@ -365,7 +360,7 @@ function _M.execute_header_filter(config)
 
     ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
 
-    local ok, err = ngx.timer.at(0, get_rpt, reqToken, httpMethod, path, cacheTokenData, ticket)
+    local ok, err = ngx.timer.at(0, get_rpt, reqToken, httpMethod, path, cacheTokenData, ticket, credential)
 
     if ok then
         ngx.log(ngx.DEBUG, PLUGINNAME .. ": timer : ok")
