@@ -1,33 +1,44 @@
 title UMA RS runtime
 
 Kong Proxy->uma-rs-plugin: ***** call "access" event for Kong plugin priority 999  *****
-uma-rs-plugin->uma-rs-plugin: Get RPT from Authorization Header
-opt no token present
-    uma-rs-plugin->Kong Proxy: 401 unauthorized / Permission Ticket
+uma-rs-plugin->uma-rs-plugin: Get token from Authorization Header
+
+opt no token
+    uma-rs-plugin->Kong Proxy: 401 Unauthorized  + ticket
 end
-opt token present
-    uma-rs-plugin->kong-cache: Lookup bearer token
-    kong-cache->uma-rs-plugin: JSON
 
-    opt token in cache, but is OAuth2 AT
-        uma-rs-plugin->Kong Proxy: 401 unauthorized / Permission Ticket
-    end
+note over uma-rs-plugin,kong-cache: OAuth Consumer Plugin MUST run first
+uma-rs-plugin->kong-cache: Lookup bearer token
+kong-cache->uma-rs-plugin: JSON
 
-    opt token not found in cache
-        uma-rs-plugin->oxd-web: call check_access(token)
-        oxd-web<->OP:
-        opt check_access granted
-            uma-rs-plugin->kong-cache: {"RPT": {"path":"/profile", "methods": ["GET", "POST"]}
-        end
-        opt check_access denied
-            uma-rs-plugin->client: 401/Unauthorized
-        end
-    end
-
-    opt RPT token in cache, RPT has already been issued for this path/method
+opt token is RPT
+    uma-rs-plugin->oxd-web: check_access(token)
+    opt granted
         Kong Proxy->API: Send request
         API->Kong Proxy: Content
-        Kong Proxy->client: Content
     end
+    opt denied
+        uma-rs-plugin->Kong Proxy: 401 unauthorized + ticket
+    end
+end
 
+opt token is OAuth
+    opt kong_acts_as_uma_client == false
+        uma-rs-plugin->Kong Proxy: 403/Forbidden
+    end
+    opt kong_acts_as_uma_client == true
+        uma-rs-plugin<->kong-cache: get associated RPT
+        opt no associated RPT found
+            uma-rs-plugin<->oxd-web: get RPT
+            uma-rs-plugin->kong-cache: write RPT
+        end
+        uma-rs-plugin->oxd-web: check_access(token)
+        opt granted
+            Kong Proxy->API: Send request
+            API->Kong Proxy: Content
+        end
+        opt denied
+            uma-rs-plugin->Kong Proxy: 403 forbidden
+        end
+    end
 end
