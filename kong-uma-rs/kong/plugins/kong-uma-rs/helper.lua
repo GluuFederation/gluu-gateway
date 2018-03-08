@@ -1,6 +1,6 @@
 local oxd = require "oxdweb"
 local json = require "JSON"
-
+local PLUGINNAME = "kong-uma-rs"
 local _M = {}
 
 --- Check value of the variable is empty or not
@@ -14,7 +14,7 @@ end
 -- @param conf: plugin global values
 -- @return response: response of setup_client
 function _M.register(conf)
-    ngx.log(ngx.DEBUG, "Registering on oxd ... ")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Registering on oxd ... ")
 
     -- ------------------Register Site----------------------------------
     local siteRequest = {
@@ -30,7 +30,7 @@ function _M.register(conf)
     local response = oxd.setup_client(siteRequest)
 
     if _M.is_empty(response.status) or response.status == "error" then
-        ngx.log(ngx.ERR, "kong-uma-rs: Error in setup_client")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Error in setup_client")
         return false
     end
 
@@ -55,7 +55,7 @@ function _M.register(conf)
     local token = oxd.get_client_token(tokenRequest)
 
     if _M.is_empty(token.status) or token.status == "error" then
-        ngx.log(ngx.ERR, "kong-uma-rs: Error in get_client_token")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Error in get_client_token")
         return false
     end
     -- -----------------------------------------------------------------
@@ -70,7 +70,7 @@ function _M.register(conf)
     response = oxd.uma_rs_protect(umaRSRequest, token.data.access_token)
 
     if _M.is_empty(response.status) or response.status == "error" then
-        ngx.log(ngx.ERR, "kong-uma-rs: Error in uma_rs_protect")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Error in uma_rs_protect")
         return false
     end
 
@@ -98,7 +98,7 @@ function _M.check_access(conf, rpt, path, httpMethod)
     local token = oxd.get_client_token(tokenRequest)
 
     if _M.is_empty(token.status) or token.status == "error" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs: Failed to get client_token")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to get client_token")
         return false
     end
     -- -----------------------------------------------------------------
@@ -129,13 +129,13 @@ function _M.introspect_rpt(conf, rpt)
     local introspectResponse = oxd.introspect_rpt(introspectRequest)
 
     if _M.is_empty(introspectResponse.status) or introspectResponse.status == "error" then
-        ngx.log(ngx.ERR, "kong-uma-rs : Failed introspect_rpt")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. "Failed introspect_rpt")
         return false
     end
 
     -- If tokne is not active the return false
     if not introspectResponse.data.active then
-        ngx.log(ngx.DEBUG, "kong-uma-rs : Introspect active false")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Introspect active false")
         return false
     end
 

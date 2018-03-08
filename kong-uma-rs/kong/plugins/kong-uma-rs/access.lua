@@ -33,7 +33,7 @@ end
 -- @return path
 local function getPath()
     local path = ngx.var.request_uri
-    ngx.log(ngx.DEBUG, "request_uri " .. path)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": request_uri " .. path)
     local indexOf = string.find(path, "?")
     if indexOf ~= nil then
         return string.sub(path, 1, (indexOf - 1))
@@ -62,7 +62,7 @@ local function get_set_token_cache(rpt, method, path, isPathProtected, exp_sec)
     local token, err
     if rpt then
         local token_cache_key = PLUGINNAME .. rpt .. method .. path
-        ngx.log(ngx.DEBUG, "Cache search: " .. token_cache_key)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Cache search: " .. token_cache_key)
         token, err = singletons.cache:get(token_cache_key, { ttl = exp_sec },
             load_token_into_memory, rpt, method, path, isPathProtected, exp_sec)
         if err then
@@ -86,11 +86,11 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
     if umaRSResponse.status == "error" and helper.is_empty(umaRSResponse.data) then
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     elseif umaRSResponse.data.error == "invalid_request" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. ", path: " .. path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. ", path: " .. path)
         ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
         return { access = true, isPathProtected = false }
     elseif umaRSResponse.data.error == "internal_error" then
-        ngx.log(ngx.DEBUG, "kong-uma-rs : Unknown internal server error occurs. Check oxd-server log")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Unknown internal server error occurs. Check oxd-server log")
         ngx.status = 500
         ngx.header.content_type = "application/json; charset=utf-8"
         ngx.say([[{ "message": "Unknown internal server error occurs. Check oxd-server log" }]])
@@ -125,24 +125,24 @@ function _M.execute(conf)
     local path = getPath()
     local ip = ngx.var.remote_addr
 
-    ngx.log(ngx.DEBUG, "kong-uma-rs : Access - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Access - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
 
     -- Check token in cache
     local cacheToken = get_set_token_cache(rpt or ip, httpMethod, path, false, nil)
 
     if not helper.is_empty(cacheToken) then
-        ngx.log(ngx.DEBUG, "Token found in cache")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in cache")
 
         -- If path is not protected then send header with UMA-Wanrning
         if not cacheToken.isPathProtected then
-            ngx.log(ngx.DEBUG, "kong-uma-rs : Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
             ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
         end
 
         return -- ACCESS GRANTED
     end
 
-    ngx.log(ngx.DEBUG, "Token not found in cache")
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not found in cache")
 
     -- Check UMA-RS access -> oxd
     local umaRSResponse = helper.check_access(conf, rpt, path, httpMethod)
@@ -165,7 +165,7 @@ function _M.execute(conf)
 
             -- Count expire time in second
             local exp_sec = (introspectResponse.data.exp - introspectResponse.data.iat)
-            ngx.log(ngx.DEBUG, "Expire time: " .. exp_sec)
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Expire time: " .. exp_sec)
 
             get_set_token_cache(rpt, httpMethod, path, checkUMARsResponse.isPathProtected, exp_sec)
             return -- ACCESS GRANTED
