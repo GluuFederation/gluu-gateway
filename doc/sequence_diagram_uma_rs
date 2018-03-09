@@ -1,44 +1,42 @@
-title UMA RS runtime
+title Gluu OAuth2 RS access phase
 
-Kong Proxy->uma-rs-plugin: ***** call "access" event for Kong plugin priority 999  *****
-uma-rs-plugin->uma-rs-plugin: Get token from Authorization Header
+note over Kong Proxy,gluu-oauth2-rs: OAuth Consumer Plugin MUST run first
+note over Kong Proxy,gluu-oauth2-rs: AT and RPT should be in cache
+Kong Proxy->gluu-oauth2-rs: ***** call "access" event for gluu-oauth2-rs   *****
+gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
 
 opt no token
-    uma-rs-plugin->Kong Proxy: 401 Unauthorized  + ticket
+    gluu-oauth2-rs->Kong Proxy: 401 Unauthorized  + ticket
 end
 
-note over uma-rs-plugin,kong-cache: OAuth Consumer Plugin MUST run first
-uma-rs-plugin->kong-cache: Lookup bearer token
-kong-cache->uma-rs-plugin: JSON
+gluu-oauth2-rs->kong-cache: Lookup bearer token
+kong-cache->gluu-oauth2-rs: JSON
 
 opt token is RPT
-    uma-rs-plugin->oxd-web: check_access(token)
+    gluu-oauth2-rs->oxd-web: check_access(token)
     opt granted
         Kong Proxy->API: Send request
         API->Kong Proxy: Content
     end
     opt denied
-        uma-rs-plugin->Kong Proxy: 401 unauthorized + ticket
+        gluu-oauth2-rs->Kong Proxy: 401 unauthorized + ticket
     end
 end
 
 opt token is OAuth
-    opt kong_acts_as_uma_client == false
-        uma-rs-plugin->Kong Proxy: 403/Forbidden
+    opt OAuth Mode
+        gluu-oauth2-rs->Kong Proxy: 403/Forbidden
     end
-    opt kong_acts_as_uma_client == true
-        uma-rs-plugin<->kong-cache: get associated RPT
-        opt no associated RPT found
-            uma-rs-plugin<->oxd-web: get RPT
-            uma-rs-plugin->kong-cache: write RPT
-        end
-        uma-rs-plugin->oxd-web: check_access(token)
+    opt Mix Mode
+        gluu-oauth2-rs<->oxd-web: get RPT
+        gluu-oauth2-rs->kong-cache: write RPT
+        gluu-oauth2-rs->oxd-web: check_access(token)
         opt granted
             Kong Proxy->API: Send request
             API->Kong Proxy: Content
         end
-        opt denied
-            uma-rs-plugin->Kong Proxy: 403 forbidden
+        opt denied or error
+            gluu-oauth2-rs->Kong Proxy: 403 forbidden
         end
     end
 end
