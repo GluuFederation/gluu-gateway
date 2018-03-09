@@ -1,18 +1,20 @@
 title Gluu OAuth2 RS access phase
 
-note over Kong Proxy,gluu-oauth2-rs: OAuth Consumer Plugin MUST run first
-note over Kong Proxy,gluu-oauth2-rs: AT and RPT should be in cache
-Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 999  *****
+note over Kong Proxy,gluu-oauth2-rs: gluu-oauth2-client plugin MUST run first
+note over Kong Proxy,gluu-oauth2-rs: token should be cached
+Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 998  *****
 
-gluu-oauth2-rs->gluu-oauth2-rs: Get RPT from Authorization Header
+gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
 
 opt no token present
-    gluu-oauth2-rs->Kong Proxy: 401 unauthorized / Permission Ticket
+    note over gluu-oauth2-rs, Kong Proxy: not possible... oauth-client plugin requires token
+    gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
 end
 
-gluu-oauth2-rs->kong-cache: Lookup bearer token from oauth2-consumer cache
+gluu-oauth2-rs->kong-cache: Lookup token
 
 opt oauth2-consumer cache not found
+    note over gluu-oauth2-rs, Kong Proxy: not possible... oauth2-client plugin requires active token
     gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
 end
 
@@ -20,14 +22,14 @@ kong-cache->gluu-oauth2-rs: JSON
 
 opt token_type == RPT
     opt OAuth Mode
-        gluu-oauth2-rs->Kong Proxy: 403/Forbidden: "OAuth (not UMA) token required"
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized: "OAuth (not UMA) token required"
     end
-    opt RPT already authorized for this path/method
+    opt token already authorized for this path/method
         gluu-oauth2-rs->Kong Proxy: return
     end
     gluu-oauth2-rs->oxd-web: call check_access(token)
     opt granted
-        gluu-oauth2-rs->kong-cache: RPT["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
+        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
         Kong Proxy->API: Send Request
         API->Kong Proxy: Content
     end
@@ -41,13 +43,12 @@ opt token is OAuth
         gluu-oauth2-rs->Kong Proxy: 403/Forbidden: "UMA token required"
     end
     opt Mix Mode
-        gluu-oauth2-rs<->oxd-web: get RPT
-        gluu-oauth2-rs->kong-cache: write RPT, update OAuth2 JSON (add "associated_rpt" key)
+        gluu-oauth2-rs<->oxd-web: get token
+        gluu-oauth2-rs->kong-cache: write token, update OAuth2 JSON (add "associated_rpt" key)
         gluu-oauth2-rs->oxd-web: check_access(token)
         opt granted
-            gluu-oauth2-rs->kong-cache: write oauth2-rs cache {"RPT": "...", {"path":"/profile", "methods": ["GET", "POST"]}
-            Kong Proxy->API: Send request
-            API->Kong Proxy: Content
+            gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
+            gluu-oauth2-rs->Kong Proxy: return
         end
         opt denied or error
             gluu-oauth2-rs->Kong Proxy: 403 forbidden
