@@ -18,8 +18,8 @@
         $scope.data = {
           op_host: $scope.globalInfo.opHost,
           oxd_http_url: $scope.globalInfo.oxdWeb,
-          native_uma_client: false,
-          kong_acts_as_uma_client: false
+          uma_mode: false,
+          mix_mode: false
         };
 
         $scope.close = function () {
@@ -56,7 +56,7 @@
         ];
 
         function create() {
-          if ($scope.data.native_uma_client && $scope.data.kong_acts_as_uma_client) {
+          if ($scope.data.uma_mode && $scope.data.mix_mode) {
             MessageService.error("kong acts as uma client and Native UMA Client, Both flags cannot be “YES” at the same time.");
             return;
           }
