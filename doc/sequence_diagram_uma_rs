@@ -29,7 +29,7 @@ opt token is OAuth
     end
     opt Mix Mode
         gluu-oauth2-rs<->oxd-web: get RPT
-        gluu-oauth2-rs->kong-cache: write RPT
+        gluu-oauth2-rs->kong-cache: write RPT, update OAuth2 JSON (add "associated_rpt" key)
         gluu-oauth2-rs->oxd-web: check_access(token)
         opt granted
             Kong Proxy->API: Send request
