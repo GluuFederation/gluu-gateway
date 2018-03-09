@@ -5,38 +5,44 @@ opt push claim
     client->Kong Proxy: Add Header "UMA Data": [{"claim_token":"...","claim_token_format":"..."}]
 end
 
-Kong Proxy->oauth2-plugin: *****  call "access" event for Kong OAuth-Consumer plugin priority 999 *****
+Kong Proxy->gluu-oauth2-client-plugin: *****  call "access" event for Kong OAuth-Consumer plugin priority 999 *****
 
-oauth2-plugin->kong-cache: Lookup token in cache
+opt no token
+    note over gluu-oauth2-client-plugin,oxd-web: OAuth clients can ignore ticket
+    gluu-oauth2-client-plugin<->oxd-web: get minimal permission ticket
+    gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized + ticket
+end
+
+gluu-oauth2-client-plugin->kong-cache: Lookup token in cache
 
 opt token not in cache
-    oauth2-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
+    gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
     opt OAuth token introspection fails
-        oauth2-plugin<->oxd-web: Introspect token at UMA introspection endpoint
+        gluu-oauth2-client-plugin<->oxd-web: Introspect token at UMA introspection endpoint
         opt RPT token introspection fails
-            oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
+            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
         end
     end
     opt active == false | token expired
-        oauth2-plugin->Kong Proxy: Unauthorized 401 - token expired
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token expired
     end
-    oauth2-plugin<->kong_db: fetch oauth2 consumer_id using client_id {id:'..', oxd_id:'..', ..., mix_mode:[t|f], uma_mode:[t|f] }
+    gluu-oauth2-client-plugin<->kong_db: fetch oauth2 consumer_id using client_id {id:'..', oxd_id:'..', ..., mix_mode:[t|f], uma_mode:[t|f] }
     opt &(tokenType == UMA)(uma_mode == false)
-            oauth2-plugin->Kong Proxy: Unauthorized 401 - token can't be validated
+            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
     end
 
-    oauth2-plugin->kong-cache: write "token": {token JSON}
+    gluu-oauth2-client-plugin->kong-cache: write "token": {token JSON}
 end
 
-kong-cache->oauth2-plugin: return token JSON
+kong-cache->gluu-oauth2-client-plugin: return token JSON
 
 opt &(token_type == OAuth)(mix_mode == true)
-    oauth2-plugin->kong-cache: lookup associated RPT JSON
+    gluu-oauth2-client-plugin->kong-cache: lookup associated RPT JSON
     opt RPT found
-        oauth2-plugin->oauth2-plugin: replace Authoriation Header with associated UMA token
+        gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: replace Authoriation Header with associated UMA token
     end
 end
-opt &(tokenType == OAuth)(uma_mode == false)(mix_mode == false)
-    oauth2-plugin->oauth2-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
-    oauth2-plugin->Kong Proxy: return
+opt &(tokenType == OAuth)(oauth_mode == true)
+    gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
+    gluu-oauth2-client-plugin->Kong Proxy: return
 end
