@@ -33,14 +33,14 @@ opt token_type == RPT
         Kong Proxy->API: Send Request
         API->Kong Proxy: Content
     end
-    opt denied
-        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
+    opt denied or error
+        gluu-oauth2-rs->Kong Proxy: 403/Forbidden
     end
 end
 
 opt token is OAuth
     opt UMA Mode
-        gluu-oauth2-rs->Kong Proxy: 403/Forbidden: "UMA token required"
+        gluu-oauth2-rs->Kong Proxy: 401/Forbidden: "UMA token required"
     end
     opt Mix Mode
         gluu-oauth2-rs<->oxd-web: get token
