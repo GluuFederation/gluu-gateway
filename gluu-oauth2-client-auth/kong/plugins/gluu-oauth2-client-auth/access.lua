@@ -6,6 +6,9 @@ local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local ngx_re_gmatch = ngx.re.gmatch
 local ngx_set_header = ngx.req.set_header
 local PLUGINNAME = "gluu-oauth2-client-auth"
+local OAUTH_CLIENT_ID = "OAUTH_CLIENT_ID"
+local OAUTH_EXP = "OAUTH_EXP"
+local OAUTH_SCOPE = "OAUTH_SCOPE"
 
 local _M = {}
 
@@ -177,9 +180,14 @@ local function validate_credentials(conf, req_token)
         credential = get_set_oauth2_consumer(cacheToken.client_id)
         cacheToken.credential = credential
 
-        if cacheToken.token_type == "OAuth" and credential.kong_acts_as_uma_client then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong_acts_as_uma_client = true rpt: " .. tostring(cacheToken.associated_rpt))
+        if cacheToken.token_type == "OAuth" and credential.mix_mode then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": mix_mode = true rpt: " .. tostring(cacheToken.associated_rpt))
             ngx_set_header("Authorization", "Bearer " .. (cacheToken.associated_rpt or req_token))
+        end
+
+        -- If (tokenType == OAuth)(uma_mode == false)(mix_mode == false) then set header
+        if cacheToken.tokenType == "OAuth" and credential.uma_mode == false and credential.mix_mode == false then
+            ngx.header[OAUTH_CLIENT_ID] = cacheToken.client_id
         end
 
         return cacheToken
@@ -218,14 +226,19 @@ local function validate_credentials(conf, req_token)
 
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " native_uma_client: " .. tostring(credential.native_uma_client))
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " uma_mode: " .. tostring(credential.uma_mode))
 
-    -- tokenType == "UMA" and native_uma_client=false so Unauthorized 401/token can't be validate
+    -- tokenType == "UMA" and uma_mode=false so Unauthorized 401/token can't be validate
     local umaPlugin, err
-    if tokenType == "UMA" and not credential.native_uma_client then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. " tokenType = UMA and native_uma_client=false so response is Unauthorized 401/token can't be validate")
+    if tokenType == "UMA" and not credential.uma_mode then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " tokenType = UMA and uma_mode=false so response is Unauthorized 401/token can't be validate")
         tokenResponse.active = false
         return tokenResponse
+    end
+
+    -- If (tokenType == OAuth)(uma_mode == false)(mix_mode == false) then set header
+    if tokenType == "OAuth" and credential.uma_mode == false and credential.mix_mode == false then
+        ngx.header[OAUTH_CLIENT_ID] = tokenResponse.data.client_id
     end
 
     -- Invalidate(clear) the cache if exist
@@ -314,63 +327,6 @@ function _M.execute_access(config)
     set_consumer_in_header(consumer, responseValidCredential.credential)
 
     return -- ACCESS GRANTED
-end
-
---- Start execution. Call by handler.lua header_filter event
--- @param conf: Global configuration oxd_id, client_id and client_secret
--- @return ACCESS GRANTED and Unauthorized
-function _M.execute_header_filter(config)
-    -- Not Get 401/Unauthtorized
-    if ngx.status ~= 401 then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Not get 401/Unauthorized")
-        return -- ACCESS GRANTED
-    end
-
-    -- Get 401/Unauthtorized
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get 401/Unauthtorized")
-
-    local httpMethod = ngx.req.get_method()
-    local path = getPath()
-    local reqToken = retrieve_token(ngx.req, config, "authorization")
-
-    -- Return 401/Unauthorized when token not found in header
-    if helper.is_empty(reqToken) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Return 401/Unauthorized when token not found in header")
-        return -- Return response comes from access method 401/Unauthorized
-    end
-
-    -- Return 401/Unauthorized when token is not valid and not cached
-    local cacheTokenData = get_set_token_cache(reqToken, httpMethod, path, nil)
-    if helper.is_empty(cacheTokenData) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Return 401/Unauthorized when token is not valid and not cached")
-        return -- Return response comes from access method 401/Unauthorized
-    end
-
-    -- Get oauth2-consumer data from cache
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get oauth2-consumer data from cache")
-    local credential = get_set_oauth2_consumer(cacheTokenData.client_id)
-
-    -- Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized
-    local ticket = helper.get_ticket_from_www_authenticate_header(ngx.header["www-authenticate"])
-    if not credential.kong_acts_as_uma_client or helper.is_empty(ticket) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get 401/Unauthorized from header but kong_acts_as_uma_client = false or permission ticket is empty then return 401/Unauthorized")
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": kong_acts_as_uma_client = " .. tostring(credential.kong_acts_as_uma_client))
-        return -- Return response comes from access method 401/Unauthorized
-    end
-
-    ngx.log(ngx.DEBUG, "Ticket from www-authenticate header" .. ticket)
-
-    local ok, err = ngx.timer.at(0, get_rpt, reqToken, httpMethod, path, cacheTokenData, ticket, credential)
-
-    if ok then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": timer : ok")
-        ngx.status = 205
-        ngx.exit(205)
-    else
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": timer : err")
-        ngx.status = 401
-        ngx.exit(401)
-    end
 end
 
 return _M

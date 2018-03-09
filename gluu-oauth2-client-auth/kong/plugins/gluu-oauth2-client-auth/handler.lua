@@ -16,12 +16,4 @@ function Handler:access(conf)
     end
 end
 
-function Handler:header_filter(conf)
-    Handler.super.header_filter(self)
-    local response = access.execute_header_filter(conf)
-    if response ~= nil then
-        return response
-    end
-end
-
 return Handler

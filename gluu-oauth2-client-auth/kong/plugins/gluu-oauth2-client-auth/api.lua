@@ -24,8 +24,8 @@ return {
                 return responses.send_HTTP_BAD_REQUEST("oxd_http_url is required")
             end
 
-            if (self.params.native_uma_client and self.params.kong_acts_as_uma_client) then
-                return responses.send_HTTP_BAD_REQUEST("'Native uma client' and 'kong acts as uma client', Both flags cannot be 'YES' at the same time")
+            if (self.params.uma_mode and self.params.mix_mode) then
+                return responses.send_HTTP_BAD_REQUEST("'uma mode' and 'mix mode', Both flags cannot be 'YES' at the same time")
             end
 
             local redirect_uris
@@ -106,8 +106,8 @@ return {
                 jwks_file = self.params.jwks_file or "",
                 client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
                 client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or "",
-                native_uma_client = self.params.native_uma_client or false,
-                kong_acts_as_uma_client = self.params.kong_acts_as_uma_client or false
+                uma_mode = self.params.uma_mode or false,
+                mix_mode = self.params.mix_mode or false
             }
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)

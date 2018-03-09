@@ -27,12 +27,12 @@ end
 
 function _M.isHttps(url)
     if _M.is_empty(url) then
-        ngx.log(ngx.ERR, url .. ". It is blank.")
+        ngx.log(ngx.DEBUG, url .. ". It is blank.")
         return false
     end
 
     if not (string.sub(url, 0, 8) == "https://") then
-        ngx.log(ngx.ERR, "Invalid " .. url .. ". It does not start from 'https://', value: " .. url)
+        ngx.log(ngx.DEBUG, "Invalid " .. url .. ". It does not start from 'https://', value: " .. url)
         return false
     end
 

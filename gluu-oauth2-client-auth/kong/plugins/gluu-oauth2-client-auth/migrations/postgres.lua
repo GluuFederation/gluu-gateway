@@ -16,8 +16,8 @@ return {
         jwks_file text,
         client_token_endpoint_auth_method text,
         client_token_endpoint_auth_signing_alg text,
-        native_uma_client boolean,
-        kong_acts_as_uma_client boolean,
+        uma_mode boolean,
+        mix_mode boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
