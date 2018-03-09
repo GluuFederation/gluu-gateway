@@ -121,6 +121,54 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, not auth_helper.is_empty(body.oxd_id))
                 assert.equal(true, not auth_helper.is_empty(body.client_id))
                 assert.equal(true, not auth_helper.is_empty(body.client_secret))
+                assert.equal(false, body.mix_mode)
+                assert.equal(false, body.uma_mode)
+            end)
+            it("creates a oauth2 consumer credential with uma_mode = true", function()
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "New_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        uma_mode = true
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("New_oauth2_credential", body.name)
+                assert.equal(true, not auth_helper.is_empty(body.oxd_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_secret))
+                assert.equal(true, body.uma_mode)
+                assert.equal(false, body.mix_mode)
+            end)
+            it("creates a oauth2 consumer credential with mix_mode = true", function()
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "New_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        mix_mode = true
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("New_oauth2_credential", body.name)
+                assert.equal(true, not auth_helper.is_empty(body.oxd_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_secret))
+                assert.equal(true, body.mix_mode)
+                assert.equal(false, body.uma_mode)
             end)
             it("creates oauth2 credentials with the existing client", function()
                 -- ------------------GET Client Token-------------------------------
@@ -169,8 +217,8 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                         body = {
                             op_host = "https://gluu.local.org",
                             oxd_http_url = "http://localhost:8553",
-                            native_uma_client = true,
-                            kong_acts_as_uma_client = true
+                            uma_mode = true,
+                            mix_mode = true
                         },
                         headers = {
                             ["Content-Type"] = "application/json"
@@ -178,7 +226,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                     })
                     local body = assert.res_status(400, res)
                     local json = cjson.decode(body)
-                    assert.equal("'Native uma client' and 'kong acts as uma client', Both flags cannot be 'YES' at the same time", json.message)
+                    assert.equal("'uma mode' and 'mix mode', Both flags cannot be 'YES' at the same time", json.message)
                 end)
             end)
         end)
