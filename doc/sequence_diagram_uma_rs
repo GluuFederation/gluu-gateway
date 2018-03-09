@@ -2,27 +2,30 @@ title Gluu OAuth2 RS access phase
 
 note over Kong Proxy,gluu-oauth2-rs: OAuth Consumer Plugin MUST run first
 note over Kong Proxy,gluu-oauth2-rs: AT and RPT should be in cache
-Kong Proxy->gluu-oauth2-rs: ***** call "access" event for gluu-oauth2-rs   *****
-gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
+Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 999  *****
 
-opt no token
-    gluu-oauth2-rs->Kong Proxy: 401 Unauthorized  + ticket
+gluu-oauth2-rs->gluu-oauth2-rs: Get RPT from Authorization Header
+opt no token present
+    gluu-oauth2-rs->Kong Proxy: 401 unauthorized / Permission Ticket
 end
 
-gluu-oauth2-rs->kong-cache: Lookup bearer token
-kong-cache->gluu-oauth2-rs: JSON
+gluu-oauth2-rs->kong-cache: Lookup bearer token from oauth2-consumer cache
+opt oauth2-consumer cache not found
+    gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
+end
 
-opt token is RPT
-    gluu-oauth2-rs->oxd-web: check_access(token)
+kong-cache->gluu-oauth2-rs: JSON
+opt token_type == RPT
+    gluu-oauth2-rs->oxd-web: call check_access(token)
     opt granted
-        Kong Proxy->API: Send request
+        gluu-oauth2-rs->kong-cache: write oauth2-rs cache {"RPT": "...", {"path":"/profile", "methods": ["GET", "POST"]}
+        Kong Proxy->API: Send Request
         API->Kong Proxy: Content
     end
     opt denied
-        gluu-oauth2-rs->Kong Proxy: 401 unauthorized + ticket
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
     end
 end
-
 opt token is OAuth
     opt OAuth Mode
         gluu-oauth2-rs->Kong Proxy: 403/Forbidden
@@ -32,6 +35,7 @@ opt token is OAuth
         gluu-oauth2-rs->kong-cache: write RPT, update OAuth2 JSON (add "associated_rpt" key)
         gluu-oauth2-rs->oxd-web: check_access(token)
         opt granted
+            gluu-oauth2-rs->kong-cache: write oauth2-rs cache {"RPT": "...", {"path":"/profile", "methods": ["GET", "POST"]}
             Kong Proxy->API: Send request
             API->Kong Proxy: Content
         end
@@ -39,4 +43,9 @@ opt token is OAuth
             gluu-oauth2-rs->Kong Proxy: 403 forbidden
         end
     end
+end
+
+opt oauth2-rs cache RPT token in cache, RPT has already been issued for this path/method
+        Kong Proxy->API: Send request
+        API->Kong Proxy: Content
 end
