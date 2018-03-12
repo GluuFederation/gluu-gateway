@@ -16,6 +16,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         jwks_file = { type = "string" },
         uma_mode = { type = "boolean" },
         mix_mode = { type = "boolean" },
+        oauth_mode = { type = "boolean" },
         client_token_endpoint_auth_method = { type = "string" },
         client_token_endpoint_auth_signing_alg = { type = "string" },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true },

@@ -37,7 +37,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 body = {
                     name = "gluu-oauth2-client-auth",
                     config = {
-                        op_server = "http://gluu.local.org"
+                        op_server = "http://text.com"
                     },
                 },
                 headers = {
@@ -123,6 +123,31 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, not auth_helper.is_empty(body.client_secret))
                 assert.equal(false, body.mix_mode)
                 assert.equal(false, body.uma_mode)
+                assert.equal(true, body.oauth_mode)
+            end)
+            it("creates a oauth2 consumer credential with oauth_mode = true", function()
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "New_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oauth_mode = true
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("New_oauth2_credential", body.name)
+                assert.equal(true, not auth_helper.is_empty(body.oxd_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_secret))
+                assert.equal(false, body.uma_mode)
+                assert.equal(false, body.mix_mode)
+                assert.equal(true, body.oauth_mode)
             end)
             it("creates a oauth2 consumer credential with uma_mode = true", function()
                 local res = assert(admin_client:send {
@@ -146,6 +171,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, not auth_helper.is_empty(body.client_secret))
                 assert.equal(true, body.uma_mode)
                 assert.equal(false, body.mix_mode)
+                assert.equal(false, body.oauth_mode)
             end)
             it("creates a oauth2 consumer credential with mix_mode = true", function()
                 local res = assert(admin_client:send {
@@ -169,6 +195,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, not auth_helper.is_empty(body.client_secret))
                 assert.equal(true, body.mix_mode)
                 assert.equal(false, body.uma_mode)
+                assert.equal(false, body.oauth_mode)
             end)
             it("creates oauth2 credentials with the existing client", function()
                 -- ------------------GET Client Token-------------------------------
@@ -208,15 +235,48 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(setupClientResponse.data.oxd_id, body.oxd_id)
                 assert.equal(setupClientResponse.data.client_id, body.client_id)
                 assert.equal(setupClientResponse.data.client_secret, body.client_secret)
+                assert.equal(false, body.mix_mode)
+                assert.equal(false, body.uma_mode)
+                assert.equal(true, body.oauth_mode)
             end)
             describe("errors", function()
-                it("returns bad request", function()
+                it("returns bad request i:e without op_host", function()
+                    local res = assert(admin_client:send {
+                        method = "POST",
+                        path = "/consumers/foo/gluu-oauth2-client-auth",
+                        body = {},
+                        headers = {
+                            ["Content-Type"] = "application/json"
+                        }
+                    })
+                    local body = assert.res_status(400, res)
+                    local json = cjson.decode(body)
+                    assert.equal("op_host is required", json.message)
+                end)
+                it("returns bad request i:e without op_host", function()
                     local res = assert(admin_client:send {
                         method = "POST",
                         path = "/consumers/foo/gluu-oauth2-client-auth",
                         body = {
-                            op_host = "https://gluu.local.org",
-                            oxd_http_url = "http://localhost:8553",
+                            op_host = op_server
+                        },
+                        headers = {
+                            ["Content-Type"] = "application/json"
+                        }
+                    })
+                    local body = assert.res_status(400, res)
+                    local json = cjson.decode(body)
+                    assert.equal("oxd_http_url is required", json.message)
+                end)
+                it("returns bad request i:e check only one mode is set", function()
+                    -- Not allow when all flags is true.
+                    local res = assert(admin_client:send {
+                        method = "POST",
+                        path = "/consumers/foo/gluu-oauth2-client-auth",
+                        body = {
+                            op_host = op_server,
+                            oxd_http_url = oxd_http_url,
+                            oauth_mode = true,
                             uma_mode = true,
                             mix_mode = true
                         },
@@ -226,7 +286,61 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                     })
                     local body = assert.res_status(400, res)
                     local json = cjson.decode(body)
-                    assert.equal("'uma mode' and 'mix mode', Both flags cannot be 'YES' at the same time", json.message)
+                    assert.equal("oauth mode, uma mode and mix mode, All flags cannot be YES at the same time", json.message)
+
+                    -- Not allow when more than one is true. oauth_mode = true uma_mode = true
+                    local res = assert(admin_client:send {
+                        method = "POST",
+                        path = "/consumers/foo/gluu-oauth2-client-auth",
+                        body = {
+                            op_host = op_server,
+                            oxd_http_url = oxd_http_url,
+                            oauth_mode = true,
+                            uma_mode = true
+                        },
+                        headers = {
+                            ["Content-Type"] = "application/json"
+                        }
+                    })
+                    local body = assert.res_status(400, res)
+                    local json = cjson.decode(body)
+                    assert.equal("oauth mode and uma mode, Both flags cannot be YES at the same time", json.message)
+
+                    -- Not allow when more than one is true. oauth_mode = true mix_mode = true
+                    local res = assert(admin_client:send {
+                        method = "POST",
+                        path = "/consumers/foo/gluu-oauth2-client-auth",
+                        body = {
+                            op_host = op_server,
+                            oxd_http_url = oxd_http_url,
+                            oauth_mode = true,
+                            mix_mode = true
+                        },
+                        headers = {
+                            ["Content-Type"] = "application/json"
+                        }
+                    })
+                    local body = assert.res_status(400, res)
+                    local json = cjson.decode(body)
+                    assert.equal("oauth mode and mix mode, Both flags cannot be YES at the same time", json.message)
+
+                    -- Not allow when more than one is true. uma_mode = true mix_mode = true
+                    local res = assert(admin_client:send {
+                        method = "POST",
+                        path = "/consumers/foo/gluu-oauth2-client-auth",
+                        body = {
+                            op_host = op_server,
+                            oxd_http_url = oxd_http_url,
+                            uma_mode = true,
+                            mix_mode = true
+                        },
+                        headers = {
+                            ["Content-Type"] = "application/json"
+                        }
+                    })
+                    local body = assert.res_status(400, res)
+                    local json = cjson.decode(body)
+                    assert.equal("uma mode and mix mode, Both flags cannot be YES at the same time", json.message)
                 end)
             end)
         end)

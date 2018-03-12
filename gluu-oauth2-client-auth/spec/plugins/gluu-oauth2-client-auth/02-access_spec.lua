@@ -6,7 +6,7 @@ local auth_helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 describe("gluu-oauth2-client-auth plugin", function()
     local proxy_client
     local admin_client
-    local oauth2_consumer_both_flag_false
+    local oauth2_consumer_oauth_mode
     local oauth2_consumer_with_uma_mode
     local oauth2_consumer_with_mix_mode
     local api
@@ -14,6 +14,9 @@ describe("gluu-oauth2-client-auth plugin", function()
     local timeout = 6000
     local op_server = "https://gluu.local.org"
     local oxd_http = "http://localhost:8553"
+    local OAUTH_CLIENT_ID = "OAUTH-CLIENT-ID"
+    local OAUTH_EXPIRATION = "OAUTH-EXPIRATION"
+    local OAUTH_SCOPES = "OAUTH_SCOPES"
 
     setup(function()
         helpers.run_migrations()
@@ -66,12 +69,12 @@ describe("gluu-oauth2-client-auth plugin", function()
             end
         end
 
-        print("\n----------- OAuth2 consumer credential ----------- ")
+        print("\n----------- OAuth2 consumer oauth mode credential ----------- ")
         local res = assert(admin_client:send {
             method = "POST",
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
-                name = "New_oauth2_credential",
+                name = "oauth2_credential_oauth_mode",
                 op_host = "https://gluu.local.org",
                 oxd_http_url = "http://localhost:8553"
             },
@@ -79,8 +82,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                 ["Content-Type"] = "application/json"
             }
         })
-        oauth2_consumer_both_flag_false = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_both_flag_false) do
+        oauth2_consumer_oauth_mode = cjson.decode(assert.res_status(201, res))
+        for k, v in pairs(oauth2_consumer_oauth_mode) do
             print(k, ": ", v)
         end
 
@@ -89,7 +92,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             method = "POST",
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
-                name = "New_oauth2_credential",
+                name = "oauth2_credential_mix_mode",
                 op_host = "https://gluu.local.org",
                 oxd_http_url = "http://localhost:8553",
                 mix_mode = true
@@ -108,7 +111,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             method = "POST",
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
-                name = "New_oauth2_credential",
+                name = "oauth2_credential_uma_mode",
                 op_host = "https://gluu.local.org",
                 oxd_http_url = "http://localhost:8553",
                 uma_mode = true
@@ -142,8 +145,8 @@ describe("gluu-oauth2-client-auth plugin", function()
         end
     end)
 
-    describe("Unauthorized", function()
-        describe("When oauth2-consumer is act only as OAuth client i:e both flag is false, uma_mode = false and mix_mode = false", function()
+    describe("oauth2-consumer flow without uma-rs plugin", function()
+        describe("When oauth2-consumer is in oauth_mode = true", function()
             it("401 Unauthorized when token is not present in header", function()
                 local res = assert(proxy_client:send {
                     method = "GET",
@@ -170,16 +173,17 @@ describe("gluu-oauth2-client-auth plugin", function()
             it("200 Authorized when token active = true", function()
                 -- ------------------GET Client Token-------------------------------
                 local tokenRequest = {
-                    oxd_host = oauth2_consumer_both_flag_false.oxd_http_url,
-                    client_id = oauth2_consumer_both_flag_false.client_id,
-                    client_secret = oauth2_consumer_both_flag_false.client_secret,
+                    oxd_host = oauth2_consumer_oauth_mode.oxd_http_url,
+                    client_id = oauth2_consumer_oauth_mode.client_id,
+                    client_secret = oauth2_consumer_oauth_mode.client_secret,
                     scope = { "openid", "uma_protection" },
-                    op_host = oauth2_consumer_both_flag_false.op_host
+                    op_host = oauth2_consumer_oauth_mode.op_host
                 };
 
                 local token = oxd.get_client_token(tokenRequest)
                 local req_access_token = token.data.access_token
 
+                -- Cache is not exist
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/posts",
@@ -189,10 +193,38 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_CLIENT_ID]))
+                print("OAUTH_CLIENT_ID : " .. res.headers[OAUTH_CLIENT_ID])
+
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_EXPIRATION]))
+                print("OAUTH_EXPIRATION : " .. res.headers[OAUTH_EXPIRATION])
+
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_SCOPES]))
+                print("OAUTH_SCOPES : " .. res.headers[OAUTH_SCOPES])
+
+                -- Next request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+
+                assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_CLIENT_ID]))
+                print("OAUTH_CLIENT_ID : " .. res.headers[OAUTH_CLIENT_ID])
+
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_EXPIRATION]))
+                print("OAUTH_EXPIRATION : " .. res.headers[OAUTH_EXPIRATION])
+
+                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_SCOPES]))
+                print("OAUTH_SCOPES : " .. res.headers[OAUTH_SCOPES])
             end)
         end)
 
-        describe("When oauth2-consumer is act as mix_mode = true but uma-rs plugin is not configured", function()
+        describe("When oauth2-consumer is in mix_mode = true", function()
             it("401 Unauthorized when token is not present in header", function()
                 local res = assert(proxy_client:send {
                     method = "GET",
@@ -229,6 +261,18 @@ describe("gluu-oauth2-client-auth plugin", function()
                 local token = oxd.get_client_token(tokenRequest)
                 local req_access_token = token.data.access_token
 
+                -- Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Next request, when cache exist
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/posts",
@@ -241,7 +285,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             end)
         end)
 
-        describe("When oauth2-consumer is act as uma_mode = true but uma-rs plugin is not configured", function()
+        describe("When oauth2-consumer is in uma_mode = true", function()
             it("401 Unauthorized when token is not present in header", function()
                 local res = assert(proxy_client:send {
                     method = "GET",
@@ -278,6 +322,18 @@ describe("gluu-oauth2-client-auth plugin", function()
                 local token = oxd.get_client_token(tokenRequest)
                 local req_access_token = token.data.access_token
 
+                -- Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Next request, when cache exist
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/posts",
@@ -289,5 +345,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(200, res)
             end)
         end)
+    end)
+    describe("oauth2-consumer flow with uma-rs plugin", function()
     end)
 end)

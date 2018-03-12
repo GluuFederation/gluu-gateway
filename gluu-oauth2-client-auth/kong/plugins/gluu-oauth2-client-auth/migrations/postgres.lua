@@ -18,6 +18,7 @@ return {
         client_token_endpoint_auth_signing_alg text,
         uma_mode boolean,
         mix_mode boolean,
+        oauth_mode boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );

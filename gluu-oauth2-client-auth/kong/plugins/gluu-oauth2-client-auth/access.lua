@@ -1,3 +1,4 @@
+local cjson = require "cjson"
 local singletons = require "kong.singletons"
 local responses = require "kong.tools.responses"
 local constants = require "kong.constants"
@@ -7,8 +8,8 @@ local ngx_re_gmatch = ngx.re.gmatch
 local ngx_set_header = ngx.req.set_header
 local PLUGINNAME = "gluu-oauth2-client-auth"
 local OAUTH_CLIENT_ID = "OAUTH_CLIENT_ID"
-local OAUTH_EXP = "OAUTH_EXP"
-local OAUTH_SCOPE = "OAUTH_SCOPE"
+local OAUTH_EXPIRATION = "OAUTH_EXPIRATION"
+local OAUTH_SCOPES = "OAUTH_SCOPES"
 
 local _M = {}
 
@@ -36,7 +37,7 @@ local function get_token_data(token)
             exp_sec = token.exp_sec,
             consumer_id = token.consumer_id,
             token_type = token.token_type,
-            scope = token.scope,
+            scopes = token.scopes,
             iss = token.iss,
             permissions = token.permissions,
             iat = token.iat,
@@ -185,9 +186,11 @@ local function validate_credentials(conf, req_token)
             ngx_set_header("Authorization", "Bearer " .. (cacheToken.associated_rpt or req_token))
         end
 
-        -- If (tokenType == OAuth)(uma_mode == false)(mix_mode == false) then set header
-        if cacheToken.tokenType == "OAuth" and credential.uma_mode == false and credential.mix_mode == false then
+        -- If (tokenType == OAuth)(oauth_mode == true) then set header
+        if cacheToken.token_type == "OAuth" and credential.oauth_mode == true then
             ngx.header[OAUTH_CLIENT_ID] = cacheToken.client_id
+            ngx.header[OAUTH_SCOPES] = cacheToken.scopes
+            ngx.header[OAUTH_EXPIRATION] = cacheToken.exp
         end
 
         return cacheToken
@@ -236,9 +239,11 @@ local function validate_credentials(conf, req_token)
         return tokenResponse
     end
 
-    -- If (tokenType == OAuth)(uma_mode == false)(mix_mode == false) then set header
-    if tokenType == "OAuth" and credential.uma_mode == false and credential.mix_mode == false then
+    -- If (tokenType == OAuth)(oauth_mode == true) then set header
+    if tokenType == "OAuth" and credential.oauth_mode == true then
         ngx.header[OAUTH_CLIENT_ID] = tokenResponse.data.client_id
+        ngx.header[OAUTH_SCOPES] = cjson.encode(tokenResponse.data.scopes)
+        ngx.header[OAUTH_EXPIRATION] = tokenResponse.data.exp
     end
 
     -- Invalidate(clear) the cache if exist
@@ -247,6 +252,7 @@ local function validate_credentials(conf, req_token)
     -- set remaining data for caching
     local cacheTokenData = tokenResponse.data
     cacheTokenData.exp_sec = exp_sec
+    cacheTokenData.scopes = cjson.encode(tokenResponse.data.scopes)
     cacheTokenData.token_type = tokenType
     cacheTokenData.associated_rpt = helper.ternary(tokenType == "UMA", req_token, nil)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)

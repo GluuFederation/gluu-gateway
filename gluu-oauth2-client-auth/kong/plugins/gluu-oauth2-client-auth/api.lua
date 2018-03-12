@@ -24,8 +24,24 @@ return {
                 return responses.send_HTTP_BAD_REQUEST("oxd_http_url is required")
             end
 
+            if (self.params.oauth_mode and self.params.uma_mode and self.params.mix_mode) then
+                return responses.send_HTTP_BAD_REQUEST("oauth mode, uma mode and mix mode, All flags cannot be YES at the same time")
+            end
+
+            if (self.params.oauth_mode and self.params.uma_mode) then
+                return responses.send_HTTP_BAD_REQUEST("oauth mode and uma mode, Both flags cannot be YES at the same time")
+            end
+
+            if (self.params.oauth_mode and self.params.mix_mode) then
+                return responses.send_HTTP_BAD_REQUEST("oauth mode and mix mode, Both flags cannot be YES at the same time")
+            end
+
             if (self.params.uma_mode and self.params.mix_mode) then
-                return responses.send_HTTP_BAD_REQUEST("'uma mode' and 'mix mode', Both flags cannot be 'YES' at the same time")
+                return responses.send_HTTP_BAD_REQUEST("uma mode and mix mode, Both flags cannot be YES at the same time")
+            end
+
+            if (not self.params.oauth_mode) and (not self.params.uma_mode) and (not self.params.mix_mode) then
+                self.params.oauth_mode = true
             end
 
             local redirect_uris
@@ -107,7 +123,8 @@ return {
                 client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
                 client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or "",
                 uma_mode = self.params.uma_mode or false,
-                mix_mode = self.params.mix_mode or false
+                mix_mode = self.params.mix_mode or false,
+                oauth_mode = self.params.oauth_mode or false
             }
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
