@@ -1,8 +1,8 @@
-local helper = require "kong.plugins.kong-uma-rs.helper"
+local helper = require "kong.plugins.gluu-oauth2-rs.helper"
 local responses = require "kong.tools.responses"
 local singletons = require "kong.singletons"
 local ngx_re_gmatch = ngx.re.gmatch
-local PLUGINNAME = "kong-uma-rs"
+local PLUGINNAME = "gluu-oauth2-rs"
 local CLIENT_PLUGIN_NAME = "gluu-oauth2-client-auth"
 local ngx_set_header = ngx.req.set_header
 
@@ -106,6 +106,7 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
         if umaRSResponse.data.access == "denied" then
             local ticket = umaRSResponse.data.ticket
             if not helper.is_empty(ticket) and not helper.is_empty(umaRSResponse.data["www-authenticate_header"]) then
+                ngx.log(ngx.DEBUG, "Set WWW-Authenticate header with ticket")
                 ngx.header["WWW-Authenticate"] = umaRSResponse.data["www-authenticate_header"]
                 return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
             end
@@ -121,78 +122,128 @@ local _M = {}
 -- @param conf: Global configuration oxd_id, client_id and client_secret
 -- @return ACCESS GRANTED and Unauthorized
 function _M.execute(conf)
+    ngx.log(ngx.DEBUG, "Enter in gluu-oauth2-rs plugin")
     local httpMethod = ngx.req.get_method()
     local reqToken = retrieve_token(ngx.req)
     local path = getPath()
-    local ip = ngx.var.remote_addr
 
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Access - http_method: " .. httpMethod .. ", reqToken: " .. (reqToken or "nil") .. " ip: " .. ip .. ", path: " .. path)
-
-    -- Check token in cache
---    local cacheToken = get_set_token_cache(reqToken or ip, httpMethod, path, false, nil)
---
---    if not helper.is_empty(cacheToken) then
---        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in cache")
---
---        -- If path is not protected then send header with UMA-Wanrning
---        if not cacheToken.isPathProtected then
---            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
---            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
---        end
---
---        return -- ACCESS GRANTED
---    end
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Access - http_method: " .. httpMethod .. ", reqToken: " .. (reqToken or "nil") .. ", path: " .. path)
 
     if helper.is_empty(reqToken) then
-        return responses.send_HTTP_UNAUTHORIZED("Unauthorized! Token not found in header.")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! Token not found in header")
+        -- Check access and return permission ticket in header
+        local umaRSResponse = helper.check_access(conf, "", path, httpMethod)
+        check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
+
+        -- Unauthorized! Token not found in header
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized! Token not found in header")
     end
 
-    -- Check Client plugin cache
-    local clientPluginCacheToken = singletons.cache:get(CLIENT_PLUGIN_NAME .. reqToken .. httpMethod .. path, nil, function() end)
-    local oauth2Credential = singletons.cache:get(singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(clientPluginCacheToken.client_id), nil, function() end)
+    -- Check RPT token is in gluu-oauth2-rs cache
+    local cacheToken = get_set_token_cache(reqToken, httpMethod, path, false, nil)
+
+    if not helper.is_empty(cacheToken) then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in gluu-oauth2-rs cache")
+        --
+        --        -- If path is not protected then send header with UMA-Wanrning
+        --        if not cacheToken.isPathProtected then
+        --            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
+        --            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
+        --        end
+        return -- ACCESS GRANTED
+    end
+
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not found in gluu-oauth2-rs cache")
+
+    -- Check gluu-oauth2-client-auth plugin cache
+    local clientPluginCacheToken = singletons.cache:get(CLIENT_PLUGIN_NAME .. reqToken, nil, function() end)
 
     if helper.is_empty(clientPluginCacheToken) then
-        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! gluu-oauth2-client-auth cache is not found")
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     end
 
-    if clientPluginCacheToken.tokenType == "OAuth" then
-        if oauth2Credential.uma_mode then
-            return responses.send_HTTP_FORBIDDEN("")
+    -- Get oauth2-consumer credential for getting all modes(oauth_mode, uma_mode, mix_mode) in here.
+    local oauth2Credential = singletons.cache:get(singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(clientPluginCacheToken.client_id), nil, function() end)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token type : " .. clientPluginCacheToken.token_type)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": oauth_mode : " .. tostring(oauth2Credential.oauth_mode) .. ", uma_mode : " .. tostring(oauth2Credential.uma_mode) .. ", mix_mode : " .. tostring(oauth2Credential.mix_mode))
+
+    if clientPluginCacheToken.token_type == "UMA" then
+        if oauth2Credential.oauth_mode then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : 401 Unauthorized. OAuth(not UMA) token required.")
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
         end
 
-    end
+        -- Check UMA-RS access -> oxd
+        local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod)
 
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not found in cache")
+        if not umaRSResponse then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : Failed to access resources. umaRSResponse is false")
+            return responses.send_HTTP_FORBIDDEN("Failed to access resources")
+        end
 
-    -- Check UMA-RS access -> oxd
-    local umaRSResponse = helper.check_access(conf, reqToken, path, httpMethod)
+        -- Check uma_rs_acceess response
+        local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
+        if checkUMARsResponse.access == true then
+            -- Update rpt in gluu-oauth2-client-auth plugin
+            singletons.cache:invalidate(CLIENT_PLUGIN_NAME .. reqToken)
+            clientPluginCacheToken.associated_rpt = umaRSResponse.rpt
+            clientPluginCacheToken.permissions = { path = path, method = httpMethod }
+            ngx.log(ngx.DEBUG, "RPT token " .. umaRSResponse.rpt)
+            singletons.cache:get(CLIENT_PLUGIN_NAME .. reqToken, { ttl = clientPluginCacheToken.exp_sec }, function() return clientPluginCacheToken end)
 
-    -- Check uma_rs_acceess response
-    local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, path, httpMethod)
-
-    if checkUMARsResponse.access == true then
-        -- Invalidate(clear) the cache if exist
-        singletons.cache:invalidate(PLUGINNAME .. (rpt or ip) .. httpMethod .. path)
-
-        -- If path is protected the cache rpt with token expiration time otherwise cache using ip address
-        if checkUMARsResponse.isPathProtected then
-            -- Introspect to rpt token and get expire time
-            local introspectResponse = helper.introspect_rpt(conf, rpt)
-
-            if not introspectResponse then
-                return responses.send_HTTP_UNAUTHORIZED("Failed to introspect token.")
-            end
-
-            -- Count expire time in second
-            local exp_sec = (introspectResponse.data.exp - introspectResponse.data.iat)
-            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Expire time: " .. exp_sec)
-
-            get_set_token_cache(rpt, httpMethod, path, checkUMARsResponse.isPathProtected, exp_sec)
+            -- Set cache for gluu-oauth2-rs plugin
+            singletons.cache:invalidate(PLUGINNAME .. (umaRSResponse.rpt) .. httpMethod .. path)
+            get_set_token_cache(umaRSResponse.rpt, httpMethod, path, checkUMARsResponse.isPathProtected, clientPluginCacheToken.exp_sec)
             return -- ACCESS GRANTED
-        else
-            get_set_token_cache(rpt or ip, httpMethod, path, checkUMARsResponse.isPathProtected, conf.unprotected_path_cache_time_sec)
-            return -- ACCESS GRANTED with UMA-Warning header
         end
+
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " : Failed to access resources. access is false")
+        return responses.send_HTTP_FORBIDDEN("Failed to access resources")
+    end
+
+    --- Flow when Token is OAuth
+    if clientPluginCacheToken.token_type == "OAuth" then
+        if oauth2Credential.uma_mode then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : UMA Token required for UMA mode.")
+            return responses.send_HTTP_FORBIDDEN("UMA Token required for UMA mode.")
+        end
+
+        if oauth2Credential.oauth_mode then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : Authorized. Allow - OAuth mode")
+            return -- Access Granted
+        end
+
+        if not oauth2Credential.mix_mode then
+            return responses.send_HTTP_FORBIDDEN("Enable anyone mode.")
+        end
+
+        -- Check UMA-RS access -> oxd
+        local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod)
+
+        if not umaRSResponse then
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : Failed to access resources. umaRSResponse is false")
+            return responses.send_HTTP_FORBIDDEN("Failed to access resources")
+        end
+
+        -- Check uma_rs_acceess response
+        local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
+        if checkUMARsResponse.access == true then
+            -- Update rpt in gluu-oauth2-client-auth plugin
+            singletons.cache:invalidate(CLIENT_PLUGIN_NAME .. reqToken)
+            clientPluginCacheToken.associated_rpt = umaRSResponse.rpt
+            clientPluginCacheToken.permissions = { path = path, method = httpMethod }
+            ngx.log(ngx.DEBUG, "RPT token " .. umaRSResponse.rpt)
+            singletons.cache:get(CLIENT_PLUGIN_NAME .. reqToken, { ttl = clientPluginCacheToken.exp_sec }, function() return clientPluginCacheToken end)
+
+            -- Set cache for gluu-oauth2-rs plugin
+            singletons.cache:invalidate(PLUGINNAME .. (umaRSResponse.rpt) .. httpMethod .. path)
+            get_set_token_cache(umaRSResponse.rpt, httpMethod, path, checkUMARsResponse.isPathProtected, clientPluginCacheToken.exp_sec)
+            return -- ACCESS GRANTED
+        end
+
+        ngx.log(ngx.DEBUG, PLUGINNAME .. " : Failed to access resources. access is false")
+        return responses.send_HTTP_FORBIDDEN("Failed to access resources")
     end
 
     return responses.send_HTTP_FORBIDDEN("Unknown (unsupported) status code from oxd server for uma_rs_check_access operation.")

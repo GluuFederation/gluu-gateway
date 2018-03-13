@@ -1,5 +1,5 @@
 local BasePlugin = require "kong.plugins.base_plugin"
-local access = require "kong.plugins.kong-uma-rs.access"
+local access = require "kong.plugins.gluu-oauth2-rs.access"
 
 local Handler = BasePlugin:extend()
 
@@ -7,7 +7,7 @@ Handler.PRIORITY = 998
 
 --- Instanciate plugin itself with a name
 function Handler:new()
-  Handler.super.new(self, "kong-uma-rs")
+  Handler.super.new(self, "gluu-oauth2-rs")
 end
 
 --- Executed for every request from a client and before it is being proxied to the upstream service.

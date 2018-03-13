@@ -1,4 +1,4 @@
-local helper = require("kong.plugins.kong-uma-rs.helper")
+local helper = require("kong.plugins.gluu-oauth2-rs.helper")
 local oxd = require("oxdweb")
 
 describe("Helper module", function()

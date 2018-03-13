@@ -1,4 +1,4 @@
-local helper = require "kong.plugins.kong-uma-rs.helper"
+local helper = require "kong.plugins.gluu-oauth2-rs.helper"
 
 --- Check uma_server_host is must https and not empty
 -- @param given_value: Value of uma_server_host

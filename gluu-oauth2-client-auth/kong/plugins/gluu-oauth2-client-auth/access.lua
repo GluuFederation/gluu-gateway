@@ -7,6 +7,7 @@ local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local ngx_re_gmatch = ngx.re.gmatch
 local ngx_set_header = ngx.req.set_header
 local PLUGINNAME = "gluu-oauth2-client-auth"
+local RS_PLUGINNAME = "gluu-oauth2-rs"
 local OAUTH_CLIENT_ID = "OAUTH_CLIENT_ID"
 local OAUTH_EXPIRATION = "OAUTH_EXPIRATION"
 local OAUTH_SCOPES = "OAUTH_SCOPES"
@@ -84,14 +85,12 @@ end
 --- Get or set token cache token from cache
 -- If token not in cache then call load_token_into_memory function and set values in cache return by load_token_into_memory.
 -- @param req_token: token from authrorization request header
--- @param method: Requested http method
--- @param path: Requested path
--- @param exp_sec: Expiration time for cache in seccond
--- @return { rpt, method, path }
-local function get_set_token_cache(req_token, method, path, token)
+-- @param token: Token Json for cache
+-- @return { token JSON }
+local function get_set_token_cache(req_token, token)
     local result, err
     if req_token then
-        local token_cache_key = PLUGINNAME .. req_token .. method .. path
+        local token_cache_key = PLUGINNAME .. req_token
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Cache search: " .. token_cache_key)
 
         result, err = singletons.cache:get(token_cache_key, { ttl = (token and token.exp_sec) or nil },
@@ -166,14 +165,11 @@ end
 -- @param credential: client and plugin info
 -- @param req_token: token from authrorization request header
 local function validate_credentials(conf, req_token)
-    -- Method and path
-    local httpMethod = ngx.req.get_method()
-    local path = getPath()
     local tokenResposeBody
     local credential
 
     -- check token in cache
-    local cacheToken = get_set_token_cache(req_token, httpMethod, path, nil)
+    local cacheToken = get_set_token_cache(req_token, nil)
 
     -- If token is exist in cache the allow
     if not helper.is_empty(cacheToken) then
@@ -247,7 +243,7 @@ local function validate_credentials(conf, req_token)
     end
 
     -- Invalidate(clear) the cache if exist
-    singletons.cache:invalidate(PLUGINNAME .. req_token .. httpMethod .. path)
+    singletons.cache:invalidate(PLUGINNAME .. req_token)
 
     -- set remaining data for caching
     local cacheTokenData = tokenResponse.data
@@ -258,7 +254,7 @@ local function validate_credentials(conf, req_token)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)
 
     -- set token data in cache for exp_sec(time in second)
-    get_set_token_cache(req_token, httpMethod, path, cacheTokenData)
+    get_set_token_cache(req_token, cacheTokenData)
 
     -- oauth2-consumer data : later on use to send consumer detail in req header. See below set_consumer method for detail
     cacheTokenData.credential = credential
@@ -266,49 +262,27 @@ local function validate_credentials(conf, req_token)
     return cacheTokenData
 end
 
---- Get RPT and update cache with RPT token
--- @param premature: it is a premature timer expiration or not
--- @param reqToken: token from authrorization request header
--- @param method: Requested http method
--- @param path: Requested path
--- @param cacheTokenData: Existing cache data
--- @param ticket: permission ticket comes with www-authenticate
--- @param credential: oauth2-consumer credential {oxd_id: '...', client_id: '...', client_secret: '...'}
--- @return set and update cache with associated RPT token
-local function get_rpt(premature, reqToken, httpMethod, path, cacheTokenData, ticket, credential)
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Get RPT and update cache with RPT token")
-
-    -- Get RPT
-    local config = {
-        oxd_host = credential.oxd_http_url,
-        op_host = credential.op_host,
-        client_id = credential.client_id,
-        client_secret = credential.client_secret,
-        oxd_id = credential.oxd_id
-    }
-    local rpt = helper.get_rpt(config, reqToken, ticket)
-
-    if rpt == false or helper.is_empty(rpt) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to get RPT")
-        return --
-    end
-
-    --    Invalidate(clear) the cache if exist
-    singletons.cache:invalidate(PLUGINNAME .. reqToken .. httpMethod .. path)
-    cacheTokenData.associated_rpt = rpt
-    -- set token data in cache for exp_sec(time in second)
-    get_set_token_cache(reqToken, httpMethod, path, cacheTokenData)
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Finished with RPT in cache")
-end
-
 --- Start execution. Call by handler.lua access event
 -- @param conf: Global configuration oxd_id, client_id and client_secret
 -- @return ACCESS GRANTED and Unauthorized
 function _M.execute_access(config)
+    ngx.log(ngx.DEBUG, "Enter in gluu-oauth2-client-auth plugin")
     -- Fetch basic token from header
     local token = retrieve_token(ngx.req, config, "authorization")
 
     if helper.is_empty(token) then
+        local credentials, err = singletons.dao.plugins:find_all { name = RS_PLUGINNAME }
+        if err then
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        end
+
+        -- Check gluu-oauth2-rs plugin is configured or not. If configured then control passing to gluu-oauth2-rs plugin and return Unauhorized 401 + ticket
+        if not helper.is_empty(credentials[1]) then
+            ngx.log(ngx.DEBUG, "Token not found in header, so control passing to gluu-oauth2-rs plugin and return Unauthorized 401 + ticket")
+            return -- Controle goes to gluu-oauth2-rs plugin and return ticket
+        end
+
+        -- If gluu-oauth2-rs is not configured then return Unauthorized 401
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
