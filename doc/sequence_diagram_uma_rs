@@ -11,8 +11,12 @@ opt no token present
     gluu-oauth2-rs->Kong Proxy: 401/Unauthorized + ticket
 end
 
-gluu-oauth2-rs->kong-cache: Lookup token
+gluu-oauth2-rs->kong-cache: Lookup for gluu-oauth2-rs cache
+opt gluu-oauth2-rs cache found
+    gluu-oauth2-rs->Kong Proxy: Access Granted
+end
 
+gluu-oauth2-rs->kong-cache: Lookup token
 opt oauth2-consumer cache not found
     note over gluu-oauth2-rs, Kong Proxy: not possible... oauth2-client plugin requires active token
     gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
@@ -24,12 +28,11 @@ opt token_type == RPT
     opt OAuth Mode
         gluu-oauth2-rs->Kong Proxy: 401/Unauthorized: "OAuth (not UMA) token required"
     end
-    opt token already authorized for this path/method
-        gluu-oauth2-rs->Kong Proxy: return
-    end
+
     gluu-oauth2-rs->oxd-web: call check_access(token)
     opt granted
-        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
+        gluu-oauth2-rs->kong-cache: Update OAuth2 token json token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
+        gluu-oauth2-rs->kong-cache: write OAuth2 cache JSON in gluu-oauth2-rs cache
         Kong Proxy->API: Send Request
         API->Kong Proxy: Content
     end
@@ -44,10 +47,11 @@ opt token is OAuth
     end
     opt Mix Mode
         gluu-oauth2-rs<->oxd-web: get token
-        gluu-oauth2-rs->kong-cache: write token, update OAuth2 JSON (add "associated_rpt" key)
         gluu-oauth2-rs->oxd-web: check_access(token)
         opt granted
+            gluu-oauth2-rs->kong-cache: update OAuth2 cache JSON (add "associated_rpt" key)
             gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"] } , ...]
+            gluu-oauth2-rs->kong-cache: write OAuth2 cache JSON in gluu-oauth2-rs cache
             gluu-oauth2-rs->Kong Proxy: return
         end
         opt denied or error
