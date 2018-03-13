@@ -8,9 +8,7 @@ end
 Kong Proxy->gluu-oauth2-client-plugin: *****  call "access" event for Kong OAuth-Consumer plugin priority 999 *****
 
 opt no token
-    note over gluu-oauth2-client-plugin,oxd-web: OAuth clients can ignore ticket
-    gluu-oauth2-client-plugin<->oxd-web: get minimal permission ticket
-    gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized + ticket
+    gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized
 end
 
 gluu-oauth2-client-plugin->kong-cache: Lookup token in cache

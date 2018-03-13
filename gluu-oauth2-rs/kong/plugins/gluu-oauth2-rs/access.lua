@@ -3,6 +3,7 @@ local responses = require "kong.tools.responses"
 local singletons = require "kong.singletons"
 local ngx_re_gmatch = ngx.re.gmatch
 local PLUGINNAME = "kong-uma-rs"
+local CLIENT_PLUGIN_NAME = "gluu-oauth2-client-auth"
 local ngx_set_header = ngx.req.set_header
 
 --- Retrieve a RPT token in the `Authorization` header.
@@ -121,34 +122,53 @@ local _M = {}
 -- @return ACCESS GRANTED and Unauthorized
 function _M.execute(conf)
     local httpMethod = ngx.req.get_method()
-    local rpt = retrieve_token(ngx.req)
+    local reqToken = retrieve_token(ngx.req)
     local path = getPath()
     local ip = ngx.var.remote_addr
 
-    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Access - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Access - http_method: " .. httpMethod .. ", reqToken: " .. (reqToken or "nil") .. " ip: " .. ip .. ", path: " .. path)
 
     -- Check token in cache
-    local cacheToken = get_set_token_cache(rpt or ip, httpMethod, path, false, nil)
+--    local cacheToken = get_set_token_cache(reqToken or ip, httpMethod, path, false, nil)
+--
+--    if not helper.is_empty(cacheToken) then
+--        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in cache")
+--
+--        -- If path is not protected then send header with UMA-Wanrning
+--        if not cacheToken.isPathProtected then
+--            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
+--            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
+--        end
+--
+--        return -- ACCESS GRANTED
+--    end
 
-    if not helper.is_empty(cacheToken) then
-        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token found in cache")
+    if helper.is_empty(reqToken) then
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized! Token not found in header.")
+    end
 
-        -- If path is not protected then send header with UMA-Wanrning
-        if not cacheToken.isPathProtected then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected! - http_method: " .. httpMethod .. ", rpt: " .. (rpt or "nil") .. " ip: " .. ip .. ", path: " .. path)
-            ngx.header["UMA-Warning"] = "Path is not protected by UMA. Please check protection_document."
+    -- Check Client plugin cache
+    local clientPluginCacheToken = singletons.cache:get(CLIENT_PLUGIN_NAME .. reqToken .. httpMethod .. path, nil, function() end)
+    local oauth2Credential = singletons.cache:get(singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(clientPluginCacheToken.client_id), nil, function() end)
+
+    if helper.is_empty(clientPluginCacheToken) then
+        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+    end
+
+    if clientPluginCacheToken.tokenType == "OAuth" then
+        if oauth2Credential.uma_mode then
+            return responses.send_HTTP_FORBIDDEN("")
         end
 
-        return -- ACCESS GRANTED
     end
 
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not found in cache")
 
     -- Check UMA-RS access -> oxd
-    local umaRSResponse = helper.check_access(conf, rpt, path, httpMethod)
+    local umaRSResponse = helper.check_access(conf, reqToken, path, httpMethod)
 
     -- Check uma_rs_acceess response
-    local checkUMARsResponse = check_uma_rs_response(umaRSResponse, rpt, path, httpMethod)
+    local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, path, httpMethod)
 
     if checkUMARsResponse.access == true then
         -- Invalidate(clear) the cache if exist

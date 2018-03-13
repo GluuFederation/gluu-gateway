@@ -8,7 +8,7 @@ gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
 
 opt no token present
     note over gluu-oauth2-rs, Kong Proxy: not possible... oauth-client plugin requires token
-    gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
+    gluu-oauth2-rs->Kong Proxy: 401/Unauthorized + ticket
 end
 
 gluu-oauth2-rs->kong-cache: Lookup token
