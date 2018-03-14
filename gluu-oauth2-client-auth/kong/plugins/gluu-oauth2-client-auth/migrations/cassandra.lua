@@ -11,6 +11,7 @@ return {
         scope text,
         op_host text,
         client_id text,
+        client_id_of_oxd_id text,
         client_secret text,
         client_jwks_uri text,
         jwks_file text,

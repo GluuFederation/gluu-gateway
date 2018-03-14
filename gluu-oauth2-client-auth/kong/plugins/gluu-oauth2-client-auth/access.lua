@@ -34,6 +34,7 @@ local function get_token_data(token)
     if not helper.is_empty(token) and not helper.is_empty(token.client_id) then
         result = {
             client_id = token.client_id,
+            client_id_of_oxd_id = token.client_id_of_oxd_id,
             exp = token.exp,
             exp_sec = token.exp_sec,
             consumer_id = token.consumer_id,
@@ -57,10 +58,24 @@ end
 -- @param client_id: Client identifier for the OAuth 2.0 client
 -- @return oauth2-consumer { id: '...', client_id: '..', client_secret: '...', oxd_id: '...', ...}
 local function get_oauth2_consumer(client_id)
+    -- Find consumer by client_id
     local credentials, err = singletons.dao.gluu_oauth2_client_auth_credentials:find_all { client_id = client_id }
     if err then
         return nil, err
     end
+
+    if not helper.is_empty(credentials[1]) then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Found consumer by client_id")
+        return credentials[1]
+    end
+
+    -- Find consumer by client_id_of_oxd_id
+    credentials, err = singletons.dao.gluu_oauth2_client_auth_credentials:find_all { client_id_of_oxd_id = client_id }
+    if err then
+        return nil, err
+    end
+
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Found consumer by client_id_of_oxd_id")
     return credentials[1]
 end
 
@@ -90,7 +105,7 @@ end
 local function get_set_token_cache(req_token, token)
     local result, err
     if req_token then
-        local token_cache_key = PLUGINNAME .. req_token
+        local token_cache_key = req_token
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Cache search: " .. token_cache_key)
 
         result, err = singletons.cache:get(token_cache_key, { ttl = (token and token.exp_sec) or nil },
@@ -243,7 +258,7 @@ local function validate_credentials(conf, req_token)
     end
 
     -- Invalidate(clear) the cache if exist
-    singletons.cache:invalidate(PLUGINNAME .. req_token)
+    singletons.cache:invalidate(req_token)
 
     -- set remaining data for caching
     local cacheTokenData = tokenResponse.data
@@ -286,9 +301,10 @@ function _M.execute_access(config)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
     end
 
-    local responseValidCredential = validate_credentials(config, token)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Requested token : " .. token)
 
-    ngx.log(ngx.DEBUG, "Check Valid token response : ")
+    -- Check token
+    local responseValidCredential = validate_credentials(config, token)
 
     if not responseValidCredential.active then
         ngx.log(ngx.DEBUG, "Unauthorized")

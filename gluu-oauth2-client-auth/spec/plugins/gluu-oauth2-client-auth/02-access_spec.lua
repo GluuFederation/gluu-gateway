@@ -405,8 +405,6 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.res_status(401, res)
-                local wwwAuthenticate = res.headers["WWW-Authenticate"]
-                assert.is_truthy(string.find(wwwAuthenticate, "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -441,6 +439,110 @@ describe("gluu-oauth2-client-auth plugin", function()
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
                         ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 3rs time request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+            end)
+        end)
+
+        describe("When oauth2-consumer is in uma_mode = true", function()
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("Get 200 status when token is RPT token active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = gluu_oauth2_rs_plugin.config.oxd_host,
+                    client_id = gluu_oauth2_rs_plugin.config.client_id,
+                    client_secret = gluu_oauth2_rs_plugin.config.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = gluu_oauth2_rs_plugin.config.uma_server_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                -- -----------------------------------------------------------------
+
+                -- ------------------GET check_access-------------------------------
+                local umaAccessRequest = {
+                    oxd_host = gluu_oauth2_rs_plugin.config.oxd_host,
+                    oxd_id = gluu_oauth2_rs_plugin.config.oxd_id,
+                    rpt = "",
+                    path = "/posts",
+                    http_method = "GET"
+                }
+                local umaAccessResponse = oxd.uma_rs_check_access(umaAccessRequest, token.data.access_token)
+
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_uma_mode.oxd_http_url,
+                    client_id = oauth2_consumer_with_uma_mode.client_id,
+                    client_secret = oauth2_consumer_with_uma_mode.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_uma_mode.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- ------------------GET rpt-------------------------------
+                local umaGetRPTRequest = {
+                    oxd_host = oauth2_consumer_with_uma_mode.oxd_http_url,
+                    oxd_id = oauth2_consumer_with_uma_mode.oxd_id,
+                    ticket = umaAccessResponse.data.ticket
+                }
+                local umaGetRPTResponse = oxd.uma_rp_get_rpt(umaGetRPTRequest, req_access_token)
+
+                -- -----------------------------------------------------------------
+
+                -- 1st time request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
                 assert.res_status(200, res)
