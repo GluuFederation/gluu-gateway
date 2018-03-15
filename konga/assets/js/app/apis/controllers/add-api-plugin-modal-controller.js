@@ -30,7 +30,7 @@
           if ($rootScope.Gateway.version.indexOf('0.9.') < 0) {
             $scope.pluginGroups.forEach(function (group) {
               Object.keys(group.plugins).forEach(function (key) {
-                if (key == "kong-uma-rs") {
+                if (key == "gluu-oauth2-rs") {
                   delete group.plugins[key];
                   return;
                 }

@@ -21,7 +21,7 @@
         $scope.fetchData = fetchData
         $scope.modelPlugin = {
           api_id: $scope.api.id,
-          name: 'kong-uma-rs',
+          name: 'gluu-oauth2-rs',
           config: {
             protection_document: [{
               path: '',
@@ -38,7 +38,7 @@
         $scope.isKongUMARSPluginAdded = false;
 
         $scope.plugins.forEach(function (o) {
-          if (o.name == "kong-uma-rs") {
+          if (o.name == "gluu-oauth2-rs") {
             $scope.pluginConfig = o.config;
             $scope.isKongUMARSPluginAdded = true;
             $scope.ruleScope = {};
