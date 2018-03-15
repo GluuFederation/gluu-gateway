@@ -1,13 +1,13 @@
 local helper = require "kong.plugins.gluu-oauth2-rs.helper"
 local responses = require "kong.tools.responses"
 local singletons = require "kong.singletons"
+local json = require "JSON"
 local ngx_re_gmatch = ngx.re.gmatch
 local PLUGINNAME = "gluu-oauth2-rs"
 local CLIENT_PLUGIN_NAME = "gluu-oauth2-client-auth"
 
 --- Retrieve a RPT token in the `Authorization` header.
 -- @param request ngx request object
--- @param conf Plugin configuration
 -- @return RPT token or nil
 -- @return err
 local function retrieve_token(request)
@@ -27,6 +27,24 @@ local function retrieve_token(request)
             return m[1]
         end
     end
+end
+
+--- Retrieve a claim information from UMA_DATA header.
+-- @param request ngx request object
+-- @return {"claim_token": "", "claim_token_format": "" }
+local function retrieve_uma_data(request)
+    -- Get UMA_DATA {"claim_token": "", "claim_token_format": "" }
+    local claim_header = request.get_headers()["uma_data"]
+    if not helper.is_empty(claim_header) then
+        ngx.log(ngx.DEBUG, "claim_header " .. claim_header)
+        if pcall(function() json:decode(claim_header) end) then
+            local uma_data = json:decode(claim_header)
+            if not helper.is_empty(uma_data.claim_token) and not helper.is_empty(uma_data.claim_token) then
+                return uma_data
+            end
+        end
+    end
+    return nil
 end
 
 --- Fetch given requested path. Example: /posts
@@ -136,8 +154,8 @@ function _M.execute(conf)
     if clientPluginCacheToken.token_type == "UMA" then
         ngx.log(ngx.DEBUG, PLUGINNAME .. ": Enter in process when token is UMA")
         if oauth2Credential.oauth_mode then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " : 401 Unauthorized. OAuth(not UMA) token required.")
-            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : 401 Unauthorized. OAuth(not UMA) is required in oauth_mode")
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized! OAuth(not UMA) token required in oauth_mode")
         end
 
         -- Check UMA-RS access -> oxd
@@ -148,7 +166,7 @@ function _M.execute(conf)
             return responses.send_HTTP_FORBIDDEN("Failed to access resources")
         end
 
-        -- Check uma_rs_acceess response
+        -- Check uma_rs_access response
         local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
         if checkUMARsResponse.access == true then
             -- Update rpt in gluu-oauth2-client-auth plugin
@@ -172,8 +190,8 @@ function _M.execute(conf)
     if clientPluginCacheToken.token_type == "OAuth" then
         ngx.log(ngx.DEBUG, PLUGINNAME .. ": Enter in process when token is OAuth")
         if oauth2Credential.uma_mode then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " : UMA Token required for UMA mode.")
-            return responses.send_HTTP_FORBIDDEN("UMA Token required for UMA mode.")
+            ngx.log(ngx.DEBUG, PLUGINNAME .. " : UMA Token is required in UMA Mode")
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized! UMA Token is required in UMA Mode")
         end
 
         if oauth2Credential.oauth_mode then
@@ -185,21 +203,30 @@ function _M.execute(conf)
             return responses.send_HTTP_FORBIDDEN("Enable anyone mode.")
         end
 
+        -- Check UMA Data in header for claim token
+        local uma_data = retrieve_uma_data(ngx.req)
+
         -- Check UMA-RS access -> oxd
-        local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod)
+        local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod, uma_data)
 
         if not umaRSResponse then
             ngx.log(ngx.DEBUG, PLUGINNAME .. " : Failed to access resources. umaRSResponse is false")
             return responses.send_HTTP_FORBIDDEN("Failed to access resources")
         end
 
-        -- Check uma_rs_acceess response
+        -- Check uma_rs_access response
         local checkUMARsResponse = check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
         if checkUMARsResponse.access == true then
             -- Update rpt in gluu-oauth2-client-auth plugin
             singletons.cache:invalidate(reqToken)
             clientPluginCacheToken.associated_rpt = umaRSResponse.rpt
             clientPluginCacheToken.permissions = { path = path, method = httpMethod }
+
+            -- check claim token is exist then add it into claim_tokens in cache JSON
+            if not helper.is_empty(uma_data) and not helper.is_empty(uma_data.claim_token) then
+                clientPluginCacheToken.claim_tokens = uma_data.claim_token
+            end
+
             ngx.log(ngx.DEBUG, "RPT token " .. umaRSResponse.rpt)
             singletons.cache:get(reqToken, { ttl = clientPluginCacheToken.exp_sec }, function() return clientPluginCacheToken end)
 

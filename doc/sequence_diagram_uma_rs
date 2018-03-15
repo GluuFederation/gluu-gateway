@@ -20,7 +20,7 @@ end
 
 kong-cache->gluu-oauth2-rs: JSON
 
-opt token_type == RPT
+opt token_type == UMA
     opt OAuth Mode
         gluu-oauth2-rs->Kong Proxy: 401/Unauthorized: "OAuth (not UMA) token required"
     end
@@ -38,9 +38,9 @@ opt token_type == RPT
     end
 end
 
-opt token is OAuth
+opt token_type == OAuth
     opt UMA Mode
-        gluu-oauth2-rs->Kong Proxy: 401/Forbidden: "UMA token required"
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized: "UMA token required"
     end
     opt Mix Mode
         gluu-oauth2-rs<->oxd-web: get token
