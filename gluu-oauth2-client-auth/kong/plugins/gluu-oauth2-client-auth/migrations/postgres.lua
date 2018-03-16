@@ -20,6 +20,7 @@ return {
         uma_mode boolean,
         mix_mode boolean,
         oauth_mode boolean,
+        allow_unprotected_path boolean,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );

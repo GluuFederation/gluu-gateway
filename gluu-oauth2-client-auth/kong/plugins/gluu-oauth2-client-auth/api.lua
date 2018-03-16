@@ -124,7 +124,8 @@ return {
                 client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or "",
                 uma_mode = self.params.uma_mode or false,
                 mix_mode = self.params.mix_mode or false,
-                oauth_mode = self.params.oauth_mode or false
+                oauth_mode = self.params.oauth_mode or false,
+                allow_unprotected_path = self.params.allow_unprotected_path or false,
             }
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)

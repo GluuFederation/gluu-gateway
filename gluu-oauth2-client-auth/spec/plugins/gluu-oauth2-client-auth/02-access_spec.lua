@@ -9,6 +9,8 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_oauth_mode
     local oauth2_consumer_with_uma_mode
     local oauth2_consumer_with_mix_mode
+    local oauth2_consumer_with_uma_mode_allow_unprotected_path
+    local oauth2_consumer_with_mix_mode_allow_unprotected_path
     local api
     local plugin
     local timeout = 6000
@@ -122,6 +124,46 @@ describe("gluu-oauth2-client-auth plugin", function()
         })
         oauth2_consumer_with_uma_mode = cjson.decode(assert.res_status(201, res))
         for k, v in pairs(oauth2_consumer_with_uma_mode) do
+            print(k, ": ", v)
+        end
+
+        print("\n----------- OAuth2 consumer credential with uma_mode = true, allow_unprotected_path = true ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/consumers/foo/gluu-oauth2-client-auth",
+            body = {
+                name = "oauth2_credential_uma_mode",
+                op_host = "https://gluu.local.org",
+                oxd_http_url = "http://localhost:8553",
+                uma_mode = true,
+                allow_unprotected_path = true
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        oauth2_consumer_with_uma_mode_allow_unprotected_path = cjson.decode(assert.res_status(201, res))
+        for k, v in pairs(oauth2_consumer_with_uma_mode_allow_unprotected_path) do
+            print(k, ": ", v)
+        end
+
+        print("\n----------- OAuth2 consumer credential with mix_mode = true, allow_unprotected_path = true ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/consumers/foo/gluu-oauth2-client-auth",
+            body = {
+                name = "oauth2_credential_uma_mode",
+                op_host = "https://gluu.local.org",
+                oxd_http_url = "http://localhost:8553",
+                mix_mode = true,
+                allow_unprotected_path = true
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        oauth2_consumer_with_mix_mode_allow_unprotected_path = cjson.decode(assert.res_status(201, res))
+        for k, v in pairs(oauth2_consumer_with_mix_mode_allow_unprotected_path) do
             print(k, ": ", v)
         end
     end)
@@ -594,6 +636,40 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.res_status(200, res)
+
+                -- Request with other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time Request with other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Request with unregister path - 401/Unauthorized allow_unprotected_path = false
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(401, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
 
             it("401 status when OAuth token is active = true but uma_mode is active", function()
@@ -609,7 +685,6 @@ describe("gluu-oauth2-client-auth plugin", function()
                 local token = oxd.get_client_token(tokenRequest)
                 local req_access_token = token.data.access_token
 
-                -- 1st time request, Cache is not exist
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/posts",
@@ -726,6 +801,29 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.res_status(200, res)
+
+                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(401, res)
+
+                -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(401, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
 
             it("401 status when UMA RPT token active = true but oauth_mode is active", function()
@@ -783,6 +881,273 @@ describe("gluu-oauth2-client-auth plugin", function()
                 local body = assert.res_status(401, res)
                 local json = cjson.decode(body)
                 assert.equal("Unauthorized", json.message)
+            end)
+        end)
+
+        -- This is same case when token_type is OAuth with allow_unprotected_path is allow
+        describe("When oauth2-consumer is in mix_mode = true", function()
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("200 status when token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_mix_mode_allow_unprotected_path.oxd_http_url,
+                    client_id = oauth2_consumer_with_mix_mode_allow_unprotected_path.client_id,
+                    client_secret = oauth2_consumer_with_mix_mode_allow_unprotected_path.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_mix_mode_allow_unprotected_path.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time request with register path, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 2nd time request with register path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 3rs time request with register path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- Request with register other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 2nd time Request with register other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- Request with unregister path - 200 Status
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 2nd request with unregister path - 200 Status
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
+            end)
+        end)
+
+        -- This is same case when token_type is UMA RPT token with allow_unprotected_path is allow
+        describe("When oauth2-consumer is in uma_mode = true", function()
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("200 status when token is RPT token active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = gluu_oauth2_rs_plugin.config.oxd_host,
+                    client_id = gluu_oauth2_rs_plugin.config.client_id,
+                    client_secret = gluu_oauth2_rs_plugin.config.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = gluu_oauth2_rs_plugin.config.uma_server_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                -- -----------------------------------------------------------------
+
+                -- ------------------GET check_access-------------------------------
+                local umaAccessRequest = {
+                    oxd_host = gluu_oauth2_rs_plugin.config.oxd_host,
+                    oxd_id = gluu_oauth2_rs_plugin.config.oxd_id,
+                    rpt = "",
+                    path = "/posts",
+                    http_method = "GET"
+                }
+                local umaAccessResponse = oxd.uma_rs_check_access(umaAccessRequest, token.data.access_token)
+
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_uma_mode_allow_unprotected_path.oxd_http_url,
+                    client_id = oauth2_consumer_with_uma_mode_allow_unprotected_path.client_id,
+                    client_secret = oauth2_consumer_with_uma_mode_allow_unprotected_path.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_uma_mode_allow_unprotected_path.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- ------------------GET rpt-------------------------------
+                local umaGetRPTRequest = {
+                    oxd_host = oauth2_consumer_with_uma_mode_allow_unprotected_path.oxd_http_url,
+                    oxd_id = oauth2_consumer_with_uma_mode_allow_unprotected_path.oxd_id,
+                    ticket = umaAccessResponse.data.ticket
+                }
+                local umaGetRPTResponse = oxd.uma_rp_get_rpt(umaGetRPTRequest, req_access_token)
+
+                -- -----------------------------------------------------------------
+
+                -- 1st time request to register path, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 2nd time request to register path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- 3rd time request to register path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(401, res)
+
+                -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
+
+                -- Request again with unregister path - 401/Unauthorized - allow_unprotected_path = false
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
+                    }
+                })
+                assert.res_status(200, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
         end)
     end)
