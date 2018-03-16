@@ -20,7 +20,8 @@
           oxd_http_url: $scope.globalInfo.oxdWeb,
           uma_mode: false,
           mix_mode: false,
-          oauth_mode: true
+          oauth_mode: true,
+          allow_unprotected_path: false
         };
 
         $scope.close = function () {
