@@ -1,14 +1,14 @@
-package = "kong-uma-rs"
+package = "gluu-oauth2-rs"
 version = "1.0-0"
 source = {
-  url = "https://ox.gluu.org/luarocks/kong-uma-rs.1.0-0.zip"
+  url = "https://ox.gluu.org/luarocks/gluu-oauth2-rs.1.0-0.zip"
 }
 description = {
-  summary = "kong uma rs",
+  summary = "Gluu OAuth2 RS",
   detailed = [[
     Kong plugin that allows you to protect your API (which is proxied by Kong) with the UMA OAuth-based access management protocol.
   ]],
-  homepage = "https://github.com/GluuFederation/kong-plugins/tree/master/kong-uma-rs",
+  homepage = "https://github.com/GluuFederation/kong-plugins/tree/master/gluu-oauth2-rs",
   license = "MIT"
 }
 dependencies = {
@@ -17,9 +17,9 @@ dependencies = {
 build = {
   type = "builtin",
   modules = {
-    ["kong.plugins.kong-uma-rs.access"] = "access.lua",
-    ["kong.plugins.kong-uma-rs.handler"] = "handler.lua",
-    ["kong.plugins.kong-uma-rs.helper"] = "helper.lua",
-    ["kong.plugins.kong-uma-rs.schema"] = "schema.lua"
+    ["kong.plugins.gluu-oauth2-rs.access"] = "access.lua",
+    ["kong.plugins.gluu-oauth2-rs.handler"] = "handler.lua",
+    ["kong.plugins.gluu-oauth2-rs.helper"] = "helper.lua",
+    ["kong.plugins.gluu-oauth2-rs.schema"] = "schema.lua"
   }
 }

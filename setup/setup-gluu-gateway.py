@@ -33,7 +33,7 @@ class KongSetup(object):
         self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'kong-uma-rs,gluu-oauth2-client-auth'
+        self.kongCustomPlugins = 'gluu-oauth2-rs,gluu-oauth2-client-auth'
 
         self.oxdLicense = ''
 
@@ -246,7 +246,7 @@ class KongSetup(object):
         self.logIt('Installing luarocks packages...')
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'kong-uma-rs'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
 
     def configKonga(self):
