@@ -73,7 +73,7 @@
               <div class="row" ng-repeat="element in modelPlugin.config.protection_document" ng-init="pIndex = $index"
                    style="border: 1px dotted;">
                 <hr/>
-                <div class="col-md-1" data-ng-if="!isKongUMARSPluginAdded">
+                <div class="col-md-1">
                   <button type="button" title="Delete path" class="btn btn-danger"
                           ng-click="modelPlugin.config.protection_document.splice($index,1)">
                     <i class="mdi mdi-close"></i>
@@ -90,7 +90,7 @@
                            title="Enter path"
                            placeholder="/path"
                            ng-model="element.path"
-                           ng-required="true" data-ng-disabled="isKongUMARSPluginAdded"/>
+                           ng-required="true"/>
                     <span class="help-block error-block basic-block">The path which you want to protected by UMA.</span>
                   </div>
                   <div class="col-md-12">
@@ -98,7 +98,7 @@
                       <div class="row">
                         <div class="col-md-10">
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond.httpMethods" data-ng-disabled="isKongUMARSPluginAdded"
+                            <tags-input ng-model="cond.httpMethods"
                                         id="httpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
                                         placeholder="Enter http Methods">
@@ -109,7 +109,7 @@
                             <span class="help-block error-block basic-block"></span>
                           </div>
                         </div>
-                        <div class="col-md-2" data-ng-if="!isKongUMARSPluginAdded">
+                        <div class="col-md-2">
                           <button type="button" title="Delete condition" class="btn btn-danger"
                                   ng-click="element.conditions.splice($index,1)">
                             <i class="mdi mdi-close"></i>
@@ -119,6 +119,7 @@
 
                       <!-- edit mode view start -->
                       <div class="row" data-ng-if="isKongUMARSPluginAdded">
+                        <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
                         <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
 
                         </div>
@@ -160,7 +161,7 @@
                       <div class="row">
                         <div class="col-md-12">
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond.ticketScopes" data-ng-disabled="isKongUMARSPluginAdded"
+                            <tags-input ng-model="cond.ticketScopes"
                                         id="ticketScopes{{pIndex}}{{$index}}"
                                         placeholder="Enter ticket scopes"></tags-input>
                           </div>
@@ -169,8 +170,7 @@
                       <hr/>
                     </div>
                     <div class="row">
-                      <button type="button" class="btn btn-info" ng-click="addNewCondition($index)"
-                              data-ng-if="!isKongUMARSPluginAdded">
+                      <button type="button" class="btn btn-info" ng-click="addNewCondition($index)">
                         <i class="mdi mdi-plus"></i> Add Condition
                       </button>
                     </div>
@@ -179,20 +179,18 @@
                 </div>
               </div>
               <hr/>
-              <button type="button" class="btn btn-info" ng-click="addNewPath()" data-ng-if="!isKongUMARSPluginAdded">
+              <button type="button" class="btn btn-info" ng-click="addNewPath()">
                 <i class="mdi mdi-plus"></i> Add path
               </button>
-              <button type="button" class="btn btn-primary" ng-click="showResourceJSON()"
-                      data-ng-if="!isKongUMARSPluginAdded">
+              <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
                 <i class="mdi mdi-information"></i> View Resource Json
               </button>
             </div>
           </div>
           <div class="row">
             <hr/>
-            <button type="submit" class="btn btn-primary" ng-click="addPlugin(PluginForm.$valid)"
-                    data-ng-if="!isKongUMARSPluginAdded">
-              <i class="mdi mdi-check"></i> Add
+            <button type="submit" class="btn btn-primary" ng-click="addPlugin(PluginForm.$valid)">
+              <i class="mdi mdi-check"></i> {{isKongUMARSPluginAdded ? "Update" : "Add" }}
             </button>
           </div>
         </form>

@@ -59,6 +59,7 @@
                   _repeat(pRule[op], op, 1);
 
                   function _repeat(rule, op, id) {
+                    $(`input[name=hdScopeCount${pIndex}${cIndex}]`).val(id);
                     rule.forEach(function (oRule, oRuleIndex) {
                       if (oRule['var'] == 0 || oRule['var']) {
                         if (!$scope.ruleScope[`scope${pIndex}${cIndex}${id}`]) {
@@ -70,10 +71,16 @@
 
                       if (rule.length - 1 == oRuleIndex) {
                         // render template
-                        var htmlRender = `<input type="radio" value="${op}" checked>${op}
+                        var htmlRender = `
+                          <input type="radio" value="or" name="condition${pIndex}${cIndex}${id}" ${op == "or" ? "checked": ""}>or |
+                          <input type="radio" value="and" name="condition${pIndex}${cIndex}${id}" ${op == "and" ? "checked": ""}>and |
+                          <input type="radio" value="not" name="condition${pIndex}${cIndex}${id}" ${op == "not" ? "checked": ""}>not
+                          <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${pIndex}${cIndex}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
+                          <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${pIndex}${cIndex}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
                           <div class="form-group has-feedback">
+                           <input type="hidden" value="{{ruleScope['scope${pIndex}${cIndex}${id}']}}" name="hdScope${pIndex}${cIndex}${id}" />
                            <tags-input ng-model="ruleScope['scope${pIndex}${cIndex}${id}']" 
-                           data-ng-disabled="isKongUMARSPluginAdded" name="scope${pIndex}${cIndex}${id}" id="scope${pIndex}${cIndex}${id}">
+                           name="scope${pIndex}${cIndex}${id}" id="scope${pIndex}${cIndex}${id}">
                             </tags-input>
                           </div>
                           <div class="col-md-12" id="dyScope${pIndex}${cIndex}${id + 1}">
@@ -126,7 +133,7 @@
                         <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${parent}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
                         <input type="hidden" value="{{cond['scopes${parent}${id + 1}']}}" name="hdScope${parent}${id + 1}" />
                         <div class="form-group has-feedback">
-                          <tags-input type="url" ng-model="cond['scopes${parent}${id + 1}']" name="scope${id + 1}" data-ng-disabled="isKongUMARSPluginAdded"
+                          <tags-input type="url" ng-model="cond['scopes${parent}${id + 1}']" name="scope${id + 1}"
                                       id="scopes{{$parent.$index}}{{$index}}"
                                       placeholder="Enter scopes">
                             <auto-complete source="loadScopes($query)"
@@ -283,7 +290,7 @@
                 str = str.replace(', {%s}', '');
                 cond.scope_expression = {rule: JSON.parse(str), data: angular.copy(sData)};
 
-                if (cond.ticketScopes.length > 0) {
+                if (cond.ticketScopes && cond.ticketScopes.length > 0) {
                   cond.ticketScopes = cond.ticketScopes.map(function (o) {
                     return o.text;
                   });
@@ -292,7 +299,6 @@
                 }
               });
             });
-
             model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
             return model;
           } catch (e) {
