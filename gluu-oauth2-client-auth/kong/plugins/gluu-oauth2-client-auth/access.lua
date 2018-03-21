@@ -267,6 +267,7 @@ local function validate_credentials(conf, req_token)
     cacheTokenData.token_type = tokenType
     cacheTokenData.associated_rpt = helper.ternary(tokenType == "UMA", req_token, nil)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)
+    cacheTokenData.permissions = {}
 
     -- set token data in cache for exp_sec(time in second)
     get_set_token_cache(req_token, cacheTokenData)
