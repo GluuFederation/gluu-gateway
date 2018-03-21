@@ -626,17 +626,6 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 assert.res_status(200, res)
 
-                -- 3rs time request, when cache exist
-                local res = assert(proxy_client:send {
-                    method = "GET",
-                    path = "/posts",
-                    headers = {
-                        ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer " .. req_access_token,
-                    }
-                })
-                assert.res_status(200, res)
-
                 -- Request with other path
                 local res = assert(proxy_client:send {
                     method = "GET",
@@ -652,6 +641,17 @@ describe("gluu-oauth2-client-auth plugin", function()
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 3rs time request with first path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
                         ["Authorization"] = "Bearer " .. req_access_token,

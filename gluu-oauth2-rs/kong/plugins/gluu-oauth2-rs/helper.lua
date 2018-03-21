@@ -85,7 +85,7 @@ end
 --- Check rpt token - /uma-rs-check-access
 -- @param conf: plugin global values
 -- @return response: response of /uma-rs-check-access
-function _M.get_rpt_with_check_access(conf, path, httpMethod, uma_data)
+function _M.get_rpt_with_check_access(conf, path, httpMethod, uma_data, rpt)
     -- ------------------GET Client Token-------------------------------
     local tokenRequest = {
         oxd_host = conf.oxd_host,
@@ -129,6 +129,10 @@ function _M.get_rpt_with_check_access(conf, path, httpMethod, uma_data)
         oxd_id = conf.oxd_id,
         ticket = umaAccessResponse.data.ticket
     }
+
+    if not _M.is_empty(rpt) then
+        umaGetRPTRequest.rpt = rpt
+    end
 
     -- check uma_data is comming then passed it to get_rpt
     if not _M.is_empty(uma_data) then
