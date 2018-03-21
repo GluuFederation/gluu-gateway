@@ -11,6 +11,7 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_mix_mode
     local oauth2_consumer_with_uma_mode_allow_unprotected_path
     local oauth2_consumer_with_mix_mode_allow_unprotected_path
+    local invalidToken
     local api
     local plugin
     local timeout = 6000
@@ -77,8 +78,8 @@ describe("gluu-oauth2-client-auth plugin", function()
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
                 name = "oauth2_credential_oauth_mode",
-                op_host = "https://gluu.local.org",
-                oxd_http_url = "http://localhost:8553"
+                op_host = op_server,
+                oxd_http_url = oxd_http
             },
             headers = {
                 ["Content-Type"] = "application/json"
@@ -95,8 +96,8 @@ describe("gluu-oauth2-client-auth plugin", function()
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
                 name = "oauth2_credential_mix_mode",
-                op_host = "https://gluu.local.org",
-                oxd_http_url = "http://localhost:8553",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
                 mix_mode = true
             },
             headers = {
@@ -114,8 +115,8 @@ describe("gluu-oauth2-client-auth plugin", function()
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
                 name = "oauth2_credential_uma_mode",
-                op_host = "https://gluu.local.org",
-                oxd_http_url = "http://localhost:8553",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
                 uma_mode = true
             },
             headers = {
@@ -133,8 +134,8 @@ describe("gluu-oauth2-client-auth plugin", function()
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
                 name = "oauth2_credential_uma_mode",
-                op_host = "https://gluu.local.org",
-                oxd_http_url = "http://localhost:8553",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
                 uma_mode = true,
                 allow_unprotected_path = true
             },
@@ -153,8 +154,8 @@ describe("gluu-oauth2-client-auth plugin", function()
             path = "/consumers/foo/gluu-oauth2-client-auth",
             body = {
                 name = "oauth2_credential_uma_mode",
-                op_host = "https://gluu.local.org",
-                oxd_http_url = "http://localhost:8553",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
                 mix_mode = true,
                 allow_unprotected_path = true
             },
@@ -166,6 +167,31 @@ describe("gluu-oauth2-client-auth plugin", function()
         for k, v in pairs(oauth2_consumer_with_mix_mode_allow_unprotected_path) do
             print(k, ": ", v)
         end
+
+        -- ------------------Extra client for invalid token ----------------
+        local setupClientRequest = {
+            oxd_host = oxd_http,
+            scope = { "openid", "uma_protection" },
+            op_host = op_server,
+            authorization_redirect_uri = "https://localhost",
+            grant_types = { "client_credentials" },
+            client_name = "extra_client_for_invalid_token"
+        };
+
+        local setupClientResponse = oxd.setup_client(setupClientRequest)
+
+        -- ------------------GET Client Token-------------------------------
+        local tokenRequest = {
+            oxd_host = oxd_http,
+            client_id = setupClientResponse.data.client_id,
+            client_secret = setupClientResponse.data.client_secret,
+            scope = { "openid", "uma_protection" },
+            op_host = op_server
+        };
+
+        local tokenRespose = oxd.get_client_token(tokenRequest)
+        invalidToken = tokenRespose.data.access_token
+        -- -----------------------------------------------------------------
     end)
 
     teardown(function()
@@ -206,7 +232,19 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer sdsfsdf-dsfdf-sdfsf4535-4545"
                     }
                 })
                 assert.res_status(401, res)
@@ -289,7 +327,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -361,7 +399,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -455,7 +493,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -585,7 +623,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -718,7 +756,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -903,7 +941,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
@@ -1027,7 +1065,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     path = "/posts",
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
-                        ["Authorization"] = "Bearer 39cd86e5-ca17-4936-a9b7-deac998431fb"
+                        ["Authorization"] = "Bearer " .. invalidToken
                     }
                 })
                 assert.res_status(401, res)
