@@ -29,8 +29,8 @@ used for client credential management and cryptographic validation.
 
 Gluu Gateway uses the following components and versions:
 
-1. Gluu server 3.1.2
-1. oxd-server 3.1.2
+1. Gluu server 3.1.3
+1. oxd-server 3.1.3
 1. Kong 0.11.x
 1. OpenJDK 8
 1. Python 2.x
