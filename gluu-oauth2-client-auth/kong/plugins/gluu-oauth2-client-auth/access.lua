@@ -238,6 +238,11 @@ local function validate_credentials(conf, req_token)
     -- Fetch oauth2-consumer using client_id
     credential = get_set_oauth2_consumer(tokenResponse.data.client_id)
 
+    if helper.is_empty(credential) then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Failed to fetch oauth2 credential for client id : " .. tokenResponse.data.client_id)
+        return { active = false }
+    end
+
     -- count expire time in second
     local exp_sec = (tokenResponse.data.exp - tokenResponse.data.iat)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Client_id: " .. tokenResponse.data.client_id .. ", req_token: " .. req_token .. ", Token exp: " .. tostring(exp_sec) .. " uma_mode: " .. tostring(credential.uma_mode))
