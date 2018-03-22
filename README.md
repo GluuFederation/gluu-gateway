@@ -63,7 +63,9 @@ Installation is a three part process:
 4. Add Node repo:
    # curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 ```
-<!---4. Add Kong repo:
+
+<!---
+5. Add Kong repo:
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 --->
 
