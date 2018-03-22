@@ -1,4 +1,4 @@
-# Gluu OAuth 2.0 Back channel authentication
+# Gluu OAuth 2.0 client credential authentication
 
 ## Terminology
 * `api`: your upstream service placed behind Kong, for which Kong proxies requests to.
@@ -71,6 +71,9 @@ $ curl -i -X GET \
 curl -X POST http://kong:8001/apis/{api}/plugins \
     --data "name=gluu-oauth2-client-auth" \
     --data "config.hide_credentials=true"
+    --data "config.op_server=<op_server.com>"
+    --data "config.oxd_http_url=<oxd_http_url>"
+    --data "config.oxd_id=<oxd_id>"
 ```
 
 *api*: The `id` or `name` of the API that this plugin configuration will target
@@ -81,6 +84,9 @@ Once applied, any user with a valid credential can access the service/API.
 |----------------|---------|-------------|
 | name | | The name of the plugin to use, in this case: gluu-oauth2-client-auth. |
 | config.hide_credentials(optional) | false | An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request. |
+| config.op_server | | OP server |
+| config.oxd_http_url | | OXD http extension URL |
+| config.oxd_id | | Used to introspect the token. You can use any other oxd_id. If you not pass then plugin creates new client itself. |
 
 ## Usage
 
@@ -119,21 +125,37 @@ curl -X POST \
   -d name=<name>
   -d op_host=<op_host>
   -d oxd_http_url=<oxd_http_url>
+  -d oauth_mode=<true|false>
+  -d uma_mode=<true|false>
+  -d mix_mode=<true|false>
+  -d oxd_id=<existing_oxd_id>
+  -d client_name=<client_name>
+  -d client_id=<existing_client_id>
+  -d client_secret=<existing_client_secret>
+  -d allow_unprotected_path=<true|false>
+  -d client_jwks_uri=<client_jwks_uri>
+  -d client_token_endpoint_auth_method=<client_token_endpoint_auth_method>
+  -d client_token_endpoint_auth_signing_alg=<client_token_endpoint_auth_signing_alg>
 
 RESPONSE :
 {
-  "created_at": 1517216795000,
   "id": "e1b1e30d-94fa-4764-835d-4fae0f8ff668",
-  "name": <name>,
-  "client_secret": <client_secret>,
-  "client_jwks_uri": "",
-  "client_token_endpoint_auth_method": "",
-  "oxd_id": <oxd_id>,
-  "op_host": <op_host>,
-  "client_token_endpoint_auth_signing_alg": "",
-  "client_id": <client_id>,
-  "oxd_http_url": <oxd_http_url>,
+  "created_at": 1517216795000,
   "consumer_id": "81ae39fa-d08e-4978-a6af-be0127b9fb99"
+  "name": <name>,
+  "op_host": <op_host>
+  "oxd_http_url": <oxd_http_url>
+  "oauth_mode": <true|false>
+  "uma_mode": <true|false>
+  "mix_mode": <true|false>
+  "oxd_id": <oxd_id>
+  "client_name": <client_name>
+  "client_id": <client_id>
+  "client_secret": <client_secret>
+  "allow_unprotected_path": <true|false>
+  "client_jwks_uri": <client_jwks_uri>
+  "client_token_endpoint_auth_method": <client_token_endpoint_auth_method>
+  "client_token_endpoint_auth_signing_alg": <client_token_endpoint_auth_signing_alg>
 }
 ```
 
@@ -142,20 +164,21 @@ RESPONSE :
 | name | | The name to associate to the credential. In OAuth 2.0 this would be the application name. |
 | op_host | | Open Id connect provider. Example: https://gluu.example.org |
 | oxd_http_url | | OXD https extenstion url. |
+| oauth_mode(semi-optional) | | If true, kong act as OAuth client only. |
+| uma_mode(semi-optional) | | This indicates your client is a valid UMA client, and obtain and send an RPT as the access token. |
+| mix_mode(semi-optional) | | If Yes, then the gluu-oauth2 plugin will try to obtain an UMA RPT token if the RS returns a 401/Unauthorized. |
+| oxd_id(optional) | | If you have existing oxd entry then enter oxd_id(also client id, client secret and client id of oxd id). If you have client created from OP server then skip it and enter only client_id and client_secret. |
 | client_name(optional) | kong_oauth2_bc_client | An optional string value for client name. |
+| client_id(optional) | | You can use existing client id. |
+| client_secret(optional) | | You can use existing client secret. |
+| allow_unprotected_path(false) | | It is used to allow or deny unprotected path by UMA-RS. |
 | client_jwks_uri(optional) | | An optional string value for client jwks uri. |
 | client_token_endpoint_auth_method(optional) | | An optional string value for client token endpoint auth method. |
 | client_token_endpoint_auth_signing_alg(optional) | | An optional string value for client token endpoint auth signing alg. |
 
 ### Verify that your API is protected by gluu-oauth2-client-auth
 
-You need to pass bearer token. which is Base64 encoded combination of client_id and access_token. client_id is used to identify the consumer credential and access_token is used to authenticate the request.
-
-Below is node js sample to make base64 encoded token.
-
-```Node JS
-new Buffer('client_id' + ':' + 'access_token').toString('base64');
-```
+You need to pass token as per your authentication mode(oauth_mode, uma_mode and mix_mode). In oauth_mode and mix_mode, you need to pass oauth2 access token and in uma_mode, you need to RPT token.
 
 ```
 $ curl -X GET \
@@ -167,7 +190,7 @@ $ curl -X GET \
 If your toke is not valid or time expired then you failer message.
 
 ```
-{"message":"Invalid authentication credentials - Token is not active"}
+{"message":"Unauthorized"}
 ```
 
 ### Verify that your API can be accessed with valid basic token
