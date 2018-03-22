@@ -59,8 +59,8 @@ Installation is a three part process:
 3. Add Postgresql-10 repo:
    # echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
    # wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-<!---
-4. Add Kong repo:
+
+<!---4. Add Kong repo:
    # echo "deb https://kong.bintray.com/kong-community-edition-deb trusty main" > /etc/apt/sources.list.d/kong.list
 --->
 4. Add Node repo:
