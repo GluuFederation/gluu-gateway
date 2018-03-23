@@ -44,16 +44,20 @@ return {
         oxd_host = { required = true, type = "string" },
         uma_server_host = { required = true, type = "string", func = uma_server_host_validator },
         protection_document = { required = true, type = "string" },
-        unprotected_path_cache_time_sec = { default = 3600, type = "number", func = path_time_validator },
         client_id = { type = "string" },
         client_secret = { type = "string" },
         oxd_id = { type = "string" }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
-        if not helper.is_empty(plugin_t.oxd_id) then
+        ngx.log(ngx.DEBUG, "is updating" .. tostring(is_updating))
+        if not helper.is_empty(plugin_t.oxd_id) and not is_updating then
             return true
         end
 
-        return helper.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
+        if is_updating then
+            return helper.update_uma_rs(plugin_t), "Failed to update UMA RS on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
+        else
+            return helper.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
+        end
     end
 }
