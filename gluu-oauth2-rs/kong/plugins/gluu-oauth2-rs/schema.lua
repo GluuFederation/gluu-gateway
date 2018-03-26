@@ -24,20 +24,6 @@ local function uma_server_host_validator(given_value, given_config)
     return true
 end
 
---- Check unprotected_path_cache_time_sec is must be >= 0
--- @param given_value: Value of uma_server_host
--- @param given_config: whole config values including uma_server_host
-local function path_time_validator(given_value, given_config)
-    ngx.log(ngx.DEBUG, "path_time_validator: given_value:" .. given_value)
-
-    if given_value < 0 then
-        ngx.log(ngx.ERR, "Invalid unprotected_path_time_sec. It must be >= 0.")
-        return false
-    end
-
-    return true
-end
-
 return {
     no_consumer = true,
     fields = {
