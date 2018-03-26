@@ -1188,5 +1188,109 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
         end)
+
+        -- After update resources
+        describe("After update resources, When oauth2-consumer is in mix_mode = true", function()
+            setup(function()
+                local config = gluu_oauth2_rs_plugin.config
+                config.protection_document = "[{\"path\":\"/todos\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"rule\":{\"or\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"rule\":{\"and\":[{\"var\":0}]},\"data\":[\"https://jsonplaceholder.typicode.com\"]}}]}]"
+                local res = assert(admin_client:send {
+                    method = "PATCH",
+                    path = "/plugins/" .. gluu_oauth2_rs_plugin.id,
+                    body = {
+                        name = "gluu-oauth2-rs",
+                        config = config,
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                assert.response(res).has.status(200)
+                local body = assert.response(res).has.jsonbody()
+                assert.is_truthy(string.find(body.config.protection_document, "todos"))
+            end)
+
+            it("200 status when token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_mix_mode.oxd_http_url,
+                    client_id = oauth2_consumer_with_mix_mode.client_id,
+                    client_secret = oauth2_consumer_with_mix_mode.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_mix_mode.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Request with other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time Request with other path
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 3rs time request with first path, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Request with unregister path - 401/Unauthorized allow_unprotected_path = false
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(401, res)
+                assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
+            end)
+
+        end)
     end)
 end)

@@ -10,10 +10,11 @@
         $scope.globalInfo = $localStorage.credentials.user;
         $scope.api = _api.data
         $scope.plugins = _plugins.data.data
+        $scope.rsPlugin = null;
         $scope.addNewCondition = addNewCondition
         $scope.addNewPath = addNewPath
         $scope.showResourceJSON = showResourceJSON
-        $scope.addPlugin = addPlugin
+        $scope.managePlugin = managePlugin
         $scope.loadMethods = loadMethods
         $scope.loadScopes = loadScopes
         $scope.addGroup = addGroup
@@ -23,6 +24,8 @@
           api_id: $scope.api.id,
           name: 'gluu-oauth2-rs',
           config: {
+            oxd_host: $scope.globalInfo.oxdWeb,
+            uma_server_host: $scope.globalInfo.opHost,
             protection_document: [{
               path: '',
               conditions: [
@@ -40,6 +43,7 @@
         $scope.plugins.forEach(function (o) {
           if (o.name == "gluu-oauth2-rs") {
             $scope.pluginConfig = o.config;
+            $scope.rsPlugin = o;
             $scope.isKongUMARSPluginAdded = true;
             $scope.ruleScope = {};
             $scope.modelPlugin.config.protection_document = JSON.parse(o.config.protection_document);
@@ -56,10 +60,10 @@
                     op = 'not'
                   }
 
-                  _repeat(pRule[op], op, 1);
+                  _repeat(pRule[op], op, 0);
 
                   function _repeat(rule, op, id) {
-                    $(`input[name=hdScopeCount${pIndex}${cIndex}]`).val(id);
+                    $(`input[name=hdScopeCount${pIndex}${cIndex}]`).val(id + 1);
                     rule.forEach(function (oRule, oRuleIndex) {
                       if (oRule['var'] == 0 || oRule['var']) {
                         if (!$scope.ruleScope[`scope${pIndex}${cIndex}${id}`]) {
@@ -72,9 +76,9 @@
                       if (rule.length - 1 == oRuleIndex) {
                         // render template
                         var htmlRender = `
-                          <input type="radio" value="or" name="condition${pIndex}${cIndex}${id}" ${op == "or" ? "checked": ""}>or |
-                          <input type="radio" value="and" name="condition${pIndex}${cIndex}${id}" ${op == "and" ? "checked": ""}>and |
-                          <input type="radio" value="not" name="condition${pIndex}${cIndex}${id}" ${op == "not" ? "checked": ""}>not
+                          <input type="radio" value="or" name="condition${pIndex}${cIndex}${id}" ${op == "or" ? "checked" : ""}>or |
+                          <input type="radio" value="and" name="condition${pIndex}${cIndex}${id}" ${op == "and" ? "checked" : ""}>and |
+                          <input type="radio" value="not" name="condition${pIndex}${cIndex}${id}" ${op == "not" ? "checked" : ""}>not
                           <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${pIndex}${cIndex}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
                           <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${pIndex}${cIndex}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
                           <div class="form-group has-feedback">
@@ -153,13 +157,46 @@
           $compile(angular.element("#dyScope" + parent + id).contents())($scope)
         }
 
-        function addNewCondition(pathIndex) {
-          $scope.modelPlugin.config.protection_document[pathIndex].conditions.push(
+        function addNewCondition(pIndex) {
+          $scope.modelPlugin.config.protection_document[pIndex].conditions.push(
             {
               httpMethods: [{text: 'GET'}],
               scope_expression: [],
               ticketScopes: []
             });
+
+          if ($scope.isKongUMARSPluginAdded) {
+            var parent = pIndex + '' + ($scope.modelPlugin.config.protection_document[pIndex].conditions.length - 1);
+            var id = 0;
+            setTimeout(function () {
+              $("#dyScope" + parent + '' + id).append(`
+                        <input type="radio" value="or" name="condition${parent}0">or |
+                            <input type="radio" value="and" name="condition${parent}0">and |
+                            <input type="radio" value="not" name="condition${parent}0">not
+                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                    data-ng-click="addGroup(${parent},1)"><i class="mdi mdi-plus"></i>
+                              Add Group
+                            </button>
+                            <input type="hidden" value="{{cond['scopes' + ${parent} + '0']}}"
+                                   name="hdScope${parent}0"/>
+                            <div class="form-group has-feedback">
+                              <tags-input ng-model="cond['scopes' + ${parent} + '0']"
+                                          name="scope${parent}0"
+                                          id="scopes${parent}"
+                                          placeholder="Enter scopes">
+                                <auto-complete source="loadScopes($query)"
+                                               min-length="0"
+                                               template="my-custom-template"
+                                               debounce-delay="0"></auto-complete>
+                              </tags-input>
+                              <script type="text/ng-template" id="my-custom-template">
+                                <div>
+                                  <span>{{data.name}}</span>
+                                </div>
+                              </script>`);
+              $compile(angular.element("#dyScope" + parent + id).contents())($scope)
+            });
+          }
         }
 
         function showResourceJSON() {
@@ -197,6 +234,47 @@
               }
             ]
           });
+
+          if ($scope.isKongUMARSPluginAdded) {
+            var parent = $scope.modelPlugin.config.protection_document.length - 1 + '0';
+            var id = 0;
+            setTimeout(function () {
+              $("#dyScope" + parent + '' + id).append(`
+                        <input type="radio" value="or" name="condition${parent}0">or |
+                            <input type="radio" value="and" name="condition${parent}0">and |
+                            <input type="radio" value="not" name="condition${parent}0">not
+                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                    data-ng-click="addGroup(${parent},1)"><i class="mdi mdi-plus"></i>
+                              Add Group
+                            </button>
+                            <input type="hidden" value="{{cond['scopes' + ${parent} + '0']}}"
+                                   name="hdScope${parent}0"/>
+                            <div class="form-group has-feedback">
+                              <tags-input ng-model="cond['scopes' + ${parent} + '0']"
+                                          name="scope${parent}0"
+                                          id="scopes${parent}"
+                                          placeholder="Enter scopes">
+                                <auto-complete source="loadScopes($query)"
+                                               min-length="0"
+                                               template="my-custom-template"
+                                               debounce-delay="0"></auto-complete>
+                              </tags-input>
+                              <script type="text/ng-template" id="my-custom-template">
+                                <div>
+                                  <span>{{data.name}}</span>
+                                </div>
+                              </script>`);
+              $compile(angular.element("#dyScope" + parent + id).contents())($scope)
+            });
+          }
+        }
+
+        function managePlugin(isValid) {
+          if ($scope.isKongUMARSPluginAdded) {
+            updatePlugin(isValid);
+          } else {
+            addPlugin(isValid);
+          }
         }
 
         function addPlugin(isValid) {
@@ -245,6 +323,52 @@
 
         }
 
+        function updatePlugin(isValid) {
+          if (!isValid) {
+            MessageService.error("Invalid UMA Resources");
+            return false;
+          }
+          var model = makeJSON($scope.modelPlugin);
+
+          if (!model) {
+            return false;
+          }
+          var doc = (JSON.stringify(model.config.protection_document));
+          model.config = angular.copy($scope.rsPlugin.config);
+          model.config.protection_document = doc;
+          PluginHelperService.updatePlugin($scope.rsPlugin.id,
+            model,
+            function success(res) {
+              console.log("update plugin", res)
+              $scope.busy = false;
+              MessageService.success('Plugin updated successfully!')
+              $state.go('apis') // return to plugins page if specified
+            }, function (err) {
+              $scope.busy = false;
+              $log.error("update plugin", err)
+              var errors = {}
+
+              if (err.data.customMessage) {
+                Object.keys(err.data.customMessage).forEach(function (key) {
+                  errors[key.replace('config.', '')] = err.data.customMessage[key];
+                  MessageService.error(key + " : " + err.data.customMessage[key]);
+                })
+              } else if (err.data.body) {
+                Object.keys(err.data.body).forEach(function (key) {
+                  errors[key] = err.data.body[key];
+                  MessageService.error(key + " : " + err.data.body[key]);
+                })
+              } else {
+                MessageService.error("Invalid UMA Resources");
+              }
+              $scope.errors = errors
+            }, function evt(event) {
+              // Only used for ssl plugin certs upload
+              var progressPercentage = parseInt(100.0 * event.loaded / event.total);
+              $log.debug('progress: ' + progressPercentage + '% ' + event.config.data.file.name);
+            });
+        }
+
         function loadMethods(query) {
           var arr = ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'];
           arr = arr.filter(function (o) {
@@ -267,7 +391,7 @@
                 dIndex = 0;
                 sData = [];
                 var str = '{%s}';
-                for (var i = 1; i <= parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
+                for (var i = 0; i < parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
                   var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val();
                   var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
                     sData.push(o.text);

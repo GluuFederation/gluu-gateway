@@ -82,6 +82,48 @@ function _M.register(conf)
     -- -----------------------------------------------------------------
 end
 
+--- Register OP client using oxd setup_client
+-- @param conf: plugin global values
+-- @return response: response of setup_client
+function _M.update_uma_rs(conf)
+    ngx.log(ngx.DEBUG, PLUGINNAME .. ": Updating UMA RS ... ")
+
+    -- ------------------GET Client Token-------------------------------
+    local tokenRequest = {
+        oxd_host = conf.oxd_host,
+        client_id = conf.client_id,
+        client_secret = conf.client_secret,
+        scope = { "openid", "uma_protection" },
+        op_host = conf.uma_server_host,
+        authorization_redirect_uri = "https://client.example.com/cb",
+        grant_types = { "authorization_code" }
+    };
+    local token = oxd.get_client_token(tokenRequest)
+
+    if _M.is_empty(token.status) or token.status == "error" then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Error in get_client_token")
+        return false
+    end
+    -- -----------------------------------------------------------------
+
+    -- --------------- UMA-RS Protect ----------------------------------
+    local umaRSRequest = {
+        oxd_host = conf.oxd_host,
+        oxd_id = conf.oxd_id,
+        resources = json:decode(conf.protection_document),
+        overwrite = true
+    }
+
+    local response = oxd.uma_rs_protect(umaRSRequest, token.data.access_token)
+    if _M.is_empty(response.status) or response.status == "error" then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": Error in uma_rs_protect")
+        return false
+    end
+
+    return true
+    -- -----------------------------------------------------------------
+end
+
 --- Check rpt token - /uma-rs-check-access
 -- @param conf: plugin global values
 -- @return response: response of /uma-rs-check-access
@@ -114,7 +156,7 @@ function _M.get_rpt_with_check_access(conf, path, httpMethod, uma_data, rpt)
     local umaAccessResponse = oxd.uma_rs_check_access(umaAccessRequest, token.data.access_token)
 
     if _M.is_empty(umaAccessResponse.status) or umaAccessResponse.status == "error" then
-        if _M.is_empty(umaAccessResponse.data) or  umaAccessResponse.data.error == "invalid_request" then
+        if _M.is_empty(umaAccessResponse.data) or umaAccessResponse.data.error == "invalid_request" then
             ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected")
             return umaAccessResponse
         end
