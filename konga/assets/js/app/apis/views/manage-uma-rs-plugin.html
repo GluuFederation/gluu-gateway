@@ -54,11 +54,17 @@
                 </tr>
                 <tr>
                   <th>Client Id</th>
-                  <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href data-ng-click="isShowClientId = !isShowClientId" title="{{isShowClientId ? 'Hide': 'Show'}}"><i class="mdi mdi-eye"></i></a> </td>
+                  <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href
+                                                                                                 data-ng-click="isShowClientId = !isShowClientId"
+                                                                                                 title="{{isShowClientId ? 'Hide': 'Show'}}"><i
+                    class="mdi mdi-eye"></i></a></td>
                 </tr>
                 <tr>
                   <th>Client Secret</th>
-                  <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href data-ng-click="isShowClientSecret = !isShowClientSecret" title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i class="mdi mdi-eye"></i></a></td>
+                  <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href
+                                                                                                         data-ng-click="isShowClientSecret = !isShowClientSecret"
+                                                                                                         title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
+                    class="mdi mdi-eye"></i></a></td>
                 </tr>
                 </thead>
               </table>
@@ -116,31 +122,23 @@
                           </button>
                         </div>
                       </div>
-
-                      <!-- edit mode view start -->
-                      <div class="row" data-ng-if="isKongUMARSPluginAdded">
+                      <div class="row">
                         <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
-                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
-
+                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isKongUMARSPluginAdded">
                         </div>
-                      </div>
-                      <!-- edit mode view end -->
-
-                      <div class="row" data-ng-if="!isKongUMARSPluginAdded">
-                        <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
-                        <div class="col-md-12">
-                          <input type="radio" value="or" name="condition{{pIndex}}{{$index}}1">or |
-                          <input type="radio" value="and" name="condition{{pIndex}}{{$index}}1">and |
-                          <input type="radio" value="not" name="condition{{pIndex}}{{$index}}1">not
+                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isKongUMARSPluginAdded">
+                          <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0">or |
+                          <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
+                          <input type="radio" value="not" name="condition{{pIndex}}{{$index}}0">not
                           <button type="button" class="btn btn-xs btn-success" data-add="rule"
                                   data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
                             Add Group
                           </button>
-                          <input type="hidden" value="{{cond['scopes' + pIndex + $index + '1']}}"
-                                 name="hdScope{{pIndex}}{{$index}}1"/>
+                          <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
+                                 name="hdScope{{pIndex}}{{$index}}0"/>
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond['scopes' + pIndex + $index + '1']"
-                                        name="scope{{pIndex}}{{$index}}1" data-ng-disabled="isKongUMARSPluginAdded"
+                            <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                                        name="scope{{pIndex}}{{$index}}0"
                                         id="scopes{{pIndex}}{{$index}}"
                                         placeholder="Enter scopes">
                               <auto-complete source="loadScopes($query)"
@@ -189,7 +187,7 @@
           </div>
           <div class="row">
             <hr/>
-            <button type="submit" class="btn btn-primary" ng-click="addPlugin(PluginForm.$valid)">
+            <button type="submit" class="btn btn-primary" ng-click="managePlugin(PluginForm.$valid)">
               <i class="mdi mdi-check"></i> {{isKongUMARSPluginAdded ? "Update" : "Add" }}
             </button>
           </div>
