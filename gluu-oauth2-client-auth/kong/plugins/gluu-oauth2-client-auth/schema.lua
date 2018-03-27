@@ -1,3 +1,4 @@
+local utils = require "kong.tools.utils"
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 
 --- Check op_server_validator is must https and not empty
@@ -14,13 +15,24 @@ local function op_server_validator(given_value, given_config)
     return true
 end
 
+--- Check user valid UUID
+-- @param anonymous: anonymous consumer id
+local function check_user(anonymous)
+    if anonymous == "" or utils.is_valid_uuid(anonymous) then
+        return true
+    end
+
+    return false, "the anonymous user must be empty or a valid uuid"
+end
+
 return {
     no_consumer = true,
     fields = {
         hide_credentials = { type = "boolean", default = false },
         oxd_id = { type = "string" },
         op_server = { required = true, type = "string", func = op_server_validator },
-        oxd_http_url = { required = true, type = "string" }
+        oxd_http_url = { required = true, type = "string" },
+        anonymous = {type = "string", default = "", func = check_user}
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth oxd_id: " .. tostring(helper.is_empty(plugin_t.oxd_id)))
