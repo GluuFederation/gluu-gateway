@@ -913,6 +913,11 @@
                 type: 'text',
                 value: '',
                 help: 'Used to introspect the token. This above is oxd_id from Konga config. You can also enter any other oxd_id. If you leave it as blank then plugin creates new client itself.'
+              },
+              "anonymous": {
+                type: 'text',
+                value: '',
+                help: "An optional string (consumer uuid) value to use as an `anonymous` consumer if authentication fails. If empty (default), the request will fail with an authentication failure 4xx. Please note that this value must refer to the Consumer id attribute which is internal to Kong, and not its custom_id."
               }
             }
           };
