@@ -4,7 +4,7 @@ local auth_helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 local oxd = require "oxdweb"
 
 describe("Plugin: gluu-oauth2-client-auth (API)", function()
-    local consumer
+    local consumer, anonymous_user
     local admin_client
     local op_server = "https://gluu.local.org"
     local oxd_http_url = "http://localhost:8553"
@@ -13,12 +13,26 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
         helpers.run_migrations()
 
         assert(helpers.dao.apis:insert {
-            name = "json",
+            name = "api1",
             upstream_url = "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" },
         })
+        assert(helpers.dao.apis:insert {
+            name = "api2",
+            upstream_url = "https://jsonplaceholder.typicode.com",
+            hosts = { "jsonplaceholder.typicode.com" },
+        })
+        assert(helpers.dao.apis:insert {
+            name = "api3",
+            upstream_url = "https://jsonplaceholder.typicode.com",
+            hosts = { "jsonplaceholder.typicode.com" },
+        })
+
         consumer = assert(helpers.dao.consumers:insert {
             username = "foo"
+        })
+        anonymous_user = assert(helpers.dao.consumers:insert {
+            username = "no-body"
         })
         assert(helpers.start_kong())
         admin_client = helpers.admin_client()
@@ -33,7 +47,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
         it("Fails with invalid values", function()
             local res = assert(admin_client:send {
                 method = "POST",
-                path = "/apis/json/plugins",
+                path = "/apis/api1/plugins",
                 body = {
                     name = "gluu-oauth2-client-auth",
                     config = {
@@ -54,7 +68,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
             local oxd_id = "fb76fec7-bcc8-462a-8462-cc0f62236238"
             local res = assert(admin_client:send {
                 method = "POST",
-                path = "/apis/json/plugins",
+                path = "/apis/api1/plugins",
                 body = {
                     name = "gluu-oauth2-client-auth",
                     config = {
@@ -71,13 +85,38 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
             local body = assert.response(res).has.jsonbody()
             assert.equal(op_server, body.config.op_server)
             assert.equal(oxd_id, body.config.oxd_id)
-            helpers.dao:truncate_table("plugins")
+            assert.equal("", body.config.anonymous)
+        end)
+
+        it("Succeeds with valid value and anonymous consumer", function()
+            local oxd_id = "fb76fec7-bcc8-462a-8462-cc0f62236238"
+            local res = assert(admin_client:send {
+                method = "POST",
+                path = "/apis/api2/plugins",
+                body = {
+                    name = "gluu-oauth2-client-auth",
+                    config = {
+                        op_server = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oxd_id = oxd_id,
+                        anonymous = anonymous_user.id
+                    },
+                },
+                headers = {
+                    ["Content-Type"] = "application/json"
+                }
+            })
+            assert.response(res).has.status(201)
+            local body = assert.response(res).has.jsonbody()
+            assert.equal(op_server, body.config.op_server)
+            assert.equal(oxd_id, body.config.oxd_id)
+            assert.equal(anonymous_user.id, body.config.anonymous)
         end)
 
         it("Check global oxd client is created or not", function()
             local res = assert(admin_client:send {
                 method = "POST",
-                path = "/apis/json/plugins",
+                path = "/apis/api3/plugins",
                 body = {
                     name = "gluu-oauth2-client-auth",
                     config = {
@@ -234,14 +273,14 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                     op_host = op_server,
                     authorization_redirect_uri = "https://localhost",
                     redirect_uris = { "https://localhost" },
-                    scope = { "clientinfo", "uma_protection"},
+                    scope = { "clientinfo", "uma_protection" },
                     grant_types = { "client_credentials" },
                     client_name = "Test_existing_client",
                 };
 
                 local setupClientResponse = oxd.setup_client(setupClientRequest)
                 if setupClientResponse.status == "error" then
-                    print ("Failed to create client")
+                    print("Failed to create client")
                 end
 
                 local res = assert(admin_client:send {

@@ -8,9 +8,9 @@ local ngx_re_gmatch = ngx.re.gmatch
 local ngx_set_header = ngx.req.set_header
 local PLUGINNAME = "gluu-oauth2-client-auth"
 local RS_PLUGINNAME = "gluu-oauth2-rs"
-local OAUTH_CLIENT_ID = "OAUTH_CLIENT_ID"
-local OAUTH_EXPIRATION = "OAUTH_EXPIRATION"
-local OAUTH_SCOPES = "OAUTH_SCOPES"
+local OAUTH_CLIENT_ID = "x-oauth-client-id"
+local OAUTH_EXPIRATION = "x-oauth-expiration"
+local OAUTH_SCOPES = "x-authenticated-scope"
 
 local _M = {}
 
@@ -142,7 +142,7 @@ local function set_consumer_in_header(consumer, credential)
     ngx.ctx.authenticated_consumer = consumer
     if credential then
         ngx.ctx.authenticated_credential = credential
-        ngx_set_header(constants.HEADERS.ANONYMOUS, nil) -- in case of auth plugins concatenation
+        ngx_set_header(constants.HEADERS.ANONYMOUS, nil)
     else
         ngx_set_header(constants.HEADERS.ANONYMOUS, true)
     end
@@ -199,9 +199,9 @@ local function validate_credentials(conf, req_token)
 
         -- If (tokenType == OAuth)(oauth_mode == true) then set header
         if cacheToken.token_type == "OAuth" and credential.oauth_mode == true then
-            ngx.header[OAUTH_CLIENT_ID] = cacheToken.client_id
-            ngx.header[OAUTH_SCOPES] = cacheToken.scopes
-            ngx.header[OAUTH_EXPIRATION] = cacheToken.exp
+            ngx_set_header(OAUTH_CLIENT_ID, cacheToken.client_id)
+            ngx_set_header(OAUTH_SCOPES, table.concat(cacheToken.scopes, ","))
+            ngx_set_header(OAUTH_EXPIRATION, cacheToken.exp)
         end
 
         return cacheToken
@@ -257,9 +257,9 @@ local function validate_credentials(conf, req_token)
 
     -- If (tokenType == OAuth)(oauth_mode == true) then set header
     if tokenType == "OAuth" and credential.oauth_mode == true then
-        ngx.header[OAUTH_CLIENT_ID] = tokenResponse.data.client_id
-        ngx.header[OAUTH_SCOPES] = cjson.encode(tokenResponse.data.scopes)
-        ngx.header[OAUTH_EXPIRATION] = tokenResponse.data.exp
+        ngx_set_header(OAUTH_CLIENT_ID, tokenResponse.data.client_id)
+        ngx_set_header(OAUTH_SCOPES, table.concat(tokenResponse.data.scopes, ","))
+        ngx_set_header(OAUTH_EXPIRATION, tokenResponse.data.exp)
     end
 
     -- Invalidate(clear) the cache if exist
@@ -268,7 +268,7 @@ local function validate_credentials(conf, req_token)
     -- set remaining data for caching
     local cacheTokenData = tokenResponse.data
     cacheTokenData.exp_sec = exp_sec
-    cacheTokenData.scopes = cjson.encode(tokenResponse.data.scopes)
+    cacheTokenData.scopes = tokenResponse.data.scopes
     cacheTokenData.token_type = tokenType
     cacheTokenData.associated_rpt = helper.ternary(tokenType == "UMA", req_token, nil)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)
@@ -312,23 +312,35 @@ function _M.execute_access(config)
     -- Check token
     local responseValidCredential = validate_credentials(config, token)
 
-    if not responseValidCredential.active then
+    if responseValidCredential.active then
+        -- Retrieve consumer
+        local consumer_cache_key = singletons.dao.consumers:cache_key(responseValidCredential.credential.consumer_id)
+        local consumer, err = singletons.cache:get(consumer_cache_key, nil,
+            get_consumer,
+            responseValidCredential.credential.consumer_id)
+        if err then
+            return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
+        end
+
+        set_consumer_in_header(consumer, responseValidCredential.credential)
+
+        return -- ACCESS GRANTED
+    else
         ngx.log(ngx.DEBUG, "Unauthorized")
-        return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        if config.anonymous ~= "" then
+            -- get anonymous user
+            local consumer_cache_key = singletons.dao.consumers:cache_key(config.anonymous)
+            local consumer, err = singletons.cache:get(consumer_cache_key, nil,
+                get_consumer,
+                config.anonymous, true)
+            if err then
+                return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
+            end
+            set_consumer_in_header(consumer, nil)
+        else
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+        end
     end
-
-    -- Retrieve consumer
-    local consumer_cache_key = singletons.dao.consumers:cache_key(responseValidCredential.credential.consumer_id)
-    local consumer, err = singletons.cache:get(consumer_cache_key, nil,
-        get_consumer,
-        responseValidCredential.credential.consumer_id)
-    if err then
-        return responses.send_HTTP_INTERNAL_SERVER_ERROR(err)
-    end
-
-    set_consumer_in_header(consumer, responseValidCredential.credential)
-
-    return -- ACCESS GRANTED
 end
 
 return _M

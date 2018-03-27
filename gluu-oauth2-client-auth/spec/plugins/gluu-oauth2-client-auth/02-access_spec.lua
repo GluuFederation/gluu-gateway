@@ -12,21 +12,28 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_uma_mode_allow_unprotected_path
     local oauth2_consumer_with_mix_mode_allow_unprotected_path
     local invalidToken
-    local api
-    local plugin
+    local api, api2
+    local plugin, plugin_anonymous
     local timeout = 6000
     local op_server = "https://gluu.local.org"
     local oxd_http = "http://localhost:8553"
-    local OAUTH_CLIENT_ID = "OAUTH-CLIENT-ID"
-    local OAUTH_EXPIRATION = "OAUTH-EXPIRATION"
-    local OAUTH_SCOPES = "OAUTH_SCOPES"
+    local OAUTH_CLIENT_ID = "x-oauth-client-id"
+    local OAUTH_EXPIRATION = "x-oauth-expiration"
+    local OAUTH_SCOPES = "x-authenticated-scope"
+    local consumer, anonymous_consumer
 
     setup(function()
         helpers.run_migrations()
         api = assert(helpers.dao.apis:insert {
             name = "json",
-            upstream_url = "https://jsonplaceholder.typicode.com",
+            upstream_url = "http://localhost:4040/api", --local API for check Upstream Headers -- You can use live example like "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" }
+        })
+
+        api2 = assert(helpers.dao.apis:insert {
+            name = "api2",
+            upstream_url = "http://localhost:4040/api",
+            hosts = { "api2.typicode.com" }
         })
 
         print("----------- Api created ----------- ")
@@ -35,8 +42,13 @@ describe("gluu-oauth2-client-auth plugin", function()
         end
 
         print("\n----------- Add consumer ----------- ")
-        local consumer = assert(helpers.dao.consumers:insert {
-            username = "foo"
+        consumer = assert(helpers.dao.consumers:insert {
+            username = "foo",
+            custom_id = "cust_foo"
+        })
+        anonymous_consumer = assert(helpers.dao.consumers:insert {
+            username = "no-body",
+            custom_id = "cust_no_body"
         })
 
         -- start Kong with your testing Kong configuration (defined in "spec.helpers")
@@ -62,8 +74,34 @@ describe("gluu-oauth2-client-auth plugin", function()
         })
         assert.response(res).has.status(201)
         plugin = assert.response(res).has.jsonbody()
-
         for k, v in pairs(plugin) do
+            print(k, ": ", v)
+            if k == 'config' then
+                for sk, sv in pairs(v) do
+                    print(sk, ": ", sv)
+                end
+            end
+        end
+
+        print("\n----------- Plugin configuration with anonymous consumer ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/apis/api2/plugins",
+            body = {
+                name = "gluu-oauth2-client-auth",
+                config = {
+                    op_server = op_server,
+                    oxd_http_url = oxd_http,
+                    anonymous = anonymous_consumer.id
+                },
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        assert.response(res).has.status(201)
+        plugin_anonymous = assert.response(res).has.jsonbody()
+        for k, v in pairs(plugin_anonymous) do
             print(k, ": ", v)
             if k == 'config' then
                 for sk, sv in pairs(v) do
@@ -86,9 +124,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             }
         })
         oauth2_consumer_oauth_mode = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_oauth_mode) do
-            print(k, ": ", v)
-        end
+        auth_helper.print_table(oauth2_consumer_oauth_mode)
 
         print("\n----------- OAuth2 consumer credential with mix_mode = true ----------- ")
         local res = assert(admin_client:send {
@@ -105,9 +141,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             }
         })
         oauth2_consumer_with_mix_mode = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_with_mix_mode) do
-            print(k, ": ", v)
-        end
+        auth_helper.print_table(oauth2_consumer_with_mix_mode)
 
         print("\n----------- OAuth2 consumer credential with uma_mode = true ----------- ")
         local res = assert(admin_client:send {
@@ -124,9 +158,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             }
         })
         oauth2_consumer_with_uma_mode = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_with_uma_mode) do
-            print(k, ": ", v)
-        end
+        auth_helper.print_table(oauth2_consumer_with_uma_mode)
 
         print("\n----------- OAuth2 consumer credential with uma_mode = true, allow_unprotected_path = true ----------- ")
         local res = assert(admin_client:send {
@@ -144,9 +176,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             }
         })
         oauth2_consumer_with_uma_mode_allow_unprotected_path = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_with_uma_mode_allow_unprotected_path) do
-            print(k, ": ", v)
-        end
+        auth_helper.print_table(oauth2_consumer_with_uma_mode_allow_unprotected_path)
 
         print("\n----------- OAuth2 consumer credential with mix_mode = true, allow_unprotected_path = true ----------- ")
         local res = assert(admin_client:send {
@@ -164,9 +194,7 @@ describe("gluu-oauth2-client-auth plugin", function()
             }
         })
         oauth2_consumer_with_mix_mode_allow_unprotected_path = cjson.decode(assert.res_status(201, res))
-        for k, v in pairs(oauth2_consumer_with_mix_mode_allow_unprotected_path) do
-            print(k, ": ", v)
-        end
+        auth_helper.print_table(oauth2_consumer_with_mix_mode_allow_unprotected_path)
 
         -- ------------------Extra client for invalid token ----------------
         local setupClientRequest = {
@@ -273,9 +301,6 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.res_status(200, res)
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_CLIENT_ID]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_EXPIRATION]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_SCOPES]))
 
                 -- 2nd time request
                 local res = assert(proxy_client:send {
@@ -286,11 +311,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. req_access_token,
                     }
                 })
-
                 assert.res_status(200, res)
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_CLIENT_ID]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_EXPIRATION]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_SCOPES]))
 
                 -- 3rs time request
                 local res = assert(proxy_client:send {
@@ -301,11 +322,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. req_access_token,
                     }
                 })
-
                 assert.res_status(200, res)
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_CLIENT_ID]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_EXPIRATION]))
-                assert.equal(true, not auth_helper.is_empty(res.headers[OAUTH_SCOPES]))
             end)
         end)
 
@@ -445,6 +462,22 @@ describe("gluu-oauth2-client-auth plugin", function()
                     headers = {
                         ["Host"] = "jsonplaceholder.typicode.com",
                         ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+            end)
+        end)
+    end)
+
+    describe("oauth2-consumer flow with anonymous consumer", function()
+        describe("When oauth2-consumer is in oauth_mode = true", function()
+            it("200 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api2.typicode.com",
+                        ["Authorization"] = "Bearer fddfsdfsd-sdfsdf-sdfsdf-fdsdfsd",
                     }
                 })
                 assert.res_status(200, res)
@@ -1290,7 +1323,6 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(401, res)
                 assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
-
         end)
     end)
 end)
