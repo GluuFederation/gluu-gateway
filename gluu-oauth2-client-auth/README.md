@@ -1,5 +1,23 @@
 # Gluu OAuth 2.0 client credential authentication
 
+It provides oauth 2.0 client credential authentication with [3 different modes](#create-oauth-credential).
+
+Table of Contents
+=================
+
+ * [Terminology](#terminology)
+ * [Installation](#installation)
+ * [Configuration](#configuration)
+   * [Add API](#add-api)
+   * [Enable gluu-oauth2-client-auth protection](#enable-gluu-oauth2-client-auth-protection)
+ * [Usage](#usage)
+   * [Create a Consumer](#create-a-consumer)
+   * [Create OAuth credential](#create-oauth-credential)
+   * [Verify that your API is protected by gluu-oauth2-client-auth](#verify-that-your-api-is-protected-by-gluu-oauth2-client-auth)
+   * [Verify that your API can be accessed with valid basic token](#verify-that-your-api-can-be-accessed-with-valid-token)
+ * [Upstream Headers](#upstream-headers)
+ * [References](#references)
+
 ## Terminology
 * `api`: your upstream service placed behind Kong, for which Kong proxies requests to.
 * `plugin`: a plugin executing actions inside Kong before or after a request has been proxied to the upstream API.
@@ -8,7 +26,8 @@
 
 ## Installation
 1. [Install Kong](https://getkong.org/install/)
-2. Install gluu-oauth2-client-auth
+2. [Install oxd server v3.1.3](https://oxd.gluu.org/docs/)
+3. Install gluu-oauth2-client-auth
     1. Stop kong : `kong stop`
     2. Copy `gluu-oauth2-client-auth/kong/plugins/gluu-oauth2-client-auth` Lua sources to kong plugins folder `/usr/local/share/lua/<version>/kong/plugins/gluu-oauth2-client-auth`
 
@@ -27,8 +46,8 @@ The first step is to add your API in the kong. Below is the request for adding A
 ```
 $ curl -X POST http://localhost:8001/apis \
       --data "name=example" \
-      --data "hosts=<your_api_server>" \
-      --data "upstream_url=<your_api_server_url>"
+      --data "hosts=your.api.server" \
+      --data "upstream_url=http://your.api.server.com"
 ```
 
 Validate your API is correctly proxied via Kong.
@@ -177,7 +196,7 @@ HTTP/1.1 401 Unauthorized
 }
 ```
 
-### Verify that your API can be accessed with valid basic token
+### Verify that your API can be accessed with valid token
 (This sample assumes that below bearer token is valid and grant by OP server).
 
 ```
