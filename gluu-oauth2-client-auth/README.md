@@ -3,16 +3,17 @@
 ## Terminology
 * `api`: your upstream service placed behind Kong, for which Kong proxies requests to.
 * `plugin`: a plugin executing actions inside Kong before or after a request has been proxied to the upstream API.
-* `consumer`: a developer or service using the api. When using Kong, a Consumer only communicates with Kong which proxies every call to the said, upstream api.
-* `credential`: in the gluu-aouth2-client-auth plugin context, a openId client is registered with consumer and client id is used to identify the credential.
+* `consumer`: a developer or service using the API. When using Kong, a Consumer only communicates with Kong which proxies every call to the said, upstream API.
+* `credential`: in the gluu-aouth2-client-auth plugin context, an openId client is registered with consumer and client id is used to identify the credential.
 
 ## Installation
-
 1. [Install Kong](https://getkong.org/install/)
 2. Install gluu-oauth2-client-auth
     1. Stop kong : `kong stop`
     2. Copy `gluu-oauth2-client-auth/kong/plugins/gluu-oauth2-client-auth` Lua sources to kong plugins folder `/usr/local/share/lua/<version>/kong/plugins/gluu-oauth2-client-auth`
+
          or
+
        `luarocks install gluu-oauth2-client-auth`
     3. Enable plugin in your `kong.conf` (typically located at `/etc/kong/kong.conf`) and start kong `kong start`.
 
@@ -21,40 +22,13 @@
     ```
 
 ## Configuration
-
-### Add your API server to kong /apis
-
-```curl
-$ curl -X POST \
-  http://localhost:8001/apis/ \
-  -H 'content-type: application/x-www-form-urlencoded' \
-  -d 'name=example&hosts=<your.api.server.com>&upstream_url=<your.upstream_url>'
+### Add API
+The first step is to add your API in the kong. Below is the request for adding API in the kong.
 ```
-
-Response must confirm the API is added
-
-```
-HTTP/1.1 201 Created
-Content-Type: application/json
-Connection: keep-alive
-
-{
-    "created_at": 1515841471000,
-    "strip_uri": true,
-    "id": "68a8153f-e15f-4b6e-8fe1-264f7474ba42",
-    "hosts": [
-        "<your.api.server.com>"
-    ],
-    "name": "example",
-    "http_if_terminated": false,
-    "preserve_host": false,
-    "upstream_url": "<your.upstream_url>
-    "upstream_connect_timeout": 60000,
-    "upstream_send_timeout": 60000,
-    "upstream_read_timeout": 60000,
-    "retries": 5,
-    "https_only": false
-}
+$ curl -X POST http://localhost:8001/apis \
+      --data "name=example" \
+      --data "hosts=<your_api_server>" \
+      --data "upstream_url=<your_api_server_url>"
 ```
 
 Validate your API is correctly proxied via Kong.
@@ -62,31 +36,30 @@ Validate your API is correctly proxied via Kong.
 ```
 $ curl -i -X GET \
   --url http://localhost:8000/your/api \
-  --header 'Host: your.api.server.com'
+  --header 'Host: your_api_server'
 ```
 
 ### Enable gluu-oauth2-client-auth protection
-
 ```
 curl -X POST http://kong:8001/apis/{api}/plugins \
     --data "name=gluu-oauth2-client-auth" \
-    --data "config.hide_credentials=true"
-    --data "config.op_server=<op_server.com>"
-    --data "config.oxd_http_url=<oxd_http_url>"
-    --data "config.oxd_id=<oxd_id>"
+    --data "config.hide_credentials=true" \
+    --data "config.op_server=<op_server.com>" \
+    --data "config.oxd_http_url=<oxd_http_url>" \
+    --data "config.oxd_id=<oxd_id>" \
+    --data "config.anonymous=<consumer_id>"
 ```
 
-*api*: The `id` or `name` of the API that this plugin configuration will target
-
-Once applied, any user with a valid credential can access the service/API.
+**api**: The `id` or `name` of the API that this plugin configuration will target
 
 | FORM PARAMETER | DEFAULT | DESCRIPTION |
 |----------------|---------|-------------|
 | name | | The name of the plugin to use, in this case: gluu-oauth2-client-auth. |
 | config.hide_credentials(optional) | false | An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request. |
 | config.op_server | | OP server |
-| config.oxd_http_url | | OXD http extension URL |
-| config.oxd_id | | Used to introspect the token. You can use any other oxd_id. If you not pass then plugin creates new client itself. |
+| config.oxd_http_url | | OXD HTTP extension URL |
+| config.oxd_id(optional) | | Used to introspect the token. You can use any other oxd_id. If you not pass then plugin creates new client itself. |
+| config.anonymous(optional) | | An optional string (consumer uuid) value to use as an "anonymous" consumer if authentication fails. If empty (default), the request will fail with an authentication failure 4xx. Please note that this value must refer to the Consumer id attribute which is internal to Kong, and not its custom_id. |
 
 ## Usage
 
@@ -94,14 +67,14 @@ In order to use the plugin, you first need to create a Consumer to associate one
 
 ### Create a Consumer
 
-You need to associate a credential to an existing [Consumer](https://getkong.org/docs/latest/admin-api/#consumer-object) object, that represents a user consuming the API. To create a Consumer you can execute the following request:
+You need to associate a credential to an existing Consumer object, that represents a user consuming the API. To create a Consumer you can execute the following request:
 
 ```
 $ curl -X POST http://localhost:8001/consumers/ \
     --data "username=<USERNAME>" \
     --data "custom_id=<CUSTOM_ID>"
-HTTP/1.1 201 Created
 
+HTTP/1.1 201 Created
 {
     "username":"<USERNAME>",
     "custom_id": "<CUSTOM_ID>",
@@ -115,9 +88,17 @@ HTTP/1.1 201 Created
 | username(semi-optional) | | The username of the Consumer. Either this field or ``custom_id` must be specified. |
 | custom_id(semi-optional) | | A custom identifier used to map the Consumer to another database. Either this field or `username` must be specified. |
 
-### Register OpenId client
+### Create OAuth credential
 
-This process registers OpenId client with oxd. You can provision new credentials by making the following HTTP request:
+This process registers OpenId client with oxd which help you to get tokens and authenticate the token. Plugin behaves as per selected mode. There are three modes.
+
+| Mode | DESCRIPTION |
+|----------------|-------------|
+| oauth_mode | If yes then kong act as OAuth client only. |
+| uma_mode | If yes then this indicates your client is a valid UMA client, and obtain and send an RPT as the access token. You must need to configure [gluu-oauth2-rs](https://github.com/GluuFederation/gluu-gateway/tree/master/gluu-oauth2-rs) plugin for uma_mode. |
+| mix_mode | If yes then the gluu-oauth2 plugin will try to obtain an UMA RPT token if the RS returns a 401/Unauthorized. You must need to configure [gluu-oauth2-rs](https://github.com/GluuFederation/gluu-gateway/tree/master/gluu-oauth2-rs) plugin for uma_mode. |
+
+You can provision new credentials by making the following HTTP request:
 
 ```
 curl -X POST \
@@ -178,19 +159,22 @@ RESPONSE :
 
 ### Verify that your API is protected by gluu-oauth2-client-auth
 
-You need to pass token as per your authentication mode(oauth_mode, uma_mode and mix_mode). In oauth_mode and mix_mode, you need to pass oauth2 access token and in uma_mode, you need to RPT token.
+You need to pass token as per your authentication mode(oauth_mode, uma_mode, and mix_mode). In oauth_mode and mix_mode, you need to pass oauth2 access token and in uma_mode, you need to RPT token.
 
 ```
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
-    -H 'authorization: Bearer QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
+    -H 'authorization: Bearer 481aa800-5282-4d6c-8001-7dcdf37031eb' \
     -H 'host: your.api.server.com'
 ```
 
-If your toke is not valid or time expired then you failer message.
+If your toke is not valid or time expired then you will get failed message.
 
 ```
-{"message":"Unauthorized"}
+HTTP/1.1 401 Unauthorized
+{
+    "message": "Unauthorized"
+}
 ```
 
 ### Verify that your API can be accessed with valid basic token
@@ -199,10 +183,23 @@ If your toke is not valid or time expired then you failer message.
 ```
 $ curl -X GET \
     http://localhost:8000/your_api_endpoint \
-    -H 'authorization: Bearer QCFBQUU2LjZCMzAuMTU5Ny5CMzJDITAwMDEhMEY2Ny5DMzQ4ITAwMDghQTkwNi5DRDgwLjg1QTkuNzZEQzpiYTEzZTZjMy00M2M3LTRmODQtYmI5NC0zYzdmNzQwNGJjNWY=' \
-    -H 'host: your.api.server.com'
+    -H 'authorization: Bearer 7475ebc5-9b92-4031-b849-c70a0e3024f9' \
+    -H 'host: your_api_server'
 ```
+
+### Upstream Headers
+When a client has been authenticated, the plugin will append some headers to the request before proxying it to the upstream service, so that you can identify the consumer and the end-user in your code:
+1. **X-Consumer-ID**, the ID of the Consumer on Kong
+2. **X-Consumer-Custom-ID**, the custom_id of the Consumer (if set)
+3. **X-Consumer-Username**, the username of the Consumer (if set)
+4. **X-Authenticated-Scope**, the comma-separated list of scopes that the end user has authenticated, if available (only if the consumer is not the 'anonymous' consumer)
+5. **X-OAuth-Client-ID**, the authenticated client id, if oauth_mode is enabled(only if the consumer is not the 'anonymous' consumer)
+6. **X-OAuth-Expiration**, the token expiration time, Integer timestamp, measured in the number of seconds since January 1 1970 UTC, indicating when this token will expire, as defined in JWT RFC7519. It only returns in oauth_mode(only if the consumer is not the 'anonymous' consumer)
+7. **X-Anonymous-Consumer**, will be set to true when authentication failed, and the 'anonymous' consumer was set instead.
+
+You can use this information on your side to implement additional logic. You can use the X-Consumer-ID value to query the Kong Admin API and retrieve more information about the Consumer.
 
 ## References
  - [Kong](https://getkong.org)
- - [Gluu Server](https://www.gluu.org/gluu-server/overview/)
+ - [Gluu Server](https://www.gluu.org)
+ - [oxd](https://gluu.org/docs/oxd)
