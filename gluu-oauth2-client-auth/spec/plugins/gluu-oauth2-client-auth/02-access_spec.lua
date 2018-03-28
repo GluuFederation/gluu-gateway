@@ -517,7 +517,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -647,7 +648,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -780,7 +782,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -873,7 +876,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 assert.res_status(200, res)
 
-                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
+                -- Request to other register path, 403/Forbidden because RPT token is for path /posts not for /comments
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/comments",
@@ -882,7 +885,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
                 local res = assert(proxy_client:send {
@@ -965,7 +969,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -1089,7 +1094,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
             it("401 Unauthorized when token is invalid", function()
@@ -1185,7 +1191,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(200, res)
                 assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
 
-                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
+                -- Request to other register path, 403/Forbidden because RPT token is for path /posts not for /comments
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/comments",
@@ -1194,7 +1200,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(401, res)
+                assert.res_status(403, res)
+                assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
                 local res = assert(proxy_client:send {

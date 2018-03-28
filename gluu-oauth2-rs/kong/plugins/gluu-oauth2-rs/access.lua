@@ -94,7 +94,7 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
             if not helper.is_empty(ticket) and not helper.is_empty(umaRSResponse.data["www-authenticate_header"]) then
                 ngx.log(ngx.DEBUG, "Set WWW-Authenticate header with ticket")
                 ngx.header["WWW-Authenticate"] = umaRSResponse.data["www-authenticate_header"]
-                return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
+                return responses.send_HTTP_FORBIDDEN("Unauthorized")
             end
 
             return responses.send_HTTP_FORBIDDEN("UMA Authorization Server Unreachable")
