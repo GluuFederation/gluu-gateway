@@ -44,7 +44,7 @@ Installation is a three part process:
 
 1. Add required third party repositories
 2. Install `gluu-gateway` package
-3. Run `setup-gluu-gateway.py`
+3. Run the `gluu-gateway` interactive setup script
 
 ### Required Third Party repositories
 

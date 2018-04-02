@@ -424,9 +424,9 @@ if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
         msg = "------------------------------------------------------------------------------------- \n" \
-              + "The Gluu Support License (GLUU-SUPPORT) \n\n" \
+              + "The MIT License (MIT) \n\n" \
               + "Copyright (c) 2017 Gluu \n\n" \
-              + "Permission is hereby granted to any person obtaining a copy \n" \
+              + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
               + "of this software and associated documentation files (the 'Software'), to deal \n" \
               + "in the Software without restriction, including without limitation the rights \n" \
               + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
@@ -434,8 +434,6 @@ if __name__ == "__main__":
               + "furnished to do so, subject to the following conditions: \n\n" \
               + "The above copyright notice and this permission notice shall be included in all \n" \
               + "copies or substantial portions of the Software. \n\n" \
-              + "The person using this software has an active support subscription while the software \n" \
-              + "is in non-development use. \n\n" \
               + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
               + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
               + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
@@ -446,7 +444,7 @@ if __name__ == "__main__":
               + "------------------------------------------------------------------------------------- \n"
         print msg
         licence = False
-        licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the GLUU-SUPPORT license?(y|N)', 'N'))
+        licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
         print ""
         if licence:
             kongSetup.makeFolders()
@@ -478,7 +476,7 @@ if __name__ == "__main__":
                 cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
 
             print cnf
-            proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values(Y|n)', 'Y'))
+            proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values (Y|n)', 'Y'))
 
             if proceed:
                 kongSetup.genKongSslCertificate()
