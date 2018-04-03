@@ -29,19 +29,22 @@ local function retrieve_token(request)
     end
 end
 
---- Retrieve a claim information from UMA_DATA header.
+--- Retrieve a claim information from UMA_PUSHED_CLAIMS header.
 -- @param request ngx request object
 -- @return {"claim_token": "", "claim_token_format": "" }
 local function retrieve_uma_data(request)
-    -- Get UMA_DATA {"claim_token": "", "claim_token_format": "" }
-    local claim_header = request.get_headers()["uma_data"]
+    -- Get UMA_PUSHED_CLAIMS {"claim_token": "", "claim_token_format": "" }
+    local claim_header = request.get_headers()["uma_pushed_claims"]
     if not helper.is_empty(claim_header) then
         ngx.log(ngx.DEBUG, "claim_header " .. claim_header)
         if pcall(function() json:decode(claim_header) end) then
             local uma_data = json:decode(claim_header)
+            ngx.log(ngx.DEBUG, "uma_data.claim_token " .. uma_data.claim_token)
             if not helper.is_empty(uma_data.claim_token) and not helper.is_empty(uma_data.claim_token) then
                 return uma_data
             end
+        else
+            ngx.log(ngx.DEBUG, "Failed to parse UMA_PUSHED_CLAIMS")
         end
     end
     return nil
