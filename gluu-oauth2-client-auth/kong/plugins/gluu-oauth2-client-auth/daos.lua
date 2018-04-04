@@ -19,6 +19,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         mix_mode = { type = "boolean" },
         oauth_mode = { type = "boolean" },
         allow_unprotected_path = { type = "boolean" },
+        show_consumer_custom_id = { type = "boolean" },
         client_token_endpoint_auth_method = { type = "string" },
         client_token_endpoint_auth_signing_alg = { type = "string" },
         created_at = { type = "timestamp", immutable = true, dao_insert_value = true },

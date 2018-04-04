@@ -136,7 +136,8 @@ function _M.execute(conf)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     else
         -- Check Token is already exist with same path and method
-        if clientPluginCacheToken.permissions then
+        if not helper.is_empty(clientPluginCacheToken.permissions) then
+            local permissionFlag = false
             -- Check requested path in cached paths
             for count = 1, #clientPluginCacheToken.permissions do
                 if clientPluginCacheToken.permissions[count].path == path and clientPluginCacheToken.permissions[count].method == httpMethod then
@@ -146,7 +147,35 @@ function _M.execute(conf)
                         ngx.log(ngx.DEBUG, PLUGINNAME .. ": Path is not protected by UMA-RS! - http_method: " .. httpMethod .. ", path: " .. path)
                         ngx.header["UMA-Warning"] = "Path is not protected by UMA-RS"
                     end
-                    return -- ACCESS GRANTED
+                    permissionFlag = true
+                end
+            end
+
+            -- If requested path is found in cache then check claim token in cache
+            if permissionFlag and not helper.is_empty(clientPluginCacheToken.claim_tokens) and #clientPluginCacheToken.claim_tokens > 0 then
+                -- Check claim token in header
+                local uma_data = retrieve_uma_data(ngx.req)
+
+                -- check claim token is exist then check it with claim_tokens in cache JSON
+                if helper.is_empty(uma_data) or helper.is_empty(uma_data.claim_token) then
+                    ngx.log(ngx.DEBUG, "Unauthorized! You need to pass claim token")
+                    return responses.send_HTTP_UNAUTHORIZED("Unauthorized! You need to pass claim token")
+                end
+
+                for count = 1, #clientPluginCacheToken.claim_tokens do
+                    if uma_data.claim_token == clientPluginCacheToken.claim_tokens[count] then
+                        ngx.log(ngx.DEBUG, "Token already exist with same path, method, and claim token found in cache, Allow access")
+                        return -- Access Granted
+                    end
+                end
+
+                ngx.log(ngx.DEBUG, "Token already exist with same path, method, but claim token is invalid, deny access")
+                return responses.send_HTTP_UNAUTHORIZED("Unauthorized! You are passing wrong claim token")
+            else
+                -- If claim token is not in cache and path is found then allow access
+                if permissionFlag then
+                    ngx.log(ngx.DEBUG, "Token already exist with same path and method found in cache, Allow access")
+                    return -- Access Granted
                 end
             end
         end
@@ -240,7 +269,7 @@ function _M.execute(conf)
 
             -- check claim token is exist then add it into claim_tokens in cache JSON
             if not helper.is_empty(uma_data) and not helper.is_empty(uma_data.claim_token) then
-                clientPluginCacheToken.claim_tokens = uma_data.claim_token
+                table.insert(clientPluginCacheToken.claim_tokens, uma_data.claim_token)
             end
 
             -- Set permissions ket in token JSON cache
