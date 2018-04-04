@@ -21,6 +21,7 @@ return {
         mix_mode boolean,
         oauth_mode boolean,
         allow_unprotected_path boolean,
+        show_consumer_custom_id boolean,
         created_at timestamp,
         PRIMARY KEY (id)
       );

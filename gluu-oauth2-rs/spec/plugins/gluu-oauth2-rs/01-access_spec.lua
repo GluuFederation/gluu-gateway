@@ -78,7 +78,7 @@ describe("gluu-oauth2-rs plugin", function()
             })
             local wwwAuthenticate = res.headers["WWW-Authenticate"]
             assert.is_truthy(string.find(wwwAuthenticate, "ticket"))
-            assert.res_status(401, res)
+            assert.res_status(403, res)
         end)
 
         it("401 Unauthorized with permission ticket when token is invalid", function()

@@ -137,10 +137,12 @@ end
 -- @param credential: oauth2-consumer data
 local function set_consumer_in_header(consumer, credential)
     ngx_set_header(constants.HEADERS.CONSUMER_ID, consumer.id)
-    ngx_set_header(constants.HEADERS.CONSUMER_CUSTOM_ID, consumer.custom_id or "")
     ngx_set_header(constants.HEADERS.CONSUMER_USERNAME, consumer.username or "")
     ngx.ctx.authenticated_consumer = consumer
     if credential then
+        if credential.show_consumer_custom_id then
+            ngx_set_header(constants.HEADERS.CONSUMER_CUSTOM_ID, consumer.custom_id or "")
+        end
         ngx.ctx.authenticated_credential = credential
         ngx_set_header(constants.HEADERS.ANONYMOUS, nil)
     else
@@ -273,6 +275,7 @@ local function validate_credentials(conf, req_token)
     cacheTokenData.associated_rpt = helper.ternary(tokenType == "UMA", req_token, nil)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)
     cacheTokenData.permissions = {}
+    cacheTokenData.claim_tokens = {}
 
     -- set token data in cache for exp_sec(time in second)
     get_set_token_cache(req_token, cacheTokenData)

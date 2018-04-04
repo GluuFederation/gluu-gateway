@@ -11,6 +11,7 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_mix_mode
     local oauth2_consumer_with_uma_mode_allow_unprotected_path
     local oauth2_consumer_with_mix_mode_allow_unprotected_path
+    local oauth2_consumer_with_mix_mode_hide_consumer_custom_id
     local invalidToken
     local api, api2
     local plugin, plugin_anonymous
@@ -195,6 +196,24 @@ describe("gluu-oauth2-client-auth plugin", function()
         })
         oauth2_consumer_with_mix_mode_allow_unprotected_path = cjson.decode(assert.res_status(201, res))
         auth_helper.print_table(oauth2_consumer_with_mix_mode_allow_unprotected_path)
+
+        print("\n----------- OAuth2 consumer credential with mix_mode = true, show_consumer_custom_id = false ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/consumers/foo/gluu-oauth2-client-auth",
+            body = {
+                name = "oauth2_credential_uma_mode",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
+                mix_mode = true,
+                show_consumer_custom_id = false
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        oauth2_consumer_with_mix_mode_hide_consumer_custom_id = cjson.decode(assert.res_status(201, res))
+        auth_helper.print_table(oauth2_consumer_with_mix_mode_hide_consumer_custom_id)
 
         -- ------------------Extra client for invalid token ----------------
         local setupClientRequest = {
@@ -1246,8 +1265,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                     }
                 })
                 assert.response(res).has.status(200)
-                local body = assert.response(res).has.jsonbody()
-                assert.is_truthy(string.find(body.config.protection_document, "todos"))
+                gluu_oauth2_rs_plugin = assert.response(res).has.jsonbody()
+                assert.is_truthy(string.find(gluu_oauth2_rs_plugin.config.protection_document, "todos"))
             end)
 
             it("200 status when token is active = true", function()
@@ -1331,5 +1350,110 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.equal(true, not auth_helper.is_empty(res.headers["uma-warning"]))
             end)
         end)
+
+        -- Hide consumer custom id
+        describe("When oauth2-consumer is show_consumer_custom_id = false", function()
+            it("200 status when token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_mix_mode_hide_consumer_custom_id.oxd_http_url,
+                    client_id = oauth2_consumer_with_mix_mode_hide_consumer_custom_id.client_id,
+                    client_secret = oauth2_consumer_with_mix_mode_hide_consumer_custom_id.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_mix_mode_hide_consumer_custom_id.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time Request
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+            end)
+        end)
+
+        -- Request with UMA_PUSHED_CLAIMS
+        describe("When oauth2-consumer is show_consumer_custom_id = false", function()
+            it("200 status when token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_with_mix_mode.oxd_http_url,
+                    client_id = oauth2_consumer_with_mix_mode.client_id,
+                    client_secret = oauth2_consumer_with_mix_mode.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_with_mix_mode.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time Request, 200 HTTP Status
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["UMA_PUSHED_CLAIMS"] = "{\"claim_token\":\"eyJraWQiOiJiNGJiZWYyZS0xYjBiLTRmNjYtOTVjYy1lMDQ5ZGRhYmY2ZTciLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2dsdXUubG9jYWwub3JnIiwiYXVkIjoiQCE1ODMzLjUzRUQuNkZFRC5EQTdFITAwMDEhQkY1OC5DQTA3ITAwMDghRkM3OC5CMjJELjk4QkUuNzkxQiIsImV4cCI6MTUyMjc0OTI4MSwiaWF0IjoxNTIyNzQ1NjgxLCJub25jZSI6InJtMTlrM2x2NGVhNmZvams5dnZuaWZwZGd1IiwiYXV0aF90aW1lIjoxNTIyNzQ1Njc5LCJhdF9oYXNoIjoidVJUUjk1bEo0LUNLN2x1bFFUamtDQSIsIm94T3BlbklEQ29ubmVjdFZlcnNpb24iOiJvcGVuaWRjb25uZWN0LTEuMCIsInN1YiI6InFaRUVUUnpxYWZ5Ujc4THZSeFI2Z184X0NvN3ZuXzhFeG9oaHN0ZDBGcGcifQ.Zm_qg547zB-XI4PYW53b1d2pnU00_G5DNG1qFMbZjpJIFvCzAh6A9xvptMKxC9LgvMeUAAW4OlaQAGpDzgVmM1rGnapPuhyZhUdZvFyXWv_5ZdYWu6ajiOj0Hs2XKB-5Bp33tNtM8PtwW_2ax8wGvuEjZeXQal6AMc1fwvctrInF5776HZ70LnopUMlkIagDcjft6ZF1FFpzDSGTSHI91d4fXsosSK4_dqgbr_QhZGD65xAgiJyvkrxGEQRRmQF7CM2EljPSzfhZf59ek-aVtsfmZNStmY94MWbAoyjpQAlksoQU-cK_deLHbPxxkYRIGGQn4wRqpRd1UOH9rtPAow\", \"claim_token_format\": \"http://openid.net/specs/openid-connect-core-1_0.html#IDToken\"}"
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time Request, 200 HTTP Status
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["UMA_PUSHED_CLAIMS"] = "{\"claim_token\":\"eyJraWQiOiJiNGJiZWYyZS0xYjBiLTRmNjYtOTVjYy1lMDQ5ZGRhYmY2ZTciLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2dsdXUubG9jYWwub3JnIiwiYXVkIjoiQCE1ODMzLjUzRUQuNkZFRC5EQTdFITAwMDEhQkY1OC5DQTA3ITAwMDghRkM3OC5CMjJELjk4QkUuNzkxQiIsImV4cCI6MTUyMjc0OTI4MSwiaWF0IjoxNTIyNzQ1NjgxLCJub25jZSI6InJtMTlrM2x2NGVhNmZvams5dnZuaWZwZGd1IiwiYXV0aF90aW1lIjoxNTIyNzQ1Njc5LCJhdF9oYXNoIjoidVJUUjk1bEo0LUNLN2x1bFFUamtDQSIsIm94T3BlbklEQ29ubmVjdFZlcnNpb24iOiJvcGVuaWRjb25uZWN0LTEuMCIsInN1YiI6InFaRUVUUnpxYWZ5Ujc4THZSeFI2Z184X0NvN3ZuXzhFeG9oaHN0ZDBGcGcifQ.Zm_qg547zB-XI4PYW53b1d2pnU00_G5DNG1qFMbZjpJIFvCzAh6A9xvptMKxC9LgvMeUAAW4OlaQAGpDzgVmM1rGnapPuhyZhUdZvFyXWv_5ZdYWu6ajiOj0Hs2XKB-5Bp33tNtM8PtwW_2ax8wGvuEjZeXQal6AMc1fwvctrInF5776HZ70LnopUMlkIagDcjft6ZF1FFpzDSGTSHI91d4fXsosSK4_dqgbr_QhZGD65xAgiJyvkrxGEQRRmQF7CM2EljPSzfhZf59ek-aVtsfmZNStmY94MWbAoyjpQAlksoQU-cK_deLHbPxxkYRIGGQn4wRqpRd1UOH9rtPAow\", \"claim_token_format\": \"http://openid.net/specs/openid-connect-core-1_0.html#IDToken\"}"
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Without claim token, 401/Unauthorized
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token
+                    }
+                })
+                assert.res_status(401, res)
+
+                -- Invalid claim token, 401/Unauthorized
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["UMA_PUSHED_CLAIMS"] = "{\"claim_token\":\"yJraWQiOiJiNGJiZWYyZS0xYjBiLTRmNjYtOTVjYy1lMDQ5ZGRhYmY2ZTciLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2dsdXUubG9jYWwub3JnIiwiYXVkIjoiQCE1ODMzLjUzRUQuNkZFRC5EQTdFITAwMDEhQkY1OC5DQTA3ITAwMDghRkM3OC5CMjJELjk4QkUuNzkxQiIsImV4cCI6MTUyMjc0OTI4MSwiaWF0IjoxNTIyNzQ1NjgxLCJub25jZSI6InJtMTlrM2x2NGVhNmZvams5dnZuaWZwZGd1IiwiYXV0aF90aW1lIjoxNTIyNzQ1Njc5LCJhdF9oYXNoIjoidVJUUjk1bEo0LUNLN2x1bFFUamtDQSIsIm94T3BlbklEQ29ubmVjdFZlcnNpb24iOiJvcGVuaWRjb25uZWN0LTEuMCIsInN1YiI6InFaRUVUUnpxYWZ5Ujc4THZSeFI2Z184X0NvN3ZuXzhFeG9oaHN0ZDBGcGcifQ.Zm_qg547zB-XI4PYW53b1d2pnU00_G5DNG1qFMbZjpJIFvCzAh6A9xvptMKxC9LgvMeUAAW4OlaQAGpDzgVmM1rGnapPuhyZhUdZvFyXWv_5ZdYWu6ajiOj0Hs2XKB-5Bp33tNtM8PtwW_2ax8wGvuEjZeXQal6AMc1fwvctrInF5776HZ70LnopUMlkIagDcjft6ZF1FFpzDSGTSHI91d4fXsosSK4_dqgbr_QhZGD65xAgiJyvkrxGEQRRmQF7CM2EljPSzfhZf59ek-aVtsfmZNStmY94MWbAoyjpQAlksoQU-cK_deLHbPxxkYRIGGQn4wRqpRd1UOH9rtPAow\", \"claim_token_format\": \"http://openid.net/specs/openid-connect-core-1_0.html#IDToken\"}"
+                    }
+                })
+                assert.res_status(401, res)
+
+                -- 3rs time Request with valid claim token, 200 HTTP Status
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/comments",
+                    headers = {
+                        ["Host"] = "jsonplaceholder.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["UMA_PUSHED_CLAIMS"] = "{\"claim_token\":\"eyJraWQiOiJiNGJiZWYyZS0xYjBiLTRmNjYtOTVjYy1lMDQ5ZGRhYmY2ZTciLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2dsdXUubG9jYWwub3JnIiwiYXVkIjoiQCE1ODMzLjUzRUQuNkZFRC5EQTdFITAwMDEhQkY1OC5DQTA3ITAwMDghRkM3OC5CMjJELjk4QkUuNzkxQiIsImV4cCI6MTUyMjc0OTI4MSwiaWF0IjoxNTIyNzQ1NjgxLCJub25jZSI6InJtMTlrM2x2NGVhNmZvams5dnZuaWZwZGd1IiwiYXV0aF90aW1lIjoxNTIyNzQ1Njc5LCJhdF9oYXNoIjoidVJUUjk1bEo0LUNLN2x1bFFUamtDQSIsIm94T3BlbklEQ29ubmVjdFZlcnNpb24iOiJvcGVuaWRjb25uZWN0LTEuMCIsInN1YiI6InFaRUVUUnpxYWZ5Ujc4THZSeFI2Z184X0NvN3ZuXzhFeG9oaHN0ZDBGcGcifQ.Zm_qg547zB-XI4PYW53b1d2pnU00_G5DNG1qFMbZjpJIFvCzAh6A9xvptMKxC9LgvMeUAAW4OlaQAGpDzgVmM1rGnapPuhyZhUdZvFyXWv_5ZdYWu6ajiOj0Hs2XKB-5Bp33tNtM8PtwW_2ax8wGvuEjZeXQal6AMc1fwvctrInF5776HZ70LnopUMlkIagDcjft6ZF1FFpzDSGTSHI91d4fXsosSK4_dqgbr_QhZGD65xAgiJyvkrxGEQRRmQF7CM2EljPSzfhZf59ek-aVtsfmZNStmY94MWbAoyjpQAlksoQU-cK_deLHbPxxkYRIGGQn4wRqpRd1UOH9rtPAow\", \"claim_token_format\": \"http://openid.net/specs/openid-connect-core-1_0.html#IDToken\"}"
+                    }
+                })
+                assert.res_status(200, res)
+            end)
+        end)
+
     end)
 end)

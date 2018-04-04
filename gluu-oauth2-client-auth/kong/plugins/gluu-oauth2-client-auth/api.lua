@@ -125,8 +125,15 @@ return {
                 uma_mode = self.params.uma_mode or false,
                 mix_mode = self.params.mix_mode or false,
                 oauth_mode = self.params.oauth_mode or false,
-                allow_unprotected_path = self.params.allow_unprotected_path or false,
+                allow_unprotected_path = self.params.allow_unprotected_path or false
             }
+
+            if helper.is_empty(self.params.show_consumer_custom_id) then
+                regData.show_consumer_custom_id = true
+            else
+                regData.show_consumer_custom_id = self.params.show_consumer_custom_id
+            end
+
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
         end
