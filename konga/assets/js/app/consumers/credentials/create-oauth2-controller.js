@@ -21,7 +21,8 @@
           uma_mode: false,
           mix_mode: false,
           oauth_mode: true,
-          allow_unprotected_path: false
+          allow_unprotected_path: false,
+          show_consumer_custom_id: true
         };
 
         $scope.close = function () {
