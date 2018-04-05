@@ -250,7 +250,7 @@ var AuthController = {
               return Promise.reject(userInfo.data)
             }
 
-            var sub = userInfo.data.claims.sub[0] || uuid.v4();
+            var sub = (userInfo.data.claims && userInfo.data.claims.sub && userInfo.data.claims.sub[0]) || uuid.v4();
 
             return new Promise(function (resolve, reject) {
               sails.models.user
