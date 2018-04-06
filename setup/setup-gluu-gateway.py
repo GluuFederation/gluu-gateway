@@ -28,6 +28,7 @@ class KongSetup(object):
         self.output_folder = './output'
         self.system_folder = './system'
         self.osDefault = '/etc/default'
+        self.profileFolder = '/etc/profile.d/'
 
         self.logError = 'gluu-gateway-setup_error.log'
         self.log = 'gluu-gateway-setup.log'
@@ -49,6 +50,7 @@ class KongSetup(object):
         self.hostname = '/bin/hostname'
         self.cmd_touch = '/bin/touch'
         self.cmd_sudo = 'sudo'
+        self.cmd_mv = '/bin/mv'
 
         self.countryCode = ''
         self.state = ''
@@ -93,11 +95,13 @@ class KongSetup(object):
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
 
-        # Component versions
+        # JRE setup properties
         self.jre_version = '162'
         self.jreDestinationPath = '/opt/jdk1.8.0_%s' % self.jre_version
-        self.distAppFolder = '%s/setup/app' % self.distGluuGatewayFolder
+        self.distAppFolder = '%s/dist/app' % self.optFolder
         self.jre_home = '/opt/jre'
+        self.jreSHFileName = 'jre-gluu.sh'
+
 
     def configureRedis(self):
         return True
@@ -267,10 +271,12 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
         self.run([self.cmd_ln, '-sf', self.jreDestinationPath, self.jre_home])
-        self.run([self.cmd_chmod, '-R', "755", "%s/bin/" % self.jreDestinationPath])
+        self.run([self.cmd_chmod, '-R', '755', '%s/bin/' % self.jreDestinationPath])
         self.run([self.cmd_chown, '-R', 'root:root', self.jreDestinationPath])
         self.run([self.cmd_chown, '-h', 'root:root', self.jre_home])
-        self.run(['export', 'JAVA_HOME=/opt/jre'])
+        self.run([self.cmd_mv, '%s/%s' % (self.template_folder, self.jreSHFileName), self.profileFolder])
+        self.run([self.cmd_chmod, '644', '%s/%s' % (self.profileFolder, self.jreSHFileName)])
+
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
