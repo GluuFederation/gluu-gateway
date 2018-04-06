@@ -60,13 +60,13 @@ class KongSetup(object):
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
 
-        self.distFolder = '/opt'
-        self.distGluuGatewayFolder = '%s/gluu-gateway' % self.distFolder
+        self.optFolder = '/opt'
+        self.distGluuGatewayFolder = '%s/gluu-gateway' % self.optFolder
         self.distKongaFolder = '%s/konga' % self.distGluuGatewayFolder
         self.distKongaConfigPath = '%s/config' % self.distKongaFolder
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
 
-        self.distOxdServerFolder = '%s/oxd-server' % self.distFolder
+        self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
         self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
         self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
@@ -92,6 +92,12 @@ class KongSetup(object):
         self.oxdServerAuthorizationRedirectUri = ''
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
+
+        # Component versions
+        self.jre_version = '162'
+        self.jreDestinationPath = '/opt/jdk1.8.0_%s' % self.jre_version
+        self.distAppFolder = '%s/setup/app' % self.distGluuGatewayFolder
+        self.jre_home = '/opt/jre'
 
     def configureRedis(self):
         return True
@@ -248,6 +254,23 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
+
+    def installJRE(self):
+        self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
+        jreArchive = 'server-jre-8u%s-linux-x64.tar.gz' % self.jre_version
+
+        try:
+            self.logIt("Extracting %s into /opt/" % jreArchive)
+            self.run(['tar', '-xzf', '%s/%s' % (self.distAppFolder, jreArchive), '-C', '/opt/', '--no-xattrs', '--no-same-owner', '--no-same-permissions'])
+        except:
+            self.logIt("Error encountered while extracting archive %s" % jreArchive)
+            self.logIt(traceback.format_exc(), True)
+
+        self.run([self.cmd_ln, '-sf', self.jreDestinationPath, self.jre_home])
+        self.run([self.cmd_chmod, '-R', "755", "%s/bin/" % self.jreDestinationPath])
+        self.run([self.cmd_chown, '-R', 'root:root', self.jreDestinationPath])
+        self.run([self.cmd_chown, '-h', 'root:root', self.jre_home])
+        self.run(['export', 'JAVA_HOME=/opt/jre'])
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
@@ -480,6 +503,7 @@ if __name__ == "__main__":
 
             if proceed:
                 kongSetup.genKongSslCertificate()
+                kongSetup.installJRE()
                 kongSetup.configurePostgres()
                 kongSetup.configureOxd()
                 kongSetup.configKonga()
