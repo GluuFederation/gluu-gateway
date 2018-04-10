@@ -1,3 +1,4 @@
+local utils = require "kong.tools.utils"
 local oxd = require "oxdweb"
 local crud = require "kong.api.crud_helpers"
 local responses = require "kong.tools.responses"
@@ -44,6 +45,19 @@ return {
                 self.params.oauth_mode = true
             end
 
+            if (not helper.is_empty(self.params.restrict_api) and self.params.restrict_api) then
+                if helper.is_empty(self.params.restrict_api_list) then
+                    return responses.send_HTTP_BAD_REQUEST("Require atleast one API in restrict APIs")
+                end
+
+                local list = helper.split(self.params.restrict_api_list, ",")
+                for k, v in ipairs(list) do
+                    if not utils.is_valid_uuid(v) then
+                        return responses.send_HTTP_BAD_REQUEST("Invalid API, id: " .. v)
+                    end
+                end
+            end
+
             local redirect_uris
             local scope
             local grant_types
@@ -58,8 +72,10 @@ return {
 
             -- Default: scope - client_credentials
             if (helper.is_empty(self.params.scope)) then
-                scope = helper.split("clientinfo,uma_protection", ",")
+                self.params.scope = "clientinfo,uma_protection"
+                scope = helper.split(self.params.scope, ",")
             else
+                self.params.scope = self.params.scope .. ",clientinfo,uma_protection"
                 scope = helper.split(self.params.scope, ",")
             end
 
@@ -118,14 +134,17 @@ return {
                 op_host = self.params.op_host,
                 client_id = regClientResponseBody.data.client_id or self.params.client_id,
                 client_id_of_oxd_id = regClientResponseBody.data.client_id_of_oxd_id or self.params.client_id_of_oxd_id,
-                client_secret = regClientResponseBody.data.client_secret or self.params.client_secret,client_jwks_uri = body.client_jwks_uri,
+                client_secret = regClientResponseBody.data.client_secret or self.params.client_secret,
+                client_jwks_uri = body.client_jwks_uri,
                 jwks_file = self.params.jwks_file or "",
                 client_token_endpoint_auth_method = body.client_token_endpoint_auth_method,
                 client_token_endpoint_auth_signing_alg = body.client_token_endpoint_auth_signing_alg or "",
                 uma_mode = self.params.uma_mode or false,
                 mix_mode = self.params.mix_mode or false,
                 oauth_mode = self.params.oauth_mode or false,
-                allow_unprotected_path = self.params.allow_unprotected_path or false
+                allow_unprotected_path = self.params.allow_unprotected_path or false,
+                restrict_api = self.params.restrict_api or false,
+                restrict_api_list = self.params.restrict_api_list or "",
             }
 
             if helper.is_empty(self.params.show_consumer_custom_id) then

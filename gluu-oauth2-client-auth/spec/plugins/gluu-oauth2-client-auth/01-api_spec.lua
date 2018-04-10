@@ -8,21 +8,22 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
     local admin_client
     local op_server = "https://gluu.local.org"
     local oxd_http_url = "http://localhost:8553"
+    local api1, api2, api3
 
     setup(function()
         helpers.run_migrations()
 
-        assert(helpers.dao.apis:insert {
+        api1 = assert(helpers.dao.apis:insert {
             name = "api1",
             upstream_url = "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" },
         })
-        assert(helpers.dao.apis:insert {
+        api2 = assert(helpers.dao.apis:insert {
             name = "api2",
             upstream_url = "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" },
         })
-        assert(helpers.dao.apis:insert {
+        api3 = assert(helpers.dao.apis:insert {
             name = "api3",
             upstream_url = "https://jsonplaceholder.typicode.com",
             hosts = { "jsonplaceholder.typicode.com" },
@@ -316,6 +317,152 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(false, body.mix_mode)
                 assert.equal(false, body.uma_mode)
                 assert.equal(true, body.oauth_mode)
+                assert.equal("clientinfo,uma_protection", body.scope)
+            end)
+            it("creates oauth2 credentials with the scope", function()
+                -- ------------------GET Client Token-------------------------------
+                local setupClientRequest = {
+                    oxd_host = oxd_http_url,
+                    op_host = op_server,
+                    authorization_redirect_uri = "https://localhost",
+                    redirect_uris = { "https://localhost" },
+                    scope = { "clientinfo", "uma_protection" },
+                    grant_types = { "client_credentials" },
+                    client_name = "Test_existing_client"
+                };
+
+                local setupClientResponse = oxd.setup_client(setupClientRequest)
+                if setupClientResponse.status == "error" then
+                    print("Failed to create client")
+                end
+
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "Existing_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oxd_id = setupClientResponse.data.oxd_id,
+                        client_id = setupClientResponse.data.client_id,
+                        client_secret = setupClientResponse.data.client_secret,
+                        client_id_of_oxd_id = setupClientResponse.data.client_id_of_oxd_id,
+                        scope = "calendar"
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("Existing_oauth2_credential", body.name)
+                assert.equal(setupClientResponse.data.oxd_id, body.oxd_id)
+                assert.equal(setupClientResponse.data.client_id, body.client_id)
+                assert.equal(setupClientResponse.data.client_secret, body.client_secret)
+                assert.equal(setupClientResponse.data.client_id_of_oxd_id, body.client_id_of_oxd_id)
+                assert.equal(false, body.mix_mode)
+                assert.equal(false, body.uma_mode)
+                assert.equal(true, body.oauth_mode)
+                assert.equal("calendar,clientinfo,uma_protection", body.scope)
+                assert.equal(false, body.restrict_api)
+            end)
+            it("creates oauth2 credentials with the restricted API", function()
+                -- ------------------GET Client Token-------------------------------
+                local setupClientRequest = {
+                    oxd_host = oxd_http_url,
+                    op_host = op_server,
+                    authorization_redirect_uri = "https://localhost",
+                    redirect_uris = { "https://localhost" },
+                    scope = { "clientinfo", "uma_protection" },
+                    grant_types = { "client_credentials" },
+                    client_name = "Test_existing_client"
+                };
+
+                local setupClientResponse = oxd.setup_client(setupClientRequest)
+                if setupClientResponse.status == "error" then
+                    print("Failed to create client")
+                end
+
+                -- Failed 400
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "Existing_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oxd_id = setupClientResponse.data.oxd_id,
+                        client_id = setupClientResponse.data.client_id,
+                        client_secret = setupClientResponse.data.client_secret,
+                        client_id_of_oxd_id = setupClientResponse.data.client_id_of_oxd_id,
+                        scope = "calendar",
+                        restrict_api = true
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = assert.res_status(400, res)
+                local json = cjson.decode(body)
+                assert.equal("Require atleast one API in restrict APIs", json.message)
+
+                -- Failed 400
+                local invalid_api_id = "fdfdsf343545"
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "Existing_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oxd_id = setupClientResponse.data.oxd_id,
+                        client_id = setupClientResponse.data.client_id,
+                        client_secret = setupClientResponse.data.client_secret,
+                        client_id_of_oxd_id = setupClientResponse.data.client_id_of_oxd_id,
+                        scope = "calendar",
+                        restrict_api = true,
+                        restrict_api_list = table.concat({api1.id, invalid_api_id, api2.id}, ",")
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = assert.res_status(400, res)
+                local json = cjson.decode(body)
+                assert.equal("Invalid API, id: " .. invalid_api_id, json.message)
+
+                -- Success
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "Existing_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oxd_id = setupClientResponse.data.oxd_id,
+                        client_id = setupClientResponse.data.client_id,
+                        client_secret = setupClientResponse.data.client_secret,
+                        client_id_of_oxd_id = setupClientResponse.data.client_id_of_oxd_id,
+                        scope = "calendar",
+                        restrict_api = true,
+                        restrict_api_list = table.concat({api1.id, api2.id}, ",")
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("Existing_oauth2_credential", body.name)
+                assert.equal(setupClientResponse.data.oxd_id, body.oxd_id)
+                assert.equal(setupClientResponse.data.client_id, body.client_id)
+                assert.equal(setupClientResponse.data.client_secret, body.client_secret)
+                assert.equal(setupClientResponse.data.client_id_of_oxd_id, body.client_id_of_oxd_id)
+                assert.equal(false, body.mix_mode)
+                assert.equal(false, body.uma_mode)
+                assert.equal(true, body.oauth_mode)
+                assert.equal("calendar,clientinfo,uma_protection", body.scope)
+                assert.equal(true, body.restrict_api)
             end)
             describe("errors", function()
                 it("returns bad request i:e without op_host", function()

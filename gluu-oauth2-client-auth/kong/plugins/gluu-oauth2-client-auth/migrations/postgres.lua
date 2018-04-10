@@ -22,6 +22,8 @@ return {
         oauth_mode boolean,
         allow_unprotected_path boolean,
         show_consumer_custom_id boolean,
+        restrict_api boolean,
+        restrict_api_list text,
         created_at timestamp without time zone default (CURRENT_TIMESTAMP(0) at time zone 'utc'),
         PRIMARY KEY (id)
       );
