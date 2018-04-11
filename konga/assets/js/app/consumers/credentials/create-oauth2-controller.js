@@ -8,22 +8,32 @@
 
   angular.module('frontend.consumers')
     .controller('CreateOAuth2Controller', [
-      '_', '$scope', '$rootScope', '$log', 'ConsumerService', 'MessageService', '$uibModalInstance', '_consumer', '$localStorage', '$uibModal',
-      function controller(_, $scope, $rootScope, $log, ConsumerService, MessageService, $uibModalInstance, _consumer, $localStorage, $uibModal) {
+      '_', '$scope', '$rootScope', '$log', 'ConsumerService', 'MessageService', 'ApiModel', '$uibModalInstance', '_consumer', '_cred', '$localStorage', '$uibModal',
+      function controller(_, $scope, $rootScope, $log, ConsumerService, MessageService, ApiModel, $uibModalInstance, _consumer, _cred, $localStorage, $uibModal) {
 
         $scope.globalInfo = $localStorage.credentials.user;
 
         $scope.consumer = _consumer;
-        $scope.create = create;
-        $scope.data = {
-          op_host: $scope.globalInfo.opHost,
-          oxd_http_url: $scope.globalInfo.oxdWeb,
-          uma_mode: false,
-          mix_mode: false,
-          oauth_mode: true,
-          allow_unprotected_path: false,
-          show_consumer_custom_id: true
-        };
+        $scope.manage = manage;
+        $scope.restrictAPIModel = restrictAPIModel;
+
+        if (_cred) {
+          $scope.data = angular.copy(_cred);
+          $scope.data.scope = _cred.scope.split(",");
+          $scope.data.restrict_api_list = _cred.restrict_api_list.split(",");
+        } else {
+          $scope.data = {
+            op_host: $scope.globalInfo.opHost,
+            oxd_http_url: $scope.globalInfo.oxdWeb,
+            uma_mode: false,
+            mix_mode: false,
+            oauth_mode: true,
+            allow_unprotected_path: false,
+            show_consumer_custom_id: true,
+            restrict_api: false,
+            restrict_api_list: []
+          }
+        }
 
         $scope.close = function () {
           $uibModalInstance.dismiss()
@@ -58,12 +68,41 @@
           'none'
         ];
 
+        function manage() {
+          if (_cred) {
+            return update()
+          } else {
+            return create()
+          }
+        }
+
         function create() {
+          $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
+          $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
           ConsumerService.addCredential($scope.consumer.id, 'gluu-oauth2-client-auth', $scope.data).then(function (resp) {
             $log.debug('OAuth2 generated', resp);
             $rootScope.$broadcast('consumer.oauth2.created');
             $uibModalInstance.dismiss();
             prompt(resp.data.client_id, resp.data.oxd_id, resp.data.client_secret);
+          }).catch(function (err) {
+            $log.error(err)
+            $scope.errors = err.data.message || err.data.customMessage || {};
+            MessageService.error(err.data.body && err.data.body.message || err.data.customMessage || {});
+          })
+        }
+
+        function update() {
+          $scope.data.oauth_mode = $scope.data.oauth_mode || false;
+          $scope.data.uma_mode = $scope.data.uma_mode || false;
+          $scope.data.mix_mode = $scope.data.mix_mode || false;
+
+          $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
+          $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
+          ConsumerService.updateCredential($scope.consumer.id, 'gluu-oauth2-client-auth', _cred.id, $scope.data).then(function (resp) {
+            $log.debug('OAuth2 updated', resp);
+            MessageService.success("Updated successfully!")
+            $rootScope.$broadcast('consumer.oauth2.created');
+            $uibModalInstance.dismiss();
           }).catch(function (err) {
             $log.error(err)
             $scope.errors = err.data.message || err.data.customMessage || {};
@@ -109,6 +148,32 @@
               }
             },
             size: 'md'
+          });
+        }
+
+        function restrictAPIModel() {
+          $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/consumers/credentials/restrict_api/restrict-api.html',
+            controller: 'RestrictAPIController',
+            controllerAs: '$ctrl',
+            size: 'lg',
+            resolve: {
+              _apis: function () {
+                $scope.loading = true;
+                return ApiModel.load().then(function (response) {
+                  $scope.loading = false;
+                  return response;
+                })
+              },
+              _selected_api: function () {
+                return $scope.data.restrict_api_list;
+              }
+            }
+          }).result.then(function (result) {
+            $scope.data.restrict_api_list = result;
           });
         }
       }

@@ -23,7 +23,8 @@
     'frontend.connections',
     'frontend.snapshots',
     'frontend.cluster',
-    'ngTagsInput'
+    'ngTagsInput',
+    'checklist-model'
   ]);
 
 
