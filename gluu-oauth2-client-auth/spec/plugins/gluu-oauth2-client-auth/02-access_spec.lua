@@ -12,8 +12,9 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_uma_mode_allow_unprotected_path
     local oauth2_consumer_with_mix_mode_allow_unprotected_path
     local oauth2_consumer_with_mix_mode_hide_consumer_custom_id
+    local oauth2_consumer_with_restricted_api
     local invalidToken
-    local api, api2
+    local api, api2, api3
     local plugin, plugin_anonymous
     local timeout = 6000
     local op_server = "https://gluu.local.org"
@@ -35,6 +36,12 @@ describe("gluu-oauth2-client-auth plugin", function()
             name = "api2",
             upstream_url = "http://localhost:4040/api",
             hosts = { "api2.typicode.com" }
+        })
+
+        api3 = assert(helpers.dao.apis:insert {
+            name = "api3",
+            upstream_url = "http://localhost:4040/api",
+            hosts = { "api3.typicode.com" }
         })
 
         print("----------- Api created ----------- ")
@@ -103,6 +110,32 @@ describe("gluu-oauth2-client-auth plugin", function()
         assert.response(res).has.status(201)
         plugin_anonymous = assert.response(res).has.jsonbody()
         for k, v in pairs(plugin_anonymous) do
+            print(k, ": ", v)
+            if k == 'config' then
+                for sk, sv in pairs(v) do
+                    print(sk, ": ", sv)
+                end
+            end
+        end
+
+        print("\n----------- Plugin configuration API3 ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/apis/api3/plugins",
+            body = {
+                name = "gluu-oauth2-client-auth",
+                config = {
+                    op_server = op_server,
+                    oxd_http_url = oxd_http
+                },
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        assert.response(res).has.status(201)
+        plugin = assert.response(res).has.jsonbody()
+        for k, v in pairs(plugin) do
             print(k, ": ", v)
             if k == 'config' then
                 for sk, sv in pairs(v) do
@@ -214,6 +247,25 @@ describe("gluu-oauth2-client-auth plugin", function()
         })
         oauth2_consumer_with_mix_mode_hide_consumer_custom_id = cjson.decode(assert.res_status(201, res))
         auth_helper.print_table(oauth2_consumer_with_mix_mode_hide_consumer_custom_id)
+
+        print("\n----------- OAuth2 consumer credential with restricted API ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/consumers/foo/gluu-oauth2-client-auth",
+            body = {
+                name = "oauth2_credential_uma_mode",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
+                mix_mode = true,
+                restrict_api = true,
+                restrict_api_list = table.concat({ api.id, api2.id }, ",")
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        oauth2_consumer_with_restricted_api = cjson.decode(assert.res_status(201, res))
+        auth_helper.print_table(oauth2_consumer_with_restricted_api)
 
         -- ------------------Extra client for invalid token ----------------
         local setupClientRequest = {
@@ -1454,6 +1506,94 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(200, res)
             end)
         end)
+    end)
 
+    describe("oauth2-consumer with restricted APIS", function()
+        local req_access_token, token
+        setup(function()
+            -- ------------------GET Client Token-------------------------------
+            local tokenRequest = {
+                oxd_host = oauth2_consumer_with_restricted_api.oxd_http_url,
+                client_id = oauth2_consumer_with_restricted_api.client_id,
+                client_secret = oauth2_consumer_with_restricted_api.client_secret,
+                scope = { "openid", "uma_protection" },
+                op_host = oauth2_consumer_with_restricted_api.op_host
+            };
+
+            token = oxd.get_client_token(tokenRequest)
+            req_access_token = token.data.access_token
+        end)
+
+        it("401 Unauthorized with un-specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "api3.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(401, res)
+        end)
+
+        it("200 authorized with specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "jsonplaceholder.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(200, res)
+        end)
+
+        it("200 authorized with specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "jsonplaceholder.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(200, res)
+        end)
+
+        it("401 Unauthorized with un-specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "api3.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(401, res)
+        end)
+
+        it("200 authorized with specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "api2.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(200, res)
+        end)
+
+        it("200 authorized with specified API", function()
+            local res = assert(proxy_client:send {
+                method = "GET",
+                path = "/comments",
+                headers = {
+                    ["Host"] = "api2.typicode.com",
+                    ["Authorization"] = "Bearer " .. req_access_token
+                }
+            })
+            assert.res_status(200, res)
+        end)
     end)
 end)

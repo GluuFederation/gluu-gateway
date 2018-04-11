@@ -29,6 +29,10 @@ opt token not in cache
             gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
     end
 
+    opt restricted_api == enabled && req_api is not in restricted_api_list
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Out of available Restricted API's
+    end
+
     gluu-oauth2-client-plugin->kong-cache: write "token": {token JSON}
 end
 

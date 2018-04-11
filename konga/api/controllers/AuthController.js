@@ -324,6 +324,7 @@ var AuthController = {
             });
           })
           .catch(function (error) {
+            console.log(error);
             return res.status(500).send({error: error});
           });
       }
@@ -356,6 +357,7 @@ var AuthController = {
           return res.send({authURL: urlData.data.authorization_url});
         })
         .catch(function (error) {
+          console.log(error);
           return res.status(500).send({error: error});
         });
 

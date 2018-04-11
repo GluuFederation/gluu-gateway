@@ -194,6 +194,15 @@ local function validate_credentials(conf, req_token)
         credential = get_set_oauth2_consumer(cacheToken.client_id)
         cacheToken.credential = credential
 
+        -- Check Restricted API
+        if (not helper.is_empty(credential.restrict_api) and credential.restrict_api) then
+            local restrictedAPIs = helper.split(credential.restrict_api_list, ",")
+            if helper.find(restrictedAPIs, tostring(ngx.ctx.api.id)) == 0 then
+                ngx.log(ngx.DEBUG, "401 / Unauthorized - Out of available Restricted API")
+                return { active = false }
+            end
+        end
+
         if cacheToken.token_type == "OAuth" and credential.mix_mode then
             ngx.log(ngx.DEBUG, PLUGINNAME .. ": mix_mode = true rpt: " .. tostring(cacheToken.associated_rpt))
             ngx_set_header("Authorization", "Bearer " .. (cacheToken.associated_rpt or req_token))
@@ -255,6 +264,21 @@ local function validate_credentials(conf, req_token)
         ngx.log(ngx.DEBUG, PLUGINNAME .. " tokenType = UMA and uma_mode=false so response is Unauthorized 401/token can't be validate")
         tokenResponse.active = false
         return tokenResponse
+    end
+
+    -- Check scope security
+    --    if not helper.subset(helper.split(credential.scope, ","), tokenResponse.data.scopes) then
+    --        ngx.log(ngx.DEBUG, "401 / Unauthorized - Token with insufficient_scope")
+    --        return { active = false }
+    --    end
+
+    -- Check Restricted API
+    if (not helper.is_empty(credential.restrict_api) and credential.restrict_api) then
+        local restrictedAPIs = helper.split(credential.restrict_api_list, ",")
+        if helper.find(restrictedAPIs, tostring(ngx.ctx.api.id)) == 0 then
+            ngx.log(ngx.DEBUG, "401 / Unauthorized - Out of available Restricted API")
+            return { active = false }
+        end
     end
 
     -- If (tokenType == OAuth)(oauth_mode == true) then set header

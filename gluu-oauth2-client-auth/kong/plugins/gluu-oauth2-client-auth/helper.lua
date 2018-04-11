@@ -13,6 +13,25 @@ function _M.is_empty(s)
     return s == nil or s == ''
 end
 
+function _M.find(tbl, value)
+    for k, v in ipairs(tbl) do
+        if v == value then
+            return k;
+        end
+    end
+    return 0
+end
+
+-- Check b is subset of a
+function _M.subset(a, b)
+    for _, bv in pairs(b) do
+        if _M.find(a, bv) == 0 then
+            return false
+        end
+    end
+    return true
+end
+
 function _M.ternary(cond, T, F)
     if cond then return T else return F end
 end
