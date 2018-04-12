@@ -86,6 +86,11 @@ end
 -- @param conf: plugin global values
 -- @return response: response of setup_client
 function _M.update_uma_rs(conf)
+    if _M.is_empty(conf.oxd_id) then
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": OXD id is not found, Call register() ... ")
+        return _M.register(conf)
+    end
+
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Updating UMA RS ... ")
 
     -- ------------------GET Client Token-------------------------------
