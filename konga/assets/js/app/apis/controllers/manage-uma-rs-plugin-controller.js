@@ -132,12 +132,12 @@
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
           $("#dyScope" + parent + id).append(`
                       <div class="col-md-12">
-                        <input type="radio" value="or" name="condition${parent}${id + 1}">or | <input type="radio" value="and" name="condition${parent}${id + 1}">and | <input type="radio" value="not" name="condition${parent}${id + 1}">not
-                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${parent}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
+                        <input type="radio" value="or" name="condition${parent}${id}">or | <input type="radio" value="and" name="condition${parent}${id}">and | <input type="radio" value="not" name="condition${parent}${id}">not
+                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${parent}', ${id})"><i class="mdi mdi-plus"></i> Add Group</button>
                         <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${parent}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
-                        <input type="hidden" value="{{cond['scopes${parent}${id + 1}']}}" name="hdScope${parent}${id + 1}" />
+                        <input type="hidden" value="{{cond['scopes${parent}${id}']}}" name="hdScope${parent}${id}" />
                         <div class="form-group has-feedback">
-                          <tags-input type="url" ng-model="cond['scopes${parent}${id + 1}']" name="scope${id + 1}"
+                          <tags-input type="url" ng-model="cond['scopes${parent}${id}']" name="scope${id}"
                                       id="scopes{{$parent.$index}}{{$index}}"
                                       placeholder="Enter scopes">
                             <auto-complete source="loadScopes($query)"
