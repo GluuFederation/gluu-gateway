@@ -63,32 +63,29 @@
                   _repeat(pRule[op], op, 0);
 
                   function _repeat(rule, op, id) {
-                    $(`input[name=hdScopeCount${pIndex}${cIndex}]`).val(id + 1);
+                    $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
                     rule.forEach(function (oRule, oRuleIndex) {
                       if (oRule['var'] == 0 || oRule['var']) {
-                        if (!$scope.ruleScope[`scope${pIndex}${cIndex}${id}`]) {
-                          $scope.ruleScope[`scope${pIndex}${cIndex}${id}`] = [];
+                        if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                          $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
                         }
 
-                        $scope.ruleScope[`scope${pIndex}${cIndex}${id}`].push({text: cond.scope_expression.data[oRule['var']]});
+                        $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
                       }
 
                       if (rule.length - 1 == oRuleIndex) {
                         // render template
-                        var htmlRender = `
-                          <input type="radio" value="or" name="condition${pIndex}${cIndex}${id}" ${op == "or" ? "checked" : ""}>or |
-                          <input type="radio" value="and" name="condition${pIndex}${cIndex}${id}" ${op == "and" ? "checked" : ""}>and |
-                          <input type="radio" value="not" name="condition${pIndex}${cIndex}${id}" ${op == "not" ? "checked" : ""}>not
-                          <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${pIndex}${cIndex}', ${id + 1})"><i class="mdi mdi-plus"></i> Add Group</button>
-                          <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${pIndex}${cIndex}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
-                          <div class="form-group has-feedback">
-                           <input type="hidden" value="{{ruleScope['scope${pIndex}${cIndex}${id}']}}" name="hdScope${pIndex}${cIndex}${id}" />
-                           <tags-input ng-model="ruleScope['scope${pIndex}${cIndex}${id}']" 
-                           name="scope${pIndex}${cIndex}${id}" id="scope${pIndex}${cIndex}${id}">
-                            </tags-input>
-                          </div>
-                          <div class="col-md-12" id="dyScope${pIndex}${cIndex}${id + 1}">
-                          </div>`;
+                        var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                          "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                          "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
+                          "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                          "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
+                          "<div class=\"form-group has-feedback\"> " +
+                          "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\"></tags-input> " +
+                          "</div>" +
+                          "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+
                         $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
                         $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
                         // end
@@ -130,30 +127,17 @@
 
         function addGroup(parent, id) {
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
-          $("#dyScope" + parent + id).append(`
-                      <div class="col-md-12">
-                        <input type="radio" value="or" name="condition${parent}${id}">or | <input type="radio" value="and" name="condition${parent}${id}">and | <input type="radio" value="not" name="condition${parent}${id}">not
-                        <button type="button" class="btn btn-xs btn-success" data-add="rule" data-ng-click="addGroup('${parent}', ${id})"><i class="mdi mdi-plus"></i> Add Group</button>
-                        <button type="button" class="btn btn-xs btn-danger" data-add="rule" data-ng-click="removeGroup('${parent}', ${id})"><i class="mdi mdi-close"></i> Delete</button>
-                        <input type="hidden" value="{{cond['scopes${parent}${id}']}}" name="hdScope${parent}${id}" />
-                        <div class="form-group has-feedback">
-                          <tags-input type="url" ng-model="cond['scopes${parent}${id}']" name="scope${id}"
-                                      id="scopes{{$parent.$index}}{{$index}}"
-                                      placeholder="Enter scopes">
-                            <auto-complete source="loadScopes($query)"
-                                           min-length="0"
-                                           template="my-custom-template"
-                                           debounce-delay="0"></auto-complete>
-                          </tags-input>
-                          <script type="text/ng-template" id="my-custom-template">
-                            <div>
-                              <span>{{data.name}}</span>
-                            </div>
-                          </script>
-                        </div>
-                        <div class="col-md-12" id="dyScope${parent}${id + 1}">
-                        </div>
-                      </div>`);
+          var htmlRender = "<div class=\"col-md-12\">" +
+            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
+            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button>" +
+            "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
+            "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
+            "<div class=\"form-group has-feedback\">" +
+            "<tags-input type=\"url\" ng-model=\"cond['scopes" + parent + id + "']\" name=\"scope" + id + "\" id=\"scopes{{$parent.$index}}{{$index}}\" placeholder=\"Enter scopes\"> </tags-input>" +
+            "</div>" +
+            "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
+            "</div>";
+          $("#dyScope" + parent + id).append(htmlRender);
           $compile(angular.element("#dyScope" + parent + id).contents())($scope)
         }
 
@@ -169,31 +153,15 @@
             var parent = pIndex + '' + ($scope.modelPlugin.config.protection_document[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
-              $("#dyScope" + parent + '' + id).append(`
-                        <input type="radio" value="or" name="condition${parent}0">or |
-                            <input type="radio" value="and" name="condition${parent}0">and |
-                            <input type="radio" value="not" name="condition${parent}0">not
-                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                    data-ng-click="addGroup(${parent},1)"><i class="mdi mdi-plus"></i>
-                              Add Group
-                            </button>
-                            <input type="hidden" value="{{cond['scopes' + ${parent} + '0']}}"
-                                   name="hdScope${parent}0"/>
-                            <div class="form-group has-feedback">
-                              <tags-input ng-model="cond['scopes' + ${parent} + '0']"
-                                          name="scope${parent}0"
-                                          id="scopes${parent}"
-                                          placeholder="Enter scopes">
-                                <auto-complete source="loadScopes($query)"
-                                               min-length="0"
-                                               template="my-custom-template"
-                                               debounce-delay="0"></auto-complete>
-                              </tags-input>
-                              <script type="text/ng-template" id="my-custom-template">
-                                <div>
-                                  <span>{{data.name}}</span>
-                                </div>
-                              </script>`);
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
+                "<div class=\"form-group has-feedback\">" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
+                "</div>" +
+                "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>";
+
+              $("#dyScope" + parent + '' + id).append(htmlRender);
               $compile(angular.element("#dyScope" + parent + id).contents())($scope)
             });
           }
@@ -239,31 +207,15 @@
             var parent = $scope.modelPlugin.config.protection_document.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
-              $("#dyScope" + parent + '' + id).append(`
-                        <input type="radio" value="or" name="condition${parent}0">or |
-                            <input type="radio" value="and" name="condition${parent}0">and |
-                            <input type="radio" value="not" name="condition${parent}0">not
-                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                    data-ng-click="addGroup(${parent},1)"><i class="mdi mdi-plus"></i>
-                              Add Group
-                            </button>
-                            <input type="hidden" value="{{cond['scopes' + ${parent} + '0']}}"
-                                   name="hdScope${parent}0"/>
-                            <div class="form-group has-feedback">
-                              <tags-input ng-model="cond['scopes' + ${parent} + '0']"
-                                          name="scope${parent}0"
-                                          id="scopes${parent}"
-                                          placeholder="Enter scopes">
-                                <auto-complete source="loadScopes($query)"
-                                               min-length="0"
-                                               template="my-custom-template"
-                                               debounce-delay="0"></auto-complete>
-                              </tags-input>
-                              <script type="text/ng-template" id="my-custom-template">
-                                <div>
-                                  <span>{{data.name}}</span>
-                                </div>
-                              </script>`);
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
+                "<div class=\"form-group has-feedback\">" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
+                "</div>" +
+                "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
+                "</div>";
+              $("#dyScope" + parent + '' + id).append(htmlRender);
               $compile(angular.element("#dyScope" + parent + id).contents())($scope)
             });
           }
@@ -391,9 +343,9 @@
                 dIndex = 0;
                 sData = [];
                 var str = '{%s}';
-                for (var i = 0; i < parseInt($(`input[name=hdScopeCount${pIndex}${cIndex}]`).val()); i++) {
-                  var op = $(`input[name=condition${pIndex}${cIndex}${i}]:checked`).val();
-                  var scopes = JSON.parse($(`input[name=hdScope${pIndex}${cIndex}${i}]`).val()).map(function (o) {
+                for (var i = 0; i < parseInt($("input[name=hdScopeCount" + pIndex + cIndex + "]").val()); i++) {
+                  var op = $("input[name=condition" + pIndex + cIndex + i + "]:checked").val();
+                  var scopes = JSON.parse($("input[name=hdScope" + pIndex + cIndex + i + "]").val()).map(function (o) {
                     sData.push(o.text);
                     return {"var": dIndex++};
                   });
@@ -401,10 +353,10 @@
                   scopes.forEach(function (item) {
                     s += JSON.stringify(item) + ","
                   });
-                  str = str.replace('%s', `"${op}":[${s} {%s}]`);
+                  str = str.replace('%s', "\"" + op + "\":[" + s + " {%s}]");
 
-                  if (!!cond[`scopes${pIndex}${cIndex}${i}`]) {
-                    delete cond[`scopes${pIndex}${cIndex}${i}`]
+                  if (!!cond["scopes" + pIndex + cIndex + i]) {
+                    delete cond["scopes" + pIndex + cIndex + i]
                   }
                 }
 
