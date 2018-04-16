@@ -29,7 +29,8 @@ return {
     fields = {
         oxd_host = { required = true, type = "string" },
         uma_server_host = { required = true, type = "string", func = uma_server_host_validator },
-        protection_document = { required = true, type = "string" },
+        protection_document = { type = "string" },
+        oauth_scope_expression = { type = "string" },
         client_id = { type = "string" },
         client_secret = { type = "string" },
         oxd_id = { type = "string" }
@@ -37,6 +38,10 @@ return {
     self_check = function(schema, plugin_t, dao, is_updating)
         ngx.log(ngx.DEBUG, "is updating" .. tostring(is_updating))
         if not helper.is_empty(plugin_t.oxd_id) and not is_updating then
+            return true
+        end
+
+        if helper.is_empty(plugin_t.protection_document) then
             return true
         end
 

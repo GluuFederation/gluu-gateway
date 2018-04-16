@@ -51,6 +51,14 @@ opt token is OAuth
     opt UMA Mode
         gluu-oauth2-rs->Kong Proxy: 401/Forbidden: "UMA token required"
     end
+    opt OAuth mode
+        opt requested token scope != oauth scope expression
+            gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
+        end
+        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
+        Kong Proxy->API: Send Request
+        API->Kong Proxy: Content
+    end
     opt Mix Mode
         gluu-oauth2-rs<->oxd-web: get token
         gluu-oauth2-rs->kong-cache: write token, update OAuth2 JSON (add "associated_rpt" key)
