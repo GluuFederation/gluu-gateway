@@ -51,6 +51,7 @@ class KongSetup(object):
         self.cmd_touch = '/bin/touch'
         self.cmd_sudo = 'sudo'
         self.cmd_mv = '/bin/mv'
+        self.cmd_node = '/usr/bin/node'
 
         self.countryCode = ''
         self.state = ''
@@ -281,6 +282,10 @@ class KongSetup(object):
     def configKonga(self):
         self.logIt('Installing konga node packages...')
         print 'Installing konga node packages...'
+
+        if not os.path.exists(self.cmd_node):
+            self.run([self.cmd_sudo, self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
+
         self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
