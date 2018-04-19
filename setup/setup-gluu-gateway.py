@@ -95,6 +95,7 @@ class KongSetup(object):
         self.oxdServerAuthorizationRedirectUri = ''
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
+        self.oxdAuthorizationRedirectUri = 'localhost'
 
         # JRE setup properties
         self.jre_version = '162'
@@ -119,6 +120,7 @@ class KongSetup(object):
             self.orgName = data['orgName']
             self.admin_email = data['admin_email']
             self.pgPwd = data['pgPwd']
+            self.oxdAuthorizationRedirectUri = data['oxdAuthorizationRedirectUri']
             self.installOxd = data['installOxd']
             if self.installOxd:
                 self.kongaOPHost = 'https://' + data['kongaOPHost']
@@ -323,7 +325,7 @@ class KongSetup(object):
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         if self.generateClient:
-            AuthorizationRedirectUri = 'https://localhost:' + self.kongaPort
+            AuthorizationRedirectUri = 'https://'+self.oxdAuthorizationRedirectUri+':' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
