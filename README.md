@@ -10,7 +10,7 @@ reliability.
 2. **[Gluu Kong plugins](https://github.com/GluuFederation/gluu-gateway/)**:  
 Use a Gluu Server to authenticate OAuth2 clients or to control access to
 upstream API's.
-3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/kong-plugins/tree/master/konga)**:  
+3. **[Gluu Gateway Admin Portal](https://github.com/GluuFederation/gluu-gateway/tree/master/konga)**:  
 A web administration portal, based on [Konga](https://github.com/pantsel/konga),
 that makes it easier to manage your Gluu Gateway.
 4. **[oxd](https://oxd.gluu.org)**: OpenID Connect and UMA middleware service

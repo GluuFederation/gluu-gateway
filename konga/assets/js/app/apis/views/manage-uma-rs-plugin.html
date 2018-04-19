@@ -141,16 +141,7 @@
                                         name="scope{{pIndex}}{{$index}}0"
                                         id="scopes{{pIndex}}{{$index}}"
                                         placeholder="Enter scopes">
-                              <auto-complete source="loadScopes($query)"
-                                             min-length="0"
-                                             template="my-custom-template"
-                                             debounce-delay="0"></auto-complete>
                             </tags-input>
-                            <script type="text/ng-template" id="my-custom-template">
-                              <div>
-                                <span>{{data.name}}</span>
-                              </div>
-                            </script>
                           </div>
                           <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
                           </div>
