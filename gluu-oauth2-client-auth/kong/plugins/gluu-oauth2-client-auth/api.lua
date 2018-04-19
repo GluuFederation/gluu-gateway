@@ -153,6 +153,12 @@ return {
                 regData.show_consumer_custom_id = self.params.show_consumer_custom_id
             end
 
+            -- allow_oauth_scope_expression
+            if helper.is_empty(self.params.allow_oauth_scope_expression) then
+                regData.allow_oauth_scope_expression = regData.oauth_mode
+            else
+                regData.allow_oauth_scope_expression = regData.oauth_mode and self.params.allow_oauth_scope_expression
+            end
 
             crud.post(regData, dao_factory.gluu_oauth2_client_auth_credentials)
         end

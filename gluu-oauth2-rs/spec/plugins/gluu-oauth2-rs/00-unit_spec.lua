@@ -1,55 +1,75 @@
 local helper = require("kong.plugins.gluu-oauth2-rs.helper")
 local oxd = require("oxdweb")
+local json = require('JSON')
 
-local array_mt = {}
-local function is_array(tab)
-    return getmetatable(tab) == array_mt
-end
-
-local function mark_as_array(tab)
-    return setmetatable(tab, array_mt)
-end
-
-local function array(...)
-    return mark_as_array({ ... })
-end
-
-local function logic_apply(lgc, data, options)
-    if type(options) ~= 'table' or options == nil then
-        options = {}
-    end
-    options.is_array = is_array
-    options.mark_as_array = mark_as_array
-    return logic.apply(lgc, data, options)
+local function test_scope_expression(oauth_scope_expression, path, httpMethod, data)
+    local scope_expression = helper.fetch_Expression(oauth_scope_expression, path, httpMethod)
+    return helper.check_json_expression(scope_expression, data)
 end
 
 describe("Helper module", function()
     describe("logic() function", function()
         it("should return true if variable is null", function()
-            local data = { attr1 = 'val1', attr2 = 'val2', sub_attr = { attr = 'val1' } }
-            local rule = { var = 'attr1' }
-            assert.equals(data.attr1, logic_apply(rule, data))
+            -- Json
+            local json_expression = json:decode("{\"and\": [\"email\", \"profile\", {\"or\": [\"calendar\",\"uma\"]}]}")
+            assert.equals(false, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar", "uma" }))
 
-            rule = logic.new_logic('in', array("Spring", array("Spring", "Field")))
-            assert.equals(true, logic_apply(rule, {}))
+            json_expression = json:decode("{\"or\": [\"email\", \"profile\", {\"and\": [\"calendar\",\"uma\"]}]}")
+            assert.equals(true, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar", "uma" }))
 
-            -- OR operator
-            rule = logic.new_logic('all', array({ var = "scope" }, logic.new_logic('in', array({ var = "" }, array("email", "profile")))))
-            data = { scope = array("profile")}
-            assert.equals(true, logic_apply(rule, data))
+            json_expression = json:decode("{\"and\": [\"email\", \"profile\"]}")
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression))
+            assert.equals(false, helper.check_json_expression(json_expression, {}))
+            assert.equals(false, helper.check_json_expression(json_expression, nil))
 
-            -- With invalid value
-            data = { scope = array("calendar")}
-            assert.equals(false, logic_apply(rule, data))
+            json_expression = json:decode("{\"or\": [\"email\", \"profile\"]}")
+            assert.equals(true, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "calendar" }))
 
-            -- And operator
-            rule = logic.new_logic('some', array({ var = "scope" }, logic.new_logic('in', array({ var = "" }, array("email", "profile")))))
-            data = { scope = array("profile", "email")}
-            assert.equals(true, logic_apply(rule, data))
+            json_expression = json:decode("{}")
+            assert.equals(false, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "calendar" }))
 
-            -- With invalid value
-            data = { scope = array("profile")}
-            assert.equals(true, logic_apply(rule, data))
+            json_expression = nil
+            assert.equals(false, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", "profile" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email", "profile", "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "calendar" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "calendar" }))
+
+            json_expression = json:decode("{\"and\": [\"email\"]}")
+            assert.equals(true, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "profile" }))
+            assert.equals(false, helper.check_json_expression(json_expression, {}))
+
+            json_expression = json:decode("{\"and\": [\"email\", {\"or\": [\"calendar\",\"uma\", {\"and\": [\"post\"]}]}]}")
+            assert.equals(true, helper.check_json_expression(json_expression, { "post", "email" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email" }))
+            assert.equals(true, helper.check_json_expression(json_expression, { "email", "calendar" }))
+
+            json_expression = json:decode("{\"not\": [\"email\"]}")
+            assert.equals(true, helper.check_json_expression(json_expression, { "post" }))
+            assert.equals(false, helper.check_json_expression(json_expression, { "email" }))
+
+            -- Full expression
+            json_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+            assert.equals(true, test_scope_expression(json_expression, "/posts", "GET", {"email", "profile", "calendar"}))
+            assert.equals(false, test_scope_expression(json_expression, "/posts", "GET", {"email", "calendar"}))
+            assert.equals(false, test_scope_expression(json_expression, "/post", "GT", {"email", "calendar"}))
         end)
     end)
 

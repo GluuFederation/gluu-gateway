@@ -51,6 +51,7 @@ class KongSetup(object):
         self.cmd_touch = '/bin/touch'
         self.cmd_sudo = 'sudo'
         self.cmd_mv = '/bin/mv'
+        self.cmd_node = '/usr/bin/node'
 
         self.countryCode = ''
         self.state = ''
@@ -94,6 +95,7 @@ class KongSetup(object):
         self.oxdServerAuthorizationRedirectUri = ''
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
+        self.oxdAuthorizationRedirectUri = 'localhost'
 
         # JRE setup properties
         self.jre_version = '162'
@@ -101,7 +103,40 @@ class KongSetup(object):
         self.distAppFolder = '%s/dist/app' % self.optFolder
         self.jre_home = '/opt/jre'
         self.jreSHFileName = 'jre-gluu.sh'
+        self.isPrompt = True
+        self.license = False
+        self.initParametersFromJsonArgument()
 
+    def initParametersFromJsonArgument(self):
+        if len(sys.argv) > 1:
+            self.isPrompt = False
+            data = json.loads(sys.argv[1])
+            self.license = data['license']
+            self.ip = data['ip']
+            self.hostname = data['hostname']
+            self.countryCode = data['countryCode']
+            self.state = data['state']
+            self.city = data['city']
+            self.orgName = data['orgName']
+            self.admin_email = data['admin_email']
+            self.pgPwd = data['pgPwd']
+            self.oxdAuthorizationRedirectUri = data['oxdAuthorizationRedirectUri']
+            self.installOxd = data['installOxd']
+            if self.installOxd:
+                self.kongaOPHost = 'https://' + data['kongaOPHost']
+                self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
+                self.oxdServerLicenseId = data['oxdServerLicenseId']
+                self.oxdServerPublicKey = data['oxdServerPublicKey']
+                self.oxdServerPublicPassword = data['oxdServerPublicPassword']
+                self.oxdServerLicensePassword = data['oxdServerLicensePassword']
+            if not self.installOxd:
+                self.kongaOPHost = 'https://' + data['kongaOPHost']
+            self.kongaOxdWeb = data['kongaOxdWeb']
+            self.generateClient = data['generateClient']
+            if not self.generateClient:
+                self.kongaOxdId = data['kongaOxdId']
+                self.kongaClientId = data['kongaClientId']
+                self.kongaClientSecret = data['kongaClientSecret']
 
     def configureRedis(self):
         return True
@@ -256,6 +291,7 @@ class KongSetup(object):
         self.logIt('Installing luarocks packages...')
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-logic-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
 
@@ -281,12 +317,16 @@ class KongSetup(object):
     def configKonga(self):
         self.logIt('Installing konga node packages...')
         print 'Installing konga node packages...'
+
+        if not os.path.exists(self.cmd_node):
+            self.run([self.cmd_sudo, self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
+
         self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
         self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
         self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         if self.generateClient:
-            AuthorizationRedirectUri = 'https://localhost:' + self.kongaPort
+            AuthorizationRedirectUri = 'https://'+self.oxdAuthorizationRedirectUri+':' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
@@ -452,7 +492,8 @@ class KongSetup(object):
 if __name__ == "__main__":
     kongSetup = KongSetup()
     try:
-        msg = "------------------------------------------------------------------------------------- \n" \
+        if kongSetup.isPrompt:
+            msg = "------------------------------------------------------------------------------------- \n" \
               + "The MIT License (MIT) \n\n" \
               + "Copyright (c) 2017 Gluu \n\n" \
               + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
@@ -471,13 +512,13 @@ if __name__ == "__main__":
               + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
               + "SOFTWARE. \n" \
               + "------------------------------------------------------------------------------------- \n"
-        print msg
-        licence = False
-        licence = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
-        print ""
-        if licence:
+            print msg
+            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
+            print ""
+        if kongSetup.license:
             kongSetup.makeFolders()
-            kongSetup.promptForProperties()
+            if kongSetup.isPrompt:
+                kongSetup.promptForProperties()
             print "\n"
             print "-----------------------".ljust(30) + "-----------------------".rjust(35) + "\n"
             cnf = 'hostname'.ljust(30) + kongSetup.hostname.rjust(35) + "\n" \
@@ -505,7 +546,10 @@ if __name__ == "__main__":
                 cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
 
             print cnf
-            proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values (Y|n)', 'Y'))
+            if kongSetup.isPrompt:
+                proceed = kongSetup.makeBoolean(kongSetup.getPrompt('Proceed with these values (Y|n)', 'Y'))
+            else:
+                proceed = True
 
             if proceed:
                 kongSetup.genKongSslCertificate()

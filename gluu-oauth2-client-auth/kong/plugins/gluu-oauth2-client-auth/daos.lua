@@ -19,6 +19,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         mix_mode = { type = "boolean" },
         oauth_mode = { type = "boolean" },
         allow_unprotected_path = { type = "boolean" },
+        allow_oauth_scope_expression = { type = "boolean" },
         show_consumer_custom_id = { type = "boolean" },
         restrict_api = { type = "boolean" },
         restrict_api_list = { type = "string" },
