@@ -291,6 +291,7 @@ class KongSetup(object):
         self.logIt('Installing luarocks packages...')
         self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
+        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-logic-lua'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
         self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
 

@@ -151,7 +151,26 @@ describe("gluu-oauth2-client-auth plugin", function()
             body = {
                 name = "oauth2_credential_oauth_mode",
                 op_host = op_server,
-                oxd_http_url = oxd_http
+                oxd_http_url = oxd_http,
+                allow_oauth_scope_expression = false
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        oauth2_consumer_oauth_mode = cjson.decode(assert.res_status(201, res))
+        auth_helper.print_table(oauth2_consumer_oauth_mode)
+
+        print("\n----------- OAuth2 consumer oauth mode and scope expression ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/consumers/foo/gluu-oauth2-client-auth",
+            body = {
+                name = "oauth2_credential_oauth_mode",
+                op_host = op_server,
+                oxd_http_url = oxd_http,
+                oauth_mode = true,
+                allow_oauth_scope_expression = true
             },
             headers = {
                 ["Content-Type"] = "application/json"

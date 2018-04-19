@@ -166,6 +166,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, body.oauth_mode)
                 assert.equal(false, body.allow_unprotected_path)
                 assert.equal(true, body.show_consumer_custom_id)
+                assert.equal(true, body.allow_oauth_scope_expression)
             end)
             it("creates a oauth2 consumer credential with oauth_mode = true", function()
                 local res = assert(admin_client:send {
@@ -192,6 +193,35 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(true, body.oauth_mode)
                 assert.equal(false, body.allow_unprotected_path)
                 assert.equal(true, body.show_consumer_custom_id)
+                assert.equal(true, body.allow_oauth_scope_expression)
+            end)
+            it("creates a oauth2 consumer credential with oauth_mode = true", function()
+                local res = assert(admin_client:send {
+                    method = "POST",
+                    path = "/consumers/foo/gluu-oauth2-client-auth",
+                    body = {
+                        name = "New_oauth2_credential",
+                        op_host = op_server,
+                        oxd_http_url = oxd_http_url,
+                        oauth_mode = true,
+                        allow_oauth_scope_expression = true
+                    },
+                    headers = {
+                        ["Content-Type"] = "application/json"
+                    }
+                })
+                local body = cjson.decode(assert.res_status(201, res))
+                assert.equal(consumer.id, body.consumer_id)
+                assert.equal("New_oauth2_credential", body.name)
+                assert.equal(true, not auth_helper.is_empty(body.oxd_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_id))
+                assert.equal(true, not auth_helper.is_empty(body.client_secret))
+                assert.equal(false, body.uma_mode)
+                assert.equal(false, body.mix_mode)
+                assert.equal(true, body.oauth_mode)
+                assert.equal(false, body.allow_unprotected_path)
+                assert.equal(true, body.show_consumer_custom_id)
+                assert.equal(true, body.allow_oauth_scope_expression)
             end)
             it("creates a oauth2 consumer credential with uma_mode = true", function()
                 local res = assert(admin_client:send {
@@ -218,6 +248,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(false, body.oauth_mode)
                 assert.equal(false, body.allow_unprotected_path)
                 assert.equal(true, body.show_consumer_custom_id)
+                assert.equal(false, body.allow_oauth_scope_expression)
             end)
             it("creates a oauth2 consumer credential with mix_mode = true", function()
                 local res = assert(admin_client:send {
@@ -245,6 +276,7 @@ describe("Plugin: gluu-oauth2-client-auth (API)", function()
                 assert.equal(false, body.oauth_mode)
                 assert.equal(false, body.allow_unprotected_path)
                 assert.equal(false, body.show_consumer_custom_id)
+                assert.equal(false, body.allow_oauth_scope_expression)
             end)
             it("creates a oauth2 consumer credential with allow_unprotected_path = true", function()
                 local res = assert(admin_client:send {

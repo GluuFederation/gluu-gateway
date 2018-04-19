@@ -21,6 +21,7 @@ return {
         mix_mode boolean,
         oauth_mode boolean,
         allow_unprotected_path boolean,
+        allow_oauth_scope_expression boolean,
         show_consumer_custom_id boolean,
         restrict_api boolean,
         restrict_api_list text,

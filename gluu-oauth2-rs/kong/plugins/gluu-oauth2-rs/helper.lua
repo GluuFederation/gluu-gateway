@@ -1,5 +1,6 @@
 local oxd = require "oxdweb"
 local json = require "JSON"
+local logic = require('rucciva.json_logic')
 local PLUGINNAME = "gluu-oauth2-rs"
 local _M = {}
 
@@ -8,6 +9,26 @@ local _M = {}
 -- @return boolean
 function _M.is_empty(s)
     return s == nil or s == ''
+end
+
+--- Check value exist in array. If exist then return index value otherwise 0
+-- @param tbl: Array of values
+-- @param value: Value want to search
+function _M.find(tbl, value)
+    for k, v in ipairs(tbl) do
+        if v == value then
+            return k;
+        end
+    end
+    return 0
+end
+
+--- Function work as ternary operator
+-- @param cond: Condition which return true and false
+-- @param T: Value return when condition is true
+-- @param F: Value return when condition is false
+function _M.ternary(cond, T, F)
+    if cond then return T else return F end
 end
 
 --- Register OP client using oxd setup_client
@@ -356,6 +377,138 @@ function _M.print_table(node)
     output_str = table.concat(output)
 
     print(output_str)
+end
+
+--- Check OAuth scope expression
+-- Use check_json_expression function
+-- Others are utility functions for json logic library
+
+local array_mt = {}
+
+--- Check value is array or not
+-- @param tab: Any type of data
+local function is_array(tab)
+    return getmetatable(tab) == array_mt
+end
+
+--- Set metadata to array value
+-- @param tab: Array values
+local function mark_as_array(tab)
+    return setmetatable(tab, array_mt)
+end
+
+--- Convert array with array metadata
+-- @param ... Command separated values
+local function array(...)
+    return mark_as_array({ ... })
+end
+
+--- Apply json logic
+-- @param lgc: Json rules
+-- @param data: Data which you want to validate with lgc
+-- @param option: Extra options example: is_array
+local function logic_apply(lgc, data, options)
+    if type(options) ~= 'table' or options == nil then
+        options = {}
+    end
+    options.is_array = is_array
+    options.mark_as_array = mark_as_array
+    return logic.apply(lgc, data, options)
+end
+
+--- Check OP expression
+-- @param rules: Requested OP expressions
+local function check_op_expression(rules)
+    local result
+    for i = #rules, 1, -1 do
+        for op, _ in pairs(rules[i]) do
+            local op_result = logic_apply(logic.new_logic(_M.ternary(op == "not", "and", op), mark_as_array(rules[i][op])), {})
+            if op == 'or' then
+                result = _M.ternary(result == nil, op_result, result or op_result)
+            elseif op == 'and' then
+                result = _M.ternary(result == nil, op_result, result and op_result)
+            else
+                result = _M.ternary(result == nil, op_result, result and op_result)
+            end
+        end
+    end
+    return result or false
+end
+
+--- Recursion function to Make json expression into OP expression
+-- @param main_rule: object to store all the rules
+-- @param scope_Expression: OAuth scope expression
+-- @param data: Data which you want to validate with lgc
+local function make_op_expression(main_rule, scope_expression, data)
+    data = mark_as_array(data)
+    for key, scope_array in pairs(scope_expression or {}) do
+        local scope_result = {}
+        local next_object
+
+        if type(scope_array) == "table" then
+            for _, value in pairs(scope_array) do
+                if type(value) == "table" then
+                    next_object = value
+                    break;
+                end
+
+                local valueResult = logic_apply(logic.new_logic('in', array(value, data)), {})
+                if key == "not" then
+                    valueResult = not valueResult
+                end
+
+                if valueResult then
+                    table.insert(scope_result, true)
+                else
+                    table.insert(scope_result, false)
+                end
+            end
+        end
+
+        table.insert(main_rule, logic.new_logic(key, mark_as_array(scope_result)))
+        if next_object then
+            make_op_expression(main_rule, next_object, data)
+        else
+            break
+        end
+    end
+
+    return main_rule or {}
+end
+
+--- Check JSON expression
+-- @param json_expression: String json expression example: "{\"and\": [\"email\", \"profile\", {\"or\": [\"calendar\",\"uma\"]}]}"
+-- @param data: Array of scopes example: { "email", "profile" }
+-- @return true or false
+function _M.check_json_expression(scope_expression, data)
+    scope_expression = scope_expression or {}
+    local makeOPResult = make_op_expression({}, scope_expression, (data or {}))
+    local result = check_op_expression(makeOPResult)
+    return result
+end
+
+--- Fetch expression based on path and http methods
+function _M.fetch_Expression(json_exp, path, method)
+    local json_expression = json:decode(json_exp or "{}")
+    local found_path_condition
+    for k, v in pairs(json_expression) do
+        if v['path'] == path then
+            found_path_condition = v['conditions']
+            break
+        end
+    end
+
+    if not found_path_condition then
+        return nil
+    end
+
+    for k, v in pairs(found_path_condition) do
+        if _M.find(v['httpMethods'], method) > 0 then
+            return v['scope_expression']
+        end
+    end
+
+    return nil
 end
 
 return _M

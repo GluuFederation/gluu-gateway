@@ -240,12 +240,31 @@ function _M.execute(conf)
         end
 
         if oauth2Credential.oauth_mode then
-            ngx.log(ngx.DEBUG, PLUGINNAME .. " : Authorized. Allow - OAuth mode")
-            return -- Access Granted
+            if helper.is_empty(oauth2Credential.allow_oauth_scope_expression) or oauth2Credential.allow_oauth_scope_expression == false then
+                ngx.log(ngx.DEBUG, PLUGINNAME .. " : Authorized. Allow - OAuth mode. allow_oauth_scope_expression is off")
+                return -- Access Granted
+            end
+
+            ngx.log(ngx.DEBUG, "Checking scope expression available for path and method or not")
+            local scope_expression = helper.fetch_Expression(conf.oauth_scope_expression, path, httpMethod)
+
+            if helper.is_empty(scope_expression) then
+                ngx.log(ngx.DEBUG, "Path and method is not protected with oauth scope expression. Update your expression")
+                return responses.send_HTTP_FORBIDDEN("Path and method is not protected with oauth scope expression")
+            end
+
+            ngx.log(ngx.DEBUG, "Checking allow_oauth_scope_expression...")
+            if helper.check_json_expression(scope_expression, clientPluginCacheToken.scopes) then
+                ngx.log(ngx.DEBUG, "OAuth scope expression result : true")
+                return -- Access Granted
+            else
+                ngx.log(ngx.DEBUG, "OAuth scope expression result : true")
+                return responses.send_HTTP_FORBIDDEN("Failed to validate introspect scope with oauth scope expression")
+            end
         end
 
         if not oauth2Credential.mix_mode then
-            return responses.send_HTTP_UNAUTHORIZED("Enable anyone mode")
+            return responses.send_HTTP_UNAUTHORIZED("Enable anyone mix mode")
         end
 
         -- Check UMA Data in header for claim token
