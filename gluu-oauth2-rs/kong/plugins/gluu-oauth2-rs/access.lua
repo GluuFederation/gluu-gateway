@@ -67,7 +67,6 @@ end
 -- @param rpt: rpt token
 -- @param httpMethod: HTTP method
 -- @param path: Requested path Example: /posts
---
 local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
     if helper.is_empty(umaRSResponse.status) then
         return responses.send_HTTP_FORBIDDEN("UMA Authorization Server Unreachable")
@@ -122,6 +121,11 @@ function _M.execute(conf)
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! Token not found in header")
         -- Check access and return permission ticket in header
         local umaRSResponse = helper.check_access(conf, "", path, httpMethod)
+
+        if helper.is_empty(umaRSResponse) or umaRSResponse == false then
+            return responses.send_HTTP_UNAUTHORIZED("Unauthorized!")
+        end
+
         check_uma_rs_response(umaRSResponse, reqToken, httpMethod, path)
 
         -- Unauthorized! Token not found in header

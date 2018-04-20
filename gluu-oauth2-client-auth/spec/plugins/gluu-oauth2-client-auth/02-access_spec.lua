@@ -7,6 +7,7 @@ describe("gluu-oauth2-client-auth plugin", function()
     local proxy_client
     local admin_client
     local oauth2_consumer_oauth_mode
+    local oauth2_consumer_oauth_mode_scope_expression
     local oauth2_consumer_with_uma_mode
     local oauth2_consumer_with_mix_mode
     local oauth2_consumer_with_uma_mode_allow_unprotected_path
@@ -14,8 +15,8 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_mix_mode_hide_consumer_custom_id
     local oauth2_consumer_with_restricted_api
     local invalidToken
-    local api, api2, api3
-    local plugin, plugin_anonymous
+    local api, api2, api3, api4
+    local plugin, plugin_anonymous, plugin4
     local timeout = 6000
     local op_server = "https://gluu.local.org"
     local oxd_http = "http://localhost:8553"
@@ -42,6 +43,12 @@ describe("gluu-oauth2-client-auth plugin", function()
             name = "api3",
             upstream_url = "http://localhost:4040/api",
             hosts = { "api3.typicode.com" }
+        })
+
+        api4 = assert(helpers.dao.apis:insert {
+            name = "api4",
+            upstream_url = "http://localhost:4040/api",
+            hosts = { "api4.typicode.com" }
         })
 
         print("----------- Api created ----------- ")
@@ -144,6 +151,32 @@ describe("gluu-oauth2-client-auth plugin", function()
             end
         end
 
+        print("\n----------- Plugin configuration API4 ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/apis/api4/plugins",
+            body = {
+                name = "gluu-oauth2-client-auth",
+                config = {
+                    op_server = op_server,
+                    oxd_http_url = oxd_http
+                },
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        assert.response(res).has.status(201)
+        plugin4 = assert.response(res).has.jsonbody()
+        for k, v in pairs(plugin4) do
+            print(k, ": ", v)
+            if k == 'config' then
+                for sk, sv in pairs(v) do
+                    print(sk, ": ", sv)
+                end
+            end
+        end
+
         print("\n----------- OAuth2 consumer oauth mode credential ----------- ")
         local res = assert(admin_client:send {
             method = "POST",
@@ -176,8 +209,8 @@ describe("gluu-oauth2-client-auth plugin", function()
                 ["Content-Type"] = "application/json"
             }
         })
-        oauth2_consumer_oauth_mode = cjson.decode(assert.res_status(201, res))
-        auth_helper.print_table(oauth2_consumer_oauth_mode)
+        oauth2_consumer_oauth_mode_scope_expression = cjson.decode(assert.res_status(201, res))
+        auth_helper.print_table(oauth2_consumer_oauth_mode_scope_expression)
 
         print("\n----------- OAuth2 consumer credential with mix_mode = true ----------- ")
         local res = assert(admin_client:send {
@@ -1613,6 +1646,126 @@ describe("gluu-oauth2-client-auth plugin", function()
                 }
             })
             assert.res_status(200, res)
+        end)
+    end)
+
+    describe("oauth2-consumer flow with gluu_oauth2_rs and oauth scope expression", function()
+        local gluu_oauth2_rs_plugin
+        setup(function()
+            local res = assert(admin_client:send {
+                method = "POST",
+                path = "/apis/api4/plugins",
+                body = {
+                    name = "gluu-oauth2-rs",
+                    config = {
+                        uma_server_host = op_server,
+                        oxd_host = oxd_http,
+                        oauth_scope_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"openid\", \"calendar\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}},{\"httpMethods\":[\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+                    },
+                },
+                headers = {
+                    ["Content-Type"] = "application/json"
+                }
+            })
+            assert.response(res).has.status(201)
+            gluu_oauth2_rs_plugin = assert.response(res).has.jsonbody()
+        end)
+
+        -- oauth_mode
+        describe("When oauth2-consumer is in oauth_mode = true", function()
+            it("401 Unauthorized with ticket when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. invalidToken
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("200 status when oauth token is active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
+                    client_id = oauth2_consumer_oauth_mode_scope_expression.client_id,
+                    client_secret = oauth2_consumer_oauth_mode_scope_expression.client_secret,
+                    scope = { "openid", "uma_protection", "calendar" },
+                    op_host = oauth2_consumer_oauth_mode_scope_expression.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 3rs time request, when cache exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
+                    client_id = oauth2_consumer_oauth_mode_scope_expression.client_id,
+                    client_secret = oauth2_consumer_oauth_mode_scope_expression.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_oauth_mode_scope_expression.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                local json = cjson.decode(assert.res_status(403, res))
+                assert.equal("Failed to validate introspect scope with oauth scope expression", json.message)
+            end)
         end)
     end)
 end)
