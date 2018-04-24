@@ -33,7 +33,7 @@ do_start () {
                 echo "Starting $SERVICE_NAME ..."                
 
 		cd $BASEDIR
-                nohup node --harmony app.js >> $KONGA_INIT_LOG 2>&1 &
+                nohup node --harmony app.js --prod >> $KONGA_INIT_LOG 2>&1 &
                 echo $! > $TMP_PID_PATH_NAME        
                 START_STATUS=`tail -n 12 $KONGA_INIT_LOG|grep -i 'To see your app, visit'`
                 ERROR_STATUS=`tail -n 10 $KONGA_INIT_LOG|grep -i 'Error'`
