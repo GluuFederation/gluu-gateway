@@ -20,6 +20,16 @@
         $scope.addGroup = addGroup
         $scope.removeGroup = removeGroup
         $scope.fetchData = fetchData
+        $scope.setActiveCategory = setActiveCategory
+        $scope.addOauthNewPath = addOauthNewPath
+        $scope.addOauthNewCondition = addOauthNewCondition
+        $scope.addOauthGroup = addOauthGroup
+        $scope.removeOauthGroup = removeOauthGroup
+        $scope.showOauthResourceJSON = showOauthResourceJSON
+
+        $scope.categories = [{id: 'uma', title: 'UMA Resources'}, {id: 'oauth', title: 'OAuth Scope'}]
+        $scope.activeCategory = 'uma';
+
         $scope.modelPlugin = {
           api_id: $scope.api.id,
           name: 'gluu-oauth2-rs',
@@ -34,7 +44,8 @@
                   scope_expression: [],
                   ticketScopes: []
                 }]
-            }]
+            }],
+            oauth_scope_expression: []
           }
         };
 
@@ -46,7 +57,9 @@
             $scope.rsPlugin = o;
             $scope.isKongUMARSPluginAdded = true;
             $scope.ruleScope = {};
+            $scope.ruleOauthScope = {};
             $scope.modelPlugin.config.protection_document = JSON.parse(o.config.protection_document);
+            $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(o.config.oauth_scope_expression);
             setTimeout(function () {
               $scope.modelPlugin.config.protection_document.forEach(function (path, pIndex) {
                 path.conditions.forEach(function (cond, cIndex) {
@@ -102,6 +115,59 @@
                   }
                 });
               });
+              if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
+                $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
+                  path.conditions.forEach(function (cond, cIndex) {
+                    var pRule = cond.scope_expression;
+                    var op = '';
+                    if (pRule['and']) {
+                      op = 'and'
+                    } else if (pRule['or']) {
+                      op = 'or'
+                    } else if (pRule['not']) {
+                      op = 'not'
+                    }
+
+                    _repeatOAuth(pRule[op], op, 0);
+
+                    function _repeatOAuth(rule, op, id) {
+                      $("input[name=hdOauthScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                      rule.forEach(function (oRule, oRuleIndex) {
+                        if (!$scope.ruleOauthScope["scope" + pIndex + cIndex + id]) {
+                          $scope.ruleOauthScope["scope" + pIndex + cIndex + id] = [];
+                        }
+                        $scope.ruleOauthScope["scope" + pIndex + cIndex + id].push({text: oRule});
+
+                        if (rule.length - 1 == oRuleIndex) {
+                          // render template
+                          var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                            "<input type=\"radio\" value=\"and\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                            "<input type=\"radio\" value=\"not\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
+                            "<div class=\"form-group has-feedback\"> " +
+                            "<input type=\"hidden\" value=\"{{ruleOauthScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdOauthScope" + pIndex + cIndex + id + "\" /> " +
+                            "<tags-input ng-model=\"ruleOauthScope['scope" + pIndex + cIndex + id + "']\" name=\"oauthScope" + pIndex + cIndex + id + "\" id=\"oauthScope" + pIndex + cIndex + id + "\"></tags-input> " +
+                            "</div>" +
+                            "<div class=\"col-md-12\" id=\"dyOauthScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+
+                          $("#dyOauthScope" + pIndex + cIndex + id).append(htmlRender);
+                          $compile(angular.element("#dyOauthScope" + pIndex + cIndex + id).contents())($scope)
+                          // end
+                        }
+
+                        if (oRule['and']) {
+                          _repeatOAuth(oRule['and'], 'and', ++id);
+                        } else if (oRule['or']) {
+                          _repeatOAuth(oRule['or'], 'or', ++id);
+                        } else if (oRule['not']) {
+                          _repeatOAuth(oRule['not'], 'not', ++id);
+                        }
+                      });
+                    }
+                  });
+                });
+              }
             }, 500);
           }
         });
@@ -168,7 +234,8 @@
         }
 
         function showResourceJSON() {
-          var model = makeJSON($scope.modelPlugin);
+          var model = angular.copy($scope.modelPlugin);
+          model.config.protection_document = makeJSON(model);
           if (!model) {
             return false;
           }
@@ -234,13 +301,16 @@
             MessageService.error("Invalid UMA Resources");
             return false;
           }
-          var model = makeJSON($scope.modelPlugin);
+          var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
             return false;
           }
+          model.config.protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
+          if (model.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+          }
 
-          model.config.protection_document = (JSON.stringify(model.config.protection_document));
           PluginHelperService.addPlugin(
             model,
             function success(res) {
@@ -272,7 +342,6 @@
               var progressPercentage = parseInt(100.0 * event.loaded / event.total);
               $log.debug('progress: ' + progressPercentage + '% ' + event.config.data.file.name);
             });
-
         }
 
         function updatePlugin(isValid) {
@@ -280,14 +349,23 @@
             MessageService.error("Invalid UMA Resources");
             return false;
           }
-          var model = makeJSON($scope.modelPlugin);
+          var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
             return false;
           }
-          var doc = (JSON.stringify(model.config.protection_document));
+          var protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
+          var oauth_scope_expression
+          if ($scope.modelPlugin.config.oauth_scope_expression) {
+            oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+          }
+
           model.config = angular.copy($scope.rsPlugin.config);
-          model.config.protection_document = doc;
+          model.config.protection_document = protection_document;
+          if ($scope.modelPlugin.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = oauth_scope_expression;
+          }
+
           PluginHelperService.updatePlugin($scope.rsPlugin.id,
             model,
             function success(res) {
@@ -375,12 +453,156 @@
                 }
               });
             });
-            model.config.protection_document = JSON.parse(angular.toJson(model.config.protection_document));
-            return model;
+            return JSON.parse(angular.toJson(model.config.protection_document));
           } catch (e) {
             MessageService.error("Invalid UMA resource");
             return null;
           }
+        }
+
+        /**
+         * ----------------------------------------------------------------------
+         * Functions for oauth scope expression
+         * ----------------------------------------------------------------------
+         */
+        function setActiveCategory(o) {
+          $scope.activeCategory = o.id
+        }
+
+        function addOauthNewPath() {
+          $scope.modelPlugin.config.oauth_scope_expression.push({
+            path: '',
+            conditions: [
+              {
+                httpMethods: [{text: 'GET'}],
+                scope_expression: []
+              }
+            ]
+          });
+
+          if ($scope.isKongUMARSPluginAdded && $scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
+            var parent = $scope.modelPlugin.config.oauth_scope_expression.length - 1 + '0';
+            var id = 0;
+            setTimeout(function () {
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
+                "<div class=\"form-group has-feedback\">" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+                "</div>" +
+                "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
+                "</div>";
+              $("#dyOauthScope" + parent + '' + id).append(htmlRender);
+              $compile(angular.element("#dyOauthScope" + parent + id).contents())($scope)
+            });
+          }
+        }
+
+        function addOauthNewCondition(pIndex) {
+          $scope.modelPlugin.config.oauth_scope_expression[pIndex].conditions.push(
+            {
+              httpMethods: [{text: 'GET'}],
+              scope_expression: []
+            });
+
+          if ($scope.isKongUMARSPluginAdded && $scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
+            var parent = pIndex + '' + ($scope.modelPlugin.config.oauth_scope_expression[pIndex].conditions.length - 1);
+            var id = 0;
+            setTimeout(function () {
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not " +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
+                "<div class=\"form-group has-feedback\">" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
+                "</div>" +
+                "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>";
+
+              $("#dyOauthScope" + parent + '' + id).append(htmlRender);
+              $compile(angular.element("#dyOauthScope" + parent + id).contents())($scope)
+            });
+          }
+        }
+
+        function addOauthGroup(parent, id) {
+          $("input[name=hdOauthScopeCount" + parent + "]").val(id + 1);
+          var htmlRender = "<div class=\"col-md-12\">" +
+            "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + id + "\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + id + "\">not" +
+            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button>" +
+            "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
+            "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdOauthScope" + parent + id + "\" />" +
+            "<div class=\"form-group has-feedback\">" +
+            "<tags-input type=\"url\" ng-model=\"cond['scopes" + parent + id + "']\" name=\"oauthScope" + id + "\" id=\"oauthScope{{$parent.$index}}{{$index}}\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+            "</div>" +
+            "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
+            "</div>";
+          $("#dyOauthScope" + parent + id).append(htmlRender);
+          $compile(angular.element("#dyOauthScope" + parent + id).contents())($scope)
+        }
+
+        function removeOauthGroup(parent, id) {
+          $("#dyOauthScope" + parent + id).html('');
+          $("input[name=hdOauthScopeCount" + parent + "]").val(id);
+        }
+
+        function makeOAuthScopeJSON(data) {
+          try {
+            var model = angular.copy(data);
+            var dIndex = 0;
+            model.config.oauth_scope_expression.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                dIndex = 0;
+                var str = '{%s}';
+                for (var i = 0; i < parseInt($("input[name=hdOauthScopeCount" + pIndex + cIndex + "]").val()); i++) {
+                  var op = $("input[name=oauthCondition" + pIndex + cIndex + i + "]:checked").val();
+                  var s = "";
+                  JSON.parse($("input[name=hdOauthScope" + pIndex + cIndex + i + "]").val()).forEach(function (o) {
+                    s += "\"" + o.text + "\"" + ","
+                  });
+
+                  str = str.replace('%s', "\"" + op + "\":[" + s + " {%s}]");
+
+                  if (!!cond["scopes" + pIndex + cIndex + i]) {
+                    delete cond["scopes" + pIndex + cIndex + i]
+                  }
+                }
+
+                cond.httpMethods = cond.httpMethods.map(function (o) {
+                  return o.text;
+                });
+                str = str.replace(', {%s}', '');
+                cond.scope_expression = JSON.parse(str);
+              });
+            });
+            return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
+          } catch (e) {
+            MessageService.error("Invalid OAuth scope expression json");
+            return null;
+          }
+        }
+
+        function showOauthResourceJSON() {
+          var model = angular.copy($scope.modelPlugin);
+          model.config.oauth_scope_expression = makeOAuthScopeJSON(model);
+          if (!model) {
+            return false;
+          }
+
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/show-oauth-scope-json-modal.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', 'modelPlugin', ShowOAuthScopeController],
+            resolve: {
+              modelPlugin: function () {
+                return model;
+              }
+            }
+          }).result.then(function (result) {
+          });
+        }
+
+        function ShowOAuthScopeController($uibModalInstance, $scope, modelPlugin) {
+          $scope.model = angular.copy(modelPlugin);
         }
 
         //init
