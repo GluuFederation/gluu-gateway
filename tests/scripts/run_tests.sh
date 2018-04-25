@@ -30,3 +30,6 @@ function install_ff {
 function run_tests {
    /opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -projectPath="$PROJECT_PATH" -reportFolder="Reports" -reportFileName="report" -retry=0 -testSuitePath="Test Suites/GG_tests" -browserType="Firefox (headless)" -email="$EMAIL" -password"$PASSWORD"
 }
+
+install_ff
+install_katalon
