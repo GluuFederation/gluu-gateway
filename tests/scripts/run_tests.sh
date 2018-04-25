@@ -6,7 +6,7 @@ PROJECT_PATH=$3
 
 
 function install_katalon {
-    if [ -d "$DIRECTORY" ]; then
+    if [ -d "/opt/katalon" ]; then
         echo "Installing katalon"
         mkdir -p /opt/katalon
         cd /opt/katalon
