@@ -19,7 +19,7 @@
 
         if (_cred) {
           $scope.data = angular.copy(_cred);
-          $scope.data.scope = _cred.scope.split(",");
+          // $scope.data.scope = _cred.scope.split(",");
           $scope.data.restrict_api_list = _cred.restrict_api_list.split(",");
         } else {
           $scope.data = {
@@ -31,7 +31,8 @@
             allow_unprotected_path: false,
             show_consumer_custom_id: true,
             restrict_api: false,
-            restrict_api_list: []
+            restrict_api_list: [],
+            allow_oauth_scope_expression: true
           }
         }
 
@@ -77,7 +78,7 @@
         }
 
         function create() {
-          $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
+          // $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
           $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
           ConsumerService.addCredential($scope.consumer.id, 'gluu-oauth2-client-auth', $scope.data).then(function (resp) {
             $log.debug('OAuth2 generated', resp);
@@ -96,7 +97,7 @@
           $scope.data.uma_mode = $scope.data.uma_mode || false;
           $scope.data.mix_mode = $scope.data.mix_mode || false;
 
-          $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
+          // $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
           $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
           ConsumerService.updateCredential($scope.consumer.id, 'gluu-oauth2-client-auth', _cred.id, $scope.data).then(function (resp) {
             $log.debug('OAuth2 updated', resp);
