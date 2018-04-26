@@ -27,7 +27,7 @@
         $scope.removeOauthGroup = removeOauthGroup
         $scope.showOauthResourceJSON = showOauthResourceJSON
 
-        $scope.categories = [{id: 'uma', title: 'UMA Resources'}, {id: 'oauth', title: 'OAuth Scope'}]
+        $scope.categories = [{id: 'uma', title: 'UMA Resources'}, {id: 'oauth', title: 'OAuth Scope Security'}]
         $scope.activeCategory = 'uma';
 
         $scope.modelPlugin = {
