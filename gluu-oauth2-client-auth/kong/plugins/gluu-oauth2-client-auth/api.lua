@@ -155,7 +155,7 @@ return {
 
             -- allow_oauth_scope_expression
             if helper.is_empty(self.params.allow_oauth_scope_expression) then
-                regData.allow_oauth_scope_expression = regData.oauth_mode
+                regData.allow_oauth_scope_expression = false
             else
                 regData.allow_oauth_scope_expression = regData.oauth_mode and self.params.allow_oauth_scope_expression
             end
