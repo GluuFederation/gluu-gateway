@@ -95,7 +95,7 @@
                           "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
                           "<div class=\"form-group has-feedback\"> " +
                           "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\"></tags-input> " +
+                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
                           "</div>" +
                           "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
@@ -147,7 +147,7 @@
                             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleOauthScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdOauthScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleOauthScope['scope" + pIndex + cIndex + id + "']\" name=\"oauthScope" + pIndex + cIndex + id + "\" id=\"oauthScope" + pIndex + cIndex + id + "\"></tags-input> " +
+                            "<tags-input ng-model=\"ruleOauthScope['scope" + pIndex + cIndex + id + "']\" name=\"oauthScope" + pIndex + cIndex + id + "\" id=\"oauthScope" + pIndex + cIndex + id + "\" placeholder=\"Enter oauth scopes\"></tags-input> " +
                             "</div>" +
                             "<div class=\"col-md-12\" id=\"dyOauthScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
@@ -486,9 +486,9 @@
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not" +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
-                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
+                "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
                 "</div>";
@@ -511,9 +511,9 @@
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not " +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup(" + parent + ",1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
-                "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
+                "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
+                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"></tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>";
 
@@ -529,9 +529,9 @@
             "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + id + "\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + id + "\">not" +
             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button>" +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
-            "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdOauthScope" + parent + id + "\" />" +
+            "<input type=\"hidden\" value=\"{{oauthCond['scopes" + parent + id + "']}}\" name=\"hdOauthScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
-            "<tags-input type=\"url\" ng-model=\"cond['scopes" + parent + id + "']\" name=\"oauthScope" + id + "\" id=\"oauthScope{{$parent.$index}}{{$index}}\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+            "<tags-input type=\"url\" ng-model=\"oauthCond['scopes" + parent + id + "']\" name=\"oauthScope" + id + "\" id=\"oauthScope{{$parent.$index}}{{$index}}\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
             "</div>" +
             "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
             "</div>";

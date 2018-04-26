@@ -210,11 +210,11 @@
                     <span class="help-block error-block basic-block">The path which you want to protected by UMA.</span>
                   </div>
                   <div class="col-md-12">
-                    <div class="row" ng-repeat="cond in element.conditions">
+                    <div class="row" ng-repeat="oauthCond in element.conditions">
                       <div class="row">
                         <div class="col-md-10">
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond.httpMethods"
+                            <tags-input ng-model="oauthCond.httpMethods"
                                         id="oauthHttpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
                                         placeholder="Enter http Methods">
@@ -246,10 +246,10 @@
                                   data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
                             Add Group
                           </button>
-                          <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
+                          <input type="hidden" value="{{oauthCond['scopes' + pIndex + $index + '0']}}"
                                  name="hdOauthScope{{pIndex}}{{$index}}0"/>
                           <div class="form-group has-feedback">
-                            <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                            <tags-input ng-model="oauthCond['scopes' + pIndex + $index + '0']"
                                         name="oauthScope{{pIndex}}{{$index}}0"
                                         id="oauthScopes{{pIndex}}{{$index}}"
                                         placeholder="Enter oauth scopes">
