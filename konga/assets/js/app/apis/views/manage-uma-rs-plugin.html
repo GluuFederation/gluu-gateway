@@ -70,6 +70,20 @@
               </table>
             </div>
             <div class="col-md-12">
+              <ul class="nav nav-pills">
+                <li
+                  role="presentation"
+                  data-ng-click="setActiveCategory(o)"
+                  ng-class="{'active' : activeCategory == o.id}"
+                  data-ng-repeat="o in categories" style="cursor: pointer; border: 1px solid #445862;">
+                  <a>{{o.title}}</a>
+                </li>
+              </ul>
+            </div>
+            <div class="col-md-12">
+              <hr/>
+            </div>
+            <div class="col-md-12" data-ng-show="activeCategory == 'uma'">
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>UMA Resources</label>
                 <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. For <a
@@ -163,6 +177,104 @@
                 <i class="mdi mdi-plus"></i> Add path
               </button>
               <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
+                <i class="mdi mdi-information"></i> View Resource Json
+              </button>
+            </div>
+            <div class="col-md-12" data-ng-show="activeCategory == 'oauth'">
+              <div class="form-group has-feedback">
+                <label><span class="text text-danger">*</span>OAuth Scope Security</label>
+                <span class="help-block error-block basic-block">Protect API path by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start. </span>
+              </div>
+              <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
+                   ng-init="pIndex = $index"
+                   style="border: 1px dotted;">
+                <hr/>
+                <div class="col-md-1">
+                  <button type="button" title="Delete path" class="btn btn-danger"
+                          ng-click="modelPlugin.config.oauth_scope_expression.splice($index,1)">
+                    <i class="mdi mdi-close"></i>
+                  </button>
+                </div>
+                <div class="col-md-11">
+                  <div class="form-group has-feedback col-md-4">
+                    <input type="text" class="form-control" value="{{api.upstream_url}}" title="Upstream URL" disabled/>
+                    <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_port}}</span>
+                  </div>
+                  <div class="form-group has-feedback col-md-8"
+                       ng-class="{'has-error': PluginForm.path.$invalid && (PluginForm.path.$dirty || PluginForm.$submitted)}">
+                    <input type="text" class="form-control" id="oauthPath{{$index}}" name="oauthPath{{$index}}"
+                           title="Enter path"
+                           placeholder="/path"
+                           ng-model="element.path"
+                           ng-required="true"/>
+                    <span class="help-block error-block basic-block">The path which you want to protected by UMA.</span>
+                  </div>
+                  <div class="col-md-12">
+                    <div class="row" ng-repeat="oauthCond in element.conditions">
+                      <div class="row">
+                        <div class="col-md-10">
+                          <div class="form-group has-feedback">
+                            <tags-input ng-model="oauthCond.httpMethods"
+                                        id="oauthHttpMethods{{pIndex}}{{$index}}"
+                                        add-from-autocomplete-only="true"
+                                        placeholder="Enter http Methods">
+                              <auto-complete source="loadMethods($query)"
+                                             min-length="0"
+                                             debounce-delay="0"></auto-complete>
+                            </tags-input>
+                            <span class="help-block error-block basic-block"></span>
+                          </div>
+                        </div>
+                        <div class="col-md-2">
+                          <button type="button" title="Delete condition" class="btn btn-danger"
+                                  ng-click="element.conditions.splice($index,1)">
+                            <i class="mdi mdi-close"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <input type="hidden" value="1" name="hdOauthScopeCount{{pIndex}}{{$index}}"/>
+                        <div class="col-md-12" id="dyOauthScope{{pIndex}}{{$index}}0"
+                             data-ng-if="isKongUMARSPluginAdded">
+                        </div>
+                        <div class="col-md-12" id="dyOauthScope{{pIndex}}{{$index}}0"
+                             data-ng-if="!isKongUMARSPluginAdded">
+                          <input type="radio" value="or" name="oauthCondition{{pIndex}}{{$index}}0">or |
+                          <input type="radio" value="and" name="oauthCondition{{pIndex}}{{$index}}0">and |
+                          <input type="radio" value="not" name="oauthCondition{{pIndex}}{{$index}}0">not
+                          <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                  data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                            Add Group
+                          </button>
+                          <input type="hidden" value="{{oauthCond['scopes' + pIndex + $index + '0']}}"
+                                 name="hdOauthScope{{pIndex}}{{$index}}0"/>
+                          <div class="form-group has-feedback">
+                            <tags-input ng-model="oauthCond['scopes' + pIndex + $index + '0']"
+                                        name="oauthScope{{pIndex}}{{$index}}0"
+                                        id="oauthScopes{{pIndex}}{{$index}}"
+                                        placeholder="Enter oauth scopes">
+                            </tags-input>
+                          </div>
+                          <div class="col-md-12" id="dyOauthScope{{pIndex}}{{$index}}1">
+                          </div>
+                        </div>
+                      </div>
+                      <hr/>
+                    </div>
+                    <div class="row">
+                      <button type="button" class="btn btn-info" ng-click="addOauthNewCondition($index)">
+                        <i class="mdi mdi-plus"></i> Add Condition
+                      </button>
+                    </div>
+                    <br/>
+                  </div>
+                </div>
+              </div>
+              <hr/>
+              <button type="button" class="btn btn-info" ng-click="addOauthNewPath()">
+                <i class="mdi mdi-plus"></i> Add path
+              </button>
+              <button type="button" class="btn btn-primary" ng-click="showOauthResourceJSON()">
                 <i class="mdi mdi-information"></i> View Resource Json
               </button>
             </div>

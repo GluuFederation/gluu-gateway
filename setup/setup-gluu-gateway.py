@@ -52,6 +52,7 @@ class KongSetup(object):
         self.cmd_sudo = 'sudo'
         self.cmd_mv = '/bin/mv'
         self.cmd_node = '/usr/bin/node'
+        self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
 
         self.countryCode = ''
         self.state = ''
@@ -481,6 +482,7 @@ class KongSetup(object):
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
         self.run([self.cmd_sudo, "/etc/init.d/%s" % self.kongaService, "start"])
+        self.run([self.cmd_update_rs_d, self.kongaService, "defaults"])
 
     def copyFile(self, inFile, destFolder):
         try:
