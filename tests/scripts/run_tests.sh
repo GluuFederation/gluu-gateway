@@ -31,22 +31,14 @@ function install_ff {
     fi
 }
 
-function setDisplay {
-    #/usr/bin/killall Xvfb
-    #Xvfb :10 -ac &
-    #echo "xvfb started at display 10"
-    #export DISPLAY=:10
-    echo "export display 10"
-}
 
 function run_tests {
     sed -i -e "s/\${hostname}/$TEST_HOST/" -e "s/\${username}/$TEST_USERNAME/" -e "s/\${secret}/$TEST_PASSWORD/" "$WORKSPACE/tests/katalon/Gluu Gateway/Data Files/dev1TestData.dat"
     echo "/opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -projectPath='$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj' -reportFolder='$WORKSPACE/Reports' -reportFileName='report' -retry=0 -testSuitePath='$WORKSPACE/tests/katalon/Gluu Gateway/Test Suites/GG_tests' -browserType='Firefox (headless)' -email='$EMAIL' -password='$PASSWORD'"
-    export JAVA_HOME=/opt/jre
-    strace /opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -projectPath="$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj" -reportFolder="$WORKSPACE/Reports" -reportFileName="report" -retry=0 -testSuitePath="Test Suites/GG_Tests" -browserType="Firefox (headless)" -email="$EMAIL" -password="$PASSWORD"
+    ln -sf /opt/jre /opt/katalon/Katalon_Studio_Linux_64-5.4/jre
+    /opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -projectPath="$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj" -reportFolder="$WORKSPACE/Reports" -reportFileName="report" -retry=0 -testSuitePath="Test Suites/GG_Tests" -browserType="Firefox (headless)" -email="$EMAIL" -password="$PASSWORD"
 }
 
 install_ff
 install_katalon
-setDisplay
 run_tests
