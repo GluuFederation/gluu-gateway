@@ -42,7 +42,7 @@ function setDisplay {
 function run_tests {
     sed -i -e "s/\${hostname}/$TEST_HOST/" -e "s/\${username}/$TEST_USERNAME/" -e "s/\${secret}/$TEST_PASSWORD/" "$WORKSPACE/tests/katalon/Gluu Gateway/Data Files/dev1TestData.dat"
     echo "/opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -projectPath='$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj' -reportFolder='$WORKSPACE/Reports' -reportFileName='report' -retry=0 -testSuitePath='$WORKSPACE/tests/katalon/Gluu Gateway/Test Suites/GG_tests' -browserType='Firefox (headless)' -email='$EMAIL' -password='$PASSWORD'"
-    /opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -consoleLog -projectPath="$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj" -reportFolder="$WORKSPACE/Reports" -reportFileName="report" -retry=0 -testSuitePath="Test Suites/GG_Tests" -browserType="Firefox (headless)" -email="$EMAIL" -password="$PASSWORD"
+    /opt/katalon/Katalon_Studio_Linux_64-5.4/katalon --args -runMode=console -consoleLog -projectPath="$WORKSPACE/tests/katalon/Gluu Gateway/Gluu Gateway.prj" -reportFolder="$WORKSPACE/Reports" -reportFileName="report" -retry=0 -testSuitePath="Test Suites/GG_Tests" -browserType="Firefox (headless)" -email="$EMAIL" -password="$PASSWORD" > katalon.log
 }
 
 install_ff
