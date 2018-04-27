@@ -23,7 +23,7 @@ function install_katalon {
 }
 
 function install_ff {
-    if [ -x "$(command -v xvfb)" ]; then
+    if ! [ -x "$(command -v xvfb)" ]; then
         echo "Installing FF & xvfb"
         apt-get install -y firefox xvfb
     else
