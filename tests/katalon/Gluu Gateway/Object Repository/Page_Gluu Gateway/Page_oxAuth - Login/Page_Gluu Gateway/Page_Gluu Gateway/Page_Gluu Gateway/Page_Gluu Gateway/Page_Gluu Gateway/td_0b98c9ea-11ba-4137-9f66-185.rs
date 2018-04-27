@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebElementEntity>
+   <description></description>
+   <name>td_0b98c9ea-11ba-4137-9f66-185</name>
+   <tag></tag>
+   <elementGuidId>a5a052e6-aee2-445f-9dab-c7f8cbad53ff</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>//*[@id=&quot;konga&quot;]/body/div[1]/div/div/div[2]/table/tbody/tr[1]/td[2]</value>
+      </entry>
+   </selectorCollection>
+   <selectorMethod>BASIC</selectorMethod>
+   <useRalativeImagePath>false</useRalativeImagePath>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>tag</name>
+      <type>Main</type>
+      <value>td</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>text</name>
+      <type>Main</type>
+      <value>0b98c9ea-11ba-4137-9f66-185649f0f2cc </value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>xpath</name>
+      <type>Main</type>
+      <value>//*[@id=&quot;konga&quot;]/body/div[1]/div/div/div[2]/table/tbody/tr[1]/td[2]</value>
+   </webElementProperties>
+</WebElementEntity>
