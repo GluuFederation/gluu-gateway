@@ -26,11 +26,14 @@ function install_ff {
     if [ -x "$(command -v xvfb)" ]; then
         echo "Installing FF & xvfb"
         apt-get install -y firefox xvfb
-        Xvfb :10 -ac & > /dev/null
-        export DISPLAY=:10
     else
         echo "FF & xvfb already installed"
     fi
+}
+
+function setDisplay {
+    Xvfb :10 -ac & > /dev/null
+    export DISPLAY=:10
 }
 
 function run_tests {
@@ -40,3 +43,5 @@ function run_tests {
 
 install_ff
 install_katalon
+setDisplay
+run_tests
