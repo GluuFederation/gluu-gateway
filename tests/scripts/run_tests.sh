@@ -32,7 +32,7 @@ function install_ff {
 }
 
 function setDisplay {
-    Xvfb :10 -ac & > /dev/null
+    Xvfb :10 -ac &
     export DISPLAY=:10
 }
 
