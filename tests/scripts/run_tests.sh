@@ -32,8 +32,11 @@ function install_ff {
 }
 
 function setDisplay {
+    /usr/bin/killall Xvfb
     Xvfb :10 -ac &
+    echo "xvfb started at display 10"
     export DISPLAY=:10
+    echo "export display 10"
 }
 
 function run_tests {
