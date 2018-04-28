@@ -32,19 +32,21 @@ import org.apache.http.client.HttpClient as HttpClient
 import org.apache.http.impl.client.DefaultHttpClient as DefaultHttpClient
 import org.apache.http.HttpResponse as HttpResponse
 import org.apache.http.message.BasicHeader as BasicHeader
-import com.kms.katalon.core.testdata.TestDataFactory
-import org.apache.http.util.EntityUtils
+import org.apache.http.util.EntityUtils as EntityUtils
 
-def env = TestDataFactory.findTestData("Data Files/dev1TestData")
-def host = env.getValue("Value", 1)
-def username = env.getValue("Value", 2)
-def password = env.getValue("Value", 3)
+def env = TestDataFactory.findTestData('Data Files/dev1TestData')
 
-def api_host = new Random().nextInt()+'uma.example.com'
+def host = env.getValue('Value', 1)
+
+def username = env.getValue('Value', 2)
+
+def password = env.getValue('Value', 3)
+
+def api_host = new Random().nextInt() + 'uma.example.com'
 
 WebUI.openBrowser('')
 
-WebUI.navigateToUrl('https://'+host+':1338/#!/login')
+WebUI.navigateToUrl(('https://' + host) + ':1338/#!/login')
 
 WebUI.maximizeWindow()
 
@@ -94,7 +96,7 @@ WebUI.click(findTestObject('Page_Gluu Gateway (2)/button_btn btn-link btn-icon b
 
 WebUI.click(findTestObject('Page_Gluu Gateway (2)/button_add plugin_1'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (2)/i_mdi mdi-close'))
+WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/i_mdi mdi-close'))
 
 WebUI.delay(3)
 
@@ -288,42 +290,42 @@ WebUI.verifyNotEqual(rpt, null)
 //------------------RequestNoTokenAPI ----------------
 HttpClient noTokenClient = new DefaultHttpClient()
 
-HttpUriRequest apiNoTokenRequest = new HttpGet('http://'+host+':8000/docs/')
+HttpUriRequest apiNoTokenRequest = new HttpGet(('http://' + host) + ':8000/docs/')
 
 apiNoTokenRequest.addHeader(new BasicHeader('Authorization', 'Bearer m' + rpt))
 
-apiNoTokenRequest.addHeader(new BasicHeader('Host', api_host ))
+apiNoTokenRequest.addHeader(new BasicHeader('Host', api_host))
 
 HttpResponse noTokenHttpResponse = noTokenClient.execute(apiNoTokenRequest)
+
 //def invalidTokenBbody = EntityUtils.toString(invalidTokenHttpResponse.getEntity(),"utf-8")
 WebUI.verifyEqual(noTokenHttpResponse.getStatusLine().statusCode, 401)
-
 
 //------------------RequestInvalidTokenAPI ----------------
 HttpClient invalidTokenClient = new DefaultHttpClient()
 
-HttpUriRequest apiInvalidTokenRequest = new HttpGet('http://'+host+':8000/docs/')
+HttpUriRequest apiInvalidTokenRequest = new HttpGet(('http://' + host) + ':8000/docs/')
 
 apiInvalidTokenRequest.addHeader(new BasicHeader('Authorization', 'Bearer m' + rpt))
 
-apiInvalidTokenRequest.addHeader(new BasicHeader('Host', api_host ))
+apiInvalidTokenRequest.addHeader(new BasicHeader('Host', api_host))
 
 HttpResponse invalidTokenHttpResponse = invalidTokenClient.execute(apiInvalidTokenRequest)
+
 //def invalidTokenBbody = EntityUtils.toString(invalidTokenHttpResponse.getEntity(),"utf-8")
 WebUI.verifyEqual(invalidTokenHttpResponse.getStatusLine().statusCode, 401)
 
-
 //------------------RequestAPI ----------------
-
-HttpUriRequest apiRequest = new HttpGet('http://'+host+':8000/docs/')
+HttpUriRequest apiRequest = new HttpGet(('http://' + host) + ':8000/docs/')
 
 apiRequest.addHeader(new BasicHeader('Authorization', 'Bearer ' + rpt))
 
-apiRequest.addHeader(new BasicHeader('Host', api_host ))
+apiRequest.addHeader(new BasicHeader('Host', api_host))
 
 HttpClient client = new DefaultHttpClient()
 
 HttpResponse httpResponse = client.execute(apiRequest)
+
 //def body = EntityUtils.toString(httpResponse.getEntity(),"utf-8")
 WebUI.verifyEqual(httpResponse.getStatusLine().statusCode, 200)
 
