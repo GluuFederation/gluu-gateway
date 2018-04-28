@@ -46,3 +46,5 @@ luac.out
 kong-plugins.iml
 kong-uma-rs/kong-uma-rs.iml
 kong-openid-rp/kong-openid-rp.iml
+
+tests\katalon\Gluu Gateway\Data Files\dev1TestData.dat

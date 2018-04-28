@@ -28,22 +28,25 @@ import org.apache.http.client.HttpClient as HttpClient
 import org.apache.http.impl.client.DefaultHttpClient as DefaultHttpClient
 import org.apache.http.HttpResponse as HttpResponse
 import org.apache.http.message.BasicHeader as BasicHeader
-import com.kms.katalon.core.testdata.TestDataFactory
-import org.apache.http.util.EntityUtils
+import org.apache.http.util.EntityUtils as EntityUtils
 
-def env = TestDataFactory.findTestData("Data Files/dev1TestData")
-def host = env.getValue("Value", 1)
-def username = env.getValue("Value", 2)
-def password = env.getValue("Value", 3)
+def env = TestDataFactory.findTestData('Data Files/dev1TestData')
 
+def host = env.getValue('Value', 1)
 
-def api_host = new Random().nextInt()+'oauth.example.com'
+def username = env.getValue('Value', 2)
+
+def password = env.getValue('Value', 3)
+
+def api_host = new Random().nextInt() + 'oauth.example.com'
+
 def api_path = '/docs/'
+
 def upstream_host = 'https://www.gluu.org/'
 
 WebUI.openBrowser('')
 
-WebUI.navigateToUrl('https://'+host+':1338/#!/login')
+WebUI.navigateToUrl(('https://' + host) + ':1338/#!/login')
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/button_Login'))
 
@@ -88,11 +91,13 @@ WebUI.click(findTestObject('Page_Gluu Gateway/button_add plugin'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/a_Custom'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway/button_btn btn-link btn-icon b'))
-
 WebUI.click(findTestObject('Page_Gluu Gateway/button_add plugin_1'))
 
+WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin'))
+
 WebUI.click(findTestObject('Page_Gluu Gateway/i_mdi mdi-close'))
+
+WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin_close'))
 
 WebUI.delay(5)
 
@@ -157,7 +162,6 @@ WebUI.closeBrowser()
 JsonSlurper parser = new JsonSlurper()
 
 //-----------Get customer token-------------------------
-
 RequestObject request = findTestObject('get token')
 
 request.setHttpBody(((((('{"oxd_id":"' + oxdId) + '","client_id":"') + clientId) + '","client_secret":"') + clientSecret) + 
@@ -171,27 +175,20 @@ def accessToken = parsedResp.get('data').get('access_token')
 
 //------------------RequestAPI -- no token ----------------
 //HttpClient noTokenClient = new DefaultHttpClient()
-
 //HttpUriRequest noTokenRequest = new HttpGet('http://'+host+':8000'+api_path)
 //noTokenRequest.addHeader(new BasicHeader('Authorization', 'Bearer'))
-
 //noTokenRequest.addHeader(new BasicHeader('Host', api_host ))
-
-
 //HttpResponse httpNoTokenResponse = noTokenClient.execute(noTokenRequest)
-
 //WebUI.verifyEqual(httpNoTokenResponse.getStatusLine().statusCode, 401)
-
 //noTokenClient.close()
-
 //------------------RequestAPI -- invalid token ----------------
 HttpClient invalidTokenClient = new DefaultHttpClient()
 
-HttpUriRequest invalidTokenRequest = new HttpGet('http://'+host+':8000'+api_path)
+HttpUriRequest invalidTokenRequest = new HttpGet((('http://' + host) + ':8000') + api_path)
 
 invalidTokenRequest.addHeader(new BasicHeader('Authorization', 'Bearer b' + accessToken))
 
-invalidTokenRequest.addHeader(new BasicHeader('Host', api_host ))
+invalidTokenRequest.addHeader(new BasicHeader('Host', api_host))
 
 HttpResponse httpInvalidTokenResponse = invalidTokenClient.execute(invalidTokenRequest)
 
@@ -202,18 +199,17 @@ invalidTokenClient.close()
 //------------------RequestAPI ----------------
 HttpClient validTokenClient = new DefaultHttpClient()
 
-HttpUriRequest apiRequest = new HttpGet('http://'+host+':8000'+api_path)
+HttpUriRequest apiRequest = new HttpGet((('http://' + host) + ':8000') + api_path)
 
 apiRequest.addHeader(new BasicHeader('Authorization', 'Bearer ' + accessToken))
 
-apiRequest.addHeader(new BasicHeader('Host', api_host ))
+apiRequest.addHeader(new BasicHeader('Host', api_host))
 
 HttpResponse httpResponse = validTokenClient.execute(apiRequest)
 
-def body = EntityUtils.toString(httpResponse.getEntity(),"utf-8")
+def body = EntityUtils.toString(httpResponse.getEntity(), 'utf-8')
 
 WebUI.verifyEqual(httpResponse.getStatusLine().statusCode, 200)
 
 validTokenClient.close()
-
 

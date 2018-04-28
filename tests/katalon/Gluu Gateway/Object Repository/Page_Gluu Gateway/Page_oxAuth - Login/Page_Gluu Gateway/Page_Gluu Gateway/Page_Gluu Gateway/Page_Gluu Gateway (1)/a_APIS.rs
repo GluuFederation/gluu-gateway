@@ -4,7 +4,23 @@
    <name>a_APIS</name>
    <tag></tag>
    <elementGuidId>9e6adfb7-d167-457b-98e7-fa41c5dcf833</elementGuidId>
-   <selectorMethod>BASIC</selectorMethod>
+   <selectorCollection>
+      <entry>
+         <key>XPATH</key>
+         <value>/html/body/div[2]/div[2]/div/div/div[1]/ui-breadcrumbs/ol/li[1]/a</value>
+      </entry>
+      <entry>
+         <key>BASIC</key>
+         <value>//a[@href = '#!/apis' and (text() = '
+          
+          APIS
+        ' or . = '
+          
+          APIS
+        ')]</value>
+      </entry>
+   </selectorCollection>
+   <selectorMethod>XPATH</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
       <isSelected>true</isSelected>

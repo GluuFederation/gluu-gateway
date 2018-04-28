@@ -6,11 +6,15 @@
    <elementGuidId>611fa5d0-ee10-45a2-a8f8-13580d944fcd</elementGuidId>
    <selectorCollection>
       <entry>
+         <key>XPATH</key>
+         <value>/html/body/div[1]/div/div/div[1]/h5/a</value>
+      </entry>
+      <entry>
          <key>BASIC</key>
          <value>/html/body/div[1]/div/div/div[1]/h4/a</value>
       </entry>
    </selectorCollection>
-   <selectorMethod>BASIC</selectorMethod>
+   <selectorMethod>XPATH</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
       <isSelected>false</isSelected>

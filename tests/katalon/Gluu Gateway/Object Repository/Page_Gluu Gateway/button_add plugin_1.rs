@@ -6,11 +6,15 @@
    <elementGuidId>6167a2d3-705e-4c0e-a696-de89670c5eab</elementGuidId>
    <selectorCollection>
       <entry>
+         <key>XPATH</key>
+         <value>/html/body/div[1]/div/div/div[2]/div/div[2]/div/div[2]/div/div[1]/div/div/button</value>
+      </entry>
+      <entry>
          <key>BASIC</key>
          <value>//*[@id=&quot;konga&quot;]/body/div[1]/div/div/div[3]/form/div[4]/div/button</value>
       </entry>
    </selectorCollection>
-   <selectorMethod>BASIC</selectorMethod>
+   <selectorMethod>XPATH</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
       <isSelected>false</isSelected>

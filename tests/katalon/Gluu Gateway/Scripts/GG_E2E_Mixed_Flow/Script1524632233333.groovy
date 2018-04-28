@@ -93,13 +93,19 @@ WebUI.click(findTestObject('Page_Gluu Gateway/button_add plugin'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/a_Custom'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway/button_btn btn-link btn-icon b'))
-
 WebUI.click(findTestObject('Page_Gluu Gateway/button_add plugin_1'))
+
+WebUI.delay(5)
+
+WebUI.waitForElementClickable(findTestObject('Page_Gluu Gateway (1)/add_plugin'), 0)
+
+WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/i_mdi mdi-close'))
 
-WebUI.delay(3)
+WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin_close'))
+
+WebUI.waitForElementClickable(findTestObject('Page_Gluu Gateway (1)/Page_Gluu Gateway/a_APIS'), 30)
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/a_APIS'))
 
@@ -108,6 +114,9 @@ WebUI.delay(3)
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/a_Security'))
 
 WebUI.delay(3)
+
+WebUI.scrollToElement(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/button_Add'), 
+    0)
 
 WebUI.setText(findTestObject('Page_Gluu Gateway (2)/input_path0'), uma_path)
 
@@ -126,9 +135,6 @@ WebUI.clickOffset(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Glu
     50, -400)
 
 WebUI.delay(1)
-
-WebUI.scrollToElement(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/button_Add'), 
-    0)
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/button_Add'))
 
@@ -213,7 +219,7 @@ def accessToken = parsedResp.get('data').get('access_token')
 //------------------RequestNoTokenAPI ----------------
 HttpUriRequest apiNoTokenRequest = new HttpGet((('http://' + host) + ':8000') + uma_path)
 
-apiNoTokenRequest.addHeader(new BasicHeader('Authorization', ""))
+apiNoTokenRequest.addHeader(new BasicHeader('Authorization', ''))
 
 apiNoTokenRequest.addHeader(new BasicHeader('Host', api_host))
 
