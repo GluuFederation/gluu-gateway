@@ -1,0 +1,21 @@
+import com.kms.katalon.core.main.TestCaseMain
+import com.kms.katalon.core.logging.KeywordLogger
+import groovy.lang.MissingPropertyException
+import com.kms.katalon.core.testcase.TestCaseBinding
+import com.kms.katalon.core.driver.internal.DriverCleanerCollector
+import com.kms.katalon.core.model.FailureHandling
+import com.kms.katalon.core.configuration.RunConfiguration
+import com.kms.katalon.core.webui.contribution.WebUiDriverCleaner
+import com.kms.katalon.core.mobile.contribution.MobileDriverCleaner
+
+
+DriverCleanerCollector.getInstance().addDriverCleaner(new com.kms.katalon.core.webui.contribution.WebUiDriverCleaner())
+DriverCleanerCollector.getInstance().addDriverCleaner(new com.kms.katalon.core.mobile.contribution.MobileDriverCleaner())
+
+
+RunConfiguration.setExecutionSettingFile('C:\\Users\\Odin\\AppData\\Local\\Temp\\Katalon\\Test Cases\\GG_Simple_Login\\20180429_181935\\execution.properties')
+
+TestCaseMain.beforeStart()
+
+        TestCaseMain.runTestCase('Test Cases/GG_Simple_Login', new TestCaseBinding('Test Cases/GG_Simple_Login', [:]), FailureHandling.STOP_ON_FAILURE , false)
+    

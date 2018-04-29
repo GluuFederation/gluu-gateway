@@ -1,4 +1,3 @@
-import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 import static com.kms.katalon.core.testcase.TestCaseFactory.findTestCase
 import static com.kms.katalon.core.testdata.TestDataFactory.findTestData
 import static com.kms.katalon.core.testobject.ObjectRepository.findTestObject
@@ -18,18 +17,19 @@ import com.kms.katalon.core.webservice.keyword.WSBuiltInKeywords as WS
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUiBuiltInKeywords
 import com.kms.katalon.core.webui.keyword.WebUiBuiltInKeywords as WebUI
 import internal.GlobalVariable as GlobalVariable
-
 import static com.kms.katalon.core.checkpoint.CheckpointFactory.findCheckpoint
 
+def env = TestDataFactory.findTestData('Data Files/dev1TestData')
 
-def env = TestDataFactory.findTestData("Data Files/dev1TestData")
-def host = env.getValue("Value", 1)
-def username = env.getValue("Value", 2)
-def password = env.getValue("Value", 3)
+def host = env.getValue('Value', 1)
+
+def username = env.getValue('Value', 2)
+
+def password = env.getValue('Value', 3)
 
 WebUI.openBrowser('')
 
-WebUI.navigateToUrl('https://'+host+':1338/#!/login')
+WebUI.navigateToUrl(('https://' + host) + ':1338/#!/login')
 
 WebUI.click(findTestObject('Page_Gluu Gateway/button_Login'))
 
@@ -43,8 +43,8 @@ WebUI.click(findTestObject('Page_oxAuth - Login/input_loginFormloginButton'))
 
 WebUI.waitForPageLoad(500)
 
-if (WebUI.verifyElementPresent(findTestObject('a_Allow'),5, FailureHandling.OPTIONAL)) {
-	WebUI.click(findTestObject('a_Allow'))
+if (WebUI.verifyElementPresent(findTestObject('Page_oxAuth/a_Allow'), 5, FailureHandling.OPTIONAL)) {
+    WebUI.click(findTestObject('Page_oxAuth/a_Allow'))
 }
 
 WebUI.waitForElementPresent(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/a_'), 10)
