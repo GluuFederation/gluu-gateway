@@ -63,6 +63,8 @@ WebUI.delay(3, FailureHandling.STOP_ON_FAILURE)
 
 WebUI.maximizeWindow()
 
+WebUI.waitForElementClickable(findTestObject('Page_Gluu Gateway/a_APIS'), 20)
+
 WebUI.click(findTestObject('Page_Gluu Gateway/a_APIS'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/a_Add New Api'))
