@@ -6,10 +6,6 @@
    <elementGuidId>a1114fa8-a9a2-4193-ac4e-173236581fe6</elementGuidId>
    <selectorCollection>
       <entry>
-         <key>CSS</key>
-         <value>.modal-close</value>
-      </entry>
-      <entry>
          <key>BASIC</key>
          <value></value>
       </entry>
@@ -17,7 +13,18 @@
          <key>XPATH</key>
          <value>/html/body/div[1]/div/div/div[1]/h4/a</value>
       </entry>
+      <entry>
+         <key>CSS</key>
+         <value>c</value>
+      </entry>
    </selectorCollection>
-   <selectorMethod>CSS</selectorMethod>
+   <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>contains</matchCondition>
+      <name>class</name>
+      <type>Main</type>
+      <value>modal-close</value>
+   </webElementProperties>
 </WebElementEntity>
