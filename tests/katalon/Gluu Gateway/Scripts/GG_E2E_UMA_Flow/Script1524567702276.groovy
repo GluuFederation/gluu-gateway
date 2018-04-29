@@ -274,7 +274,7 @@ def ticket = ticketParsedResp.get('data').get('ticket')
 WebUI.verifyNotEqual(ticket, null)
 
 //------------------get rpt ----------------
-RequestObject rptRequest = findTestObject('GetRpt')
+RequestObject rptRequest = findTestObject('GetRPT')
 
 rptRequest.setHttpBody(((((('{"oxd_id":"' + oxdId) + '","ticket":"') + ticket) + '","protection_access_token":"') + customerAccessToken) + 
     '"}')

@@ -105,8 +105,6 @@ WebUI.delay(10)
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/i_mdi mdi-close'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin_close'))
-
 WebUI.waitForElementClickable(findTestObject('Page_Gluu Gateway (1)/Page_Gluu Gateway/a_APIS'), 30)
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/a_APIS'))
