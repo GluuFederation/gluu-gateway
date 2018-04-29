@@ -96,6 +96,8 @@ WebUI.click(findTestObject('Page_Gluu Gateway (2)/button_btn btn-link btn-icon b
 
 WebUI.click(findTestObject('Page_Gluu Gateway (2)/button_add plugin_1'))
 
+WebUI.delay(10)
+
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/i_mdi mdi-close'))
 
 WebUI.delay(3)

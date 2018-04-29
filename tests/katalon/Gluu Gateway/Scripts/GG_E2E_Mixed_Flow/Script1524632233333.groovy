@@ -101,6 +101,8 @@ WebUI.waitForElementClickable(findTestObject('Page_Gluu Gateway (1)/add_plugin')
 
 WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin'))
 
+WebUI.delay(10)
+
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway (1)/i_mdi mdi-close'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway (1)/add_plugin_close'))
