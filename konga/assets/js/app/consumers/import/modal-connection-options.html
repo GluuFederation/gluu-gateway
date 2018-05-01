@@ -31,6 +31,7 @@
                             <label>{{field.name}}</label><br>
                             <input
                                     bs-switch
+                                    ng-init = "connOptions[key] = (field.default ? field.default: false)"
                                     ng-model="connOptions[key]"
                                     switch-size="small"
                                     type="checkbox"
