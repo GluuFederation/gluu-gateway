@@ -16,6 +16,10 @@
           $scope.partial = 'js/app/apis/partials/form-api-' + availableFormattedVersion + '.html?r=' + Date.now();
 
           $scope.updateApi = function() {
+              if (!$scope.api.hosts && !$scope.api.uris && !$scope.api.methods) {
+                MessageService.error("Submission failed. Make sure you have completed all required fields.")
+                return false;
+              }
 
               $scope.loading = true
               ApiService.update($scope.api)
