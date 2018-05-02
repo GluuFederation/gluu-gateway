@@ -12,6 +12,13 @@ SERVICE_NAME=kong
 PID_PATH_NAME=/usr/local/kong/pids/nginx.pid
 KONG_CMD=`which kong`
 
+### If "which" command is unable to search for command at boot time.
+### Feed it with this fixed value.
+### Solution applies to trusty for now
+if [ "x" = "x$KONG_CMD" ]; then
+        KONG_CMD="/usr/local/bin/kong"
+fi
+
 get_pid() {
         if [ -f $PID_PATH_NAME ]; then
                 PID_NUM=$(cat $PID_PATH_NAME)
