@@ -1,3 +1,4 @@
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          kong
 # Required-Start:    $remote_fs $syslog
