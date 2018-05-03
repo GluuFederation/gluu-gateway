@@ -71,6 +71,7 @@ var jsFilesToInject = [
     "bower_components/angular-chart.js/dist/angular-chart.js",
     "bower_components/angular-base64/angular-base64.js",
     "bower_components/ng-tags-input/ng-tags-input.js",
+    "bower_components/ng-idle/angular-idle.js",
   // All of the rest of your client-side js files
   // will be injected here in no particular order.
   'js/app/**/*.js'

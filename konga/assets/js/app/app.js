@@ -24,7 +24,8 @@
     'frontend.snapshots',
     'frontend.cluster',
     'ngTagsInput',
-    'checklist-model'
+    'checklist-model',
+    'ngIdle'
   ]);
 
 
@@ -81,10 +82,19 @@
       'toastrConfig',
       'AccessLevels',
       '$localStorageProvider',
+      'IdleProvider',
+      'KeepaliveProvider',
       function config($stateProvider, $locationProvider, $urlRouterProvider, $httpProvider, $sailsSocketProvider,
                       cfpLoadingBarProvider,
                       toastrConfig,
-                      AccessLevels, $localStorageProvider) {
+                      AccessLevels,
+                      $localStorageProvider,
+                      IdleProvider,
+                      KeepaliveProvider) {
+        IdleProvider.idle((window.KONGA_CONFIG.session_id_lifetime || 30) * 60);
+        IdleProvider.timeout(5);
+        KeepaliveProvider.interval(10);
+
         $httpProvider.defaults.useXDomain = true;
 
         delete $httpProvider.defaults.headers.common['X-Requested-With'];
@@ -128,7 +138,6 @@
 
         // Main state provider for frontend application
         $stateProvider
-
           .state('frontend', {
             abstract: true,
             data: {
@@ -148,8 +157,7 @@
                 controller: 'FooterController'
               }
             }
-          })
-        ;
+          });
 
         // For any unmatched url, redirect to /dashboard
         if (Boolean($localStorageProvider.get('credentials'))) {
@@ -158,8 +166,7 @@
           $urlRouterProvider.otherwise('/error');
         }
       }
-    ])
-  ;
+    ]);
 
 
   /**
@@ -170,10 +177,15 @@
     .run([
       '$rootScope', '$state', '$stateParams', '$injector',
       'editableOptions', 'editableThemes', '$templateCache', 'NodesService',
-      'AuthService', 'cfpLoadingBar', 'UserService',
+      'AuthService', 'cfpLoadingBar', 'UserService', '$localStorage', 'Idle',
       function run($rootScope, $state, $stateParams, $injector,
                    editableOptions, editableThemes, $templateCache, NodesService,
-                   AuthService, cfpLoadingBar, UserService) {
+                   AuthService, cfpLoadingBar, UserService, $localStorage, Idle) {
+        Idle.watch();
+        $rootScope.$on('IdleTimeout', function() {
+          $localStorage.$reset();
+          return $state.go('auth.login');
+        });
 
         $rootScope.$on('$routeChangeStart', function (event, next, current) {
           if (typeof(current) !== 'undefined') {
@@ -204,7 +216,7 @@
 
           if (toState.name == 'auth.login' && AuthService.isAuthenticated()) {
             event.preventDefault();
-            return  $state.go('dashboard', params, {location: 'replace'});
+            return $state.go('dashboard', params, {location: 'replace'});
           }
 
           if (toState.data.needsSignupEnabled && !$rootScope.KONGA_CONFIG.signup_enable) {
