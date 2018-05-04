@@ -28,7 +28,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
         signup_enable: true,
         signup_require_activation: false,
         info_polling_interval: 5000,
-        session_id_lifetime: 30, // time in minute
+        session_id_lifetime: 20, // time in minute
         email_default_sender_name: 'KONGA',
         email_default_sender: 'konga@konga.test',
         email_notifications: false,

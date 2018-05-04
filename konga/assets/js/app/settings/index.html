@@ -185,11 +185,10 @@
                         type="checkbox"
                         switch-on-text="ON"
                         switch-off-text="OFF"
-                        ng-change="updateKongaSettings()"
-                      >
+                        ng-change="updateKongaSettings()">
                     </div>
 
-                    <img style="width: 100%;height: auto;background: #f2f2f2" src="images/{{item.image}}" alt="slack">
+                    <img style="width: 100%;height: auto;background: #f2f2f2" ng-src="images/{{item.image}}" alt="slack">
                     <div class="caption">
                       <!--<div class="form-group">-->
                       <!--<label>-->
@@ -201,18 +200,14 @@
                       <button
                         type="button"
                         ng-click="configureIntegration(item)"
-                        class="btn btn-block btn-primary btn-inverse btn-flat"
-                      >
+                        class="btn btn-block btn-primary btn-inverse btn-flat">
                         <i class="mdi mdi-settings"></i>
                         CONFIGURE
                       </button>
-
                     </div>
                   </div>
                 </div>
               </div>
-
-
             </div>
           </div>
         </uib-tab>
