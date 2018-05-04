@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<TestCaseEntity>
+   <description></description>
+   <name>GG_E2E_OAuth_Flow</name>
+   <tag></tag>
+   <comment></comment>
+   <testCaseGuid>a7dad22a-f923-410d-ace8-993307de36f0</testCaseGuid>
+   <variable>
+      <defaultValue>''</defaultValue>
+      <description></description>
+      <id>1a87c101-f5ef-4616-9ea6-f7c4c213ecec</id>
+      <masked>false</masked>
+      <name>variable</name>
+   </variable>
+</TestCaseEntity>

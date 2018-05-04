@@ -1,5 +1,5 @@
 <div class="form-group" ng-class="{'has-error' : errors.name}">
-    <label class="col-sm-4 control-label">Name <br><em><small class="help-block">optional</small></em></label>
+    <label class="col-sm-4 control-label">Name </label>
     <div class="col-sm-7">
         <input ng-model="api.name" class="form-control">
         <div class="text-danger" ng-if="errors.name" data-ng-bind="errors.name"></div>
@@ -140,7 +140,7 @@
                 switch-off-text="NO"
         >
         <p class="help-block">
-            Consider the <code>X-Forwarded-Proto</code> header when enforcing HTTPS only traffic. Default: <code>true</code>.
+            Consider the <code>X-Forwarded-Proto</code> header when enforcing HTTPS only traffic. Default: <code>false</code>.
         </p>
     </div>
 </div>

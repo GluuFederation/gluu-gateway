@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Project>
+   <description></description>
+   <name>Gluu Gateway</name>
+   <tag></tag>
+   <UUID>3431008d-8b4b-4659-8ade-c616f260ea99</UUID>
+   <migratedVersion>5.4.0</migratedVersion>
+   <pageLoadTimeout>30</pageLoadTimeout>
+</Project>

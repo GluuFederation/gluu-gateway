@@ -58,63 +58,65 @@
             $scope.isKongUMARSPluginAdded = true;
             $scope.ruleScope = {};
             $scope.ruleOauthScope = {};
-            $scope.modelPlugin.config.protection_document = JSON.parse(o.config.protection_document);
-            $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(o.config.oauth_scope_expression);
+            $scope.modelPlugin.config.protection_document = JSON.parse(o.config.protection_document || "[]");
+            $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(o.config.oauth_scope_expression || "[]");
             setTimeout(function () {
-              $scope.modelPlugin.config.protection_document.forEach(function (path, pIndex) {
-                path.conditions.forEach(function (cond, cIndex) {
-                  var pRule = cond.scope_expression.rule;
-                  var op = '';
-                  if (pRule['and']) {
-                    op = 'and'
-                  } else if (pRule['or']) {
-                    op = 'or'
-                  } else if (pRule['not']) {
-                    op = 'not'
-                  }
+              if ($scope.modelPlugin.config.protection_document && $scope.modelPlugin.config.protection_document.length > 0) {
+                $scope.modelPlugin.config.protection_document.forEach(function (path, pIndex) {
+                  path.conditions.forEach(function (cond, cIndex) {
+                    var pRule = cond.scope_expression.rule;
+                    var op = '';
+                    if (pRule['and']) {
+                      op = 'and'
+                    } else if (pRule['or']) {
+                      op = 'or'
+                    } else if (pRule['not']) {
+                      op = 'not'
+                    }
 
-                  _repeat(pRule[op], op, 0);
+                    _repeat(pRule[op], op, 0);
 
-                  function _repeat(rule, op, id) {
-                    $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
-                    rule.forEach(function (oRule, oRuleIndex) {
-                      if (oRule['var'] == 0 || oRule['var']) {
-                        if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
-                          $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
+                    function _repeat(rule, op, id) {
+                      $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                      rule.forEach(function (oRule, oRuleIndex) {
+                        if (oRule['var'] == 0 || oRule['var']) {
+                          if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                            $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
+                          }
+
+                          $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
                         }
 
-                        $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
-                      }
+                        if (rule.length - 1 == oRuleIndex) {
+                          // render template
+                          var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                            "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                            "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
+                            "<div class=\"form-group has-feedback\"> " +
+                            "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                            "</div>" +
+                            "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
-                      if (rule.length - 1 == oRuleIndex) {
-                        // render template
-                        var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
-                          "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                          "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
-                          "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
-                          "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button> " +
-                          "<div class=\"form-group has-feedback\"> " +
-                          "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
-                          "</div>" +
-                          "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+                          $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                          $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                          // end
+                        }
 
-                        $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
-                        $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
-                        // end
-                      }
-
-                      if (oRule['and']) {
-                        _repeat(oRule['and'], 'and', ++id);
-                      } else if (oRule['or']) {
-                        _repeat(oRule['or'], 'or', ++id);
-                      } else if (oRule['not']) {
-                        _repeat(oRule['not'], 'not', ++id);
-                      }
-                    });
-                  }
+                        if (oRule['and']) {
+                          _repeat(oRule['and'], 'and', ++id);
+                        } else if (oRule['or']) {
+                          _repeat(oRule['or'], 'or', ++id);
+                        } else if (oRule['not']) {
+                          _repeat(oRule['not'], 'not', ++id);
+                        }
+                      });
+                    }
+                  });
                 });
-              });
+              }
               if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
                 $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
                   path.conditions.forEach(function (cond, cIndex) {
@@ -306,9 +308,23 @@
           if (!model) {
             return false;
           }
-          model.config.protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
-          if (model.config.oauth_scope_expression) {
+
+          var protectedDocument = makeJSON($scope.modelPlugin)
+          if (protectedDocument && protectedDocument.length > 0) {
+            model.config.protection_document = JSON.stringify(protectedDocument);
+          } else {
+            delete model.config.protection_document
+          }
+
+          var oauthScopeExpression = makeOAuthScopeJSON($scope.modelPlugin)
+          if (oauthScopeExpression  && oauthScopeExpression .length > 0) {
             model.config.oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+          } else {
+            delete model.config.oauth_scope_expression
+          }
+          if (!model.config.oauth_scope_expression && !model.config.protection_document) {
+            MessageService.error("Invalid request. Configured at least one security.");
+            return
           }
 
           PluginHelperService.addPlugin(
@@ -323,6 +339,11 @@
               $log.error("create plugin", err)
               var errors = {}
 
+              if (err.status && err.status == 400) {
+                MessageService.error("Something wrong with your requested resources. Try again from start.");
+                return;
+              }
+
               if (err.data.customMessage) {
                 Object.keys(err.data.customMessage).forEach(function (key) {
                   errors[key.replace('config.', '')] = err.data.customMessage[key];
@@ -336,6 +357,7 @@
               } else {
                 MessageService.error("Invalid UMA Resources");
               }
+
               $scope.errors = errors
             }, function evt(event) {
               // Only used for ssl plugin certs upload
@@ -354,16 +376,26 @@
           if (!model) {
             return false;
           }
-          var protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
-          var oauth_scope_expression
-          if ($scope.modelPlugin.config.oauth_scope_expression) {
-            oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
-          }
 
           model.config = angular.copy($scope.rsPlugin.config);
-          model.config.protection_document = protection_document;
-          if ($scope.modelPlugin.config.oauth_scope_expression) {
-            model.config.oauth_scope_expression = oauth_scope_expression;
+          model.config.protection_document = $scope.modelPlugin.config.protection_document;
+          model.config.oauth_scope_expression = $scope.modelPlugin.config.oauth_scope_expression;
+
+          if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
+            model.config.oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+          } else {
+            delete model.config.oauth_scope_expression
+          }
+
+          if (model.config.protection_document && model.config.protection_document.length > 0) {
+            model.config.protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
+          } else {
+            delete model.config.protection_document
+          }
+
+          if (!model.config.oauth_scope_expression && !model.config.protection_document) {
+            MessageService.error("Invalid request. Configured at least one security.");
+            return
           }
 
           PluginHelperService.updatePlugin($scope.rsPlugin.id,
@@ -378,6 +410,11 @@
               $log.error("update plugin", err)
               var errors = {}
 
+              if (err.status && err.status == 400) {
+                MessageService.error("Something wrong with your requested resources. Try again from start.");
+                return
+              }
+
               if (err.data.customMessage) {
                 Object.keys(err.data.customMessage).forEach(function (key) {
                   errors[key.replace('config.', '')] = err.data.customMessage[key];
@@ -391,6 +428,7 @@
               } else {
                 MessageService.error("Invalid UMA Resources");
               }
+
               $scope.errors = errors
             }, function evt(event) {
               // Only used for ssl plugin certs upload

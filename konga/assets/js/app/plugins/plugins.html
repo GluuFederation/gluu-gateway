@@ -1,3 +1,9 @@
+<style>
+  .check-toggle .bootstrap-switch-container:last-child{
+    letter-spacing: 0 !important;
+    width:100px !important;
+  }
+</style>
 <div class="row actions">
   <div class="col-md-12">
     <div class="pull-left">
@@ -46,6 +52,7 @@
         <tr
           dir-paginate="item in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage">
           <td ng-if="user.hasPermission($state.name.split('.')[0],'update')">
+            <div class="check-toggle">
             <input
               bs-switch
               switch-on-color="primary"
@@ -53,6 +60,7 @@
               ng-model="item.enabled"
               type="checkbox"
               switch-size="mini">
+            </div>
           </td>
           <td>
             <raw-view data-item="item"></raw-view>
