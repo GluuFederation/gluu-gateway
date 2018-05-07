@@ -300,7 +300,7 @@
 
         function addPlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Invalid UMA Resources");
+            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
@@ -340,7 +340,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Try again from start.");
+                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
                 return;
               }
 
@@ -368,7 +368,7 @@
 
         function updatePlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Invalid UMA Resources");
+            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
@@ -411,7 +411,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Try again from start.");
+                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
                 return
               }
 
@@ -493,7 +493,7 @@
             });
             return JSON.parse(angular.toJson(model.config.protection_document));
           } catch (e) {
-            MessageService.error("Invalid UMA resource");
+            MessageService.error("Invalid UMA resources");
             return null;
           }
         }
@@ -613,7 +613,7 @@
             });
             return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
           } catch (e) {
-            MessageService.error("Invalid OAuth scope expression json");
+            MessageService.error("Invalid OAuth scope expression");
             return null;
           }
         }
