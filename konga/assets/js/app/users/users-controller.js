@@ -94,8 +94,8 @@
 
           function deleteUser($index,user) {
               DialogService.prompt(
-                  "Delete User","Really want to delete the user?",
-                  ['No don\'t','Yes! delete it'],
+                  "Delete User","Do you want to delete the user?",
+                  ['CANCEL','YES'],
                   function accept(){
                       UserModel.delete(user.id)
                           .then(function(resp){

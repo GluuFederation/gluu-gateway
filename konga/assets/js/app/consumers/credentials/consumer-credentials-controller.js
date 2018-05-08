@@ -80,8 +80,8 @@
 
         function deleteHMACAuthCredentials($index, credentials) {
           DialogService.prompt(
-            "Delete Credentials", "Really want to delete the selected credentials?",
-            ['No don\'t', 'Yes! delete it'],
+            "Delete Credentials", "Do you want to delete the selected credentials?",
+            ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
                 .removeCredential($scope.consumer.id, 'hmac-auth', credentials.id)
@@ -98,8 +98,8 @@
 
         function deleteBasicAuthCredentials($index, credentials) {
           DialogService.prompt(
-            "Delete Credentials", "Really want to delete the selected credentials?",
-            ['No don\'t', 'Yes! delete it'],
+            "Delete Credentials", "Do you want to delete the selected credentials?",
+            ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
                 .removeCredential($scope.consumer.id, 'basic-auth', credentials.id)
@@ -116,8 +116,8 @@
 
         function deleteOAuth2($index, oauth) {
           DialogService.prompt(
-            "Delete JWT", "Really want to delete the selected OAuth2?",
-            ['No don\'t', 'Yes! delete it'],
+            "Delete JWT", "Do you want to delete the selected OAuth2?",
+            ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
                 .removeCredential($scope.consumer.id, 'gluu-oauth2-client-auth', oauth.id)
@@ -134,8 +134,8 @@
 
         function deleteJWT($index, jwt) {
           DialogService.prompt(
-            "Delete JWT", "Really want to delete the selected JWT?",
-            ['No don\'t', 'Yes! delete it'],
+            "Delete JWT", "Do you want to delete the selected JWT?",
+            ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
                 .removeCredential($scope.consumer.id, 'jwt', jwt.id)
@@ -152,8 +152,8 @@
 
         function deleteKey($index, key) {
           DialogService.prompt(
-            "Delete Key", "Really want to delete the selected key?",
-            ['No don\'t', 'Yes! delete it'],
+            "Delete Key", "Do you want to delete the selected key?",
+            ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
                 .removeCredential($scope.consumer.id, 'key-auth', key.id)

@@ -130,8 +130,8 @@
           // Overwrite deleteItem method
           $scope.deleteItem = function (index,item) {
               DialogService.prompt(
-                  "Confirm", "Really want to delete the selected item?",
-                  ['No don\'t', 'Yes! delete it'],
+                  "Confirm", "Do you want to delete the selected item?",
+                  ['CANCEL', 'YES'],
                   function accept() {
 
                       $http.delete('kong/upstreams/' + $stateParams.id + '/targets/' + item.id)
