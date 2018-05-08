@@ -20,6 +20,13 @@
 
 
         $scope.openUploadCertsModal = function (certificate) {
+          if($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
