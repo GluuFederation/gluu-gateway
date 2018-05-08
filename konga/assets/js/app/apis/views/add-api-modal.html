@@ -1,4 +1,4 @@
-<div class="modal-header primary">
+<div class="modal-header primary" data-ng-show="!!showSubmitButton">
     <h4 class="modal-title" id="modal-title">
         Create API
         <a  class="modal-close pull-right" ng-click="close()">
@@ -8,10 +8,10 @@
     </h4>
 </div>
 
-<div class="modal-body" id="modal-body">
+<div class="modal-body" id="modal-body" data-ng-show="!!showSubmitButton">
     <form class="form-horizontal">
-        <div data-ng-include="partial"></div>
-        <div class="form-group">
+        <div data-ng-include="partial" onload="showSubmitButton = true"></div>
+        <div class="form-group" data-ng-show="!!showSubmitButton">
             <div class="col-sm-offset-4 col-sm-7">
                 <button type="submit" class="btn btn-primary btn-block" ng-click="submit()">
                     <i class="mdi mdi-check"></i>
