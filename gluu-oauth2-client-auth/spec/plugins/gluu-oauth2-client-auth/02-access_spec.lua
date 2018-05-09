@@ -15,8 +15,8 @@ describe("gluu-oauth2-client-auth plugin", function()
     local oauth2_consumer_with_mix_mode_hide_consumer_custom_id
     local oauth2_consumer_with_restricted_api
     local invalidToken
-    local api, api2, api3, api4
-    local plugin, plugin_anonymous, plugin4
+    local api, api2, api3, api4, api5
+    local plugin, plugin_anonymous, plugin4, plugin5
     local timeout = 6000
     local op_server = "https://gluu.local.org"
     local oxd_http = "http://localhost:8553"
@@ -49,6 +49,12 @@ describe("gluu-oauth2-client-auth plugin", function()
             name = "api4",
             upstream_url = "http://localhost:4040/api",
             hosts = { "api4.typicode.com" }
+        })
+
+        api5 = assert(helpers.dao.apis:insert {
+            name = "api5",
+            upstream_url = "https://jsonplaceholder.typicode.com",
+            hosts = { "api5.typicode.com" }
         })
 
         print("----------- Api created ----------- ")
@@ -169,6 +175,32 @@ describe("gluu-oauth2-client-auth plugin", function()
         assert.response(res).has.status(201)
         plugin4 = assert.response(res).has.jsonbody()
         for k, v in pairs(plugin4) do
+            print(k, ": ", v)
+            if k == 'config' then
+                for sk, sv in pairs(v) do
+                    print(sk, ": ", sv)
+                end
+            end
+        end
+
+        print("\n----------- Plugin configuration API5 ----------- ")
+        local res = assert(admin_client:send {
+            method = "POST",
+            path = "/apis/api5/plugins",
+            body = {
+                name = "gluu-oauth2-client-auth",
+                config = {
+                    op_server = op_server,
+                    oxd_http_url = oxd_http
+                },
+            },
+            headers = {
+                ["Content-Type"] = "application/json"
+            }
+        })
+        assert.response(res).has.status(201)
+        plugin5 = assert.response(res).has.jsonbody()
+        for k, v in pairs(plugin5) do
             print(k, ": ", v)
             if k == 'config' then
                 for sk, sv in pairs(v) do
@@ -1765,6 +1797,92 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 local json = cjson.decode(assert.res_status(403, res))
                 assert.equal("Failed to validate introspect scope with oauth scope expression", json.message)
+            end)
+        end)
+    end)
+
+    describe("When multiple API and plugins are configured", function()
+        describe("When oauth2-consumer is in oauth_mode = true", function()
+            it("401 Unauthorized when token is not present in header", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com",
+                        ["Authorization"] = "Bearer " .. invalidToken
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("401 Unauthorized when token is invalid", function()
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com",
+                        ["Authorization"] = "Bearer sdsfsdf-dsfdf-sdfsf4535-4545"
+                    }
+                })
+                assert.res_status(401, res)
+            end)
+
+            it("200 Authorized when token active = true", function()
+                -- ------------------GET Client Token-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_oauth_mode.oxd_http_url,
+                    client_id = oauth2_consumer_oauth_mode.client_id,
+                    client_secret = oauth2_consumer_oauth_mode.client_secret,
+                    scope = { "openid", "uma_protection" },
+                    op_host = oauth2_consumer_oauth_mode.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 3rs time request
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api5.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
             end)
         end)
     end)
