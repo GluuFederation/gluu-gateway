@@ -1,4 +1,4 @@
-**Automated Gluu Gateway Tests for the 3 Modes**
+# **Automated Gluu Gateway Tests for the 3 Modes**
 
 Whenever in need of a quick sanity check for your server and Gluu services, use an automated tool which makes it easy and convenient. Our tests enable users to check the end-to-end flow of the customized plugins in the following three modes: OAUTH, UMA and Mix.
 In order to use the test cases, download and install Mozilla Firefox and Katalon Studio, an open source solution for test automation. The download link is available on the official website: https://www.katalon.com/download. 
