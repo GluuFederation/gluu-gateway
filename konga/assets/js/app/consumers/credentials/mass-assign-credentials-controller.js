@@ -46,7 +46,7 @@
                   "Mass Assign Credentials",
                   "You are about to mass assign <strong>" + credential + "</strong> credentials" +
                   " to " + $scope.consumers.length + " selected consumers.<br>Continue?",
-                  ['No don\'t','Yes, do it!'],
+                  ['CANCEL','Yes'],
                   function accept(){
                       $scope.busy = true
 

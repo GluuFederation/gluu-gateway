@@ -15,7 +15,7 @@
                         url: '/settings',
                         parent: 'frontend',
                         data: {
-                            access: 0,
+                            access: 1,
                             pageName: "Settings",
                             displayName: "settings",
                             prefix: '<i class="mdi mdi-settings"></i>'

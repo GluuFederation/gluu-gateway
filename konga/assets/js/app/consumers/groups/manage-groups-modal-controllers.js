@@ -98,8 +98,8 @@
           function deleteGroup(group) {
 
               DialogService.prompt(
-                  "Delete Group","Really want to delete the '" + group.name + "' group?",
-                  ['No don\'t','Yes! delete it'],
+                  "Delete Group","Do you want to delete the '" + group.name + "' group?",
+                  ['CANCEL','YES'],
                   function accept(){
                       KongGroupModel
                           .delete(group.id)

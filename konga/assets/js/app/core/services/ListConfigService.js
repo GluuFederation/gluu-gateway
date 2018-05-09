@@ -441,8 +441,8 @@
               },
               deleteItem: function deleteItem($index, item) {
                 DialogService.prompt(
-                  "Confirm", "Really want to delete the selected item?",
-                  ['No don\'t', 'Yes! delete it'],
+                  "Confirm", "Do you want to delete the selected item?",
+                  ['CANCEL', 'YES'],
                   function accept() {
                     model.delete(item.id || item.name)
                       .then(function (res) {

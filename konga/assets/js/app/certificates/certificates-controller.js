@@ -20,6 +20,13 @@
 
 
         $scope.openUploadCertsModal = function (certificate) {
+          if($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -34,8 +41,8 @@
 
               $scope.deleteSNI = function (sni) {
                 DialogService.prompt(
-                  "Confirm", "Really want to delete the selected item?",
-                  ['No don\'t', 'Yes! delete it'],
+                  "Confirm", "Do you want to delete the selected item?",
+                  ['CANCEL', 'YES'],
                   function accept() {
                     SnisModel.delete(sni)
                       .then(function (res) {
@@ -130,7 +137,6 @@
 
               function handleErrors(err) {
                 $scope.errors = {}
-                debugger
                 if (err.data) {
                   if (err.data.customMessage) {
 

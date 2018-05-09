@@ -319,7 +319,7 @@ function _M.execute_access(config)
     local token = retrieve_token(ngx.req, config, "authorization")
 
     if helper.is_empty(token) then
-        local credentials, err = singletons.dao.plugins:find_all { name = RS_PLUGINNAME }
+        local credentials, err = singletons.dao.plugins:find_all { name = RS_PLUGINNAME, api_id = ngx.ctx.api.id }
         if err then
             return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
         end

@@ -59,7 +59,7 @@
 
           function deleteConsumerGroup(group) {
               DialogService.prompt(
-                  "Delete Group","Really want to remove the group from the consumer?",
+                  "Delete Group","Do you want to remove the group from the consumer?",
                   ['No','Remove it!'],
                   function accept(){
                       ConsumerService.deleteAcl($scope.consumer.id,group.id)
