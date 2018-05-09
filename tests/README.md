@@ -8,16 +8,16 @@ In order to use the test cases, download and install Mozilla Firefox and Katalon
 The test repository is available at https://github.com/GluuFederation/gluu-gateway/tree/version_3.1.3/tests. Download its contents and copy to the Katalon folder. 
 The next step is to run Katalon Studio and open the Gluu Gateway project. Do it by clicking File > Open Project in the menu and choosing the right path.
 
-!(./tests/katalon_1.png)
+![open_project](../tests/katalon_1.png)
 
 Upon opening the project, you will see the four test cases in the tree to the left. Before running them, go to Data Files and change the variable values for your GG. Now, there are two ways to run the test cases: separately and together as a test suite. To run them separately, go back to Test Cases and open each one by clicking on them. Run a test by clicking the green Play button in the upper right menu. Following the same steps, run the whole Test Suite, GG_Tests, located just two clicks below the Test Cases.
 
 !!! Note Always make sure Firefox is set as the default browser before running a test.
 
-!(./tests/katalon_2.png)
+![run_test](../tests/katalon_2.png)
 
 Check the status of your test in the Log Viewer located below the test case window. A green bar means the test has passed, while a red one shows a failure. If there are any issues with the test case, view them in the Problems window or simply check the Console. 
 
-!(./tests/katalon_3.png)
+![check_status](../tests/katalon_3.png)
 
 Happy testing!
