@@ -15,7 +15,7 @@
                         url: '/connections',
                         parent : 'frontend',
                         data : {
-                            access : 0,
+                            access : 1,
                             pageName : "Connections",
                             pageDescription : "Create connections to Kong Nodes and select the one to use by clicking on the respective star icon.",
                             prefix : '<i class="mdi mdi-cast-connected"></i>'

@@ -32,7 +32,7 @@ module.exports.routes = {
 
         return res.view('homepage',{
             angularDebugEnabled: process.env.NODE_ENV == 'production' ? false : true,
-            konga_version: require('../package.json').version,
+            konga_version: sails.config.ggVersion,
             accountActivated : req.query.activated ? true : false
         })
     },
