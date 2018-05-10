@@ -238,6 +238,9 @@
         function showResourceJSON() {
           var model = angular.copy($scope.modelPlugin);
           model.config.protection_document = makeJSON(model);
+          if (model.config.protection_document == null) {
+            return
+          }
           if (!model) {
             return false;
           }
@@ -312,13 +315,19 @@
           var protectedDocument = makeJSON($scope.modelPlugin)
           if (protectedDocument && protectedDocument.length > 0) {
             model.config.protection_document = JSON.stringify(protectedDocument);
+            if (model.config.protection_document == "null") {
+              return
+            }
           } else {
             delete model.config.protection_document
           }
 
           var oauthScopeExpression = makeOAuthScopeJSON($scope.modelPlugin)
           if (oauthScopeExpression  && oauthScopeExpression .length > 0) {
-            model.config.oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+            model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
+            if (model.config.oauth_scope_expression == "null") {
+              return
+            }
           } else {
             delete model.config.oauth_scope_expression
           }
@@ -383,12 +392,18 @@
 
           if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
             model.config.oauth_scope_expression = JSON.stringify(makeOAuthScopeJSON($scope.modelPlugin));
+            if (model.config.oauth_scope_expression == "null") {
+              return
+            }
           } else {
             delete model.config.oauth_scope_expression
           }
 
           if (model.config.protection_document && model.config.protection_document.length > 0) {
             model.config.protection_document = JSON.stringify(makeJSON($scope.modelPlugin));
+            if (model.config.protection_document == "null") {
+              return
+            }
           } else {
             delete model.config.protection_document
           }
@@ -621,6 +636,10 @@
         function showOauthResourceJSON() {
           var model = angular.copy($scope.modelPlugin);
           model.config.oauth_scope_expression = makeOAuthScopeJSON(model);
+          if (model.config.oauth_scope_expression == null) {
+            return
+          }
+
           if (!model) {
             return false;
           }
