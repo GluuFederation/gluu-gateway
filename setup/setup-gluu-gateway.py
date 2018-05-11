@@ -103,7 +103,7 @@ class KongSetup(object):
         # JRE setup properties
         self.jre_version = '162'
         self.jreDestinationPath = '/opt/jdk1.8.0_%s' % self.jre_version
-        self.distAppFolder = '%s/dist/app' % self.optFolder
+        self.distAppFolder = '%s/dist/app' % self.distGluuGatewayFolder
         self.jre_home = '/opt/jre'
         self.jreSHFileName = 'jre-gluu.sh'
         self.isPrompt = True
