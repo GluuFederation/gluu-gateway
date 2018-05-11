@@ -440,6 +440,7 @@
 
               },
               deleteItem: function deleteItem($index, item) {
+                $('.btn-link').blur();
                 DialogService.prompt(
                   "Confirm", "Do you want to delete the selected item?",
                   ['CANCEL', 'YES'],
