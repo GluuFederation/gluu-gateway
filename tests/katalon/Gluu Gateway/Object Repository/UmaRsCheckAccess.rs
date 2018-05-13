@@ -20,6 +20,7 @@
       <type>Main</type>
       <value>application/json</value>
    </httpHeaderProperties>
+   <migratedVersion>5.4.1</migratedVersion>
    <restRequestMethod>POST</restRequestMethod>
    <restUrl>https://dev1.gluu.org:8443/uma-rs-check-access</restUrl>
    <serviceType>RESTful</serviceType>

@@ -9,6 +9,7 @@
    <httpBody></httpBody>
    <httpBodyContent></httpBodyContent>
    <httpBodyType></httpBodyType>
+   <migratedVersion>5.4.1</migratedVersion>
    <restRequestMethod>GET</restRequestMethod>
    <restUrl>http://dev1.gluu.org:8000/my</restUrl>
    <serviceType>RESTful</serviceType>

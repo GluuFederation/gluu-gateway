@@ -16,6 +16,7 @@
       <type>Main</type>
       <value>example2.com</value>
    </httpHeaderProperties>
+   <migratedVersion>5.4.1</migratedVersion>
    <restRequestMethod>GET</restRequestMethod>
    <restUrl>http://dev1.gluu.org:8000/test</restUrl>
    <serviceType>RESTful</serviceType>

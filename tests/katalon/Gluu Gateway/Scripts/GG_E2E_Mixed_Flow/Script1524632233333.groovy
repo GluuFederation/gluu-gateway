@@ -69,7 +69,9 @@ WebUI.click(findTestObject('Page_Gluu Gateway/a_APIS'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/a_Add New Api'))
 
-WebUI.delay(3)
+WebUI.delay(5)
+
+WebUI.waitForElementPresent(findTestObject('Page_Gluu Gateway (1)/input_form-control ng-pristine'), 3)
 
 WebUI.setText(findTestObject('Page_Gluu Gateway/input_form-control ng-pristine'), 'mix_api' + new Random().nextInt())
 

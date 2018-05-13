@@ -7,13 +7,13 @@
    <selectorCollection>
       <entry>
          <key>BASIC</key>
-         <value>id(&quot;modal-body&quot;)/form[1]/div[1]/div[1]/div[1]/input</value>
+         <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
       </entry>
    </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>
@@ -45,6 +45,6 @@
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>id(&quot;modal-body&quot;)/form[1]/div[1]/div[1]/div[1]/input</value>
+      <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
    </webElementProperties>
 </WebElementEntity>

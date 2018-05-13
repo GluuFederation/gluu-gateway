@@ -8,9 +8,9 @@
    <dataFileGUID>84200962-287e-4284-92c8-9bfe401f68b0</dataFileGUID>
    <dataSourceUrl></dataSourceUrl>
    <driver>InternalData</driver>
-   <data>host ${hostname}</data>
-   <data>gluu_username ${username}</data>
-   <data>gluu_secret ${secret}</data>
+   <data>host dev1.gluu.org</data>
+   <data>gluu_username michal</data>
+   <data>gluu_secret secret</data>
    <internalDataColumns>
       <columnIndex>0</columnIndex>
       <name>Name</name>

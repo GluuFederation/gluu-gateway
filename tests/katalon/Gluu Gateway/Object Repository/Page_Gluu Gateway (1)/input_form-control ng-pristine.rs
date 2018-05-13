@@ -7,15 +7,13 @@
    <selectorCollection>
       <entry>
          <key>BASIC</key>
-         <value>id(&quot;modal-body&quot;)/form[1]/div[1]/div[1]/div[2]/input</value>
-      </entry>
-      <entry>
-         <key>XPATH</key>
-         <value></value>
+         <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
       </entry>
       <entry>
          <key>CSS</key>
-         <value></value>
+      </entry>
+      <entry>
+         <key>XPATH</key>
       </entry>
    </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
@@ -46,6 +44,6 @@
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>id(&quot;modal-body&quot;)/form[1]/div[1]/div[2]/div[1]/input</value>
+      <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
    </webElementProperties>
 </WebElementEntity>
