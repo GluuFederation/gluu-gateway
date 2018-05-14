@@ -7,7 +7,7 @@
    <selectorCollection>
       <entry>
          <key>BASIC</key>
-         <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
+         <value>/html/body/div[1]/div/div/div[2]/form/div[2]/div/input</value>
       </entry>
       <entry>
          <key>CSS</key>
@@ -44,6 +44,6 @@
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>/html/body/div[1]/div/div/div[2]/form/div[1]/div/input</value>
+      <value>/html/body/div[1]/div/div/div[2]/form/div[2]/div/input</value>
    </webElementProperties>
 </WebElementEntity>

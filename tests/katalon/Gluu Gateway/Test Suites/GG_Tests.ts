@@ -4,7 +4,7 @@
    <name>GG_Tests</name>
    <tag></tag>
    <isRerun>false</isRerun>
-   <lastRun>2018-05-03T15:20:10</lastRun>
+   <lastRun>2018-05-14T13:49:37</lastRun>
    <mailRecipient></mailRecipient>
    <numberOfRerun>0</numberOfRerun>
    <pageLoadTimeout>30</pageLoadTimeout>
