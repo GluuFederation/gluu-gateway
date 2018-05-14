@@ -69,7 +69,9 @@ WebUI.click(findTestObject('Page_Gluu Gateway/a_APIS'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/a_Add New Api'))
 
-WebUI.delay(3)
+WebUI.delay(5)
+
+WebUI.waitForElementPresent(findTestObject('Page_Gluu Gateway (1)/input_form-control ng-pristine'), 3)
 
 WebUI.setText(findTestObject('Page_Gluu Gateway/input_form-control ng-pristine'), 'mix_api' + new Random().nextInt())
 
@@ -228,8 +230,8 @@ HttpClient noTokenClient = new DefaultHttpClient()
 HttpResponse httpNoTokenResponse = noTokenClient.execute(apiNoTokenRequest)
 
 //def body = EntityUtils.toString(httpResponse.getEntity(),"utf-8")
-WebUI.verifyEqual(httpNoTokenResponse.getStatusLine().statusCode, 403)
-
+WebUI.verifyGreaterThan(httpNoTokenResponse.getStatusLine().statusCode, 400)
+WebUI.verifyLessThan(httpNoTokenResponse.getStatusLine().statusCode, 500)
 //------------------RequestInvalidTokenAPI ----------------
 HttpUriRequest apiInvalidTokenRequest = new HttpGet((('http://' + host) + ':8000') + uma_path)
 

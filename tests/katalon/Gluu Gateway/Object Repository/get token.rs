@@ -27,6 +27,7 @@
       <type>Main</type>
       <value>utf-8</value>
    </httpHeaderProperties>
+   <migratedVersion>5.4.1</migratedVersion>
    <restRequestMethod>POST</restRequestMethod>
    <restUrl>https://dev1.gluu.org:8443/get-client-token</restUrl>
    <serviceType>RESTful</serviceType>
