@@ -96,6 +96,7 @@
           $scope.data.oauth_mode = $scope.data.oauth_mode || false;
           $scope.data.uma_mode = $scope.data.uma_mode || false;
           $scope.data.mix_mode = $scope.data.mix_mode || false;
+          $scope.data.allow_oauth_scope_expression = $scope.data.allow_oauth_scope_expression || false;
 
           // $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
           $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
