@@ -117,7 +117,7 @@
 
         function deleteOAuth2($index, oauth) {
           DialogService.prompt(
-            "Delete JWT", "Do you want to delete the selected OAuth2?",
+            "Delete Credentials", "Do you want to delete the selected OAuth2?",
             ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
@@ -135,7 +135,7 @@
 
         function deleteJWT($index, jwt) {
           DialogService.prompt(
-            "Delete JWT", "Do you want to delete the selected JWT?",
+            "Delete Credentials", "Do you want to delete the selected JWT?",
             ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
@@ -153,7 +153,7 @@
 
         function deleteKey($index, key) {
           DialogService.prompt(
-            "Delete Key", "Do you want to delete the selected key?",
+            "Delete Credentials", "Do you want to delete the selected key?",
             ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
