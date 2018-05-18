@@ -1,0 +1,1 @@
+/etc/init.d/gluu-gateway stop > /dev/null 2>&1
