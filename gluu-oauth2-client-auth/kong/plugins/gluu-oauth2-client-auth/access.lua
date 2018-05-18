@@ -370,4 +370,69 @@ function _M.execute_access(config)
     end
 end
 
+--- Calculate the matrics
+-- @param conf: Global configuration oxd_id, client_id and client_secret
+-- @return ACCESS GRANTED and Unauthorized
+function _M.execute_log(config)
+    ngx.log(ngx.DEBUG, "Enter in gluu-oauth2-client-auth plugin")
+
+    --- Calculate matrics
+    local function push_data(premature, token, httpMethod)
+        -- Fetch token data from cache
+        local cacheToken = get_set_token_cache(token, nil)
+
+        -- Check token cache, if available then count matrics otherwise not
+        if helper.is_empty(cacheToken) or helper.is_empty(cacheToken.token_type) or helper.is_empty(cacheToken.client_id) then
+            return ngx.log(ngx.DEBUG, "Cannot find cache")
+        end
+
+        -- Log cache token
+        helper.print_table(cacheToken)
+
+        -- Find existing record
+        local gluuOAuth2matrics, err = singletons.dao.gluu_oauth2_matrics:find_all { client_id = cacheToken.client_id }
+        if err then
+            return ngx.log(ngx.DEBUG, PLUGINNAME .. ": Not find matrics db data of client " .. cacheToken.client_id)
+        end
+
+        if helper.is_empty(gluuOAuth2matrics[1]) then
+            singletons.dao.gluu_oauth2_matrics:insert({ client_id = cacheToken.client_id, matrics = { uma_grant = 0, client_crednetial_grant = 0, client_authentications = 0, permission_ticket = 0, get = 0, post = 0, put = 0, delete = 0 } })
+        else
+            local gluuOAuth2matric = gluuOAuth2matrics[1]
+            helper.print_table(gluuOAuth2matric)
+
+            if cacheToken.token_type == "OAuth" then
+                gluuOAuth2matric.matrics.client_crednetial_grant = gluuOAuth2matric.matrics.client_crednetial_grant + 1
+            end
+
+            if cacheToken.token_type == "UMA" then
+                gluuOAuth2matric.matrics.uma_grant = gluuOAuth2matric.matrics.uma_grant + 1
+            end
+
+            gluuOAuth2matric.matrisc.client_authentications = gluuOAuth2matric.matrisc.client_authentications + 1
+
+            if httpMethod == "GET" then
+                gluuOAuth2matric.matrisc.get = gluuOAuth2matric.matrisc.get + 1
+            end
+
+            if httpMethod == "POST" then
+                gluuOAuth2matric.matrisc.post = gluuOAuth2matric.matrisc.post + 1
+            end
+
+            if httpMethod == "PUT" then
+                gluuOAuth2matric.matrisc.put = gluuOAuth2matric.matrisc.put + 1
+            end
+
+            if httpMethod == "DELETE" then
+                gluuOAuth2matric.matrisc.delete = gluuOAuth2matric.matrisc.delete + 1
+            end
+
+            singletons.dao.gluu_oauth2_matrics:update({ matrics = gluuOAuth2matric.matrisc }, { id = gluuOAuth2matric.id })
+        end
+    end
+
+    -- Put matrics calulation in process asynchronization
+    ngx.timer.at(0, push_data, retrieve_token(ngx.req, config, "authorization"), ngx.req.get_method())
+end
+
 return _M

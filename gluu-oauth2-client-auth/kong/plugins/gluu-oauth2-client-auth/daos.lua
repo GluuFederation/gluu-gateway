@@ -32,6 +32,22 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
     end
 }
 
+local GLUU_OAUTH2_MATRICS = {
+    primary_key = { "id" },
+    table = "gluu_oauth2_matrics",
+    cache_key = { "client_id" },
+    fields = {
+        id = { type = "id", dao_insert_value = true },
+        client_id = { type = "string", required = true },
+        matrics = { type = "table", required = true },
+        created_at = { type = "timestamp", immutable = true, dao_insert_value = true }
+    },
+    marshall_event = function(self, t)
+        return { id = t.id, client_id = t.client_id }
+    end
+}
+
 return {
-    gluu_oauth2_client_auth_credentials = GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA
+    gluu_oauth2_client_auth_credentials = GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA,
+    gluu_oauth2_matrics = GLUU_OAUTH2_MATRICS
 }
