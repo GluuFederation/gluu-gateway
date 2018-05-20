@@ -9,7 +9,7 @@
         </div>
         <input type="text" data-ng-model="search" class="form-control" placeholder="search plugins...">
     </div>
-    <dir-pagination-controls class="pull-right"></dir-pagination-controls>
+    <dir-pagination-controls class="pull-right" pagination-id="pluginData"></dir-pagination-controls>
 </div>
 <table class="table">
     <tr>
@@ -21,7 +21,7 @@
         <th width="1"></th>
     </tr>
     <tr
-            dir-paginate="item in plugins.data | orderBy:'created_at':true | itemsPerPage: 25 | filter : search">
+            dir-paginate="item in plugins.data | orderBy:'created_at':true | itemsPerPage: 25 | filter : search" pagination-id="pluginData">
         <td>
 
             <input

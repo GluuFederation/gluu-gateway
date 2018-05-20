@@ -9,8 +9,13 @@ Homepage: https://www.gluu.org
 Package: gluu-gateway
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- postgresql,
+ postgresql (>= 9.4),
  oxd-server,
  nodejs,
+ git,
+ unzip,
+ lua-cjson,
+ npm,
+ kong-community-edition (= 0.11.0),
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
