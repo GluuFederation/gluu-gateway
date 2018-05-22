@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<WebElementEntity>
+   <description></description>
+   <name>span_19CF.B296.532F.83E2000125</name>
+   <tag></tag>
+   <elementGuidId>92a80c7d-c693-460a-add9-6b7de48dcc37</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>id(&quot;pluginDetails&quot;)/tr[4]/td[1]/span[@class=&quot;ng-binding&quot;][count(. | //*[(text() = '@!19CF.B296.532F.83E2!0001!25C1.E1E4!0008!30AB.E511.8AD6.123A' or . = '@!19CF.B296.532F.83E2!0001!25C1.E1E4!0008!30AB.E511.8AD6.123A')]) = count(//*[(text() = '@!19CF.B296.532F.83E2!0001!25C1.E1E4!0008!30AB.E511.8AD6.123A' or . = '@!19CF.B296.532F.83E2!0001!25C1.E1E4!0008!30AB.E511.8AD6.123A')])]</value>
+      </entry>
+   </selectorCollection>
+   <selectorMethod>BASIC</selectorMethod>
+   <useRalativeImagePath>false</useRalativeImagePath>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>tag</name>
+      <type>Main</type>
+      <value>span</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>data-ng-show</name>
+      <type>Main</type>
+      <value>isShowClientId</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>false</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>class</name>
+      <type>Main</type>
+      <value>ng-binding</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>text</name>
+      <type>Main</type>
+      <value>@!19CF.B296.532F.83E2!0001!25C1.E1E4!0008!30AB.E511.8AD6.123A</value>
+   </webElementProperties>
+   <webElementProperties>
+      <isSelected>true</isSelected>
+      <matchCondition>equals</matchCondition>
+      <name>xpath</name>
+      <type>Main</type>
+      <value>id(&quot;pluginDetails&quot;)/tr[4]/td[1]/span[@class=&quot;ng-binding&quot;]</value>
+   </webElementProperties>
+</WebElementEntity>
