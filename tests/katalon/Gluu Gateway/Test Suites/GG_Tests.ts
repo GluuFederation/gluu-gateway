@@ -4,7 +4,7 @@
    <name>GG_Tests</name>
    <tag></tag>
    <isRerun>false</isRerun>
-   <lastRun>2018-05-14T13:49:37</lastRun>
+   <lastRun>2018-05-21T09:19:12</lastRun>
    <mailRecipient></mailRecipient>
    <numberOfRerun>0</numberOfRerun>
    <pageLoadTimeout>30</pageLoadTimeout>
@@ -14,19 +14,19 @@
    <testCaseLink>
       <guid>68c68667-b5ab-40ad-813e-b0b2857dbdd5</guid>
       <isReuseDriver>false</isReuseDriver>
-      <isRun>true</isRun>
+      <isRun>false</isRun>
       <testCaseId>Test Cases/GG_Simple_Login</testCaseId>
    </testCaseLink>
    <testCaseLink>
       <guid>0f96f21d-3436-4e62-a561-bc4901405a5a</guid>
       <isReuseDriver>false</isReuseDriver>
-      <isRun>true</isRun>
+      <isRun>false</isRun>
       <testCaseId>Test Cases/GG_E2E_Mixed_Flow</testCaseId>
    </testCaseLink>
    <testCaseLink>
       <guid>f3718a2b-bde3-4da0-b9e2-5cd7acd29590</guid>
       <isReuseDriver>false</isReuseDriver>
-      <isRun>true</isRun>
+      <isRun>false</isRun>
       <testCaseId>Test Cases/GG_E2E_OAuth_Flow</testCaseId>
       <variableLink>
          <testDataLinkId></testDataLinkId>

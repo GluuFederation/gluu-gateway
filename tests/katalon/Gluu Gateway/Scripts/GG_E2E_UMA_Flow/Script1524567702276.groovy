@@ -147,25 +147,23 @@ WebUI.click(findTestObject('Page_Gluu Gateway (5)/a_Security'))
 
 WebUI.delay(3)
 
-WebUI.click(findTestObject('Page_Gluu Gateway (5)/td_84164f52-7986-406d-87bd-006'))
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/th_Plugin details'))
 
-uma_oxdid = WebUI.getText(findTestObject('Page_Gluu Gateway (5)/td_84164f52-7986-406d-87bd-006'))
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/td_d1185b63-44c2-4fa6-bae4-40e'))
 
-WebUI.scrollToElement(findTestObject('Page_Gluu Gateway (5)/i_mdi mdi-eye'), 3)
+uma_oxdid = WebUI.getText(findTestObject('Page_Gluu Gateway (9)/td_d1185b63-44c2-4fa6-bae4-40e'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (5)/i_mdi mdi-eye'))
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/i_mdi mdi-eye'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (5)/span_19CF.B296.532F.83E2000125'))
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/span_19CF.B296.532F.83E2000125'))
 
-uma_clientid = WebUI.getText(findTestObject('Page_Gluu Gateway (5)/span_19CF.B296.532F.83E2000125'))
+uma_clientid = WebUI.getText(findTestObject('Page_Gluu Gateway (9)/span_19CF.B296.532F.83E2000125'))
 
-WebUI.scrollToElement(findTestObject('Page_Gluu Gateway (5)/i_mdi mdi-eye_1'), 5)
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/i_mdi mdi-eye_1'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (5)/i_mdi mdi-eye_1'), FailureHandling.STOP_ON_FAILURE)
+WebUI.click(findTestObject('Page_Gluu Gateway (9)/span_cc4c3790-79b3-4c4f-83bc-c'))
 
-WebUI.click(findTestObject('Page_Gluu Gateway (5)/span_b93e0539-ff1e-4b95-81bc-2'))
-
-uma_clientsecret = WebUI.getText(findTestObject('Page_Gluu Gateway (5)/span_b93e0539-ff1e-4b95-81bc-2'))
+uma_clientsecret = WebUI.getText(findTestObject('Page_Gluu Gateway (9)/span_cc4c3790-79b3-4c4f-83bc-c'))
 
 WebUI.click(findTestObject('Page_Gluu Gateway/Page_oxAuth - Login/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/Page_Gluu Gateway/span_CONSUMERS'))
 
