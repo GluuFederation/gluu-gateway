@@ -4,10 +4,16 @@
    <name>i_mdi mdi-close</name>
    <tag></tag>
    <elementGuidId>271636ae-8186-4a1b-a975-a0de02f18763</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>id(&quot;modal-title&quot;)/a[@class=&quot;modal-close pull-right&quot;]/i[@class=&quot;mdi mdi-close&quot;]</value>
+      </entry>
+   </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>

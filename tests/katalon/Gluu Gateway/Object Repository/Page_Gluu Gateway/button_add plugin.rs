@@ -4,10 +4,16 @@
    <name>button_add plugin</name>
    <tag></tag>
    <elementGuidId>82e2f6b6-8bee-4252-97e9-77a45a8f4a63</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>/html/body/div[2]/div[2]/div/div/div[2]/div/div[2]/div[2]/div[1]/div[2]/button</value>
+      </entry>
+   </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>
@@ -28,7 +34,7 @@
       <value>onAddPlugin()</value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>text</name>
       <type>Main</type>
@@ -38,10 +44,10 @@
     </value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>false</isSelected>
+      <isSelected>true</isSelected>
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>id(&quot;konga&quot;)/body[@class=&quot;body ng-scope _expose-aside&quot;]/div[@class=&quot;main-container-wrapper side-nav--animatable&quot;]/div[@class=&quot;main-container-wrapper-static&quot;]/div[@class=&quot;container-fluid&quot;]/div[@class=&quot;main-container container&quot;]/div[@class=&quot;main-container-inner ng-scope&quot;]/div[@class=&quot;row ng-scope&quot;]/div[@class=&quot;col-md-9&quot;]/div[@class=&quot;ng-scope&quot;]/div[@class=&quot;col-md-12 bg-light-grey padding margin-bottom ng-scope&quot;]/div[@class=&quot;col-md-6 text-right&quot;]/button[@class=&quot;btn btn-primary btn-flat&quot;]</value>
+      <value>/html/body/div[2]/div[2]/div/div/div[2]/div/div[2]/div[2]/div[1]/div[2]/button</value>
    </webElementProperties>
 </WebElementEntity>

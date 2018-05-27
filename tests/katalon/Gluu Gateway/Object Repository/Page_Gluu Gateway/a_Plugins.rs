@@ -7,19 +7,13 @@
    <selectorCollection>
       <entry>
          <key>BASIC</key>
-         <value>//a[(text() = '
-                    
-                    Plugins
-                ' or . = '
-                    
-                    Plugins
-                ')]</value>
+         <value>//*[@id=&quot;konga&quot;]/body/div[2]/div[2]/div/div/div[2]/div/div[1]/ul/li[2]/a</value>
       </entry>
    </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>
@@ -33,7 +27,7 @@
       <value>ng-binding</value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>text</name>
       <type>Main</type>
@@ -43,7 +37,7 @@
                 </value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>false</isSelected>
+      <isSelected>true</isSelected>
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
