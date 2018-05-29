@@ -28,7 +28,7 @@ class KongSetup(object):
         self.output_folder = './output'
         self.system_folder = './system'
         self.osDefault = '/etc/default'
-        self.profileFolder = '/etc/profile.d/'
+        self.profileFolder = '/etc/profile.d'
 
         self.logError = 'gluu-gateway-setup_error.log'
         self.log = 'gluu-gateway-setup.log'
@@ -49,10 +49,10 @@ class KongSetup(object):
         self.cmd_ln = '/bin/ln'
         self.hostname = '/bin/hostname'
         self.cmd_touch = '/bin/touch'
-        self.cmd_sudo = 'sudo'
         self.cmd_mv = '/bin/mv'
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
+        self.cmd_sh = '/bin/sh'
 
         self.countryCode = ''
         self.state = ''
@@ -147,7 +147,7 @@ class KongSetup(object):
     def configurePostgres(self):
         self.logIt('Configuring postgres...')
         print 'Configuring postgres...'
-        self.run([self.cmd_sudo, '/etc/init.d/postgresql', 'start'])
+        self.run(['/etc/init.d/postgresql', 'start'])
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
         os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
@@ -159,8 +159,8 @@ class KongSetup(object):
             self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
                                      self.distOxdServerConfigPath)
 
-        self.run([self.cmd_sudo, '/etc/init.d/oxd-server', 'start'])
-        self.run([self.cmd_sudo, '/etc/init.d/oxd-https-extension', 'start'])
+        self.run(['/etc/init.d/oxd-server', 'start'])
+        self.run(['/etc/init.d/oxd-https-extension', 'start'])
 
     def detectHostname(self):
         detectedHostname = None
@@ -293,11 +293,11 @@ class KongSetup(object):
 
     def installSample(self):
         self.logIt('Installing luarocks packages...')
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-logic-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
+        self.run(['luarocks', 'install', 'json-lua'])
+        self.run(['luarocks', 'install', 'oxd-web-lua'])
+        self.run(['luarocks', 'install', 'json-logic-lua'])
+        self.run(['luarocks', 'install', 'gluu-oauth2-rs'])
+        self.run(['luarocks', 'install', 'gluu-oauth2-client-auth'])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
@@ -316,18 +316,18 @@ class KongSetup(object):
         self.run([self.cmd_chown, '-h', 'root:root', self.jre_home])
         self.run([self.cmd_mv, '%s/%s' % (self.template_folder, self.jreSHFileName), self.profileFolder])
         self.run([self.cmd_chmod, '644', '%s/%s' % (self.profileFolder, self.jreSHFileName)])
-
+        self.run(['.', '%s/%s' % (self.profileFolder, self.jreSHFileName)], None, None, True, True)
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
         print 'Installing konga node packages...'
 
         if not os.path.exists(self.cmd_node):
-            self.run([self.cmd_sudo, self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
+            self.run([self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
 
-        self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
-        self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
-        self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
+        self.run(['npm', 'install', '-g', 'bower', 'gulp', 'sails'])
+        self.run(['npm', 'install', '--unsafe-perm'], self.distKongaFolder, os.environ.copy(), True)
+        self.run(['bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         if self.generateClient:
             AuthorizationRedirectUri = 'https://'+self.oxdAuthorizationRedirectUri+':' + self.kongaPort
@@ -362,7 +362,7 @@ class KongSetup(object):
                 sys.exit()
 
         # Render konga property
-        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
+        self.run([self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
                  self.distKongaConfigPath, os.environ.copy(), True)
         self.renderTemplateInOut(self.distKongaConfigFile, self.template_folder, self.distKongaConfigPath)
 
@@ -457,11 +457,11 @@ class KongSetup(object):
         newFn.write(template_text % self.__dict__)
         newFn.close()
 
-    def run(self, args, cwd=None, env=None, usewait=False):
+    def run(self, args, cwd=None, env=None, useWait=False, shell=False):
         self.logIt('Running: %s' % ' '.join(args))
         try:
-            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env)
-            if usewait:
+            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env, shell=shell)
+            if useWait:
                 code = p.wait()
                 self.logIt('Run: %s with result code: %d' % (' '.join(args), code))
             else:
@@ -475,14 +475,14 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        self.run([self.cmd_sudo, "kong", "start"])
+        self.run(["kong", "start"])
 
     def migrateKong(self):
-        self.run([self.cmd_sudo, "kong", "migrations", "up"])
+        self.run(["kong", "migrations", "up"])
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
-        self.run([self.cmd_sudo, "/etc/init.d/%s" % self.kongaService, "start"])
+        self.run(["/etc/init.d/%s" % self.kongaService, "start"])
         self.run([self.cmd_update_rs_d, self.kongaService, "defaults"])
 
     def copyFile(self, inFile, destFolder):
