@@ -53,6 +53,9 @@ class KongSetup(object):
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
         self.cmd_sh = '/bin/sh'
+        self.cmd_update_alternatives = 'update-alternatives'
+        self.cmd_echo = '/bin/echo'
+        self.cmd_service = '/usr/sbin/service'
 
         self.countryCode = ''
         self.state = ''
@@ -312,11 +315,10 @@ class KongSetup(object):
 
         self.run([self.cmd_ln, '-sf', self.jreDestinationPath, self.jre_home])
         self.run([self.cmd_chmod, '-R', '755', '%s/bin/' % self.jreDestinationPath])
-        self.run([self.cmd_chown, '-R', 'root:root', self.jreDestinationPath])
-        self.run([self.cmd_chown, '-h', 'root:root', self.jre_home])
-        self.run([self.cmd_mv, '%s/%s' % (self.template_folder, self.jreSHFileName), self.profileFolder])
-        self.run([self.cmd_chmod, '644', '%s/%s' % (self.profileFolder, self.jreSHFileName)])
-        self.run(['.', '%s/%s' % (self.profileFolder, self.jreSHFileName)], None, None, True, True)
+        with open('/etc/environment', 'a') as f:
+            f.write('JAVA_HOME=/opt/jre')
+        self.run([self.cmd_update_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'], shell=True)
+
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
@@ -482,6 +484,7 @@ class KongSetup(object):
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
+        self.run(["/etc/init.d/%s" % self.kongaService, "stop"])
         self.run(["/etc/init.d/%s" % self.kongaService, "start"])
         self.run([self.cmd_update_rs_d, self.kongaService, "defaults"])
 
