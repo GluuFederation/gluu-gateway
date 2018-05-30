@@ -12,6 +12,7 @@ import shutil
 import requests
 import json
 import getpass
+import urllib3
 
 class KongSetup(object):
     def __init__(self):
@@ -477,6 +478,7 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
+        self.run(["kong", "stop"])
         self.run(["kong", "start"])
 
     def migrateKong(self):
@@ -484,6 +486,8 @@ class KongSetup(object):
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
+        self.run(['/etc/init.d/oxd-server', 'stop'])
+        self.run(['/etc/init.d/oxd-https-extension', 'stop'])
         self.run(["/etc/init.d/%s" % self.kongaService, "stop"])
         self.run(["/etc/init.d/%s" % self.kongaService, "start"])
         self.run([self.cmd_update_rs_d, self.kongaService, "defaults"])
@@ -495,6 +499,8 @@ class KongSetup(object):
         except:
             self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
             self.logIt(traceback.format_exc(), True)
+    def disableWarnings(selfself):
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 if __name__ == "__main__":
@@ -560,6 +566,7 @@ if __name__ == "__main__":
                 proceed = True
 
             if proceed:
+                kongSetup.disableWarnings()
                 kongSetup.genKongSslCertificate()
                 kongSetup.installJRE()
                 kongSetup.configurePostgres()
