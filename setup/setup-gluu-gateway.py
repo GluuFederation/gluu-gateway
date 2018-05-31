@@ -13,6 +13,7 @@ import requests
 import json
 import getpass
 import urllib3
+import platform
 
 class KongSetup(object):
     def __init__(self):
@@ -113,6 +114,7 @@ class KongSetup(object):
         self.isPrompt = True
         self.license = False
         self.initParametersFromJsonArgument()
+        self.platform = platform.linux_distribution()
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -499,8 +501,9 @@ class KongSetup(object):
         except:
             self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
             self.logIt(traceback.format_exc(), True)
-    def disableWarnings(selfself):
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    def disableWarnings(self):
+        if self.platform[1].split(".")[0] == '16':
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 if __name__ == "__main__":
