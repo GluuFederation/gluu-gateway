@@ -4,10 +4,16 @@
    <name>button_add plugin</name>
    <tag></tag>
    <elementGuidId>f7259a89-78a5-4591-8649-cf7099a6c61b</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>id(&quot;konga&quot;)/body[@class=&quot;body ng-scope _expose-aside&quot;]/div[@class=&quot;main-container-wrapper side-nav--animatable&quot;]/div[@class=&quot;main-container-wrapper-static&quot;]/div[@class=&quot;container-fluid&quot;]/div[@class=&quot;main-container container&quot;]/div[@class=&quot;main-container-inner ng-scope&quot;]/div[@class=&quot;row ng-scope&quot;]/div[@class=&quot;col-md-9&quot;]/div[@class=&quot;ng-scope&quot;]/div[@class=&quot;col-md-12 bg-light-grey padding margin-bottom ng-scope&quot;]/div[@class=&quot;col-md-6 text-right&quot;]/button[@class=&quot;btn btn-primary btn-flat&quot;]</value>
+      </entry>
+   </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>
@@ -28,7 +34,7 @@
       <value>onAddPlugin()</value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>text</name>
       <type>Main</type>
@@ -38,7 +44,7 @@
     </value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>false</isSelected>
+      <isSelected>true</isSelected>
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
