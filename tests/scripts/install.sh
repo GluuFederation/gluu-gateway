@@ -124,7 +124,7 @@ function checkServices {
 }
 
 createSwap
-prepareSources
+prepareSourcesForDistribution
 installGG
 configureGG
 sleep 60
