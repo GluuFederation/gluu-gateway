@@ -5,15 +5,29 @@ OXD_SERVER_PUBLIC_KEY=$2
 OXD_PUBLIC_PASSWORD=$3
 OXD_SERVER_LICENSE_PASSWORD=$4
 OXD_SERVER_PUBLIC_PASSWORD=$5
+DISTRIBUTION=$6
 
-
-function prepareSources {
+function prepareSourcesTrusty {
     echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
-    add-apt-repository ppa:openjdk-r/ppa -y
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+}
+
+function prepareSourcesXenial {
+    echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
+    curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+}
+
+function prepareSourcesForDistribution {
+    case $DISTRIBUTION in
+        "trusty") prepareSourcesTrusty ;;
+        "xenial") prepareSourcesXenial ;;
+    esac
 }
 
 
