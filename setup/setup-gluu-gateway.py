@@ -14,6 +14,11 @@ import json
 import getpass
 import urllib3
 import platform
+from enum import Enum
+
+class Distribution(Enum):
+    Ubuntu = "ubuntu"
+    Debian = "debian"
 
 class KongSetup(object):
     def __init__(self):
@@ -114,7 +119,8 @@ class KongSetup(object):
         self.isPrompt = True
         self.license = False
         self.initParametersFromJsonArgument()
-        self.platform = platform.linux_distribution()
+        self.platform.name = Distribution(platform.linux_distribution()[0])
+        self.platform.version = platform.linux_distribution()[1].split(".")[0]
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -154,10 +160,16 @@ class KongSetup(object):
         self.logIt('Configuring postgres...')
         print 'Configuring postgres...'
         self.run(['/etc/init.d/postgresql', 'start'])
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
-        os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.platform.name == Distribution.Ubuntu:
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.platform.name == Distribution.Debian:
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\"" postgres' % self.pgPwd)
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"" postgres')
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\"" postgres')
+            os.system('/bin/su -s /bin/bash -c "psql konga < %s" postgres' % self.distKongaDBFile)
 
     def configureOxd(self):
         if self.installOxd:
@@ -502,7 +514,7 @@ class KongSetup(object):
             self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
             self.logIt(traceback.format_exc(), True)
     def disableWarnings(self):
-        if self.platform[1].split(".")[0] == '16':
+        if self.platform.version == '16':
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 

@@ -23,10 +23,19 @@ function prepareSourcesXenial {
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 }
 
+function prepareSourcesJessie {
+    echo "deb https://repo.gluu.org/debian/ testing main" > /etc/apt/sources.list.d/gluu-repo.list
+    curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/psql.list
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+    curl -sL https://deb.nodesource.com/setup_8.x |  bash -
+}
+
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
         "trusty") prepareSourcesTrusty ;;
         "xenial") prepareSourcesXenial ;;
+        "debian8") prepareSourcesJessie ;;
     esac
 }
 
