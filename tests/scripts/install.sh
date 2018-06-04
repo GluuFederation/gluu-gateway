@@ -24,6 +24,7 @@ function prepareSourcesXenial {
 }
 
 function prepareSourcesJessie {
+    apt-get install curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/psql.list
