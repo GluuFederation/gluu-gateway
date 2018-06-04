@@ -16,7 +16,7 @@ import urllib3
 import platform
 
 class Distribution:
-    Ubuntu = "ubuntu"
+    Ubuntu = "Ubuntu"
     Debian = "debian"
 
 class KongSetup(object):
