@@ -357,7 +357,7 @@ class KongSetup(object):
         if self.os_type == [Distribution.Ubuntu, Distribution.Debian]:
             self.run([self.cmd_update_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'], shell=True)
         elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
-            self.run([self.cmd_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'], shell=True)
+            self.run([self.cmd_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'])
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
