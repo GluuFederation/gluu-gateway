@@ -33,6 +33,9 @@ function prepareSourcesJessie {
 }
 
 function prepareSourcesStretch {
+    echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
+    echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
+    apt-get update
     apt-get install curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ stretchtesting main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
