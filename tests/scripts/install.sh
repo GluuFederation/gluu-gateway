@@ -32,11 +32,21 @@ function prepareSourcesJessie {
     curl -sL https://deb.nodesource.com/setup_8.x |  bash -
 }
 
+function prepareSourcesStretch {
+    apt-get install curl apt-transport-https -y
+    echo "deb https://repo.gluu.org/debian/ stretchtesting main" > /etc/apt/sources.list.d/gluu-repo.list
+    curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
+    curl -sL https://deb.nodesource.com/setup_8.x |  bash -
+}
+
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
         "trusty") prepareSourcesTrusty ;;
         "xenial") prepareSourcesXenial ;;
         "debian8") prepareSourcesJessie ;;
+        "debian9") prepareSourcesStretch ;;
     esac
 }
 
