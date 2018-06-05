@@ -37,7 +37,7 @@ function prepareSourcesStretch {
     echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
     apt-get update
     apt-get install curl apt-transport-https -y
-    echo "deb https://repo.gluu.org/debian/ stretchtesting main" > /etc/apt/sources.list.d/gluu-repo.list
+    echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
