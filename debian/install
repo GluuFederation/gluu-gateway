@@ -1,4 +1,11 @@
-konga opt/gluu-gateway
-debian/konga etc/init.d
-setup opt/gluu-gateway
-debian/kong etc/init.d
+#kongGUI /opt/kong-gateway
+#kong-openid-rp /opt/gluu-gateway
+#kong-uma-rs /opt/gluu-gateway
+#kongAPIGateway /opt/kong-pluings
+#oxd-kong /opt/kong-gateway
+#doc /usr/share/docs/
+konga /opt/gluu-gateway
+setup/konga /etc/init.d/
+setup /opt/gluu-gateway
+setup/kong /etc/init.d/
+dist /opt/gluu-gateway
