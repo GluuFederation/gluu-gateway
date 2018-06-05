@@ -64,7 +64,7 @@ class KongSetup(object):
         self.cmd_update_alternatives = 'update-alternatives'
         self.cmd_alternatives = 'alternatives'
         self.cmd_echo = '/bin/echo'
-        self.cmd_service = '/usr/sbin/service'
+        self.cmd_service = 'service'
 
         self.countryCode = ''
         self.state = ''
@@ -183,9 +183,18 @@ class KongSetup(object):
             os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"" postgres')
             os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\"" postgres')
             os.system('/bin/su -s /bin/bash -c "psql konga < %s" postgres' % self.distKongaDBFile)
-        if self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             # Initialize PostgreSQL first time
             self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
+            self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
+            self.run([self.cmd_service, 'postgresql-10', 'start'])
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '6':
+            # Initialize PostgreSQL first time
+            self.run([self.cmd_service, 'postgresql-10', 'initdb'])
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
             self.run([self.cmd_service, 'postgresql-10', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
@@ -539,7 +548,7 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def disableWarnings(self):
-        if self.os_type in ['ubuntu', 'red', 'centos'] and self.os_version in ['16', '7']:
+        if self.os_type in ['ubuntu', 'red', 'centos'] and self.os_version in ['16', '7', '6']:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def chooseFromList(self, list_of_choices, choice_name="item", default_choice_index=0):
