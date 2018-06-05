@@ -15,6 +15,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  git,
  unzip,
  lua-cjson,
+ python-requests,
  npm,
  kong-community-edition (= 0.11.0),
 Description: <insert up to 60 chars description>
