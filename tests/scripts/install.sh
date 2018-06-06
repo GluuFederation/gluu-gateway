@@ -35,7 +35,7 @@ function prepareSourcesJessie {
 }
 
 function prepareSourcesStretch {
-    echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list
     echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
     apt-get update
     apt-get install xvfb curl apt-transport-https -y
