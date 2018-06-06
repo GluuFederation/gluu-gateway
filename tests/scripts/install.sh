@@ -44,19 +44,53 @@ function prepareSourcesStretch {
     curl -sL https://deb.nodesource.com/setup_8.x |  bash -
 }
 
+function prepareSourcesCentos6 {
+    wget https://repo.gluu.org/centos/Gluu-centos-testing.repo -O /etc/yum.repos.d/Gluu.repo
+    wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-6-x86_64/pgdg-redhat10-10-2.noarch.rpm
+    curl -sL https://rpm.nodesource.com/setup_8.x | sudo -E bash -
+}
+
+
+function prepareSourcesCentos7 {
+    wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
+    wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+    curl -sL https://rpm.nodesource.com/setup_8.x | sudo -E bash -
+}
+
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
         "trusty") prepareSourcesTrusty ;;
         "xenial") prepareSourcesXenial ;;
         "debian8") prepareSourcesJessie ;;
         "debian9") prepareSourcesStretch ;;
+        "centos6") prepareSourcesCentos6 ;;
+        "centos7") prepareSourcesCentos7 ;;
     esac
 }
 
+function installGGDeb {
+    apt update
+    apt install gluu-gateway -y
+}
+
+function installGGRpm {
+    yum clean all
+    yum -y install gluu-gateway
+}
 
 function installGG {
- apt update
- apt install gluu-gateway -y
+    case $DISTRIBUTION in
+        "trusty") installGGDeb ;;
+        "xenial") installGGDeb ;;
+        "debian8") installGGDeb ;;
+        "debian9") installGGDeb ;;
+        "centos6") installGGRpm ;;
+        "centos7") installGGRpm ;;
+    esac
 }
 
 function configureGG {
