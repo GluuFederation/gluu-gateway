@@ -8,6 +8,7 @@ OXD_SERVER_PUBLIC_PASSWORD=$5
 DISTRIBUTION=$6
 
 function prepareSourcesTrusty {
+    apt-get install xvfb -y
     echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -16,6 +17,7 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
+    apt-get install xvfb -y
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -24,7 +26,7 @@ function prepareSourcesXenial {
 }
 
 function prepareSourcesJessie {
-    apt-get install curl apt-transport-https -y
+    apt-get install xvfb curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -36,7 +38,7 @@ function prepareSourcesStretch {
     echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
     echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
     apt-get update
-    apt-get install curl apt-transport-https -y
+    apt-get install xvfb curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -45,7 +47,7 @@ function prepareSourcesStretch {
 }
 
 function prepareSourcesCentos6 {
-    yum -y install curl lsof
+    yum -y install curl lsof xvfb
     wget https://repo.gluu.org/centos/Gluu-centos-testing.repo -O /etc/yum.repos.d/Gluu.repo
     wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
     rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
@@ -55,7 +57,7 @@ function prepareSourcesCentos6 {
 
 
 function prepareSourcesCentos7 {
-    yum -y install curl lsof
+    yum -y install wget curl lsof xvfb
     wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
     wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
     rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
