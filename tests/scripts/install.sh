@@ -35,6 +35,7 @@ function prepareSourcesJessie {
 }
 
 function prepareSourcesStretch {
+    export DEBIAN_FRONTEND="noninteractive"
     echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list
     echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
     apt-get update
