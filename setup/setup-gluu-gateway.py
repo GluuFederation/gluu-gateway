@@ -62,6 +62,7 @@ class KongSetup(object):
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
         self.cmd_sh = '/bin/sh'
         self.cmd_update_alternatives = 'update-alternatives'
+        self.cmd_chkconfig = 'chkconfig'
         self.cmd_alternatives = 'alternatives'
         self.cmd_echo = '/bin/echo'
         self.cmd_service = 'service'
@@ -185,18 +186,20 @@ class KongSetup(object):
             os.system('/bin/su -s /bin/bash -c "psql konga < %s" postgres' % self.distKongaDBFile)
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             # Initialize PostgreSQL first time
+            self.run([self.cmd_ln, '/usr/lib/systemd/system/postgresql-10.service', '/usr/lib/systemd/system/postgresql.service'])
             self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
-            self.run([self.cmd_service, 'postgresql-10', 'start'])
+            self.run([self.cmd_service, 'postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '6':
             # Initialize PostgreSQL first time
+            self.run([self.cmd_ln, '/etc/init.d/postgresql-10', '/etc/init.d/postgresql'])
             self.run([self.cmd_service, 'postgresql-10', 'initdb'])
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
-            self.run([self.cmd_service, 'postgresql-10', 'start'])
+            self.run([self.cmd_service, 'postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
@@ -537,7 +540,10 @@ class KongSetup(object):
         self.run([self.cmd_service, self.oxdHTTPExtensionService, 'stop'])
         self.run([self.cmd_service, self.kongaService, 'stop'])
         self.run([self.cmd_service, self.kongaService, 'start'])
-        self.run([self.cmd_update_rs_d, self.kongaService, 'defaults'])
+        if self.os_type in [Distribution.Ubuntu, Distribution.Debian]:
+            self.run([self.cmd_update_rs_d, self.kongaService, 'defaults'])
+        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
+            self.run([self.cmd_chkconfig, self.kongaService, 'on'])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -548,7 +554,7 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def disableWarnings(self):
-        if self.os_type in ['ubuntu', 'red', 'centos'] and self.os_version in ['16', '7', '6']:
+        if self.os_type in [Distribution.Ubuntu, Distribution.CENTOS, Distribution.RHEL] and self.os_version in ['16', '7', '6']:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def chooseFromList(self, list_of_choices, choice_name="item", default_choice_index=0):
