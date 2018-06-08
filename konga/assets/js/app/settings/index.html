@@ -30,12 +30,13 @@
           </div>
         </div>
         <div class="col-md-4">
-          <div class="form-group">
+          <div class="form-group" ng-class="{'has-error' : applicationSettingsForm.session_id_lifetime.$invalid && (applicationSettingsForm.session_id_lifetime.$dirty || applicationSettingsForm.$submitted)}">
             <label>
               Logout session timeout
             </label>
-            <input type="number" class="form-control" data-ng-model="KONGA_CONFIG.session_id_lifetime">
+            <input type="number" name="session_id_lifetime" class="form-control" data-ng-model="KONGA_CONFIG.session_id_lifetime" min="15" required>
             <p class="help-block">The interval in minutes at which you will be logged out after idle time.</p>
+            <div class="text-danger" ng-if="applicationSettingsForm.session_id_lifetime.$invalid && (applicationSettingsForm.session_id_lifetime.$dirty || applicationSettingsForm.$submitted)"> Minimum interval value is 15.</div>
           </div>
         </div>
       </div>
