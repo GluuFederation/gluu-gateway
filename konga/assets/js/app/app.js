@@ -184,7 +184,7 @@
         Idle.watch();
         $rootScope.$on('IdleTimeout', function() {
           $localStorage.$reset();
-          return $state.go('auth.login');
+          return window.location.reload(false)
         });
 
         $rootScope.$on('$routeChangeStart', function (event, next, current) {
