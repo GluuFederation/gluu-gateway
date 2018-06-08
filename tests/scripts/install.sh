@@ -36,8 +36,13 @@ function prepareSourcesJessie {
 
 function prepareSourcesStretch {
     export DEBIAN_FRONTEND="noninteractive"
-    echo "deb http://ftp.au.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list
-    echo "deb-src http://ftp.au.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian/ stable main contrib non-free" > /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian/ stable main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian/ stable-updates main contrib non-free" >> /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian/ stable-updates main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
+
     apt-get update
     apt-get install xvfb curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
