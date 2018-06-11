@@ -18,7 +18,7 @@
             <div class="text-danger" ng-if="applicationSettingsForm.info_polling_interval.$invalid && (applicationSettingsForm.info_polling_interval.$dirty || applicationSettingsForm.$submitted)"> Minimum interval value is 3000.</div>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4" data-ng-show="false">
           <div class="form-group">
             <label>
               Base URL
@@ -45,7 +45,7 @@
   <br>
 
   <!-- SIGN UP RESTRICTIONS -->
-  <div class="row">
+  <div class="row" data-ng-show="false">
     <div class="col-md-12">
       <hr>
       <h3>
@@ -86,7 +86,7 @@
   <br>
 
   <!-- NOTIFICATIONS -->
-  <div class="row">
+  <div class="row" data-ng-show="false">
     <div class="col-md-12">
       <hr>
       <h3>Notifications</h3>
@@ -245,7 +245,7 @@
   <br>
 
   <!-- USER PERMISSIONS -->
-  <div class="row">
+  <div class="row" data-ng-show="false">
     <div class="col-md-12">
       <hr>
       <h3>
