@@ -20,7 +20,7 @@
         if (_cred) {
           $scope.data = angular.copy(_cred);
           // $scope.data.scope = _cred.scope.split(",");
-          $scope.data.restrict_api_list = _cred.restrict_api_list.split(",");
+          $scope.data.restrict_api_list = _cred.restrict_api_list == "" ? [] : _cred.restrict_api_list.split(",");
         } else {
           $scope.data = {
             op_host: $scope.globalInfo.opHost,
@@ -104,6 +104,12 @@
           if (!$scope.data.oauth_mode && !$scope.data.uma_mode && !$scope.data.mix_mode) {
             MessageService.error("Please select atleast one mode");
             return
+          }
+          if ($scope.data.restrict_api) {
+            if ($scope.data.restrict_api_list && $scope.data.restrict_api_list.length <= 0) {
+              MessageService.error("Require atleast one API in restrict APIs");
+              return
+            }
           }
           // $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
           $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
