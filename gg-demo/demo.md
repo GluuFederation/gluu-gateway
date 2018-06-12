@@ -126,7 +126,7 @@ From the last call you get oxd_id, client_id and client_secret
  curl -X POST https://gg.example:8443/get-client-token 
     --Header "Content-Type: application/json" 
     --data '{"oxd_id":"<YOUR_CONSUMER_OXD_ID>", "client_id":"<YOUR_CONSUMER_ID>", 
-    "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_CONSUMER_SCOPES>]}'
+    "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
  ````
  From this call you get Consumer accessToken
 
