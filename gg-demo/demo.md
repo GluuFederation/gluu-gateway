@@ -123,26 +123,26 @@ From the last call you get oxd_id, client_id and client_secret
 ### 5. Call UMA protected API
 6. LogIn Consumer
  ````
- curl -X POST https://gg.example.com:8443/get-client-token 
-     --data oxd_id="<YOUR_OXD_ID>" 
-     --data client_id="<YOUR_CLIENT_ID>" 
-     --data client_secret="<YOUR_CLIENT_SECRET>" 
+ curl -X POST https://gg.example:8443/get-client-token 
+    --Header "Content-Type: application/json" 
+    --data '{"oxd_id":"<YOUR_CONSUMER_OXD_ID>", "client_id":"<YOUR_CONSUMER_ID>", 
+    "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_CONSUMER_SCOPES>]}'
  ````
  From this call you get Consumer accessToken
 
  7. LogIn UmaResource
-  ````
-  curl -X POST https://gg.example.com:8443/get-client-token 
-      --data oxd_id="<YOUR_UMA_OXD_ID>" 
-      --data client_id="<YOUR_UMA_CLIENT_ID>" 
-      --data client_secret="<YOUR_UMA_CLIENT_SECRET>" 
-  ````
+ ````
+ curl -X POST https://gg.example:8443/get-client-token 
+    --Header "Content-Type: application/json" 
+    --data '{"oxd_id":"<YOUR_UMA_OXD_ID>", "client_id":"<YOUR_UMA_CLIENT_ID>", 
+    "client_secret":"<YOUR_UMA_CLIENT_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
+ ````
 From this call you get resource accessToken
 
 8. Get resource ticket
   ````
   curl -X POST https://gg.example.com:8443/uma-rs-check-access
-      --Header "Authorization Bearer <UMA_RESOURCE_TOKEN>"
+      --Header "Authorization: Bearer <UMA_RESOURCE_TOKEN>"
       --Header "Content-Type: application/json" 
       --data '{"oxd_id": "<YOUR_UMA_OXD_ID>","rpt":"","path":"<YOUR_RESOURCE_PATH>,"http_method" : "<YOUR_RESOURCE_METHOD>" }
 '
@@ -152,9 +152,9 @@ From this call you get resource accessToken
 9. Get RPT token
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
-      --Header "Authorization Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json" 
-      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>"}'
+      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
 ````
 From this call you get accesstoken (RPT)
 
@@ -176,7 +176,7 @@ From this call you get accesstoken (RPT)
 8.2. Getting need_info ticket
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
-      --Header "Authorization Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json" 
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":[<YOUR_SCOPE>]}'
 ````
@@ -185,7 +185,7 @@ From this call you get need_info ticket
 8.3. Getting claims gathering url
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-claims-gathering-url"
-      --Header "Authorization Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json" 
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>",""claims_redirect_uri"":[<YOUR_CLAIMS_URI>]}'
 ````
