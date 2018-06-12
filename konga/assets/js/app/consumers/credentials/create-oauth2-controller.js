@@ -96,8 +96,15 @@
           $scope.data.oauth_mode = $scope.data.oauth_mode || false;
           $scope.data.uma_mode = $scope.data.uma_mode || false;
           $scope.data.mix_mode = $scope.data.mix_mode || false;
+          $scope.data.allow_unprotected_path = $scope.data.allow_unprotected_path || false;
           $scope.data.allow_oauth_scope_expression = $scope.data.allow_oauth_scope_expression || false;
+          $scope.data.restrict_api = $scope.data.restrict_api || false;
+          $scope.data.show_consumer_custom_id = $scope.data.show_consumer_custom_id || false;
 
+          if (!$scope.data.oauth_mode && !$scope.data.uma_mode && !$scope.data.mix_mode) {
+            MessageService.error("Please select atleast one mode");
+            return
+          }
           // $scope.data.scope = $scope.data.scope ? $scope.data.scope.join(",") : "";
           $scope.data.restrict_api_list = $scope.data.restrict_api_list ? $scope.data.restrict_api_list.join(",") : "";
           ConsumerService.updateCredential($scope.consumer.id, 'gluu-oauth2-client-auth', _cred.id, $scope.data).then(function (resp) {
