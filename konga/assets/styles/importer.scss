@@ -794,4 +794,10 @@ tr.disabled{
 //  padding: 15px;
 //}
 
-
+@media (min-width: 1400px )and (max-width: 2000px){
+  body {
+    .container{
+        width:1970px;
+    }
+  }
+}
