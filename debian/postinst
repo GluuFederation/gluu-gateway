@@ -3,6 +3,6 @@
 /etc/init.d/konga stop
 /etc/init.d/kong stop
 
-if [ -d "/tmp/gluu-gateway ]; then
+if [ -d "/tmp/gluu-gateway" ]; then
     cp -r  /tmp/gluu-gateway /opt/gluu-gateway/konga/config
 fi
