@@ -2,3 +2,7 @@
 /usr/sbin/update-rc.d konga defaults
 /etc/init.d/konga stop
 /etc/init.d/kong stop
+
+if [ -d "/tmp/gluu-gateway ]; then
+    cp -r  /tmp/gluu-gateway /opt/gluu-gateway/konga/config
+fi
