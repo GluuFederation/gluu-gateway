@@ -4,6 +4,7 @@
 /etc/init.d/kong stop
 
 if [ -d "/tmp/gluu-gateway" ]; then
+    mkdir -p /opt/gluu-gateway/konga/config
     cp -r  /tmp/gluu-gateway/* /opt/gluu-gateway/konga/config/
     rm -r /tmp/gluu-gateway
 fi
