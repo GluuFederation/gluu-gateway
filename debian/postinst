@@ -1,3 +1,4 @@
 /usr/sbin/update-rc.d kong defaults
 /usr/sbin/update-rc.d konga defaults
-/etc/init.d/gluu-gateway stop 2>/dev/null
+/etc/init.d/konga stop
+/etc/init.d/kong stop
