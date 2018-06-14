@@ -4,5 +4,5 @@
 /etc/init.d/kong stop
 
 if [ -d "/tmp/gluu-gateway" ]; then
-    cp -r  /tmp/gluu-gateway /opt/gluu-gateway/konga/config
+    cp -r  /tmp/gluu-gateway/* /opt/gluu-gateway/konga/config
 fi
