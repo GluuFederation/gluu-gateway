@@ -1,5 +1,5 @@
 #!/bin/bash
 mkdir -p /opt/gluu-gateway/konga
-cp -r  /tmp/gluu-gateway /opt/gluu-gateway/konga/config
+cp -r  /tmp/gluu-gateway/* /opt/gluu-gateway/konga/config/
 rm -r /tmp/gluu-gateway
 exit 0
