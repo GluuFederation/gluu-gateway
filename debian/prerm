@@ -1,2 +1,3 @@
 #!/bin/bash
-cp -r /opt/gluu-gateway/konga/config /tmp/gluu-gateway
+mkdir -p /tmp/gluu-gateway
+cp -r /opt/gluu-gateway/konga/config/* /tmp/gluu-gateway/

@@ -1,5 +1,6 @@
 #!/bin/bash
 
 if [ -d "/opt/gluu-gateway/konga/config" ]; then
-    cp -r /opt/gluu-gateway/konga/config /tmp/gluu-gateway
+    mkdir /tmp/gluu-gateway
+    cp -r /opt/gluu-gateway/konga/config/* /tmp/gluu-gateway/
 fi
