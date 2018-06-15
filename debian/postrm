@@ -1,4 +1,5 @@
 #!/bin/bash
-rm -rf /etc/init.d/kong
-rm -rf /etc/init.d/konga
+mkdir -p /opt/gluu-gateway/konga/config
+cp -r  /tmp/gluu-gateway/* /opt/gluu-gateway/konga/config/
+rm -r /tmp/gluu-gateway
 exit 0
