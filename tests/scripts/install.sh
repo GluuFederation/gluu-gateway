@@ -17,6 +17,7 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
+    rm -f /var/lib/dpkg/lock
     apt-get install xvfb -y
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
