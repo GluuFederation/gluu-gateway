@@ -3,10 +3,11 @@
 from oxdpython import Client
 
 init=False
+api_url="https://kong.example.com/demo/protected1"
 
 # Setup client
-config = "demo-py-oxd.cfg"
-client = Client(config)
+configFN = "demo-py-oxd.cfg"
+client = Client(configFN)
 
 if init:
     client.setup_client()
