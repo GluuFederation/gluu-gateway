@@ -1,30 +1,32 @@
-#Gluu Gateway UMA study case.
-
+# Gluu Gateway UMA demo app
 
 ### 1. Parties
 
-![alt text](uma.png "Logo Title Text 1")
+![UMA Overview](./uma.png)
 
 ### 2. Flow
-![alt text](flow.png "Logo Title Text 1")
+![Flow chart](./flow.png)
 
 ### 3. RS Configuration
-RS configuration can be done either via REST calls or via GluuGateway GUI
+
+RS configuration can be done either via REST calls or via Gluu Gateway Konga
+web interface.
+
 #### REST Configuration
 1. Resource configuration (Kong API configuration)
 ````
-curl -X POST http://gg.example.com:8001/apis 
-    --data "name=demo_api" 
-    --data "hosts=demo_host" 
-    --data "upstream_url=https://gluu.org"
+curl -X POST http://gg.example.com:8001/apis
+    --data "name=demo_api"
+    --data "hosts=demo_host"
+    --data "upstream_url=https://jsonplaceholder.typicode.com/comments"
 ````
 
-2. Configuration of oAuth plugin
+2. Configuration of OAuth plugin
 
 ````
-curl -X POST http://gg.example.com:8001/apis/demo_api/plugins 
-    --data "name=gluu-oauth2-client-auth" 
-    --data "config.op_server=https://ce-gluu.example.com" 
+curl -X POST http://gg.example.com:8001/apis/demo_api/plugins
+    --data "name=gluu-oauth2-client-auth"
+    --data "config.op_server=https://ce-gluu.example.com"
     --data "config.oxd_http_url=https://localhost:8443"
 
 ````
@@ -32,11 +34,11 @@ curl -X POST http://gg.example.com:8001/apis/demo_api/plugins
 3. Securing RS with UMA
 
 ````
-curl -X POST --url http://gg.example.com:8001/apis/demo_api/plugins/ 
-    --data "name=gluu-oauth2-rs" 
-    --data "config.oxd_host=https://localhost:8443" 
-    --data "config.uma_server_host=https://ce-gluu.example.com" 
-    --data "config.protection_document=[ { \"path\": \"<YOUR_PATH>\", \"conditions\": [ { \"httpMethods\": [ \"GET\" ], \"scope_expression\": { 
+curl -X POST --url http://gg.example.com:8001/apis/demo_api/plugins/
+    --data "name=gluu-oauth2-rs"
+    --data "config.oxd_host=https://localhost:8443"
+    --data "config.uma_server_host=https://ce-gluu.example.com"
+    --data "config.protection_document=[ { \"path\": \"<YOUR_PATH>\", \"conditions\": [ { \"httpMethods\": [ \"GET\" ], \"scope_expression\": {
     \"rule\": { \"and\": [ { \"var\": 0 } ] }, \"data\": [ \"http://photoz.example.com/dev/actions/view\" ] } } ] } ]"`
 ````
 
@@ -93,15 +95,15 @@ UMA client registraion can be done either via REST calls or via GluuGateway GUI
 #### REST Configuration
 4. Register consumer
 ````
-curl -X POST http://gg.example.com:8001/consumers/ 
+curl -X POST http://gg.example.com:8001/consumers/
     --data "username=uma_client"
 ````
 5. Register UMA credentials
 ````
-curl -X POST http://gg.example.com:8001/consumers/uma_client/gluu-oauth2-client-auth/ 
-    --data name="uma_consumer_cred" 
-    --data op_host="ce-gluu.example.com" 
-    --data oxd_http_url="https://localhost:8443" 
+curl -X POST http://gg.example.com:8001/consumers/uma_client/gluu-oauth2-client-auth/
+    --data name="uma_consumer_cred"
+    --data op_host="ce-gluu.example.com"
+    --data oxd_http_url="https://localhost:8443"
     --data uma_mode=true
 ````
 From the last call you get oxd_id, client_id and client_secret
@@ -123,18 +125,18 @@ From the last call you get oxd_id, client_id and client_secret
 ### 5. Call UMA protected API
 6. LogIn Consumer
  ````
- curl -X POST https://gg.example:8443/get-client-token 
-    --Header "Content-Type: application/json" 
-    --data '{"oxd_id":"<YOUR_CONSUMER_OXD_ID>", "client_id":"<YOUR_CONSUMER_ID>", 
+ curl -X POST https://gg.example:8443/get-client-token
+    --Header "Content-Type: application/json"
+    --data '{"oxd_id":"<YOUR_CONSUMER_OXD_ID>", "client_id":"<YOUR_CONSUMER_ID>",
     "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
  ````
  From this call you get Consumer accessToken
 
  7. LogIn UmaResource
  ````
- curl -X POST https://gg.example:8443/get-client-token 
-    --Header "Content-Type: application/json" 
-    --data '{"oxd_id":"<YOUR_UMA_OXD_ID>", "client_id":"<YOUR_UMA_CLIENT_ID>", 
+ curl -X POST https://gg.example:8443/get-client-token
+    --Header "Content-Type: application/json"
+    --data '{"oxd_id":"<YOUR_UMA_OXD_ID>", "client_id":"<YOUR_UMA_CLIENT_ID>",
     "client_secret":"<YOUR_UMA_CLIENT_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
  ````
 From this call you get resource accessToken
@@ -143,17 +145,17 @@ From this call you get resource accessToken
   ````
   curl -X POST https://gg.example.com:8443/uma-rs-check-access
       --Header "Authorization: Bearer <UMA_RESOURCE_TOKEN>"
-      --Header "Content-Type: application/json" 
+      --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_UMA_OXD_ID>","rpt":"","path":"<YOUR_RESOURCE_PATH>,"http_method" : "<YOUR_RESOURCE_METHOD>" }
 '
   ````
  From this call you get ticket
-  
+
 9. Get RPT token
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
-      --Header "Content-Type: application/json" 
+      --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
 ````
 From this call you get accesstoken (RPT)
@@ -162,12 +164,12 @@ From this call you get accesstoken (RPT)
   ````
   curl -X GET http://gg.example.com:8000/<YOUR_PATH>
       --Header "Authorization: Bearer <YOUR_RPT>"
-      --Header "Host: <YOUR_HOST>" 
+      --Header "Host: <YOUR_HOST>"
 ````
 
 ### 6. UMA flow with claims gathering
-8.1. Prerequisites 
-* UMA scope with Authorization Policy 
+8.1. Prerequisites
+* UMA scope with Authorization Policy
 ![alt text](uma_scope.png "Logo Title Text 1")
 * Enabled UMA RPT Polices & UMA Claims Gathering
 ![alt text](scripts.png "Logo Title Text 1")
@@ -177,7 +179,7 @@ From this call you get accesstoken (RPT)
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
-      --Header "Content-Type: application/json" 
+      --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":[<YOUR_SCOPE>]}'
 ````
 From this call you get need_info ticket
@@ -186,13 +188,13 @@ From this call you get need_info ticket
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-claims-gathering-url"
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
-      --Header "Content-Type: application/json" 
+      --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>",""claims_redirect_uri"":[<YOUR_CLAIMS_URI>]}'
 ````
 From this call you get ticket
 
 8.4. Enter gathering url in browser
-    
+
 You may need to add your claims redirect url to your client configuration in CE
 
 Continue to 9.
