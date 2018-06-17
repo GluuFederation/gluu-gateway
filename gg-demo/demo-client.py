@@ -1,20 +1,13 @@
 #!/usr/bin/python
 
-from oxdpython import Client
-
 init=False
 api_url="https://kong.example.com/demo/protected1"
-
-# Setup client
-configFN = "demo-py-oxd.cfg"
-client = Client(configFN)
-
-if init:
-    client.setup_client()
-
-oxd_https_client_token = client.get_client_token()
+gg_base_url = "https://demo.gluu.org"
+api_path = "dove"
 
 # Client calls API without RPT token
+
+
 
 # Client calls AS UMA /token endpoint with permission ticket and client creds
 
