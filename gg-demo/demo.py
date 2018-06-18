@@ -8,12 +8,11 @@ import sys
 import urllib3
 
 #--------------LOGGER SETUP
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.basicConfig()
 logging.StreamHandler(sys.stdout)
 logger = logging.getLogger('logger')
-# logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 
 
 #-------------DEMO SETTINGS---------------
@@ -22,11 +21,11 @@ claimsGathering=False
 if claimsGathering:
     scope="new_demo_scope"
 else:
-    scope="non-gather"
+    scope="non-gather-demo12"
 
 ggHost="demo.gluu.org"
-ceHost="ce-dev6.gluu.org"
-host="demo.example.com"
+ceHost="demo.gluu.org"
+host="demo22.example.com"
 path="/posts"
 upsreamUrl="https://jsonplaceholder.typicode.com"
 claimsGatheringUrl="https://client.example.com/cb"
@@ -48,9 +47,10 @@ logger.debug(json.dumps(response.json(), indent=2))
 
 # 3. Securing RS with UMA
 response= requests.post("http://"+ggHost+":8001/apis/demo_api/plugins",headers={"Content-Type":"application/x-www-form-urlencoded"}, params={"name":"gluu-oauth2-rs","config.oxd_host":"https://localhost:8443","config.uma_server_host":"https://"+ceHost,
-                                                                                                                                             "config.protection_document":"[ { \"path\": \""+path+"\", \"conditions\": [ { \"httpMethods\": [ \"GET\" ], \"scope_expression\": {\"rule\": { \"and\": [ { \"var\": 0 } ] }, \"data\": [ \""+scope+"\" ] } } ] } ]"})
+                                                                                                                                             "config.protection_document":"[ { \"path\": \""+path+"\", \"conditions\": [ { \"httpMethods\": [ \"GET\" ], \"scope_expression\": {\"rule\": { \"and\": [ { \"var\": 0 } ] }, \"data\": [ \""+scope+"\" ] }, \"ticketScopes\":[\""+scope+"\"] } ] } ]"})
 logger.debug("Status: "+str(response.status_code))
 logger.debug(json.dumps(response.json(), indent=2))
+
 
 uma_oxd_id = response.json()['config']['oxd_id']
 uma_client_id = response.json()['config']['client_id']
@@ -94,13 +94,13 @@ raw_input("Getting access tokens, Continue?")
 # 1. LogIn Consumer
 response= requests.post("https://"+ggHost+":8443/get-client-token",headers={"Content-Type":"application/json"},
                         json={"oxd_id":consumer_oxd_id,"client_id":consumer_client_id,"client_secret":consumer_client_secret,
-                                      "op_host":"https://"+ceHost, "scope":["uma_protection","openid, demo_scope"]}, verify=False)
+                                      "op_host":"https://"+ceHost, "scope":["uma_protection","openid, demo_scope, "+scope]}, verify=False)
 logger.debug("Status: "+str(response.status_code))
 logger.debug(json.dumps(response.json(), indent=2))
 consumer_access_token = response.json()['data']['access_token']
 
 
-#  2. LogIn UmaResource
+# 2. LogIn UmaResource
 response= requests.post("https://"+ggHost+":8443/get-client-token",headers={"Content-Type":"application/json"},
                         json={"oxd_id":uma_oxd_id,"client_id":uma_client_id,"client_secret":uma_client_secret,"op_host":"https://"+ceHost,
                               "scope":["uma_protection","openid"]}, verify=False)
@@ -110,23 +110,46 @@ uma_access_token = response.json()['data']['access_token']
 
 logger.info("--------------------Access tokens-------------------")
 logger.info("Consumer access_token: "+consumer_access_token)
-logger.info("Resource access_token: "+uma_access_token)
+# logger.info("Resource access_token: "+uma_access_token)
 logger.info("----------------------------------------------------")
 
-#----------Ticket
+# #----------Ticket
 time.sleep(2)
 raw_input("Getting ticket, Continue?")
-# 3. Get resource ticket
-response= requests.post("https://"+ggHost+":8443/uma-rs-check-access",headers={"Content-Type":"application/json","Authorization":"Bearer "
-                                                                                                                                 ""+uma_access_token},
-                        json={"oxd_id":uma_oxd_id,"path":path,"http_method":"GET"}, verify=False)
-logger.debug("Status: "+str(response.status_code))
+response= requests.get("http://"+ggHost+":8000"+path,headers={"Host":host})
+
+logger.debug("Status: " + str(response.status_code))
 logger.debug(json.dumps(response.json(), indent=2))
-ticket = response.json()['data']['ticket']
+ticket_gg=response.headers["WWW-Authenticate"].split(",")[3].split("=")[1].replace("\"", "")
+
 
 logger.info("------------------------Ticket----------------------")
-logger.info("Ticket: "+ticket)
+logger.info("Ticket: "+ticket_gg)
 logger.info("----------------------------------------------------")
+
+
+# # 3. Get resource ticket
+# response= requests.post("https://"+ggHost+":8443/uma-rs-check-access",headers={"Content-Type":"application/json","Authorization":"Bearer "
+#                                                                                                                                  ""+uma_access_token},
+#                         json={"oxd_id":uma_oxd_id,"path":path,"http_method":"GET"}, verify=False)
+# logger.debug("Status: "+str(response.status_code))
+# logger.debug(json.dumps(response.json(), indent=2))
+# ticket_gg = response.json()['data']['ticket']
+#
+# logger.info("------------------------Ticket----------------------")
+# logger.info("Ticket: "+ticket_gg)
+# logger.info("----------------------------------------------------")
+
+
+
+
+
+
+
+
+
+
+
 
 #--------------------
 #--------------------
@@ -175,12 +198,27 @@ if claimsGathering:
 
 
 #------------- rpt
+# time.sleep(2)
+# raw_input("Getting RPT, Continue?")
+# 4. Get RPT token
+response= requests.post("https://"+ggHost+":8443/uma-rp-get-rpt",headers={"Content-Type":"application/json","Authorization":"Bearer "
+                                                                                                                                 ""+consumer_access_token},
+                        json={"oxd_id":consumer_oxd_id,"ticket":ticket_gg,"scope":[scope],"protection_access_token":consumer_access_token}, verify=False)
+logger.debug("Status: " + str(response.status_code))
+logger.debug(json.dumps(response.json(), indent=2))
+rpt = response.json()['data']['access_token']
+logger.info("----------------RPT--------------")
+logger.info("RPT: " + rpt)
+logger.info("----------------------------------------------------")
+
+
+#------------- rpt
 time.sleep(2)
 raw_input("Getting RPT, Continue?")
 # 4. Get RPT token
 response= requests.post("https://"+ggHost+":8443/uma-rp-get-rpt",headers={"Content-Type":"application/json","Authorization":"Bearer "
                                                                                                                                  ""+consumer_access_token},
-                        json={"oxd_id":consumer_oxd_id,"ticket":ticket,"scope":[scope],"protection_access_token":consumer_access_token}, verify=False)
+                        json={"oxd_id":consumer_oxd_id,"ticket":ticket_manual,"scope":[scope],"protection_access_token":consumer_access_token}, verify=False)
 logger.debug("Status: " + str(response.status_code))
 logger.debug(json.dumps(response.json(), indent=2))
 rpt = response.json()['data']['access_token']
