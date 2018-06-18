@@ -53,6 +53,13 @@
                   <td>{{::pluginConfig.oxd_id}}</td>
                 </tr>
                 <tr>
+                  <th>Client Id of OXD Id</th>
+                  <td><span data-ng-show="isShowOXDClientId">{{::pluginConfig.client_id_of_oxd_id}}</span> <a href
+                                                                                                 data-ng-click="isShowOXDClientId = !isShowOXDClientId"
+                                                                                                 title="{{isShowOXDClientId ? 'Hide': 'Show'}}"><i
+                    class="mdi mdi-eye"></i></a></td>
+                </tr>
+                <tr>
                   <th>UMA RS Server</th>
                   <td>{{::pluginConfig.uma_server_host}}</td>
                 </tr>

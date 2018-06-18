@@ -98,6 +98,7 @@ function _M.register(conf)
     conf.oxd_id = data.oxd_id
     conf.client_id = data.client_id
     conf.client_secret = data.client_secret
+    conf.client_id_of_oxd_id = data.client_id_of_oxd_id
 
     return true
     -- -----------------------------------------------------------------
