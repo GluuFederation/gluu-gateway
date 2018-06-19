@@ -16,6 +16,7 @@
         $scope.consumer = _consumer;
         $scope.manage = manage;
         $scope.restrictAPIModel = restrictAPIModel;
+        $scope.edit_client_secret = null;
 
         if (_cred) {
           $scope.data = angular.copy(_cred);
@@ -100,6 +101,7 @@
           $scope.data.allow_oauth_scope_expression = $scope.data.allow_oauth_scope_expression || false;
           $scope.data.restrict_api = $scope.data.restrict_api || false;
           $scope.data.show_consumer_custom_id = $scope.data.show_consumer_custom_id || false;
+          $scope.data.client_secret = $scope.edit_client_secret || $scope.data.client_secret;
 
           if (!$scope.data.oauth_mode && !$scope.data.uma_mode && !$scope.data.mix_mode) {
             MessageService.error("Please select atleast one mode");
