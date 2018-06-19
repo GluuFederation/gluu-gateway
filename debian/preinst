@@ -1,3 +1,4 @@
 #!/bin/bash
-mkdir -p /opt/gluu-gateway/konga/config
+mkdir -p /opt/gluu-gateway/konga/config/locales
+mkdir -p /opt/gluu-gateway/konga/config/env
 exit 0
