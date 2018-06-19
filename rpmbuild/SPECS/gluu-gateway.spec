@@ -31,9 +31,11 @@ cp -a opt/gluu-gateway %{buildroot}/opt/
 %post
 /etc/init.d/gluu-gateway stop > /dev/null 2>&1
 
-%postun
-rm -rf /etc/init.d/kong
-rm -rf /etc/init.d/konga
+%config 
+/etc/init.d/kong
+/etc/init.d/konga
+/etc/init.d/gluu-gateway
+/opt/gluu-gateway/konga/config
 
 %files
 /opt/gluu-gateway/*
