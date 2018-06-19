@@ -4,13 +4,11 @@
 /opt/gluu-gateway/konga/config/connections.js
 /opt/gluu-gateway/konga/config/cors.js
 /opt/gluu-gateway/konga/config/csrf.js
-/opt/gluu-gateway/konga/config/env
 /opt/gluu-gateway/konga/config/globals.js
 /opt/gluu-gateway/konga/config/http.js
 /opt/gluu-gateway/konga/config/i18n.js
 /opt/gluu-gateway/konga/config/jwt.js
 /opt/gluu-gateway/konga/config/load-db.js
-/opt/gluu-gateway/konga/config/locales
 /opt/gluu-gateway/konga/config/local_example.js
 /opt/gluu-gateway/konga/config/local.js
 /opt/gluu-gateway/konga/config/log.js
@@ -24,3 +22,7 @@
 /opt/gluu-gateway/konga/config/session.js
 /opt/gluu-gateway/konga/config/sockets.js
 /opt/gluu-gateway/konga/config/views.js
+/opt/gluu-gateway/konga/config/locales/en.json
+/opt/gluu-gateway/konga/config/locales/_README.md
+/opt/gluu-gateway/konga/config/env/development.js
+/opt/gluu-gateway/konga/config/env/production.js
