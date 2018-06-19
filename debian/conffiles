@@ -1,0 +1,4 @@
+/etc/init.d/kong
+/etc/init.d/konga
+/etc/init.d/gluu-gateway
+/opt/gluu-gateway/konga/config
