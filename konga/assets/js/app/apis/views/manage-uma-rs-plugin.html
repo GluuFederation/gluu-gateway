@@ -8,6 +8,10 @@
     cursor: pointer;
     background-color: #F1F1F1
   }
+  .pathValidationClass .form-control{
+    -webkit-box-shadow: inset 0 -2px 0 #f7464a;
+    box-shadow: inset 0 -2px 0 #f7464a;
+  }
 </style>
 <div class="row" ng-if="!loading || items.data.length">
   <div class="col-md-12">
@@ -120,12 +124,12 @@
                     <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_port}}</span>
                   </div>
                   <div class="form-group has-feedback col-md-8"
-                       ng-class="{'has-error': PluginForm.path.$invalid && (PluginForm.path.$dirty || PluginForm.$submitted)}">
+                       ng-class="{'pathValidationClass': PluginForm['path'+$index].$invalid && (PluginForm['path'+$index].$dirty || PluginForm.$submitted)}">
                     <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
                            title="Enter path"
                            placeholder="/path"
                            ng-model="element.path"
-                           ng-required="true"/>
+                           ng-required="true" required/>
                     <span class="help-block error-block basic-block">The path which you want to have protected.</span>
                   </div>
                   <div class="col-md-12">
@@ -136,7 +140,7 @@
                             <tags-input ng-model="cond.httpMethods"
                                         id="httpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
-                                        placeholder="Enter http Methods">
+                                        placeholder="Enter http Methods" required>
                               <auto-complete source="loadMethods($query)"
                                              min-length="0"
                                              debounce-delay="0"></auto-complete>
@@ -169,7 +173,7 @@
                             <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
                                         name="scope{{pIndex}}{{$index}}0"
                                         id="scopes{{pIndex}}{{$index}}"
-                                        placeholder="Enter scopes">
+                                        placeholder="Enter scopes" required>
                             </tags-input>
                           </div>
                           <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
@@ -216,7 +220,7 @@
                     <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_port}}</span>
                   </div>
                   <div class="form-group has-feedback col-md-8"
-                       ng-class="{'has-error': PluginForm.path.$invalid && (PluginForm.path.$dirty || PluginForm.$submitted)}">
+                       ng-class="{'pathValidationClass': PluginForm['oauthPath'+$index].$invalid && (PluginForm['oauthPath'+$index].$dirty || PluginForm.$submitted)}">
                     <input type="text" class="form-control" id="oauthPath{{$index}}" name="oauthPath{{$index}}"
                            title="Enter path"
                            placeholder="/path"
@@ -232,7 +236,7 @@
                             <tags-input ng-model="oauthCond.httpMethods"
                                         id="oauthHttpMethods{{pIndex}}{{$index}}"
                                         add-from-autocomplete-only="true"
-                                        placeholder="Enter http Methods">
+                                        placeholder="Enter http Methods" required>
                               <auto-complete source="loadMethods($query)"
                                              min-length="0"
                                              debounce-delay="0"></auto-complete>
@@ -267,7 +271,7 @@
                             <tags-input ng-model="oauthCond['scopes' + pIndex + $index + '0']"
                                         name="oauthScope{{pIndex}}{{$index}}0"
                                         id="oauthScopes{{pIndex}}{{$index}}"
-                                        placeholder="Enter oauth scopes">
+                                        placeholder="Enter oauth scopes" required>
                             </tags-input>
                           </div>
                           <div class="col-md-12" id="dyOauthScope{{pIndex}}{{$index}}1">
