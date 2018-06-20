@@ -70,7 +70,11 @@
           'none'
         ];
 
-        function manage() {
+        function manage(valid) {
+          if (!valid) {
+            return
+          }
+
           if (_cred) {
             return update()
           } else {
