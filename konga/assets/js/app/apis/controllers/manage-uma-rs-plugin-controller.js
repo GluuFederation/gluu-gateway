@@ -336,7 +336,7 @@
           }
 
           var oauthScopeExpression = makeOAuthScopeJSON($scope.modelPlugin)
-          if (oauthScopeExpression  && oauthScopeExpression .length > 0) {
+          if (oauthScopeExpression && oauthScopeExpression.length > 0) {
             model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
             if (model.config.oauth_scope_expression == "null") {
               return
