@@ -316,7 +316,7 @@
 
         function addPlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+            MessageService.error("Please fill all the fields marked in red");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
@@ -390,7 +390,7 @@
 
         function updatePlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+            MessageService.error("Please fill all the fields marked in red.");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
