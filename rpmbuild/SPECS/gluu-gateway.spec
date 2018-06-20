@@ -35,35 +35,34 @@ mkdir -p /opt/gluu-gateway/konga/config/env
 %post
 /etc/init.d/gluu-gateway stop > /dev/null 2>&1
 
-%config 
-/opt/gluu-gateway/konga/config/application.js
-/opt/gluu-gateway/konga/config/blueprints.js
-/opt/gluu-gateway/konga/config/bootstrap.js
-/opt/gluu-gateway/konga/config/connections.js
-/opt/gluu-gateway/konga/config/cors.js
-/opt/gluu-gateway/konga/config/csrf.js
-/opt/gluu-gateway/konga/config/globals.js
-/opt/gluu-gateway/konga/config/http.js
-/opt/gluu-gateway/konga/config/i18n.js
-/opt/gluu-gateway/konga/config/jwt.js
-/opt/gluu-gateway/konga/config/load-db.js
-/opt/gluu-gateway/konga/config/local_example.js
-/opt/gluu-gateway/konga/config/local.js
-/opt/gluu-gateway/konga/config/log.js
-/opt/gluu-gateway/konga/config/models.js
-/opt/gluu-gateway/konga/config/orm.js
-/opt/gluu-gateway/konga/config/passport.js
-/opt/gluu-gateway/konga/config/paths.js
-/opt/gluu-gateway/konga/config/policies.js
-/opt/gluu-gateway/konga/config/pubsub.js
-/opt/gluu-gateway/konga/config/routes.js
-/opt/gluu-gateway/konga/config/session.js
-/opt/gluu-gateway/konga/config/sockets.js
-/opt/gluu-gateway/konga/config/views.js
-/opt/gluu-gateway/konga/config/locales/en.json
-/opt/gluu-gateway/konga/config/locales/_README.md
-/opt/gluu-gateway/konga/config/env/development.js
-/opt/gluu-gateway/konga/config/env/production.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/blueprints.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/bootstrap.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/connections.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/cors.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/csrf.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/globals.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/http.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/i18n.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/jwt.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/load-db.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/local_example.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/local.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/log.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/models.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/orm.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/passport.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/paths.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/policies.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/pubsub.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/routes.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/session.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/sockets.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/views.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/locales/en.json
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/locales/_README.md
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/development.js
+%config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/production.js
 
 %files
 /opt/gluu-gateway/*
