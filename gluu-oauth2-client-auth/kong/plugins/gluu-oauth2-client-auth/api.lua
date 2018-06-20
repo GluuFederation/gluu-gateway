@@ -47,7 +47,7 @@ return {
 
             if (not helper.is_empty(self.params.restrict_api) and self.params.restrict_api) then
                 if helper.is_empty(self.params.restrict_api_list) then
-                    return responses.send_HTTP_BAD_REQUEST("Require atleast one API in restrict APIs")
+                    return responses.send_HTTP_BAD_REQUEST("Requires at least one restricted API")
                 end
 
                 local list = helper.split(self.params.restrict_api_list, ",")
@@ -110,7 +110,7 @@ return {
                 -- Register site or update
                 local tokenResponse = oxd.get_client_token(body)
                 if helper.is_empty(tokenResponse.status) or tokenResponse.status == "error" then
-                    return responses.send_HTTP_BAD_REQUEST("Register site: failed to fetch client token")
+                    return responses.send_HTTP_BAD_REQUEST("Invalid client credentials.")
                 end
 
                 if not helper.is_empty(self.params.oxd_id) then
@@ -186,6 +186,18 @@ return {
             return helpers.responses.send_HTTP_OK(self.gluu_oauth2_client_auth_credential)
         end,
         PATCH = function(self, dao_factory)
+            local body = {
+                client_id = self.params.client_id or "",
+                client_secret = self.params.client_secret or "",
+                oxd_host = self.params.oxd_http_url,
+                op_host = self.params.op_host
+            }
+
+            local tokenResponse = oxd.get_client_token(body)
+            if helper.is_empty(tokenResponse.status) or tokenResponse.status == "error" then
+                return responses.send_HTTP_BAD_REQUEST("Invalid client credentials.")
+            end
+
             crud.patch(self.params, dao_factory.gluu_oauth2_client_auth_credentials, self.gluu_oauth2_client_auth_credential)
         end,
         DELETE = function(self, dao_factory)
