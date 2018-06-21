@@ -307,6 +307,31 @@
         }
 
         function managePlugin(isValid) {
+          if (!isValid) {
+            MessageService.error("Please fill all the fields marked in red");
+            return false;
+          }
+
+          if (checkDuplicatePath()) {
+            MessageService.error("UMA Resources: PATH must be unique (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkDuplicateMethod()) {
+            MessageService.error("UMA Resources: HTTP method must be unique within the given PATH (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkOauthDuplicatePath()) {
+            MessageService.error("OAuth Scope Security: PATH must be unique (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkOauthDuplicateMethod()) {
+            MessageService.error("OAuth Scope Security: HTTP method must be unique within the given PATH (but occurs more than one once).");
+            return false;
+          }
+
           if ($scope.isKongUMARSPluginAdded) {
             updatePlugin(isValid);
           } else {
@@ -524,6 +549,80 @@
             MessageService.error("Invalid UMA resources");
             return null;
           }
+        }
+
+        function checkDuplicateMethod() {
+          var model = angular.copy($scope.modelPlugin);
+          var methodFlag = false;
+
+          model.config.protection_document.forEach(function (path, pIndex) {
+            var methods = [];
+            path.conditions.forEach(function (cond, cIndex) {
+              if (!cond.httpMethods) {
+                return
+              }
+              cond.httpMethods.forEach(function (m) {
+                if (methods.indexOf(m.text) >= 0) {
+                  methodFlag = true
+                }
+                methods.push(m.text);
+              })
+            });
+          });
+          return methodFlag;
+        }
+
+        function checkDuplicatePath() {
+          var model = angular.copy($scope.modelPlugin);
+          var pathFlag = false;
+          var paths = [];
+          model.config.protection_document.forEach(function (path, pIndex) {
+            if (!path.path) {
+              return
+            }
+            if (paths.indexOf(path.path) >= 0) {
+              pathFlag = true
+            }
+            paths.push(path.path);
+          });
+          return pathFlag;
+        }
+
+        function checkOauthDuplicateMethod() {
+          var model = angular.copy($scope.modelPlugin);
+          var methodFlag = false;
+
+          model.config.oauth_scope_expression.forEach(function (path, pIndex) {
+            var methods = [];
+            path.conditions.forEach(function (cond, cIndex) {
+              if (!cond.httpMethods) {
+                return
+              }
+              cond.httpMethods.forEach(function (m) {
+                if (methods.indexOf(m.text) >= 0) {
+                  methodFlag = true
+                }
+                methods.push(m.text);
+              })
+            });
+          });
+          return methodFlag;
+        }
+
+        function checkOauthDuplicatePath() {
+          var model = angular.copy($scope.modelPlugin);
+          var pathFlag = false;
+          var paths = [];
+          model.config.oauth_scope_expression.forEach(function (path, pIndex) {
+            if (!path.path) {
+              return
+            }
+            if (paths.indexOf(path.path) >= 0) {
+              pathFlag = true
+            }
+            paths.push(path.path);
+          });
+          return pathFlag;
         }
 
         /**
