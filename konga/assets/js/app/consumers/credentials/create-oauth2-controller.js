@@ -89,7 +89,7 @@
             $log.debug('OAuth2 generated', resp);
             $rootScope.$broadcast('consumer.oauth2.created');
             $uibModalInstance.dismiss();
-            prompt(resp.data.oxd_id, resp.data.client_id_of_oxd_id, resp.data.client_id, resp.data.client_secret);
+            prompt(resp.data);
           }).catch(function (err) {
             $log.error(err)
             $scope.errors = err.data.message || err.data.customMessage || {};
@@ -131,7 +131,7 @@
           })
         }
 
-        function prompt(oxd_id, client_id_of_oxd_id, client_id, client_secret) {
+        function prompt(data) {
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -146,19 +146,28 @@
             '<tbody>' +
             '<tr>' +
             '<td>OXD Id</td>' +
-            '<td>' + oxd_id + ' </td>' +
+            '<td>' + data.oxd_id + ' </td>' +
             '</tr>' +
             '<tr>' +
             '<td>Client Id of OXD Id</td>' +
-            '<td>' + client_id_of_oxd_id + '</td>' +
+            '<td>' + data.client_id_of_oxd_id + '</td>' +
             '</tr>' +
+            '</tbody>' +
+            '</table>' +
+            '<table class="table table-bordered">' +
+            '<tbody>' +
             '<tr>' +
+            '<tr>' +
+            '<tr>' +
+            '<td>Setup client OXD Id</td>' +
+            '<td>' + data.setup_client_oxd_id + ' </td>' +
+            '</tr>' +
             '<td>Client Id</td>' +
-            '<td>' + client_id + '</td>' +
+            '<td>' + data.client_id + '</td>' +
             '</tr>' +
             '<tr>' +
             '<td>Client Secret</td>' +
-            '<td>' + client_secret + '</td>' +
+            '<td>' + data.client_secret + '</td>' +
             '</tr>' +
             '</tbody>' +
             '</table>' +

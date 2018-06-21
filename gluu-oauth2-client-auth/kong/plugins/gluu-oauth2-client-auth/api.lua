@@ -134,6 +134,7 @@ return {
                 op_host = self.params.op_host,
                 client_id = regClientResponseBody.data.client_id or self.params.client_id,
                 client_id_of_oxd_id = regClientResponseBody.data.client_id_of_oxd_id or self.params.client_id_of_oxd_id,
+                setup_client_oxd_id = regClientResponseBody.data.setup_client_oxd_id or self.params.setup_client_oxd_id,
                 client_secret = regClientResponseBody.data.client_secret or self.params.client_secret,
                 client_jwks_uri = body.client_jwks_uri,
                 jwks_file = self.params.jwks_file or "",

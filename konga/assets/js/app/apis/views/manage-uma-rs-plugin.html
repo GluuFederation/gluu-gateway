@@ -58,18 +58,11 @@
                 </tr>
                 <tr>
                   <th>Client Id of OXD Id</th>
-                  <td><span data-ng-show="isShowOXDClientId">{{::pluginConfig.client_id_of_oxd_id}}</span> <a href
-                                                                                                 data-ng-click="isShowOXDClientId = !isShowOXDClientId"
-                                                                                                 title="{{isShowOXDClientId ? 'Hide': 'Show'}}"><i
-                    class="mdi mdi-eye"></i></a></td>
+                  <td>{{::pluginConfig.client_id_of_oxd_id}}</td>
                 </tr>
                 <tr>
-                  <th>UMA RS Server</th>
-                  <td>{{::pluginConfig.uma_server_host}}</td>
-                </tr>
-                <tr>
-                  <th>OXD Host</th>
-                  <td>{{::pluginConfig.oxd_host}}</td>
+                  <th>Setup client OXD Id</th>
+                  <td>{{::pluginConfig.setup_client_oxd_id}}</td>
                 </tr>
                 <tr>
                   <th>Client Id</th>
@@ -84,6 +77,14 @@
                                                                                                          data-ng-click="isShowClientSecret = !isShowClientSecret"
                                                                                                          title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
                     class="mdi mdi-eye"></i></a></td>
+                </tr>
+                <tr>
+                  <th>UMA RS Server</th>
+                  <td>{{::pluginConfig.uma_server_host}}</td>
+                </tr>
+                <tr>
+                  <th>OXD Host</th>
+                  <td>{{::pluginConfig.oxd_host}}</td>
                 </tr>
                 </tbody>
               </table>

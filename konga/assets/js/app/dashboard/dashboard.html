@@ -60,11 +60,15 @@
             </tr>
             <tr>
               <th>Client Id of OXD Id</th>
-              <td><span data-ng-show="isShowOXDClientId">{{globalInfo.oxdClientId}}</span>
+              <td><span data-ng-show="isShowOXDClientId">{{globalInfo.clientIdOfOXDId}}</span>
                 <a href data-ng-click="isShowOXDClientId = !isShowOXDClientId" title="{{isShowOXDClientId ? 'Hide': 'Show'}}">
                   <i class="mdi mdi-eye"></i>
                 </a>
               </td>
+            </tr>
+            <tr>
+              <th>Setup client OXD Id</th>
+              <td>{{globalInfo.setupClientOXDId}}</td>
             </tr>
             <tr>
               <th>Client Id</th>
