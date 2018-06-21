@@ -113,7 +113,7 @@
           }
           if ($scope.data.restrict_api) {
             if ($scope.data.restrict_api_list && $scope.data.restrict_api_list.length <= 0) {
-              MessageService.error("Require atleast one API in restrict APIs");
+              MessageService.error("Requires at least one restricted API");
               return
             }
           }
