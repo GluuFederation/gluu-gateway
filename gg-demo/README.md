@@ -2,7 +2,7 @@
 
 ### 1. Parties
 
-![UMA Overview](./uma.png)
+![UMA Overview](./gg-demo-overview-diagram-uma.png)
 
 ### 2. Flow
 ![Flow chart](./flow.png)
@@ -132,26 +132,14 @@ From the last call you get oxd_id, client_id and client_secret
  ````
  From this call you get Consumer accessToken
 
- 7. LogIn UmaResource
- ````
- curl -X POST https://gg.example:8443/get-client-token
-    --Header "Content-Type: application/json"
-    --data '{"oxd_id":"<YOUR_UMA_OXD_ID>", "client_id":"<YOUR_UMA_CLIENT_ID>",
-    "client_secret":"<YOUR_UMA_CLIENT_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
- ````
-From this call you get resource accessToken
-
-8. Get resource ticket
+7. Get resource ticket
   ````
-  curl -X POST https://gg.example.com:8443/uma-rs-check-access
-      --Header "Authorization: Bearer <UMA_RESOURCE_TOKEN>"
-      --Header "Content-Type: application/json"
-      --data '{"oxd_id": "<YOUR_UMA_OXD_ID>","rpt":"","path":"<YOUR_RESOURCE_PATH>,"http_method" : "<YOUR_RESOURCE_METHOD>" }
-'
-  ````
- From this call you get ticket
+  curl -X GET http://gg.example.com:8000/<YOUR_PATH>
+      --Header "Host: <YOUR_HOST>"
+````
+ From this call you get ticket in WWW-Authenticate header
 
-9. Get RPT token
+8. Get RPT token
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
@@ -160,7 +148,7 @@ From this call you get resource accessToken
 ````
 From this call you get accesstoken (RPT)
 
-10. Call UMA protected API
+9. Call UMA protected API
   ````
   curl -X GET http://gg.example.com:8000/<YOUR_PATH>
       --Header "Authorization: Bearer <YOUR_RPT>"
@@ -168,33 +156,37 @@ From this call you get accesstoken (RPT)
 ````
 
 ### 6. UMA flow with claims gathering
-8.1. Prerequisites
+7.1. Prerequisites
 * UMA scope with Authorization Policy
 ![alt text](uma_scope.png "Logo Title Text 1")
 * Enabled UMA RPT Polices & UMA Claims Gathering
 ![alt text](scripts.png "Logo Title Text 1")
 * Register RS with correct scope
 
-8.2. Getting need_info ticket
+7.2. Getting need_info ticket
   ````
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":[<YOUR_SCOPE>]}'
 ````
-From this call you get need_info ticket
+From this call you get need_info ticket and claims gathering url.
+You have to add your claims redirect uri as a url query parameter.
+You may need to add your claims redirect url to your client configuration in CE.
 
-8.3. Getting claims gathering url
-  ````
-  curl -X POST https://gg.example.com:8443/uma-rp-get-claims-gathering-url"
-      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
-      --Header "Content-Type: application/json"
-      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>",""claims_redirect_uri"":[<YOUR_CLAIMS_URI>]}'
-````
-From this call you get ticket
+7.3. Claims gathering returns ticket
 
-8.4. Enter gathering url in browser
+Continue to 8.
 
-You may need to add your claims redirect url to your client configuration in CE
 
-Continue to 9.
+### 7. Demo
+
+Demo is prepared as python CGI script. You need to put it in some CGI enabled web server. Script is divided into 4 parts:
+* demo-client.py - main script
+* calls.py - REST calls
+* config.py - custom configuration
+* display.py - printing functions
+
+By default, UMA flow is executed. 
+
+If you want to execute UMA with claims gathering flow, add claims=true parameter in your url.
