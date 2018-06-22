@@ -387,7 +387,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+                MessageService.error("OXD Error: Please check the oxd server log");
                 return;
               }
 
@@ -464,7 +464,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+                MessageService.error("OXD Error: Please check the oxd server log");
                 return
               }
 
