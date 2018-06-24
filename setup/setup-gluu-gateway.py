@@ -91,6 +91,7 @@ class KongSetup(object):
         self.ggVersion = '3.1.3'
 
         # oxd licence configuration
+        self.oxdHost = ''
         self.oxdServerLicenseId = ''
         self.oxdServerPublicKey = ''
         self.oxdServerPublicPassword = ''
@@ -418,8 +419,12 @@ class KongSetup(object):
         # OXD Configuration
         self.installOxd = self.makeBoolean(self.getPrompt(
             'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
+
+        #We are going to ask for 'OP hostname' regardless of whether we're installing oxd or not
+        self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+
         if self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+            #self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
             self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
             self.oxdServerLicenseId = self.getPrompt('License Id')
             self.oxdServerPublicKey = self.getPrompt('Public key')
@@ -433,10 +438,14 @@ class KongSetup(object):
             """
         print msg
 
-        if not self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+        #if not self.installOxd:
+            #self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
+
+        #https://xyz.domain.com:8443 is split to: //xyz.domain.com to xyz.domain.com
+        self.oxdHost = self.kongaOxdWeb.split(":")[1][2:]
+
         self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
 
         if not self.generateClient:
