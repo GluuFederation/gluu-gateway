@@ -33,7 +33,9 @@ return {
         oauth_scope_expression = { type = "string" },
         client_id = { type = "string" },
         client_secret = { type = "string" },
-        oxd_id = { type = "string" }
+        oxd_id = { type = "string" },
+        client_id_of_oxd_id = { type = "string" },
+        setup_client_oxd_id = { type = "string" }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         ngx.log(ngx.DEBUG, "is updating" .. tostring(is_updating))

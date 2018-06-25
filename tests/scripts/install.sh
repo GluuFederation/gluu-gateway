@@ -8,6 +8,7 @@ OXD_SERVER_PUBLIC_PASSWORD=$5
 DISTRIBUTION=$6
 
 function prepareSourcesTrusty {
+    apt-get install xvfb -y
     echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -16,6 +17,8 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
+    rm -f /var/lib/dpkg/lock
+    apt-get install xvfb -y
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -24,7 +27,7 @@ function prepareSourcesXenial {
 }
 
 function prepareSourcesJessie {
-    apt-get install curl apt-transport-https -y
+    apt-get install xvfb curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -33,12 +36,40 @@ function prepareSourcesJessie {
 }
 
 function prepareSourcesStretch {
-    apt-get install curl apt-transport-https -y
-    echo "deb https://repo.gluu.org/debian/ stretchtesting main" > /etc/apt/sources.list.d/gluu-repo.list
+    export DEBIAN_FRONTEND="noninteractive"
+    echo "deb http://deb.debian.org/debian/ stable main contrib non-free" > /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian/ stable main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian/ stable-updates main contrib non-free" >> /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian/ stable-updates main contrib non-free" >> /etc/apt/sources.list
+    echo "deb http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
+    echo "deb-src http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
+
+    apt-get update
+    apt-get install xvfb curl apt-transport-https -y
+    echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
     curl -sL https://deb.nodesource.com/setup_8.x |  bash -
+}
+
+function prepareSourcesCentos6 {
+    yum -y install curl lsof xvfb
+    wget https://repo.gluu.org/centos/Gluu-centos-testing.repo -O /etc/yum.repos.d/Gluu.repo
+    wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-6-x86_64/pgdg-redhat10-10-2.noarch.rpm
+    curl -sL https://rpm.nodesource.com/setup_8.x | sudo -E bash -
+}
+
+
+function prepareSourcesCentos7 {
+    yum -y install wget curl lsof xvfb
+    wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
+    wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
+    rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
+    curl -sL https://rpm.nodesource.com/setup_8.x | sudo -E bash -
 }
 
 function prepareSourcesForDistribution {
@@ -47,13 +78,30 @@ function prepareSourcesForDistribution {
         "xenial") prepareSourcesXenial ;;
         "debian8") prepareSourcesJessie ;;
         "debian9") prepareSourcesStretch ;;
+        "centos6") prepareSourcesCentos6 ;;
+        "centos7") prepareSourcesCentos7 ;;
     esac
 }
 
+function installGGDeb {
+    apt update
+    apt install gluu-gateway -y
+}
+
+function installGGRpm {
+    yum clean all
+    yum -y install gluu-gateway
+}
 
 function installGG {
- apt update
- apt install gluu-gateway -y
+    case $DISTRIBUTION in
+        "trusty") installGGDeb ;;
+        "xenial") installGGDeb ;;
+        "debian8") installGGDeb ;;
+        "debian9") installGGDeb ;;
+        "centos6") installGGRpm ;;
+        "centos7") installGGRpm ;;
+    esac
 }
 
 function configureGG {

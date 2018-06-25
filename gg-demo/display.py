@@ -17,9 +17,10 @@ def displayPageHeader():
     print "<h3 style=\"display: inline-block; float:right;\">DEMO</h3>"
     print "</header>"
 
-def displayResponse(response):
+def displayResponse(response, request):
     body = "<table style=\"width: 100%; table-layout: fixed\"><tr><td width=\"200px\">Request url:</td><td>" + response.url + "</td></tr>"
     body += "<tr><td>Request headers:</td><td>" + str(response.request.headers) + "</td></tr>"
+    body += "<tr><td>Request body:</td><td> <pre>" + json.dumps(request,indent=4) + "</pre></td></tr>"
     body += "<tr><td>Response status:</td><td>" + str(response.status_code) + "</td></tr>"
     body += "<tr><td>Response headers:</td><td>" + str(response.headers) + "</td></tr>"
     body += "<tr><td>Response body:</td><td> <pre>" + json.dumps(response.json(),indent=4) + "</pre></td></tr></table>"

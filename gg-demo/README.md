@@ -186,7 +186,7 @@ Demo is prepared as python CGI script. You need to put it in some CGI enabled we
 * calls.py - REST calls
 * config.py - custom configuration
 * display.py - printing functions
+y
+By default, UMA flow is executed.
 
-By default, UMA flow is executed. 
-
-If you want to execute UMA with claims gathering flow, add claims=true parameter in your url.
+If you want to execute UMA with claims gathering flow, add `claim=true` parameter in your url.

@@ -912,7 +912,7 @@
               'oxd_id': {
                 type: 'text',
                 value: '',
-                help: 'Used to introspect the token. This above is oxd_id from Konga config. You can also enter any other oxd_id. If you leave it as blank then plugin creates new client itself.'
+                help: 'Used to introspect the token. This above is oxd_id from Konga config. You can also enter any other oxd_id. If you leave it blank, then the plugin creates a new client itself.'
               },
               "anonymous": {
                 type: 'text',
