@@ -61,7 +61,8 @@
             <tr>
               <th>Client Id of OXD Id</th>
               <td><span data-ng-show="isShowOXDClientId">{{globalInfo.clientIdOfOXDId}}</span>
-                <a href data-ng-click="isShowOXDClientId = !isShowOXDClientId" title="{{isShowOXDClientId ? 'Hide': 'Show'}}">
+                <a href data-ng-click="isShowOXDClientId = !isShowOXDClientId"
+                   title="{{isShowOXDClientId ? 'Hide': 'Show'}}">
                   <i class="mdi mdi-eye"></i>
                 </a>
               </td>
@@ -118,6 +119,43 @@
           </tr>
         </table>
       </div>
+    </div>
+  </div>
+  <div class="row actions">
+    <div class="col-md-12">
+      <list-search
+        class="pull-right"
+        data-filters="filters"
+        data-options="[10, 20]"
+        data-items="itemsPerPage">
+      </list-search>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12 table-responsive">
+      <table class="table table-bordered">
+        <thead>
+        <tr>
+          <th width="350px">Name</th>
+          <th width="200px">OXD Id / Client Id of OXD Id</th>
+          <th width="100px">Setup client OXD Id / Client Id</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr
+          dir-paginate="o in credentials | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage">
+          <td>{{o.name}}</td>
+          <td data-ng-if="!!o.config">{{o.config.oxd_id}} <br/> {{o.config.client_id_of_oxd_id}}</td>
+          <td data-ng-if="!!o.config">{{o.config.setup_client_oxd_id}} <br/> {{o.config.client_id}}</td>
+
+          <td data-ng-if="!o.config">{{o.oxd_id}} <br/> {{o.client_id_of_oxd_id}}</td>
+          <td data-ng-if="!o.config">{{o.setup_client_oxd_id}} <br/> {{o.client_id}}</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="col-md-12" style="margin-bottom: 10px;">
+      <dir-pagination-controls></dir-pagination-controls>
     </div>
   </div>
 

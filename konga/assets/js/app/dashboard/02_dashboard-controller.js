@@ -9,11 +9,12 @@
   angular.module('frontend.dashboard')
     .controller('DashboardController', [
       '$scope', '$rootScope', '$log', '$state', '$q', 'InfoService', '$localStorage', 'HttpTimeout',
-      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', '$window',
+      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', 'ConsumerService', 'PluginsService', '$window',
       function controller($scope, $rootScope, $log, $state, $q, InfoService, $localStorage, HttpTimeout,
-                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, $window) {
+                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, ConsumerService, PluginsService, $window) {
 
         $scope.globalInfo = $localStorage.credentials.user;
+        $scope.itemsPerPage = 10;
         var loadTime = $rootScope.KONGA_CONFIG.info_polling_interval,
           errorCount = 0,
           hasInitiallyLoaded = false,
@@ -195,6 +196,29 @@
               })
         }
 
+        function fetchPluginData() {
+          var plugins = [];
+          var consumers = [];
+          $scope.credentials = [];
+          var pluginFunc = PluginsService
+            .load({name: 'gluu-oauth2-rs'})
+            .then(function (resp) {
+              plugins = resp.data.data;
+            });
+
+          var consumerFunc = ConsumerService
+            .listOAuthConsumerCredential()
+            .then(function (resp) {
+              consumers = resp.data.data;
+            });
+
+          $q
+            .all([pluginFunc, consumerFunc])
+            .finally(
+              function onFinally() {
+                $scope.credentials = consumers.concat(plugins)
+              })
+        };
 
         $scope.kong_versions = SettingsService.getKongVersions()
 
@@ -294,6 +318,9 @@
         $scope.$on('user.node.updated', function (node) {
           fetchData();
         })
+
+        // plugins
+        fetchPluginData();
       }
     ])
   ;

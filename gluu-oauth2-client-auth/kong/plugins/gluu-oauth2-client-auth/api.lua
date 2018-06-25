@@ -5,6 +5,11 @@ local responses = require "kong.tools.responses"
 local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
 
 return {
+    ["/gluu-oauth2-client-auth/"] = {
+        GET = function(self, dao_factory)
+            crud.paginated_set(self, dao_factory.gluu_oauth2_client_auth_credentials)
+        end
+    },
     ["/consumers/:username_or_id/gluu-oauth2-client-auth/"] = {
         before = function(self, dao_factory, helpers)
             crud.find_consumer_by_username_or_id(self, dao_factory, helpers)

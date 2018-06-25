@@ -92,6 +92,10 @@
           removeCredential: function (consumerId, credential, credential_id) {
             return $http.delete('kong/consumers/' + consumerId + '/' + credential + '/' + credential_id)
           },
+
+          listOAuthConsumerCredential: function () {
+            return $http.get('kong/gluu-oauth2-client-auth')
+          },
         }
       }
     ])
