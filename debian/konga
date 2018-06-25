@@ -20,7 +20,7 @@ get_pid() {
 		PID_NUM=$(cat $PID_PATH_NAME)
 		echo "$PID_NUM"
 	else
-		OTHER_GATEWAY_PID="`ps -eaf|grep -i node|grep -v grep|grep -i 'app.js'|awk '{print $2}'`"                
+		OTHER_GATEWAY_PID="`ps -eaf|grep -i node|grep -v grep|grep -i '\-\-harmony app.js'|awk '{print $2}'`"
 		###For one more possible bug, find and kill oxd                
 		if [ "x$OTHER_GATEWAY_PID" != "x" ]; then
 			echo "$OTHER_GATEWAY_PID"

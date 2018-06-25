@@ -83,7 +83,7 @@
             url: '/:api_id/uma-plugin',
             data: {
               pageName: "UMA-RS plugin",
-              pageDescription: "A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong.",
+              pageDescription: "A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong. <code> It will create a client and register the UMA resources using oxd.</code>",
               displayName: "UMA-RS plugin",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },

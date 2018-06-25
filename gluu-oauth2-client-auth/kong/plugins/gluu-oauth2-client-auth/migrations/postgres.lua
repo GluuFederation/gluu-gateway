@@ -12,6 +12,7 @@ return {
         op_host text,
         client_id text UNIQUE,
         client_id_of_oxd_id text,
+        setup_client_oxd_id text,
         client_secret text,
         client_jwks_uri text,
         jwks_file text,
