@@ -12,6 +12,14 @@ import shutil
 import requests
 import json
 import getpass
+import urllib3
+import platform
+
+class Distribution:
+    Ubuntu = "ubuntu"
+    Debian = "debian"
+    CENTOS = "centos"
+    RHEL = "red"
 
 class KongSetup(object):
     def __init__(self):
@@ -28,7 +36,7 @@ class KongSetup(object):
         self.output_folder = './output'
         self.system_folder = './system'
         self.osDefault = '/etc/default'
-        self.profileFolder = '/etc/profile.d/'
+        self.profileFolder = '/etc/profile.d'
 
         self.logError = 'gluu-gateway-setup_error.log'
         self.log = 'gluu-gateway-setup.log'
@@ -49,10 +57,15 @@ class KongSetup(object):
         self.cmd_ln = '/bin/ln'
         self.hostname = '/bin/hostname'
         self.cmd_touch = '/bin/touch'
-        self.cmd_sudo = 'sudo'
         self.cmd_mv = '/bin/mv'
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
+        self.cmd_sh = '/bin/sh'
+        self.cmd_update_alternatives = 'update-alternatives'
+        self.cmd_chkconfig = 'chkconfig'
+        self.cmd_alternatives = 'alternatives'
+        self.cmd_echo = '/bin/echo'
+        self.cmd_service = 'service'
 
         self.countryCode = ''
         self.state = ''
@@ -76,12 +89,16 @@ class KongSetup(object):
         self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
         self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
 
-        self.kongaService = "gluu-gateway"
+        self.kongaService = 'gluu-gateway'
+        self.oxdServerService = 'oxd-server'
+        self.oxdHTTPExtensionService = 'oxd-https-extension'
 
         # oxd kong Property values
         self.kongaPort = '1338'
         self.kongaPolicyType = 'uma_rpt_policy'
         self.kongaOxdId = ''
+        self.kongaClientIdOfOXDId = ''
+        self.kongaSetupClientOXDId = ''
         self.kongaOPHost = ''
         self.kongaClientId = ''
         self.kongaClientSecret = ''
@@ -109,6 +126,16 @@ class KongSetup(object):
         self.isPrompt = True
         self.license = False
         self.initParametersFromJsonArgument()
+
+        # OS types properties
+        self.os_types = ['centos', 'red', 'fedora', 'ubuntu', 'debian']
+        self.os_type = None
+        self.os_version = None
+        self.os_initdaemon = None
+
+        # PostgreSQL config file path
+        self.distPGhbaConfigPath = '/var/lib/pgsql/10/data'
+        self.distPGhbaConfigFile = '%s/pg_hba.conf' % self.distPGhbaConfigPath
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -138,6 +165,8 @@ class KongSetup(object):
             self.generateClient = data['generateClient']
             if not self.generateClient:
                 self.kongaOxdId = data['kongaOxdId']
+                self.kongaClientIdOfOXDId = data['kongaClientIdOfOXDId']
+                self.kongaSetupClientOXDId = data['kongaSetupClientOXDId']
                 self.kongaClientId = data['kongaClientId']
                 self.kongaClientSecret = data['kongaClientSecret']
 
@@ -147,11 +176,38 @@ class KongSetup(object):
     def configurePostgres(self):
         self.logIt('Configuring postgres...')
         print 'Configuring postgres...'
-        self.run([self.cmd_sudo, '/etc/init.d/postgresql', 'start'])
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
-        os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
-        os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.os_type == Distribution.Ubuntu:
+            self.run(['/etc/init.d/postgresql', 'start'])
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.os_type == Distribution.Debian:
+            self.run(['/etc/init.d/postgresql', 'start'])
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\"" postgres' % self.pgPwd)
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"" postgres')
+            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\"" postgres')
+            os.system('/bin/su -s /bin/bash -c "psql konga < %s" postgres' % self.distKongaDBFile)
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            # Initialize PostgreSQL first time
+            self.run([self.cmd_ln, '/usr/lib/systemd/system/postgresql-10.service', '/usr/lib/systemd/system/postgresql.service'])
+            self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
+            self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
+            self.run([self.cmd_service, 'postgresql', 'start'])
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '6':
+            # Initialize PostgreSQL first time
+            self.run([self.cmd_ln, '/etc/init.d/postgresql-10', '/etc/init.d/postgresql'])
+            self.run([self.cmd_service, 'postgresql-10', 'initdb'])
+            self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
+            self.run([self.cmd_service, 'postgresql', 'start'])
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
 
     def configureOxd(self):
         if self.installOxd:
@@ -159,8 +215,8 @@ class KongSetup(object):
             self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
                                      self.distOxdServerConfigPath)
 
-        self.run([self.cmd_sudo, '/etc/init.d/oxd-server', 'start'])
-        self.run([self.cmd_sudo, '/etc/init.d/oxd-https-extension', 'start'])
+        self.run([self.cmd_service, self.oxdServerService, 'start'])
+        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'start'])
 
     def detectHostname(self):
         detectedHostname = None
@@ -293,11 +349,11 @@ class KongSetup(object):
 
     def installSample(self):
         self.logIt('Installing luarocks packages...')
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'oxd-web-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'json-logic-lua'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-rs'])
-        self.run([self.cmd_sudo, 'luarocks', 'install', 'gluu-oauth2-client-auth'])
+        self.run(['luarocks', 'install', 'json-lua'])
+        self.run(['luarocks', 'install', 'oxd-web-lua'])
+        self.run(['luarocks', 'install', 'json-logic-lua'])
+        self.run(['luarocks', 'install', 'gluu-oauth2-rs'])
+        self.run(['luarocks', 'install', 'gluu-oauth2-client-auth'])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
@@ -312,25 +368,26 @@ class KongSetup(object):
 
         self.run([self.cmd_ln, '-sf', self.jreDestinationPath, self.jre_home])
         self.run([self.cmd_chmod, '-R', '755', '%s/bin/' % self.jreDestinationPath])
-        self.run([self.cmd_chown, '-R', 'root:root', self.jreDestinationPath])
-        self.run([self.cmd_chown, '-h', 'root:root', self.jre_home])
-        self.run([self.cmd_mv, '%s/%s' % (self.template_folder, self.jreSHFileName), self.profileFolder])
-        self.run([self.cmd_chmod, '644', '%s/%s' % (self.profileFolder, self.jreSHFileName)])
-
+        with open('/etc/environment', 'a') as f:
+            f.write('JAVA_HOME=/opt/jre')
+        if self.os_type == [Distribution.Ubuntu, Distribution.Debian]:
+            self.run([self.cmd_update_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'], shell=True)
+        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
+            self.run([self.cmd_alternatives, '--install', '/usr/bin/java', 'java', '%s/bin/java' % (self.jre_home), '1'])
 
     def configKonga(self):
         self.logIt('Installing konga node packages...')
         print 'Installing konga node packages...'
 
         if not os.path.exists(self.cmd_node):
-            self.run([self.cmd_sudo, self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
+            self.run([self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
 
-        self.run([self.cmd_sudo, 'npm', 'install', '-g', 'bower', 'gulp', 'sails'])
-        self.run([self.cmd_sudo, 'npm', 'install'], self.distKongaFolder, os.environ.copy(), True)
-        self.run([self.cmd_sudo, 'bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
+        self.run(['npm', 'install', '-g', 'bower', 'gulp', 'sails'])
+        self.run(['npm', 'install', '--unsafe-perm'], self.distKongaFolder, os.environ.copy(), True)
+        self.run(['bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
         if self.generateClient:
-            AuthorizationRedirectUri = 'https://'+self.oxdAuthorizationRedirectUri+':' + self.kongaPort
+            AuthorizationRedirectUri = 'https://' + self.oxdAuthorizationRedirectUri + ':' + self.kongaPort
             payload = {
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
@@ -347,6 +404,8 @@ class KongSetup(object):
 
                 if resJson['status'] == 'ok':
                     self.kongaOxdId = resJson['data']['oxd_id']
+                    self.kongaClientIdOfOXDId = resJson['data']['client_id_of_oxd_id']
+                    self.kongaSetupClientOXDId = resJson['data']['setup_client_oxd_id']
                     self.kongaClientSecret = resJson['data']['client_secret']
                     self.kongaClientId = resJson['data']['client_id']
                 else:
@@ -362,7 +421,7 @@ class KongSetup(object):
                 sys.exit()
 
         # Render konga property
-        self.run([self.cmd_sudo, self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
+        self.run([self.cmd_touch, os.path.split(self.distKongaConfigFile)[-1]],
                  self.distKongaConfigPath, os.environ.copy(), True)
         self.renderTemplateInOut(self.distKongaConfigFile, self.template_folder, self.distKongaConfigPath)
 
@@ -441,6 +500,8 @@ class KongSetup(object):
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
+            self.kongaClientIdOfOXDId = self.getPrompt('client_id_of_oxd_id')
+            self.kongaSetupClientOXDId = self.getPrompt('setup_client_oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
@@ -457,11 +518,11 @@ class KongSetup(object):
         newFn.write(template_text % self.__dict__)
         newFn.close()
 
-    def run(self, args, cwd=None, env=None, usewait=False):
+    def run(self, args, cwd=None, env=None, useWait=False, shell=False):
         self.logIt('Running: %s' % ' '.join(args))
         try:
-            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env)
-            if usewait:
+            p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env, shell=shell)
+            if useWait:
                 code = p.wait()
                 self.logIt('Run: %s with result code: %d' % (' '.join(args), code))
             else:
@@ -475,15 +536,22 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        self.run([self.cmd_sudo, "kong", "start"])
+        self.run(["kong", "stop"])
+        self.run(["kong", "start"])
 
     def migrateKong(self):
-        self.run([self.cmd_sudo, "kong", "migrations", "up"])
+        self.run(["kong", "migrations", "up"])
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
-        self.run([self.cmd_sudo, "/etc/init.d/%s" % self.kongaService, "start"])
-        self.run([self.cmd_update_rs_d, self.kongaService, "defaults"])
+        self.run([self.cmd_service, self.oxdServerService, 'stop'])
+        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'stop'])
+        self.run([self.cmd_service, self.kongaService, 'stop'])
+        self.run([self.cmd_service, self.kongaService, 'start'])
+        if self.os_type in [Distribution.Ubuntu, Distribution.Debian]:
+            self.run([self.cmd_update_rs_d, self.kongaService, 'defaults'])
+        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
+            self.run([self.cmd_chkconfig, self.kongaService, 'on'])
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -492,6 +560,44 @@ class KongSetup(object):
         except:
             self.logIt("Error copying %s to %s" % (inFile, destFolder), True)
             self.logIt(traceback.format_exc(), True)
+
+    def disableWarnings(self):
+        if self.os_type in [Distribution.Ubuntu, Distribution.CENTOS, Distribution.RHEL] and self.os_version in ['16', '7', '6']:
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+    def chooseFromList(self, list_of_choices, choice_name="item", default_choice_index=0):
+        return_value = None
+        choice_map = {}
+        chosen_index = 0
+        print "\nSelect the number for the %s from the following list:" % choice_name
+        for choice in list_of_choices:
+            choice_map[chosen_index] = choice
+            chosen_index += 1
+            print "  [%i]   %s" % (chosen_index, choice)
+        while not return_value:
+            choice_number = self.getPrompt("Please select a number listed above", str(default_choice_index + 1))
+            try:
+                choice_number = int(choice_number) - 1
+                if (choice_number >= 0) & (choice_number < len(list_of_choices)):
+                    return_value = choice_map[choice_number]
+                else:
+                    print '"%i" is not a valid choice' % (choice_number + 1)
+            except:
+                print 'Cannot convert "%s" to a number' % choice_number
+                self.logIt(traceback.format_exc(), True)
+        return return_value
+
+    def detectOSType(self):
+        try:
+            p = platform.linux_distribution()
+            self.os_type = p[0].split()[0].lower()
+            self.os_version = p[1].split('.')[0]
+        except:
+            self.os_type, self.os_version = self.chooseFromList(self.os_types, "Operating System")
+        self.logIt('OS Type: %s OS Version: %s' % (self.os_type, self.os_version))
+
+    def detectInitd(self):
+        self.os_initdaemon = open(os.path.join('/proc/1/status'), 'r').read().split()[1]
 
 
 if __name__ == "__main__":
@@ -545,6 +651,8 @@ if __name__ == "__main__":
 
             if not kongSetup.generateClient:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
+                      + 'client_id_of_oxd_id'.ljust(30) + kongSetup.kongaClientIdOfOXDId.rjust(35) + "\n" \
+                      + 'setup_client_oxd_id'.ljust(30) + kongSetup.kongaSetupClientOXDId.rjust(35) + "\n" \
                       + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
                       + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
             else:
@@ -557,6 +665,9 @@ if __name__ == "__main__":
                 proceed = True
 
             if proceed:
+                kongSetup.detectOSType()
+                kongSetup.detectInitd()
+                kongSetup.disableWarnings()
                 kongSetup.genKongSslCertificate()
                 kongSetup.installJRE()
                 kongSetup.configurePostgres()

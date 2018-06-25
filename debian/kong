@@ -9,6 +9,7 @@
 # Description:       Enable service provided by daemon.
 ### END INIT INFO
 
+PATH=/sbin:/usr/sbin:/bin:/usr/bin:/usr/local/bin
 SERVICE_NAME=kong
 PID_PATH_NAME=/usr/local/kong/pids/nginx.pid
 KONG_CMD=`which kong`

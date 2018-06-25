@@ -4,10 +4,16 @@
    <name>input_input ng-pristine ng-unt</name>
    <tag></tag>
    <elementGuidId>3ef9b9cd-6371-4526-b022-f48b4d6b3ee0</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>/html/body/div[2]/div[2]/div/div/div[2]/div/div/div/div/form/div[1]/div[4]/div[2]/div[2]/div[3]/div[1]/div[2]/div/div[1]/tags-input/div/div/input[count(. | //*[@placeholder = 'Enter scopes']) = count(//*[@placeholder = 'Enter scopes'])]</value>
+      </entry>
+   </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>
@@ -119,17 +125,17 @@
       <value>2</value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>type</name>
       <type>Main</type>
       <value>text</value>
    </webElementProperties>
    <webElementProperties>
-      <isSelected>false</isSelected>
+      <isSelected>true</isSelected>
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>id(&quot;scopes00&quot;)/div[@class=&quot;host&quot;]/div[@class=&quot;tags focused&quot;]/input[@class=&quot;input ng-pristine ng-untouched ng-valid ng-empty ng-not-empty-add ng-pristine-remove ng-dirty-add ng-valid-parse-add ng-animate ng-empty-remove&quot;]</value>
+      <value>/html/body/div[2]/div[2]/div/div/div[2]/div/div/div/div/form/div[1]/div[4]/div[2]/div[2]/div[3]/div[1]/div[2]/div/div[1]/tags-input/div/div/input</value>
    </webElementProperties>
 </WebElementEntity>

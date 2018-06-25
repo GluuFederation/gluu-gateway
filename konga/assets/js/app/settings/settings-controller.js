@@ -16,7 +16,10 @@
                 $log.info("#####################",$rootScope.KONGA_CONFIG)
 
 
-                $scope.updateKongaSettings = function() {
+                $scope.updateKongaSettings = function(valid) {
+                    if (!valid) {
+                      return
+                    }
                     updateKongaSettings()
                 }
 
@@ -135,7 +138,6 @@
                 }
 
                 function updateKongaSettings() {
-
 
                     console.log("#####################",$rootScope.KONGA_CONFIG)
 

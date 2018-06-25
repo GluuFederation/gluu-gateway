@@ -190,9 +190,9 @@ WebUI.click(findTestObject('Page_Gluu Gateway (4)/button_create credentials'))
 
 WebUI.delay(3)
 
-WebUI.click(findTestObject('Page_Gluu Gateway (4)/span_'))
+not_run: WebUI.click(findTestObject('Page_Gluu Gateway (4)/span_'))
 
-WebUI.delay(3)
+not_run: WebUI.delay(3)
 
 WebUI.setText(findTestObject('Page_Gluu Gateway (4)/input_form-control ng-untouche_1'), 'uma')
 

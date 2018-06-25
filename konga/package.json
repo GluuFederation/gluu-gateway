@@ -41,7 +41,6 @@
     "include-all": "^1.0.0",
     "ip": "^1.1.5",
     "jsonwebtoken": "5.4.1",
-    "ldapjs": "^1.0.1",
     "lodash": "3.10.1",
     "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",

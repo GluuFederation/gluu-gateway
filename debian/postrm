@@ -1,4 +1,0 @@
-#!/bin/bash
-rm -rf /etc/init.d/kong
-rm -rf /etc/init.d/konga
-exit 0

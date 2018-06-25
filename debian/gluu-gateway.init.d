@@ -1,3 +1,4 @@
+#!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          gluu-gateway
 # Required-Start:    $remote_fs $syslog
