@@ -12,6 +12,7 @@ local GLUU_OAUTH2_CLIENT_AUTH_CREDENTIALS_SCHEMA = {
         op_host = { type = "string", required = true },
         client_id = { type = "string", required = true },
         client_id_of_oxd_id = { type = "string", required = true },
+        setup_client_oxd_id = { type = "string", required = true },
         client_secret = { type = "string", required = true },
         client_jwks_uri = { type = "string" },
         jwks_file = { type = "string" },
