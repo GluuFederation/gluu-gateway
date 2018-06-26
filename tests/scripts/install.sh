@@ -45,7 +45,7 @@ function prepareSourcesStretch {
     echo "deb-src http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
 
     apt-get update
-    apt-get install xvfb curl apt-transport-https -y
+    apt-get install lsof curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
