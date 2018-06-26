@@ -1,6 +1,4 @@
 #!/bin/bash
-
-if [ -d "/opt/gluu-gateway/konga/config" ]; then
-    mkdir /tmp/gluu-gateway
-    cp -r /opt/gluu-gateway/konga/config/* /tmp/gluu-gateway/
-fi
+mkdir -p /opt/gluu-gateway/konga/config/locales
+mkdir -p /opt/gluu-gateway/konga/config/env
+exit 0

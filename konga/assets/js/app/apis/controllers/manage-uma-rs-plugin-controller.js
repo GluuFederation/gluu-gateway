@@ -101,7 +101,7 @@
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
                             "</div>" +
                             "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
@@ -162,7 +162,7 @@
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleOauthScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdOauthScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleOauthScope['scope" + pIndex + cIndex + id + "']\" name=\"oauthScope" + pIndex + cIndex + id + "\" id=\"oauthScope" + pIndex + cIndex + id + "\" placeholder=\"Enter oauth scopes\"></tags-input> " +
+                            "<tags-input ng-model=\"ruleOauthScope['scope" + pIndex + cIndex + id + "']\" required name=\"oauthScope" + pIndex + cIndex + id + "\" id=\"oauthScope" + pIndex + cIndex + id + "\" placeholder=\"Enter oauth scopes\"></tags-input> " +
                             "</div>" +
                             "<div class=\"col-md-12\" id=\"dyOauthScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
@@ -209,12 +209,12 @@
         function addGroup(parent, id) {
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
           var htmlRender = "<div class=\"col-md-12\">" +
-            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
+            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
-            "<tags-input type=\"url\" ng-model=\"cond['scopes" + parent + id + "']\" name=\"scope" + id + "\" id=\"scopes{{$parent.$index}}{{$index}}\" placeholder=\"Enter scopes\"> </tags-input>" +
+            "<tags-input type=\"url\" required ng-model=\"cond['scopes" + parent + id + "']\" name=\"scope" + id + "\" id=\"scopes{{$parent.$index}}{{$index}}\" placeholder=\"Enter scopes\"> </tags-input>" +
             "</div>" +
             "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
             "</div>";
@@ -234,11 +234,11 @@
             var parent = pIndex + '' + ($scope.modelPlugin.config.protection_document[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>";
 
@@ -292,11 +292,11 @@
             var parent = $scope.modelPlugin.config.protection_document.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
+                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
                 "</div>";
@@ -307,6 +307,31 @@
         }
 
         function managePlugin(isValid) {
+          if (!isValid) {
+            MessageService.error("Please fill all the fields marked in red");
+            return false;
+          }
+
+          if (checkDuplicatePath()) {
+            MessageService.error("UMA Resources: PATH must be unique (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkDuplicateMethod()) {
+            MessageService.error("UMA Resources: HTTP method must be unique within the given PATH (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkOauthDuplicatePath()) {
+            MessageService.error("OAuth Scope Security: PATH must be unique (but occurs more than one once).");
+            return false;
+          }
+
+          if (checkOauthDuplicateMethod()) {
+            MessageService.error("OAuth Scope Security: HTTP method must be unique within the given PATH (but occurs more than one once).");
+            return false;
+          }
+
           if ($scope.isKongUMARSPluginAdded) {
             updatePlugin(isValid);
           } else {
@@ -316,7 +341,7 @@
 
         function addPlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+            MessageService.error("Please fill all the fields marked in red");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
@@ -336,7 +361,7 @@
           }
 
           var oauthScopeExpression = makeOAuthScopeJSON($scope.modelPlugin)
-          if (oauthScopeExpression  && oauthScopeExpression .length > 0) {
+          if (oauthScopeExpression && oauthScopeExpression.length > 0) {
             model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
             if (model.config.oauth_scope_expression == "null") {
               return
@@ -362,7 +387,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+                MessageService.error("OXD Error: Please check the oxd server log");
                 return;
               }
 
@@ -390,7 +415,7 @@
 
         function updatePlugin(isValid) {
           if (!isValid) {
-            MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+            MessageService.error("Please fill all the fields marked in red.");
             return false;
           }
           var model = angular.copy($scope.modelPlugin);
@@ -439,7 +464,7 @@
               var errors = {}
 
               if (err.status && err.status == 400) {
-                MessageService.error("Something wrong with your requested resources. Fill it properly and try again.");
+                MessageService.error("OXD Error: Please check the oxd server log");
                 return
               }
 
@@ -526,6 +551,80 @@
           }
         }
 
+        function checkDuplicateMethod() {
+          var model = angular.copy($scope.modelPlugin);
+          var methodFlag = false;
+
+          model.config.protection_document.forEach(function (path, pIndex) {
+            var methods = [];
+            path.conditions.forEach(function (cond, cIndex) {
+              if (!cond.httpMethods) {
+                return
+              }
+              cond.httpMethods.forEach(function (m) {
+                if (methods.indexOf(m.text) >= 0) {
+                  methodFlag = true
+                }
+                methods.push(m.text);
+              })
+            });
+          });
+          return methodFlag;
+        }
+
+        function checkDuplicatePath() {
+          var model = angular.copy($scope.modelPlugin);
+          var pathFlag = false;
+          var paths = [];
+          model.config.protection_document.forEach(function (path, pIndex) {
+            if (!path.path) {
+              return
+            }
+            if (paths.indexOf(path.path) >= 0) {
+              pathFlag = true
+            }
+            paths.push(path.path);
+          });
+          return pathFlag;
+        }
+
+        function checkOauthDuplicateMethod() {
+          var model = angular.copy($scope.modelPlugin);
+          var methodFlag = false;
+
+          model.config.oauth_scope_expression.forEach(function (path, pIndex) {
+            var methods = [];
+            path.conditions.forEach(function (cond, cIndex) {
+              if (!cond.httpMethods) {
+                return
+              }
+              cond.httpMethods.forEach(function (m) {
+                if (methods.indexOf(m.text) >= 0) {
+                  methodFlag = true
+                }
+                methods.push(m.text);
+              })
+            });
+          });
+          return methodFlag;
+        }
+
+        function checkOauthDuplicatePath() {
+          var model = angular.copy($scope.modelPlugin);
+          var pathFlag = false;
+          var paths = [];
+          model.config.oauth_scope_expression.forEach(function (path, pIndex) {
+            if (!path.path) {
+              return
+            }
+            if (paths.indexOf(path.path) >= 0) {
+              pathFlag = true
+            }
+            paths.push(path.path);
+          });
+          return pathFlag;
+        }
+
         /**
          * ----------------------------------------------------------------------
          * Functions for oauth scope expression
@@ -550,11 +649,11 @@
             var parent = $scope.modelPlugin.config.oauth_scope_expression.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not" +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not" +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" required name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
                 "</div>";
@@ -575,11 +674,11 @@
             var parent = pIndex + '' + ($scope.modelPlugin.config.oauth_scope_expression[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not " +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not " +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"></tags-input>" +
+                "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" required name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"></tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>";
 
@@ -592,12 +691,12 @@
         function addOauthGroup(parent, id) {
           $("input[name=hdOauthScopeCount" + parent + "]").val(id + 1);
           var htmlRender = "<div class=\"col-md-12\">" +
-            "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + id + "\">or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + id + "\">not" +
+            "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + id + "\">not" +
             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{oauthCond['scopes" + parent + id + "']}}\" name=\"hdOauthScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
-            "<tags-input type=\"url\" ng-model=\"oauthCond['scopes" + parent + id + "']\" name=\"oauthScope" + id + "\" id=\"oauthScope{{$parent.$index}}{{$index}}\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
+            "<tags-input type=\"url\" ng-model=\"oauthCond['scopes" + parent + id + "']\" required name=\"oauthScope" + id + "\" id=\"oauthScope{{$parent.$index}}{{$index}}\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
             "</div>" +
             "<div class=\"col-md-12\" id=\"dyOauthScope" + parent + (id + 1) + "\"></div>" +
             "</div>";

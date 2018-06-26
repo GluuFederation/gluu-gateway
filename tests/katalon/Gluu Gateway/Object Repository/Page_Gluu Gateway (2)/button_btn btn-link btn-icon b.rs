@@ -4,10 +4,16 @@
    <name>button_btn btn-link btn-icon b</name>
    <tag></tag>
    <elementGuidId>30d3981d-26ee-47f6-be3c-546f8ab05dee</elementGuidId>
+   <selectorCollection>
+      <entry>
+         <key>BASIC</key>
+         <value>id(&quot;konga&quot;)/body[@class=&quot;body ng-scope _expose-aside modal-open&quot;]/div[@class=&quot;modal fade ng-scope ng-isolate-scope in&quot;]/div[@class=&quot;modal-dialog modal-lg&quot;]/div[@class=&quot;modal-content&quot;]/div[@class=&quot;modal-body ng-scope&quot;]/div[@class=&quot;row&quot;]/div[@class=&quot;col-md-9&quot;]/div[@class=&quot;row ng-scope&quot;]/div[@class=&quot;col-md-6 ng-scope&quot;]/div[@class=&quot;panel panel-default&quot;]/div[@class=&quot;panel-heading&quot;]/div[@class=&quot;panel-title&quot;]/div[@class=&quot;pull-right&quot;]/button[@class=&quot;btn btn-link btn-icon btn-primary&quot;]</value>
+      </entry>
+   </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
    <useRalativeImagePath>false</useRalativeImagePath>
    <webElementProperties>
-      <isSelected>true</isSelected>
+      <isSelected>false</isSelected>
       <matchCondition>equals</matchCondition>
       <name>tag</name>
       <type>Main</type>

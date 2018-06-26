@@ -16,6 +16,7 @@
         $scope.consumer = _consumer;
         $scope.manage = manage;
         $scope.restrictAPIModel = restrictAPIModel;
+        $scope.edit_client_secret = null;
 
         if (_cred) {
           $scope.data = angular.copy(_cred);
@@ -69,7 +70,11 @@
           'none'
         ];
 
-        function manage() {
+        function manage(valid) {
+          if (!valid) {
+            return
+          }
+
           if (_cred) {
             return update()
           } else {
@@ -84,7 +89,7 @@
             $log.debug('OAuth2 generated', resp);
             $rootScope.$broadcast('consumer.oauth2.created');
             $uibModalInstance.dismiss();
-            prompt(resp.data.client_id, resp.data.oxd_id, resp.data.client_secret);
+            prompt(resp.data);
           }).catch(function (err) {
             $log.error(err)
             $scope.errors = err.data.message || err.data.customMessage || {};
@@ -100,6 +105,7 @@
           $scope.data.allow_oauth_scope_expression = $scope.data.allow_oauth_scope_expression || false;
           $scope.data.restrict_api = $scope.data.restrict_api || false;
           $scope.data.show_consumer_custom_id = $scope.data.show_consumer_custom_id || false;
+          $scope.data.client_secret = $scope.edit_client_secret || $scope.data.client_secret;
 
           if (!$scope.data.oauth_mode && !$scope.data.uma_mode && !$scope.data.mix_mode) {
             MessageService.error("Please select atleast one mode");
@@ -107,7 +113,7 @@
           }
           if ($scope.data.restrict_api) {
             if ($scope.data.restrict_api_list && $scope.data.restrict_api_list.length <= 0) {
-              MessageService.error("Require atleast one API in restrict APIs");
+              MessageService.error("Requires at least one restricted API");
               return
             }
           }
@@ -125,7 +131,7 @@
           })
         }
 
-        function prompt(client_id, oxd_id, client_secret) {
+        function prompt(data) {
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -140,15 +146,28 @@
             '<tbody>' +
             '<tr>' +
             '<td>OXD Id</td>' +
-            '<td>' + oxd_id + ' </td>' +
+            '<td>' + data.oxd_id + ' </td>' +
             '</tr>' +
             '<tr>' +
-            '<td>Client ID</td>' +
-            '<td>' + client_id + '</td>' +
+            '<td>Client Id of OXD Id</td>' +
+            '<td>' + data.client_id_of_oxd_id + '</td>' +
+            '</tr>' +
+            '</tbody>' +
+            '</table>' +
+            '<table class="table table-bordered">' +
+            '<tbody>' +
+            '<tr>' +
+            '<tr>' +
+            '<tr>' +
+            '<td>Setup client OXD Id</td>' +
+            '<td>' + data.setup_client_oxd_id + ' </td>' +
+            '</tr>' +
+            '<td>Client Id</td>' +
+            '<td>' + data.client_id + '</td>' +
             '</tr>' +
             '<tr>' +
             '<td>Client Secret</td>' +
-            '<td>' + client_secret + '</td>' +
+            '<td>' + data.client_secret + '</td>' +
             '</tr>' +
             '</tbody>' +
             '</table>' +
@@ -162,7 +181,7 @@
                 $uibModalInstance.dismiss()
               }
             },
-            size: 'md'
+            size: 'lg'
           });
         }
 

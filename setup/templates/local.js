@@ -68,6 +68,8 @@ module.exports = {
   oxdWeb: '%(kongaOxdWeb)s',
   opHost: '%(kongaOPHost)s',
   oxdId: '%(kongaOxdId)s',
+  clientIdOfOXDId: '%(kongaClientIdOfOXDId)s',
+  setupClientOXDId: '%(kongaSetupClientOXDId)s',
   clientId: '%(kongaClientId)s',
   clientSecret: '%(kongaClientSecret)s',
   oxdVersion: '%(kongaOxdVersion)s',

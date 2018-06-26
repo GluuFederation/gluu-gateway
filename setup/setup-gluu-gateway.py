@@ -97,6 +97,8 @@ class KongSetup(object):
         self.kongaPort = '1338'
         self.kongaPolicyType = 'uma_rpt_policy'
         self.kongaOxdId = ''
+        self.kongaClientIdOfOXDId = ''
+        self.kongaSetupClientOXDId = ''
         self.kongaOPHost = ''
         self.kongaClientId = ''
         self.kongaClientSecret = ''
@@ -163,6 +165,8 @@ class KongSetup(object):
             self.generateClient = data['generateClient']
             if not self.generateClient:
                 self.kongaOxdId = data['kongaOxdId']
+                self.kongaClientIdOfOXDId = data['kongaClientIdOfOXDId']
+                self.kongaSetupClientOXDId = data['kongaSetupClientOXDId']
                 self.kongaClientId = data['kongaClientId']
                 self.kongaClientSecret = data['kongaClientSecret']
 
@@ -400,6 +404,8 @@ class KongSetup(object):
 
                 if resJson['status'] == 'ok':
                     self.kongaOxdId = resJson['data']['oxd_id']
+                    self.kongaClientIdOfOXDId = resJson['data']['client_id_of_oxd_id']
+                    self.kongaSetupClientOXDId = resJson['data']['setup_client_oxd_id']
                     self.kongaClientSecret = resJson['data']['client_secret']
                     self.kongaClientId = resJson['data']['client_id']
                 else:
@@ -494,6 +500,8 @@ class KongSetup(object):
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
+            self.kongaClientIdOfOXDId = self.getPrompt('client_id_of_oxd_id')
+            self.kongaSetupClientOXDId = self.getPrompt('setup_client_oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
@@ -643,6 +651,8 @@ if __name__ == "__main__":
 
             if not kongSetup.generateClient:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
+                      + 'client_id_of_oxd_id'.ljust(30) + kongSetup.kongaClientIdOfOXDId.rjust(35) + "\n" \
+                      + 'setup_client_oxd_id'.ljust(30) + kongSetup.kongaSetupClientOXDId.rjust(35) + "\n" \
                       + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
                       + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
             else:
