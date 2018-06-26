@@ -152,8 +152,12 @@ function checkKonga {
     if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
         echo "Konga is running"
     else
-        echo "ERROR: Konga is not running"
-        exit 1
+        echo "ERROR: Konga is not running. Waiting 1 min more"
+        if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
+            echo "Konga is running"
+        else
+            exit 1
+        fi
     fi
 }
 
