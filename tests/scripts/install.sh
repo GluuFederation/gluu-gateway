@@ -17,7 +17,7 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
-    ps -ef
+    pkill .*upgrade.*
     rm -f /var/lib/dpkg/lock
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
