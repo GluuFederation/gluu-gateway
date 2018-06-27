@@ -17,9 +17,8 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
-    pkill .*update.*
+    ps -ef
     rm -f /var/lib/dpkg/lock
-    apt-get remove update-notifier-common -y
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -65,6 +64,10 @@ function prepareSourcesCentos6 {
 
 
 function prepareSourcesCentos7 {
+    dd if=/dev/zero of=/myswap count=4096 bs=1MiB
+    chmod 600 /myswap
+    mkswap /myswap
+    swapon /myswap
     yum -y install wget curl lsof xvfb
     wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
     wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
