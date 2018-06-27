@@ -17,13 +17,14 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
-    rm -f /var/lib/dpkg/lock
-    apt-get install xvfb -y
+    sleep 120
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+    pkill .*upgrade.*
+    rm /var/lib/dpkg/lock
 }
 
 function prepareSourcesJessie {
@@ -45,7 +46,7 @@ function prepareSourcesStretch {
     echo "deb-src http://deb.debian.org/debian-security stable/updates main" >> /etc/apt/sources.list
 
     apt-get update
-    apt-get install xvfb curl apt-transport-https -y
+    apt-get install lsof curl apt-transport-https -y
     echo "deb https://repo.gluu.org/debian/ stretch-testing main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/debian/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ stretch-pgdg main" > /etc/apt/sources.list.d/psql.list
@@ -64,6 +65,10 @@ function prepareSourcesCentos6 {
 
 
 function prepareSourcesCentos7 {
+    dd if=/dev/zero of=/myswap count=4096 bs=1MiB
+    chmod 600 /myswap
+    mkswap /myswap
+    swapon /myswap
     yum -y install wget curl lsof xvfb
     wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
     wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
@@ -152,8 +157,17 @@ function checkKonga {
     if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
         echo "Konga is running"
     else
-        echo "ERROR: Konga is not running"
-        exit 1
+        echo "ERROR: Konga is not running. Waiting 1 min more"
+        if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
+            echo "Konga is running"
+        else
+            echo "ERROR: Konga is not running. Waiting 1 min more"
+            if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
+                echo "Konga is running"
+            else
+                exit 1
+            fi
+        fi
     fi
 }
 
