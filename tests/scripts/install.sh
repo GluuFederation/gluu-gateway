@@ -17,8 +17,7 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
-    pkill .*upgrade.*
-    rm -f /var/lib/dpkg/lock
+    sleep 120
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
