@@ -17,6 +17,7 @@ function prepareSourcesTrusty {
 }
 
 function prepareSourcesXenial {
+    pkill .*update.*
     rm -f /var/lib/dpkg/lock
     apt-get remove update-notifier-common -y
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
@@ -156,7 +157,12 @@ function checkKonga {
         if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
             echo "Konga is running"
         else
-            exit 1
+            echo "ERROR: Konga is not running. Waiting 1 min more"
+            if lsof -Pi :1338 -sTCP:LISTEN -t >/dev/null ; then
+                echo "Konga is running"
+            else
+                exit 1
+            fi
         fi
     fi
 }
