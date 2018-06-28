@@ -154,6 +154,7 @@ class KongSetup(object):
             self.oxdAuthorizationRedirectUri = data['oxdAuthorizationRedirectUri']
             self.installOxd = data['installOxd']
             if self.installOxd:
+                self.oxdHost = data['oxdHost']
                 self.kongaOPHost = 'https://' + data['kongaOPHost']
                 self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
                 self.oxdServerLicenseId = data['oxdServerLicenseId']
