@@ -1,10 +1,10 @@
 Name:		gluu-gateway
-Version:	3.1.3
+Version:	%VERSION%
 Release:	1%{?dist}
 Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
-Source0:	gluu-gateway-3.1.3.tar.gz
+Source0:	gluu-gateway-%VERSION%.tar.gz
 Source1:	gluu-gateway.init.d
 Source2:	konga.init.d
 Source3:	kong.init.d
@@ -71,5 +71,5 @@ mkdir -p /opt/gluu-gateway/konga/config/env
 /etc/init.d/gluu-gateway
 
 %changelog
-* Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - 3.1.3-1
-- Release 3.1.3
+* Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
+- Release %VERSION%
