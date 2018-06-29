@@ -313,6 +313,7 @@ var AuthController = {
               user.oxdWeb = sails.config.oxdWeb;
               user.opHost = sails.config.opHost;
               user.oxdId = sails.config.oxdId;
+              user.oxdServerLicenseId = sails.config.oxdServerLicenseId;
               user.clientIdOfOXDId = sails.config.clientIdOfOXDId;
               user.setupClientOXDId = sails.config.setupClientOXDId;
               user.clientId = sails.config.clientId;

@@ -166,6 +166,7 @@ class KongSetup(object):
             self.kongaOxdWeb = data['kongaOxdWeb']
             self.generateClient = data['generateClient']
             if not self.generateClient:
+                self.oxdServerLicenseId = data['oxdServerLicenseId']
                 self.kongaOxdId = data['kongaOxdId']
                 self.kongaClientIdOfOXDId = data['kongaClientIdOfOXDId']
                 self.kongaSetupClientOXDId = data['kongaSetupClientOXDId']

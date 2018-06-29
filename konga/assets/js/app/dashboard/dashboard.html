@@ -1,3 +1,8 @@
+<style>
+  .trueColorTd {
+    background: #d4f7d4
+  }
+</style>
 <div class="container margin-top" style="width: 600px;max-width: 100%" ng-if="!loading">
   <div class="row" ng-if="!user.node && !Gateway">
     <div class="col-md-12 text-center">
@@ -145,11 +150,18 @@
         <tr
           dir-paginate="o in credentials | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage">
           <td>{{o.name}}</td>
-          <td data-ng-if="!!o.config">{{o.config.oxd_id}} <br/> {{o.config.client_id_of_oxd_id}}</td>
-          <td data-ng-if="!!o.config">{{o.config.setup_client_oxd_id}} <br/> {{o.config.client_id}}</td>
-
-          <td data-ng-if="!o.config">{{o.oxd_id}} <br/> {{o.client_id_of_oxd_id}}</td>
-          <td data-ng-if="!o.config">{{o.setup_client_oxd_id}} <br/> {{o.client_id}}</td>
+          <td data-ng-if="!!o.config" data-ng-class="{'trueColorTd': o.isOXDIdTrue}">{{o.config.oxd_id}} <br/>
+            {{o.config.client_id_of_oxd_id}}
+          </td>
+          <td data-ng-if="!!o.config" data-ng-class="{'trueColorTd': o.isSetupOXDIdTrue}">
+            {{o.config.setup_client_oxd_id}} <br/> {{o.config.client_id}}
+          </td>
+          <td data-ng-if="!o.config" data-ng-class="{'trueColorTd': o.isOXDIdTrue}">{{o.oxd_id}} <br/>
+            {{o.client_id_of_oxd_id}}
+          </td>
+          <td data-ng-if="!o.config" data-ng-class="{'trueColorTd': o.isSetupOXDIdTrue}">{{o.setup_client_oxd_id}} <br/>
+            {{o.client_id}}
+          </td>
         </tr>
         </tbody>
       </table>
