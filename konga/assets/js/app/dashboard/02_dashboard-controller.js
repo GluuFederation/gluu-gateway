@@ -201,6 +201,7 @@
           var consumers = [];
           $scope.activeClient = [];
           $scope.credentials = [];
+          $scope.oxdLoading = true;
           var pluginFunc = PluginsService
             .load({name: 'gluu-oauth2-rs'})
             .then(function (resp) {
@@ -232,6 +233,7 @@
             .all([pluginFunc, consumerFunc, getActiveClients])
             .finally(
               function onFinally() {
+                $scope.oxdLoading = false;
                 $scope.credentials = consumers.concat(plugins)
                 $scope.credentials = $scope.credentials.filter(function (o) {
                   if (!!o.config) {
@@ -258,7 +260,7 @@
                       }) > -1;
                   }
                 })
-                console.log($scope.credentials)
+                console.log('Filtered crdentials', $scope.credentials)
               })
         };
 
