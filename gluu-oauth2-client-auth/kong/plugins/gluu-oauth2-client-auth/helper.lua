@@ -1,6 +1,7 @@
 local oxd = require "oxdweb"
 local cjson = require "cjson"
-local json = require "JSON"
+local logger = require "kong.plugins.gluu-oauth2-client-auth.socket"
+
 local _M = {}
 local PLUGINNAME = "gluu-oauth2-client-auth"
 
@@ -239,12 +240,43 @@ end
 
 function _M.get_ticket_from_www_authenticate_header(wwwAuth)
     local ticket = ''
-    for k, v in wwwAuth:gmatch'(%w+)="([^"]*)"' do
+    for k, v in wwwAuth:gmatch '(%w+)="([^"]*)"' do
         if k == "ticket" then
             ticket = v
         end
     end
     return ticket
+end
+
+
+--- Send message to log server
+-- @param conf: Global configuration data for log server connection
+-- @return
+function _M.send_message(config, msg)
+    ngx.log(ngx.DEBUG, "Started execute log.....")
+    if not logger.initted() then
+        local ok, err = logger.init {
+            host = config.log_server_host,
+            port = config.log_server_port,
+            flush_limit = config.flush_limit, -- 0 disable buffer, else flume cannot seperate the events
+            drop_limit = config.drop_limit, -- 8388608 bytes == 8 MB
+            sock_type = config.sock_type -- 'udp' or 'tcp'
+        }
+        ngx.log(ngx.DEBUG, "ok", ok, err)
+        if not ok then
+            ngx.log(ngx.ERR, "failed to initialize the logger: ", err)
+            return
+        end
+    end
+
+    -- construct the custom access log message in
+    -- the Lua variable "msg"
+    local bytes, err = logger.log(cjson.encode(msg))
+    ngx.log(ngx.DEBUG, "Messsage Size Bytes: ", bytes, err)
+    if err then
+        ngx.log(ngx.ERR, "failed to log message: ", err)
+        return
+    end
 end
 
 return _M

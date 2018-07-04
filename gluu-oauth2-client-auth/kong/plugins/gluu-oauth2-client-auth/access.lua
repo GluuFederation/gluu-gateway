@@ -1,4 +1,3 @@
-local cjson = require "cjson"
 local singletons = require "kong.singletons"
 local responses = require "kong.tools.responses"
 local constants = require "kong.constants"
@@ -13,19 +12,6 @@ local OAUTH_EXPIRATION = "x-oauth-expiration"
 local OAUTH_SCOPES = "x-authenticated-scope"
 
 local _M = {}
-
---- Get path from requested URL
--- Example: request URL is https://api.com/photos then path is /photos
--- @return path
-local function getPath()
-    local path = ngx.var.request_uri
-    ngx.log(ngx.DEBUG, PLUGINNAME .. " : request_uri " .. path)
-    local indexOf = string.find(path, "?")
-    if indexOf ~= nil then
-        return string.sub(path, 1, (indexOf - 1))
-    end
-    return path
-end
 
 --- Return table formate data for caching
 -- @return if client_id is set then return valid data otherwise nil
@@ -368,6 +354,62 @@ function _M.execute_access(config)
             return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
         end
     end
+end
+
+--- Calculate the matrics
+-- @param conf: Global configuration oxd_id, client_id and client_secret
+-- @return ACCESS GRANTED and Unauthorized
+function _M.execute_log(config)
+    ngx.log(ngx.DEBUG, "Started execute log...")
+
+    -- Put matrics calulation in process asynchronization
+    local cacheToken = get_set_token_cache(retrieve_token(ngx.req, config, "authorization"), nil);
+    local httpMethod = ngx.req.get_method()
+
+    -- Check token cache, if available then count matrics otherwise not
+    if helper.is_empty(cacheToken) or helper.is_empty(cacheToken.token_type) or helper.is_empty(cacheToken.client_id) then
+        return ngx.log(ngx.DEBUG, "No cache data for metrics")
+    end
+
+    -- Log cache token
+    helper.print_table(cacheToken)
+
+    -- data for metrics
+    local metricData = {}
+    if cacheToken.token_type == "OAuth" then
+        metricData.client_crednetial_grant = 1
+    end
+
+    if cacheToken.token_type == "UMA" then
+        metricData.uma_grant = 1
+    end
+
+    metricData.client_authentications = 1
+
+    if httpMethod == "GET" then
+        metricData.get = 1
+    end
+
+    if httpMethod == "POST" then
+        metricData.post = 1
+    end
+
+    if httpMethod == "PUT" then
+        metricData.put = 1
+    end
+
+    if httpMethod == "DELETE" then
+        metricData.delete = 1
+    end
+
+    local logServer = {
+        log_server_host = "localhost",
+        log_server_port = 5000,
+        flush_limit = 0,
+        drop_limit = 8388608,
+        sock_type = 'udp'
+    }
+    helper.send_message(logServer, metricData)
 end
 
 return _M
