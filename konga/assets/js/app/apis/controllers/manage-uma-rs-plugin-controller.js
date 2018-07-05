@@ -97,7 +97,7 @@
                           var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
                             "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
                             "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
-                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
@@ -107,6 +107,7 @@
 
                           $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
                           $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
                           // end
                         }
 
@@ -116,6 +117,8 @@
                           _repeat(oRule['or'], 'or', ++id);
                         } else if (oRule['not']) {
                           _repeat(oRule['not'], 'not', ++id);
+                        } else {
+                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
                         }
                       });
                     }
@@ -158,7 +161,7 @@
                           var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
                             "<input type=\"radio\" value=\"and\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
                             "<input type=\"radio\" value=\"not\" name=\"oauthCondition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
-                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnOAuthAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleOauthScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdOauthScope" + pIndex + cIndex + id + "\" /> " +
@@ -168,6 +171,7 @@
 
                           $("#dyOauthScope" + pIndex + cIndex + id).append(htmlRender);
                           $compile(angular.element("#dyOauthScope" + pIndex + cIndex + id).contents())($scope)
+                          $("button[name=btnOAuthAdd" + pIndex + cIndex + id + "]").hide();
                           // end
                         }
 
@@ -177,6 +181,8 @@
                           _repeatOAuth(oRule['or'], 'or', ++id);
                         } else if (oRule['not']) {
                           _repeatOAuth(oRule['not'], 'not', ++id);
+                        } else {
+                          $("button[name=btnOAuthAdd" + pIndex + cIndex + id + "]").show();
                         }
                       });
                     }
@@ -237,7 +243,7 @@
             var id = 0;
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
-                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
                 "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
@@ -295,7 +301,7 @@
             var id = 0;
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
-                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
                 "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
@@ -652,7 +658,7 @@
             var id = 0;
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not" +
-                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\" name=\"btnOAuthAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
                 "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" required name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"> </tags-input>" +
@@ -677,7 +683,7 @@
             var id = 0;
             setTimeout(function () {
               var htmlRender = "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + "0\">not " +
-                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
+                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "',1)\" name=\"btnOAuthAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{oauthCond['scopes' + " + parent + " + '0']}}\" name=\"hdOauthScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
                 "<tags-input ng-model=\"oauthCond['scopes' + " + parent + " + '0']\" required name=\"oauthScope" + parent + "0\" id=\"oauthScope" + parent + "\" placeholder=\"Enter oauth scopes\"></tags-input>" +
@@ -692,9 +698,10 @@
 
         function addOauthGroup(parent, id) {
           $("input[name=hdOauthScopeCount" + parent + "]").val(id + 1);
+          $("button[name=btnOAuthAdd" + parent + (id - 1) + "]").hide();
           var htmlRender = "<div class=\"col-md-12\">" +
             "<input type=\"radio\" value=\"or\" name=\"oauthCondition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"oauthCondition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"oauthCondition" + parent + id + "\">not" +
-            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addOauthGroup('" + parent + "', " + (id + 1) + ")\" name=\"btnOAuthAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeOauthGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{oauthCond['scopes" + parent + id + "']}}\" name=\"hdOauthScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
@@ -709,6 +716,7 @@
         function removeOauthGroup(parent, id) {
           $("#dyOauthScope" + parent + id).html('');
           $("input[name=hdOauthScopeCount" + parent + "]").val(id);
+          $("button[name=btnOAuthAdd" + parent + (id - 1) + "]").show();
         }
 
         function makeOAuthScopeJSON(data) {
