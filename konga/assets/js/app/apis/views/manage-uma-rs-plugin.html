@@ -263,7 +263,7 @@
                           <input type="radio" value="and" name="oauthCondition{{pIndex}}{{$index}}0">and |
                           <input type="radio" value="not" name="oauthCondition{{pIndex}}{{$index}}0">not
                           <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                  data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                                  data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus" name="btnOAuthAdd{{pIndex}}{{$index}}0"></i>
                             Add Group
                           </button>
                           <input type="hidden" value="{{oauthCond['scopes' + pIndex + $index + '0']}}"
