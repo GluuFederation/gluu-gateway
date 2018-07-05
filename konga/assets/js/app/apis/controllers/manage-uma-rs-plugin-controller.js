@@ -204,13 +204,15 @@
         function removeGroup(parent, id) {
           $("#dyScope" + parent + id).html('');
           $("input[name=hdScopeCount" + parent + "]").val(id);
+          $("button[name=btnAdd" + parent + (id - 1) + "]").show();
         }
 
         function addGroup(parent, id) {
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
+          $("button[name=btnAdd" + parent + (id - 1) + "]").hide();
           var htmlRender = "<div class=\"col-md-12\">" +
             "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
-            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
