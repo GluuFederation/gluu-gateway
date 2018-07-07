@@ -672,7 +672,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -803,7 +803,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -937,7 +937,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1040,7 +1040,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
@@ -1124,7 +1124,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1249,7 +1249,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1355,7 +1355,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
@@ -1692,7 +1692,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     config = {
                         uma_server_host = op_server,
                         oxd_host = oxd_http,
-                        oauth_scope_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"openid\", \"calendar\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}},{\"httpMethods\":[\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+                        oauth_scope_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\"],\"scope_expression\":{\"and\":[\"openid\", \"calendar\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}},{\"httpMethods\":[\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
                     },
                 },
                 headers = {
@@ -1774,7 +1774,35 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 assert.res_status(200, res)
 
-                -- ------------------GET Client Token-------------------------------
+                -- Post method
+                local res = assert(proxy_client:send {
+                    method = "POST",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["Content-Type"] = "application/json"
+                    },
+                    body = {
+                        name = "Test",
+                        description = "Test description",
+                        image = "test.jpg"
+                    }
+                })
+                local json = cjson.decode(assert.res_status(200, res))
+
+                -- Delete method
+                local res = assert(proxy_client:send {
+                    method = "DELETE",
+                    path = "/posts/" .. json._id,
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- ------------------GET Client Token with incomplete scope-------------------------------
                 local tokenRequest = {
                     oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
                     client_id = oauth2_consumer_oauth_mode_scope_expression.client_id,

@@ -266,12 +266,6 @@ local function validate_credentials(conf, req_token)
         return tokenResponse
     end
 
-    -- Check scope security
-    --    if not helper.subset(helper.split(credential.scope, ","), tokenResponse.data.scopes) then
-    --        ngx.log(ngx.DEBUG, "401 / Unauthorized - Token with insufficient_scope")
-    --        return { active = false }
-    --    end
-
     -- Check Restricted API
     if (not helper.is_empty(credential.restrict_api) and credential.restrict_api) then
         local restrictedAPIs = helper.split(credential.restrict_api_list, ",")

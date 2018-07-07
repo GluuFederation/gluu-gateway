@@ -96,7 +96,7 @@ local function check_uma_rs_response(umaRSResponse, rpt, httpMethod, path)
             if not helper.is_empty(ticket) and not helper.is_empty(umaRSResponse.data["www-authenticate_header"]) then
                 ngx.log(ngx.DEBUG, "Set WWW-Authenticate header with ticket")
                 ngx.header["WWW-Authenticate"] = umaRSResponse.data["www-authenticate_header"]
-                return responses.send_HTTP_FORBIDDEN("Unauthorized")
+                return responses.send_HTTP_UNAUTHORIZED("Unauthorized")
             end
 
             return responses.send_HTTP_FORBIDDEN("UMA Authorization Server Unreachable")
@@ -139,6 +139,9 @@ function _M.execute(conf)
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! gluu-oauth2-client-auth cache is not found")
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     else
+        -- Path filter
+        path = helper.filter_expression_path(conf.protection_document, path)
+
         -- Check Token is already exist with same path and method
         if not helper.is_empty(clientPluginCacheToken.permissions) then
             local permissionFlag = false
@@ -200,6 +203,9 @@ function _M.execute(conf)
             return responses.send_HTTP_UNAUTHORIZED("Unauthorized! OAuth(not UMA) token required in oauth_mode")
         end
 
+        -- Path filter
+        path = helper.filter_expression_path(conf.protection_document, path)
+
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.check_access(conf, reqToken, path, httpMethod)
 
@@ -249,6 +255,9 @@ function _M.execute(conf)
                 return -- Access Granted
             end
 
+            -- Path filter
+            path = helper.filter_expression_path(conf.oauth_scope_expression, path)
+
             ngx.log(ngx.DEBUG, "Checking scope expression available for path and method or not")
             local scope_expression = helper.fetch_Expression(conf.oauth_scope_expression, path, httpMethod)
 
@@ -273,6 +282,9 @@ function _M.execute(conf)
 
         -- Check UMA Data in header for claim token
         local uma_data = retrieve_uma_data(ngx.req)
+
+        -- Path filter
+        path = helper.filter_expression_path(conf.protection_document, path)
 
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod, uma_data, clientPluginCacheToken.associated_rpt or nil)

@@ -8,6 +8,26 @@ local function test_scope_expression(oauth_scope_expression, path, httpMethod, d
 end
 
 describe("Helper module", function()
+    describe("filter_expression_path() function", function()
+        local json_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/123") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/users/1") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/tree") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/postssss") == nil)
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts") ~= nil)
+
+        local json_expression = "[{\"path\":\"/posts/one/two\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two") == "/posts/one/two")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/123") == "/posts/one/two")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/users/1") == "/posts/one/two")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/one/two") == "/posts/one/two")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/tree") == "/posts/one/two")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/twooo") == nil)
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two") ~= nil)
+    end)
+
     describe("logic() function", function()
         it("should return true if variable is null", function()
             -- Json

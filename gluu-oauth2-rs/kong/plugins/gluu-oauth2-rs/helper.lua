@@ -513,4 +513,34 @@ function _M.fetch_Expression(json_exp, path, method)
     return nil
 end
 
+--- Get path
+function _M.get_path(request_path, register_path)
+    if request_path == nil then
+        return false
+    end
+
+    if register_path == nil then
+        return false
+    end
+
+    local start, last = string.find(request_path, register_path, 1)
+    if start == nil or last == nil or start ~= 1 then
+        return false
+    end
+
+    return request_path == register_path or string.sub(request_path, start, last + 1) == register_path .. "/" or string.sub(request_path, start, last + 1) == register_path .. "?"
+end
+
+--- Filter request path with parent path
+function _M.filter_expression_path(json_exp, path)
+    local json_expression = json:decode(json_exp or "{}")
+    local found_path_condition
+    for k, v in pairs(json_expression) do
+        if _M.get_path(path, v['path']) then
+            return v['path']
+        end
+    end
+    return path
+end
+
 return _M
