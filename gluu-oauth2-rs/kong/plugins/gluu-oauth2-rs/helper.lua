@@ -532,15 +532,23 @@ function _M.get_path(request_path, register_path)
 end
 
 --- Filter request path with parent path
-function _M.filter_expression_path(json_exp, path)
+function _M.filter_expression_path(json_exp, request_path)
     local json_expression = json:decode(json_exp or "{}")
-    local found_path_condition
+    local register_paths = {}
     for k, v in pairs(json_expression) do
-        if _M.get_path(path, v['path']) then
-            return v['path']
+        table.insert(register_paths, v['path'])
+    end
+
+    table.sort(register_paths, function(first, second)
+        return string.len(first) > string.len(second)
+    end)
+
+    for k, v in pairs(register_paths) do
+        if _M.get_path(request_path, v) then
+            return v
         end
     end
-    return path
+    return request_path
 end
 
 return _M

@@ -140,14 +140,15 @@ function _M.execute(conf)
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     else
         -- Path filter
-        path = helper.filter_expression_path(conf.protection_document, path)
+        local filter_path = helper.filter_expression_path(conf.protection_document, path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. filter_path)
 
         -- Check Token is already exist with same path and method
         if not helper.is_empty(clientPluginCacheToken.permissions) then
             local permissionFlag = false
             -- Check requested path in cached paths
             for count = 1, #clientPluginCacheToken.permissions do
-                if clientPluginCacheToken.permissions[count].path == path and clientPluginCacheToken.permissions[count].method == httpMethod then
+                if clientPluginCacheToken.permissions[count].path == filter_path and clientPluginCacheToken.permissions[count].method == httpMethod then
                     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token already exist with same path and method")
                     -- If path is not protected then send header with UMA-Wanrning
                     if not clientPluginCacheToken.permissions[count].path_protected then
@@ -205,6 +206,7 @@ function _M.execute(conf)
 
         -- Path filter
         path = helper.filter_expression_path(conf.protection_document, path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
 
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.check_access(conf, reqToken, path, httpMethod)
@@ -257,6 +259,7 @@ function _M.execute(conf)
 
             -- Path filter
             path = helper.filter_expression_path(conf.oauth_scope_expression, path)
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
 
             ngx.log(ngx.DEBUG, "Checking scope expression available for path and method or not")
             local scope_expression = helper.fetch_Expression(conf.oauth_scope_expression, path, httpMethod)
@@ -285,6 +288,7 @@ function _M.execute(conf)
 
         -- Path filter
         path = helper.filter_expression_path(conf.protection_document, path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
 
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod, uma_data, clientPluginCacheToken.associated_rpt or nil)
