@@ -76,6 +76,7 @@ class KongSetup(object):
         self.kongAdminListenSsl = '8445'
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
+        self.distKongPluginsFolder = '/usr/local/share/lua/5.1/kong/plugins'
 
         self.optFolder = '/opt'
         self.distGluuGatewayFolder = '%s/gluu-gateway' % self.optFolder
@@ -83,6 +84,9 @@ class KongSetup(object):
         self.distKongaConfigPath = '%s/config' % self.distKongaFolder
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
+        self.ggPluginsFolder = '%s/plugins' % self.distGluuGatewayFolder
+        self.gluuOAuth2ClientAuthPlugin = '%s/gluu-oauth2-client-auth' % self.ggPluginsFolder
+        self.gluuOAuth2RSPlugin = '%s/gluu-oauth2-rs' % self.ggPluginsFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
@@ -347,13 +351,13 @@ class KongSetup(object):
         except:
             return None
 
-    def installSample(self):
+    def installPlugins(self):
         self.logIt('Installing luarocks packages...')
         self.run(['luarocks', 'install', 'json-lua'])
         self.run(['luarocks', 'install', 'oxd-web-lua'])
         self.run(['luarocks', 'install', 'json-logic-lua'])
-        self.run(['luarocks', 'install', 'gluu-oauth2-rs'])
-        self.run(['luarocks', 'install', 'gluu-oauth2-client-auth'])
+        self.run([self.cmd_mv, self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_mv, self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
@@ -382,7 +386,7 @@ class KongSetup(object):
         if not os.path.exists(self.cmd_node):
             self.run([self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
 
-        self.run(['npm', 'install', '-g', 'bower', 'gulp', 'sails'])
+        self.run(['npm', 'install', '-g', 'bower@1.8.4', 'gulp@3.9.1', 'sails@1.0.0'])
         self.run(['npm', 'install', '--unsafe-perm'], self.distKongaFolder, os.environ.copy(), True)
         self.run(['bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
 
@@ -674,7 +678,7 @@ if __name__ == "__main__":
                 kongSetup.configureOxd()
                 kongSetup.configKonga()
                 kongSetup.renderKongConfigure()
-                kongSetup.installSample()
+                kongSetup.installPlugins()
                 kongSetup.migrateKong()
                 kongSetup.startKong()
                 kongSetup.startKongaService()
