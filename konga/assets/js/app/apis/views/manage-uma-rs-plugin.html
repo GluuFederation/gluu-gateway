@@ -203,7 +203,7 @@
             <div class="col-md-12" data-ng-show="activeCategory == 'oauth'">
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>OAuth Scope Security</label>
-                <span class="help-block error-block basic-block">Protect API path by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start. </span>
+                <span class="help-block error-block basic-block">Protect API path by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start. <code>Available only for Consumers with OAuth Mode credentials!</code></span>
               </div>
               <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
                    ng-init="pIndex = $index"
