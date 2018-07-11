@@ -491,6 +491,10 @@ end
 
 --- Fetch expression based on path and http methods
 function _M.fetch_Expression(json_exp, path, method)
+    if _M.is_empty(json_exp) then
+        return nil
+    end
+
     local json_expression = json:decode(json_exp or "{}")
     local found_path_condition
     for k, v in pairs(json_expression) do
@@ -533,6 +537,10 @@ end
 
 --- Filter request path with parent path
 function _M.filter_expression_path(json_exp, request_path)
+    if _M.is_empty(json_exp) then
+        return request_path
+    end
+
     local json_expression = json:decode(json_exp or "{}")
     local register_paths = {}
     for k, v in pairs(json_expression) do

@@ -135,12 +135,26 @@ function _M.execute(conf)
     -- Check RPT token is in gluu-oauth2-rs cache
     local clientPluginCacheToken = singletons.cache:get(reqToken, nil, function() end)
 
-    if helper.is_empty(clientPluginCacheToken) then
+    -- Get oauth2-consumer credential for getting all modes(oauth_mode, uma_mode, mix_mode) in here.
+    local oauth2Credential = clientPluginCacheToken.credential
+
+    ngx.log(ngx.DEBUG, PLUGINNAME .. " : Cache token: " .. tostring(helper.is_empty(clientPluginCacheToken) == false) .. " oauth2Credential : " .. tostring(helper.is_empty(oauth2Credential) == false))
+    if helper.is_empty(clientPluginCacheToken) or helper.is_empty(oauth2Credential) then
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! gluu-oauth2-client-auth cache is not found")
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     else
         -- Path filter
-        local filter_path = helper.filter_expression_path(conf.protection_document, path)
+        local filter_path
+        if oauth2Credential.oauth_mode then
+            filter_path = helper.filter_expression_path(conf.oauth_scope_expression, path)
+        elseif oauth2Credential.mix_mode then
+            filter_path = helper.filter_expression_path(conf.protection_document, path)
+        elseif oauth2Credential.uma_mode then
+            filter_path = helper.filter_expression_path(conf.protection_document, path)
+        else
+            filter_path = path
+        end
+
         ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. filter_path)
 
         -- Check Token is already exist with same path and method
@@ -190,9 +204,6 @@ function _M.execute(conf)
     end
 
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not exist with requested path and method")
-
-    -- Get oauth2-consumer credential for getting all modes(oauth_mode, uma_mode, mix_mode) in here.
-    local oauth2Credential = singletons.cache:get(singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(clientPluginCacheToken.client_id), nil, function() end)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token type : " .. clientPluginCacheToken.token_type)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": oauth_mode : " .. tostring(oauth2Credential.oauth_mode) .. ", uma_mode : " .. tostring(oauth2Credential.uma_mode) .. ", mix_mode : " .. tostring(oauth2Credential.mix_mode))
 
@@ -255,6 +266,11 @@ function _M.execute(conf)
             if helper.is_empty(oauth2Credential.allow_oauth_scope_expression) or oauth2Credential.allow_oauth_scope_expression == false then
                 ngx.log(ngx.DEBUG, PLUGINNAME .. " : Authorized. Allow - OAuth mode. allow_oauth_scope_expression is off")
                 return -- Access Granted
+            end
+
+            if helper.is_empty(conf.oauth_scope_expression) then
+                ngx.log(ngx.DEBUG, PLUGINNAME .. " : OAuth scope flag is true but scope expression is not configured.")
+                return responses.send_HTTP_FORBIDDEN("Please configure OAuth scope expression")
             end
 
             -- Path filter

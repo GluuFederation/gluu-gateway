@@ -47,7 +47,8 @@ local function get_token_data(token)
             associated_oauth_token = token.associated_oauth_token,
             pct = token.pct,
             claim_tokens = token.claim_tokens,
-            active = token.active
+            active = token.active,
+            credential = token.credential
         }
     end
 
@@ -294,12 +295,11 @@ local function validate_credentials(conf, req_token)
     cacheTokenData.associated_oauth_token = helper.ternary(tokenType == "OAuth", req_token, nil)
     cacheTokenData.permissions = {}
     cacheTokenData.claim_tokens = {}
+    -- oauth2-consumer data : later on use to send consumer detail in req header. See below set_consumer method for detail
+    cacheTokenData.credential = credential
 
     -- set token data in cache for exp_sec(time in second)
     get_set_token_cache(req_token, cacheTokenData)
-
-    -- oauth2-consumer data : later on use to send consumer detail in req header. See below set_consumer method for detail
-    cacheTokenData.credential = credential
 
     return cacheTokenData
 end
