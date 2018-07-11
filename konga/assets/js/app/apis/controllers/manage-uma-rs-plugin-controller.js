@@ -341,17 +341,13 @@
           }
 
           if ($scope.isKongUMARSPluginAdded) {
-            updatePlugin(isValid);
+            updatePlugin();
           } else {
-            addPlugin(isValid);
+            addPlugin();
           }
         }
 
-        function addPlugin(isValid) {
-          if (!isValid) {
-            MessageService.error("Please fill all the fields marked in red");
-            return false;
-          }
+        function addPlugin() {
           var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
@@ -382,10 +378,17 @@
             return
           }
 
+          if (!model.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = ""
+          }
+
+          if (!model.config.protection_document) {
+            model.config.protection_document = ""
+          }
+
           PluginHelperService.addPlugin(
             model,
             function success(res) {
-              console.log("create plugin", res)
               $scope.busy = false;
               MessageService.success('Plugin added successfully!')
               $state.go('apis') // return to plugins page if specified
@@ -421,11 +424,7 @@
             });
         }
 
-        function updatePlugin(isValid) {
-          if (!isValid) {
-            MessageService.error("Please fill all the fields marked in red.");
-            return false;
-          }
+        function updatePlugin() {
           var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
@@ -459,10 +458,17 @@
             return
           }
 
+          if (!model.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = ""
+          }
+
+          if (!model.config.protection_document) {
+            model.config.protection_document = ""
+          }
+
           PluginHelperService.updatePlugin($scope.rsPlugin.id,
             model,
             function success(res) {
-              console.log("update plugin", res)
               $scope.busy = false;
               MessageService.success('Plugin updated successfully!')
               $state.go('apis') // return to plugins page if specified
