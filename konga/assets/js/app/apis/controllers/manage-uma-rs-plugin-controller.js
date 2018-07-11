@@ -378,7 +378,7 @@
             delete model.config.oauth_scope_expression
           }
           if (!model.config.oauth_scope_expression && !model.config.protection_document) {
-            MessageService.error("Invalid request. Configured at least one security.");
+            MessageService.error("Invalid request. Configure at least one type of security.");
             return
           }
 
@@ -455,7 +455,7 @@
           }
 
           if (!model.config.oauth_scope_expression && !model.config.protection_document) {
-            MessageService.error("Invalid request. Configured at least one security.");
+            MessageService.error("Invalid request. Configure at least one type of security.");
             return
           }
 
