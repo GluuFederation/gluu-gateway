@@ -314,8 +314,17 @@
           }
         }
 
-        function managePlugin(isValid) {
-          if (!isValid) {
+        function managePlugin(fElement) {
+          var isFormValid = true;
+          if (fElement && fElement.$error && fElement.$error.required) {
+            fElement.$error.required.forEach(function (o) {
+              if (document.getElementById(o.$name)) {
+                isFormValid = false;
+              }
+            });
+          }
+
+          if (!isFormValid) {
             MessageService.error("Please fill all the fields marked in red");
             return false;
           }
