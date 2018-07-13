@@ -70,8 +70,8 @@
                       op = 'and'
                     } else if (pRule['or']) {
                       op = 'or'
-                    } else if (pRule['not']) {
-                      op = 'not'
+                    } else if (pRule['!']) {
+                      op = '!'
                     }
 
                     _repeat(pRule[op], op, 0);
@@ -96,7 +96,7 @@
                           // render template
                           var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
                             "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                            "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
+                            "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
                             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
@@ -115,8 +115,8 @@
                           _repeat(oRule['and'], 'and', ++id);
                         } else if (oRule['or']) {
                           _repeat(oRule['or'], 'or', ++id);
-                        } else if (oRule['not']) {
-                          _repeat(oRule['not'], 'not', ++id);
+                        } else if (oRule['!']) {
+                          _repeat(oRule['!'], '!', ++id);
                         } else {
                           $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
                         }
@@ -217,7 +217,7 @@
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
           $("button[name=btnAdd" + parent + (id - 1) + "]").hide();
           var htmlRender = "<div class=\"col-md-12\">" +
-            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
+            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + id + "\">not" +
             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
@@ -242,7 +242,7 @@
             var parent = pIndex + '' + ($scope.modelPlugin.config.protection_document[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + "0\">not " +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
@@ -300,7 +300,7 @@
             var parent = $scope.modelPlugin.config.protection_document.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + "0\">not" +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
