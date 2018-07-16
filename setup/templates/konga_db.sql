@@ -492,97 +492,145 @@ SELECT pg_catalog.setval('public.konga_users_id_seq', 1, false);
 -- Name: konga_api_health_checks konga_api_health_checks_api_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_api_health_checks
-    ADD CONSTRAINT konga_api_health_checks_api_id_key UNIQUE (api_id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_api_health_checks_api_id_key')
+THEN
+ALTER TABLE ONLY public.konga_api_health_checks ADD CONSTRAINT konga_api_health_checks_api_id_key UNIQUE (api_id);
+END IF;
+END$$;
 
 --
 -- Name: konga_api_health_checks konga_api_health_checks_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_api_health_checks
-    ADD CONSTRAINT konga_api_health_checks_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_api_health_checks_pkey')
+THEN
+ALTER TABLE ONLY public.konga_api_health_checks ADD CONSTRAINT konga_api_health_checks_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_email_transports konga_email_transports_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_email_transports
-    ADD CONSTRAINT konga_email_transports_name_key UNIQUE (name);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_email_transports_name_key')
+THEN
+ALTER TABLE ONLY public.konga_email_transports ADD CONSTRAINT konga_email_transports_name_key UNIQUE (name);
+END IF;
+END$$;
 
 --
 -- Name: konga_email_transports konga_email_transports_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_email_transports
-    ADD CONSTRAINT konga_email_transports_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_email_transports_pkey')
+THEN
+ALTER TABLE ONLY public.konga_email_transports ADD CONSTRAINT konga_email_transports_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_kong_nodes konga_kong_nodes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_kong_nodes
-    ADD CONSTRAINT konga_kong_nodes_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_kong_nodes_pkey')
+THEN
+ALTER TABLE ONLY public.konga_kong_nodes ADD CONSTRAINT konga_kong_nodes_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_kong_snapshots konga_kong_snapshots_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_kong_snapshots
-    ADD CONSTRAINT konga_kong_snapshots_name_key UNIQUE (name);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_kong_snapshots_name_key')
+THEN
+ALTER TABLE ONLY public.konga_kong_snapshots ADD CONSTRAINT konga_kong_snapshots_name_key UNIQUE (name);
+END IF;
+END$$;
 
 --
 -- Name: konga_kong_snapshots konga_kong_snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_kong_snapshots
-    ADD CONSTRAINT konga_kong_snapshots_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_kong_snapshots_pkey')
+THEN
+ALTER TABLE ONLY public.konga_kong_snapshots ADD CONSTRAINT konga_kong_snapshots_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_passports konga_passports_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_passports
-    ADD CONSTRAINT konga_passports_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_passports_pkey')
+THEN
+ALTER TABLE ONLY public.konga_passports ADD CONSTRAINT konga_passports_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_settings konga_settings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_settings
-    ADD CONSTRAINT konga_settings_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_settings_pkey')
+THEN
+ALTER TABLE ONLY public.konga_settings ADD CONSTRAINT konga_settings_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_users konga_users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_users
-    ADD CONSTRAINT konga_users_email_key UNIQUE (email);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_users_email_key')
+THEN
+ALTER TABLE ONLY public.konga_users ADD CONSTRAINT konga_users_email_key UNIQUE (email);
+END IF;
+END$$;
 
 --
 -- Name: konga_users konga_users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_users
-    ADD CONSTRAINT konga_users_pkey PRIMARY KEY (id);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_users_pkey')
+THEN
+ALTER TABLE ONLY public.konga_users ADD CONSTRAINT konga_users_pkey PRIMARY KEY (id);
+END IF;
+END$$;
 
 --
 -- Name: konga_users konga_users_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_users
-    ADD CONSTRAINT konga_users_username_key UNIQUE (username);
-
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_users_username_key')
+THEN
+ALTER TABLE ONLY public.konga_users ADD CONSTRAINT konga_users_username_key UNIQUE (username);
+END IF;
+END$$;
 
 --
 -- PostgreSQL database dump complete
