@@ -36,15 +36,7 @@
           config: {
             oxd_host: $scope.globalInfo.oxdWeb,
             uma_server_host: $scope.globalInfo.opHost,
-            protection_document: [{
-              path: '',
-              conditions: [
-                {
-                  httpMethods: [{text: 'GET'}, {text: 'POST'}],
-                  scope_expression: [],
-                  ticketScopes: []
-                }]
-            }],
+            protection_document: [],
             oauth_scope_expression: []
           }
         };
