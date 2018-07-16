@@ -16,14 +16,14 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: 
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner:
 --
 
 CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
 
 
 --
--- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: 
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner:
 --
 
 COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
@@ -37,7 +37,7 @@ SET default_with_oids = false;
 -- Name: konga_api_health_checks; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_api_health_checks (
+CREATE TABLE IF NOT EXISTS public.konga_api_health_checks (
     id integer NOT NULL,
     api_id text,
     api json,
@@ -58,7 +58,7 @@ ALTER TABLE public.konga_api_health_checks OWNER TO postgres;
 -- Name: konga_api_health_checks_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_api_health_checks_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_api_health_checks_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -80,7 +80,7 @@ ALTER SEQUENCE public.konga_api_health_checks_id_seq OWNED BY public.konga_api_h
 -- Name: konga_email_transports; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_email_transports (
+CREATE TABLE IF NOT EXISTS public.konga_email_transports (
     id integer NOT NULL,
     name text,
     description text,
@@ -100,7 +100,7 @@ ALTER TABLE public.konga_email_transports OWNER TO postgres;
 -- Name: konga_email_transports_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_email_transports_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_email_transports_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -122,7 +122,7 @@ ALTER SEQUENCE public.konga_email_transports_id_seq OWNED BY public.konga_email_
 -- Name: konga_kong_nodes; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_kong_nodes (
+CREATE TABLE IF NOT EXISTS public.konga_kong_nodes (
     id integer NOT NULL,
     name text,
     kong_admin_url text,
@@ -144,7 +144,7 @@ ALTER TABLE public.konga_kong_nodes OWNER TO postgres;
 -- Name: konga_kong_nodes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_kong_nodes_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_kong_nodes_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -166,7 +166,7 @@ ALTER SEQUENCE public.konga_kong_nodes_id_seq OWNED BY public.konga_kong_nodes.i
 -- Name: konga_kong_snapshots; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_kong_snapshots (
+CREATE TABLE IF NOT EXISTS public.konga_kong_snapshots (
     id integer NOT NULL,
     name text,
     kong_node_name text,
@@ -186,7 +186,7 @@ ALTER TABLE public.konga_kong_snapshots OWNER TO postgres;
 -- Name: konga_kong_snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_kong_snapshots_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_kong_snapshots_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -208,7 +208,7 @@ ALTER SEQUENCE public.konga_kong_snapshots_id_seq OWNED BY public.konga_kong_sna
 -- Name: konga_passports; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_passports (
+CREATE TABLE IF NOT EXISTS public.konga_passports (
     id integer NOT NULL,
     protocol text,
     password text,
@@ -227,7 +227,7 @@ ALTER TABLE public.konga_passports OWNER TO postgres;
 -- Name: konga_passports_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_passports_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_passports_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -249,7 +249,7 @@ ALTER SEQUENCE public.konga_passports_id_seq OWNED BY public.konga_passports.id;
 -- Name: konga_settings; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_settings (
+CREATE TABLE IF NOT EXISTS public.konga_settings (
     id integer NOT NULL,
     data json,
     "createdAt" timestamp with time zone,
@@ -265,7 +265,7 @@ ALTER TABLE public.konga_settings OWNER TO postgres;
 -- Name: konga_settings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_settings_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_settings_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -287,7 +287,7 @@ ALTER SEQUENCE public.konga_settings_id_seq OWNED BY public.konga_settings.id;
 -- Name: konga_users; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.konga_users (
+CREATE TABLE IF NOT EXISTS public.konga_users (
     id integer NOT NULL,
     username text,
     email text,
@@ -311,7 +311,7 @@ ALTER TABLE public.konga_users OWNER TO postgres;
 -- Name: konga_users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_users_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_users_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -387,6 +387,11 @@ COPY public.konga_api_health_checks (id, api_id, api, health_check_endpoint, not
 
 
 --
+-- Delete data if exist
+--
+DELETE FROM public.konga_email_transports;
+
+--
 -- Data for Name: konga_email_transports; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
@@ -395,6 +400,12 @@ COPY public.konga_email_transports (id, name, description, schema, settings, act
 2	sendmail	Pipe messages to the sendmail command	\N	{"sendmail":true}	f	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
 3	mailgun	Send emails through Mailgun’s Web API	[{"name":"api_key","model":"auth.api_key","description":"The API key that you got from www.mailgun.com/cp","type":"text","required":true},{"name":"domain","model":"auth.domain","description":"One of your domain names listed at your https://mailgun.com/app/domains","type":"text","required":true}]	{"auth":{"api_key":"","domain":""}}	f	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
 \.
+
+
+--
+-- Delete data if exist
+--
+DELETE FROM public.konga_kong_nodes;
 
 
 --
@@ -421,6 +432,11 @@ COPY public.konga_kong_snapshots (id, name, kong_node_name, kong_node_url, kong_
 COPY public.konga_passports (id, protocol, password, provider, identifier, tokens, "user", "createdAt", "updatedAt") FROM stdin;
 \.
 
+
+--
+-- Delete data if exist
+--
+DELETE FROM public.konga_settings;
 
 --
 -- Data for Name: konga_settings; Type: TABLE DATA; Schema: public; Owner: postgres
