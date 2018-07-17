@@ -29,19 +29,19 @@
                 <table class="table no-margin">
                   <tbody id="apiDetails" class="collapse">
                   <tr>
-                    <th>Name</th>
+                    <th width="30%">Name</th>
                     <td>{{api.name}}</td>
                   </tr>
                   <tr>
-                    <th>Upstream URL</th>
+                    <th width="30%">Upstream URL</th>
                     <td>{{api.upstream_url}}</td>
                   </tr>
                   <tr>
-                    <th>Hosts</th>
+                    <th width="30%">Hosts</th>
                     <td>{{api.hosts.join(',')}}</td>
                   </tr>
                   <tr>
-                    <th>Proxy Listen</th>
+                    <th width="30%">Proxy Listen</th>
                     <td>http://{{info.hostname}}:{{info.configuration.proxy_port}}</td>
                   </tr>
                   </tbody>
@@ -59,37 +59,37 @@
                 <table class="table no-margin">
                   <tbody id="pluginDetails" class="collapse">
                   <tr>
-                    <th>OXD Id</th>
+                    <th width="30%">OXD Id</th>
                     <td>{{::pluginConfig.oxd_id}}</td>
                   </tr>
                   <tr>
-                    <th>Client Id of OXD Id</th>
+                    <th width="30%">Client Id of OXD Id</th>
                     <td>{{::pluginConfig.client_id_of_oxd_id}}</td>
                   </tr>
                   <tr>
-                    <th>Setup client OXD Id</th>
+                    <th width="30%">Setup client OXD Id</th>
                     <td>{{::pluginConfig.setup_client_oxd_id}}</td>
                   </tr>
                   <tr>
-                    <th>Client Id</th>
+                    <th width="30%">Client Id</th>
                     <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href
                                                                                                    data-ng-click="isShowClientId = !isShowClientId"
                                                                                                    title="{{isShowClientId ? 'Hide': 'Show'}}"><i
                       class="mdi mdi-eye"></i></a></td>
                   </tr>
                   <tr>
-                    <th>Client Secret</th>
+                    <th width="30%">Client Secret</th>
                     <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href
                                                                                                            data-ng-click="isShowClientSecret = !isShowClientSecret"
                                                                                                            title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
                       class="mdi mdi-eye"></i></a></td>
                   </tr>
                   <tr>
-                    <th>UMA RS Server</th>
+                    <th width="30%">UMA RS Server</th>
                     <td>{{::pluginConfig.uma_server_host}}</td>
                   </tr>
                   <tr>
-                    <th>OXD Host</th>
+                    <th width="30%">OXD Host</th>
                     <td>{{::pluginConfig.oxd_host}}</td>
                   </tr>
                   </tbody>
