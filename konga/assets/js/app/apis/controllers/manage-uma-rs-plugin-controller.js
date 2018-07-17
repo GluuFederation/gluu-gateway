@@ -115,6 +115,7 @@
                       });
                     }
                   });
+                  path.pathIndex = pIndex;
                 });
               }
               if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
@@ -179,6 +180,7 @@
                       });
                     }
                   });
+                  path.pathIndex = pIndex;
                 });
               }
             }, 500);
@@ -279,6 +281,7 @@
         function addNewPath() {
           $scope.modelPlugin.config.protection_document.push({
             path: '',
+            pathIndex: $scope.modelPlugin.config.protection_document.length,
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
@@ -526,6 +529,7 @@
               path.conditions.forEach(function (cond, cIndex) {
                 dIndex = 0;
                 sData = [];
+                pIndex = path.pathIndex;
                 var str = '{%s}';
                 for (var i = 0; i < parseInt($("input[name=hdScopeCount" + pIndex + cIndex + "]").val()); i++) {
                   var op = $("input[name=condition" + pIndex + cIndex + i + "]:checked").val();
@@ -558,6 +562,7 @@
                   delete cond.ticketScopes;
                 }
               });
+              delete path.pathIndex
             });
             return JSON.parse(angular.toJson(model.config.protection_document));
           } catch (e) {
@@ -652,6 +657,7 @@
         function addOauthNewPath() {
           $scope.modelPlugin.config.oauth_scope_expression.push({
             path: '',
+            pathIndex: $scope.modelPlugin.config.oauth_scope_expression.length,
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
@@ -733,6 +739,7 @@
             model.config.oauth_scope_expression.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
                 dIndex = 0;
+                pIndex = path.pathIndex;
                 var str = '{%s}';
                 for (var i = 0; i < parseInt($("input[name=hdOauthScopeCount" + pIndex + cIndex + "]").val()); i++) {
                   var op = $("input[name=oauthCondition" + pIndex + cIndex + i + "]:checked").val();
@@ -754,6 +761,7 @@
                 str = str.replace(', {%s}', '');
                 cond.scope_expression = JSON.parse(str);
               });
+              delete path.pathIndex
             });
             return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
           } catch (e) {
