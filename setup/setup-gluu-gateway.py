@@ -610,7 +610,7 @@ if __name__ == "__main__":
         if kongSetup.isPrompt:
             msg = "------------------------------------------------------------------------------------- \n" \
               + "The MIT License (MIT) \n\n" \
-              + "Copyright (c) 2017 Gluu \n\n" \
+              + "Copyright (c) 2018 Gluu \n\n" \
               + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
               + "of this software and associated documentation files (the 'Software'), to deal \n" \
               + "in the Software without restriction, including without limitation the rights \n" \
