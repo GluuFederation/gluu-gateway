@@ -353,9 +353,9 @@ class KongSetup(object):
 
     def installPlugins(self):
         self.logIt('Installing luarocks packages...')
-        self.run(['luarocks', 'install', 'json-lua'])
-        self.run(['luarocks', 'install', 'oxd-web-lua'])
-        self.run(['luarocks', 'install', 'json-logic-lua'])
+        self.run(['luarocks', 'install', 'json-lua', '0.1-3'])
+        self.run(['luarocks', 'install', 'oxd-web-lua', '1.0-0'])
+        self.run(['luarocks', 'install', 'json-logic-lua', '0.2.0-1'])
         self.run([self.cmd_mv, self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_mv, self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
 
@@ -500,7 +500,7 @@ class KongSetup(object):
             self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
+        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
