@@ -8,6 +8,30 @@ local function test_scope_expression(oauth_scope_expression, path, httpMethod, d
 end
 
 describe("Helper module", function()
+    describe("filter_expression_path() function", function()
+        local json_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\",\"PUT\"],\"scope_expression\":{\"and\":[\"openid\"]}}]},{\"path\":\"/todos\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\",\"PUT\"],\"scope_expression\":{\"and\":[\"openid\"]}}]},{\"path\":\"/todos/users\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\"],\"scope_expression\":{\"and\":[\"openid\",\"uma_protection\"]}}]},{\"path\":\"/todos/users/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\"],\"scope_expression\":{\"and\":[\"openid\",\"uma_protection\",\"calendar\"]}}]}]"
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts?id=fdfd") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/123") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/users/1?id=fdfdf") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/posts/one/two/tree") == "/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/postssss") == "/postssss")
+
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos?id=454df334") == "/todos")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/folder1") == "/todos")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/folder2?id=df4edfdf") == "/todos")
+
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users?id=dfdf454gtfg") == "/todos/users")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/folder1") == "/todos/users")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/folder1?id=w4354f") == "/todos/users")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/folder1/folder2?id=w4354f") == "/todos/users")
+
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/posts?id=fdfdf") == "/todos/users/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/posts/fdf45trgrg") == "/todos/users/posts")
+        assert.equals(true, helper.filter_expression_path(json_expression, "/todos/users/posts/folder1&id=w4354f") == "/todos/users/posts")
+    end)
+
     describe("logic() function", function()
         it("should return true if variable is null", function()
             -- Json

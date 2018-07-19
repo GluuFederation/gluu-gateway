@@ -1,14 +1,14 @@
 <konga-loader ng-if="loading && !items.data.length"></konga-loader>
 <style>
-  #toggleAPIDetails:hover{
+  #toggleAPIDetails:hover {
     cursor: pointer;
-    background-color: #F1F1F1
   }
-  #togglePluginDetails:hover{
+
+  #togglePluginDetails:hover {
     cursor: pointer;
-    background-color: #F1F1F1
   }
-  .pathValidationClass .form-control{
+
+  .pathValidationClass .form-control {
     -webkit-box-shadow: inset 0 -2px 0 #f7464a;
     box-shadow: inset 0 -2px 0 #f7464a;
   }
@@ -20,74 +20,81 @@
         <form name="PluginForm" novalidate>
           <div class="row">
             <div class="col-md-12">
-              <table class="table table-bordered">
-                <thead>
-                <tr data-toggle="collapse" data-target="#apiDetails" id="toggleAPIDetails">
-                  <th colspan="2">API details</th>
-                </tr>
-                </thead>
-                <tbody id="apiDetails" class="collapse">
-                <tr>
-                  <th>Name</th>
-                  <td>{{api.name}}</td>
-                </tr>
-                <tr>
-                  <th>Upstream URL</th>
-                  <td>{{api.upstream_url}}</td>
-                </tr>
-                <tr>
-                  <th>Hosts</th>
-                  <td>{{api.hosts.join(',')}}</td>
-                </tr>
-                <tr>
-                  <th>Proxy Listen</th>
-                  <td>http://{{info.hostname}}:{{info.configuration.proxy_port}}</td>
-                </tr>
-                </tbody>
-              </table>
-              <table data-ng-if="isKongUMARSPluginAdded" class="table table-bordered">
-                <thead>
-                <tr data-toggle="collapse" data-target="#pluginDetails" id="togglePluginDetails">
-                  <th colspan="2">Plugin details</th>
-                </tr>
-                </thead>
-                <tbody id="pluginDetails" class="collapse">
-                <tr>
-                  <th>OXD Id</th>
-                  <td>{{::pluginConfig.oxd_id}}</td>
-                </tr>
-                <tr>
-                  <th>Client Id of OXD Id</th>
-                  <td>{{::pluginConfig.client_id_of_oxd_id}}</td>
-                </tr>
-                <tr>
-                  <th>Setup client OXD Id</th>
-                  <td>{{::pluginConfig.setup_client_oxd_id}}</td>
-                </tr>
-                <tr>
-                  <th>Client Id</th>
-                  <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href
-                                                                                                 data-ng-click="isShowClientId = !isShowClientId"
-                                                                                                 title="{{isShowClientId ? 'Hide': 'Show'}}"><i
-                    class="mdi mdi-eye"></i></a></td>
-                </tr>
-                <tr>
-                  <th>Client Secret</th>
-                  <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href
-                                                                                                         data-ng-click="isShowClientSecret = !isShowClientSecret"
-                                                                                                         title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
-                    class="mdi mdi-eye"></i></a></td>
-                </tr>
-                <tr>
-                  <th>UMA RS Server</th>
-                  <td>{{::pluginConfig.uma_server_host}}</td>
-                </tr>
-                <tr>
-                  <th>OXD Host</th>
-                  <td>{{::pluginConfig.oxd_host}}</td>
-                </tr>
-                </tbody>
-              </table>
+              <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#apiDetails" id="toggleAPIDetails">
+                  <div class="panel-title">
+                    <i class="mdi mdi-information-outline"></i>&nbsp;API details
+                  </div>
+                </div>
+                <table class="table no-margin">
+                  <tbody id="apiDetails" class="collapse">
+                  <tr>
+                    <th width="30%">Name</th>
+                    <td>{{api.name}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Upstream URL</th>
+                    <td>{{api.upstream_url}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Hosts</th>
+                    <td>{{api.hosts.join(',')}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Proxy Listen</th>
+                    <td>http://{{info.hostname}}:{{info.configuration.proxy_port}}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="col-md-12" data-ng-if="isKongUMARSPluginAdded && pluginConfig.oxd_id">
+              <div class="panel panel-default">
+                <div class="panel-heading" data-toggle="collapse" data-target="#pluginDetails"
+                     id="togglePluginDetails">
+                  <div class="panel-title">
+                    <i class="mdi mdi-information-outline"></i>&nbsp;Plugin details
+                  </div>
+                </div>
+                <table class="table no-margin">
+                  <tbody id="pluginDetails" class="collapse">
+                  <tr>
+                    <th width="30%">OXD Id</th>
+                    <td>{{::pluginConfig.oxd_id}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Client Id of OXD Id</th>
+                    <td>{{::pluginConfig.client_id_of_oxd_id}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Setup client OXD Id</th>
+                    <td>{{::pluginConfig.setup_client_oxd_id}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Client Id</th>
+                    <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href
+                                                                                                   data-ng-click="isShowClientId = !isShowClientId"
+                                                                                                   title="{{isShowClientId ? 'Hide': 'Show'}}"><i
+                      class="mdi mdi-eye"></i></a></td>
+                  </tr>
+                  <tr>
+                    <th width="30%">Client Secret</th>
+                    <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href
+                                                                                                           data-ng-click="isShowClientSecret = !isShowClientSecret"
+                                                                                                           title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
+                      class="mdi mdi-eye"></i></a></td>
+                  </tr>
+                  <tr>
+                    <th width="30%">UMA RS Server</th>
+                    <td>{{::pluginConfig.uma_server_host}}</td>
+                  </tr>
+                  <tr>
+                    <th width="30%">OXD Host</th>
+                    <td>{{::pluginConfig.oxd_host}}</td>
+                  </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
             <div class="col-md-12">
               <ul class="nav nav-pills">
@@ -106,7 +113,7 @@
             <div class="col-md-12" data-ng-show="activeCategory == 'uma'">
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>UMA Resources</label>
-                <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. For <a
+                <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. Click on <code>Add Path</code> button to start. For <a
                   href="https://gluu.org/docs/oxd/{{globalInfo.oxdVersion}}/api/#uma-2-resource-server-apis"
                   target="_blank">more details...</a> </span>
               </div>
@@ -163,8 +170,9 @@
                         <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isKongUMARSPluginAdded">
                           <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0" checked>or |
                           <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
-                          <input type="radio" value="not" name="condition{{pIndex}}{{$index}}0">not
-                          <button type="button" class="btn btn-xs btn-success" data-add="rule" name="btnAdd{{pIndex}}{{$index}}0"
+                          <input type="radio" value="!" name="condition{{pIndex}}{{$index}}0">not
+                          <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                  name="btnAdd{{pIndex}}{{$index}}0"
                                   data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
                             Add Group
                           </button>
@@ -203,7 +211,7 @@
             <div class="col-md-12" data-ng-show="activeCategory == 'oauth'">
               <div class="form-group has-feedback">
                 <label><span class="text text-danger">*</span>OAuth Scope Security</label>
-                <span class="help-block error-block basic-block">Protect API path by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start. </span>
+                <span class="help-block error-block basic-block">Protect API path by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start. <code>Available only for Consumers with OAuth Mode credentials!</code></span>
               </div>
               <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
                    ng-init="pIndex = $index"
@@ -263,7 +271,8 @@
                           <input type="radio" value="and" name="oauthCondition{{pIndex}}{{$index}}0">and |
                           <input type="radio" value="not" name="oauthCondition{{pIndex}}{{$index}}0">not
                           <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                  data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus" name="btnOAuthAdd{{pIndex}}{{$index}}0"></i>
+                                  data-ng-click="addOauthGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"
+                                                                                         name="btnOAuthAdd{{pIndex}}{{$index}}0"></i>
                             Add Group
                           </button>
                           <input type="hidden" value="{{oauthCond['scopes' + pIndex + $index + '0']}}"
@@ -301,7 +310,7 @@
           </div>
           <div class="row">
             <hr/>
-            <button type="submit" class="btn btn-primary" ng-click="managePlugin(PluginForm.$valid)">
+            <button type="submit" class="btn btn-primary" ng-click="managePlugin(PluginForm)">
               <i class="mdi mdi-check"></i> {{isKongUMARSPluginAdded ? "Update" : "Add" }}
             </button>
           </div>

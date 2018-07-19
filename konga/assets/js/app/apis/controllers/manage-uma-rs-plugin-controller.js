@@ -36,15 +36,7 @@
           config: {
             oxd_host: $scope.globalInfo.oxdWeb,
             uma_server_host: $scope.globalInfo.opHost,
-            protection_document: [{
-              path: '',
-              conditions: [
-                {
-                  httpMethods: [{text: 'GET'}, {text: 'POST'}],
-                  scope_expression: [],
-                  ticketScopes: []
-                }]
-            }],
+            protection_document: [],
             oauth_scope_expression: []
           }
         };
@@ -70,8 +62,8 @@
                       op = 'and'
                     } else if (pRule['or']) {
                       op = 'or'
-                    } else if (pRule['not']) {
-                      op = 'not'
+                    } else if (pRule['!']) {
+                      op = '!'
                     }
 
                     _repeat(pRule[op], op, 0);
@@ -96,7 +88,7 @@
                           // render template
                           var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
                             "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                            "<input type=\"radio\" value=\"not\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "not" ? "checked" : "") + ">not " +
+                            "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
                             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
@@ -115,8 +107,8 @@
                           _repeat(oRule['and'], 'and', ++id);
                         } else if (oRule['or']) {
                           _repeat(oRule['or'], 'or', ++id);
-                        } else if (oRule['not']) {
-                          _repeat(oRule['not'], 'not', ++id);
+                        } else if (oRule['!']) {
+                          _repeat(oRule['!'], '!', ++id);
                         } else {
                           $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
                         }
@@ -187,6 +179,7 @@
                       });
                     }
                   });
+                  path.pathIndex = pIndex;
                 });
               }
             }, 500);
@@ -217,7 +210,7 @@
           $("input[name=hdScopeCount" + parent + "]").val(id + 1);
           $("button[name=btnAdd" + parent + (id - 1) + "]").hide();
           var htmlRender = "<div class=\"col-md-12\">" +
-            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + id + "\">not" +
+            "<input type=\"radio\" value=\"or\" name=\"condition" + parent + id + "\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + id + "\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + id + "\">not" +
             "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "', " + (id + 1) + ")\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
@@ -242,7 +235,7 @@
             var parent = pIndex + '' + ($scope.modelPlugin.config.protection_document[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not " +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + "0\">not " +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
@@ -287,6 +280,7 @@
         function addNewPath() {
           $scope.modelPlugin.config.protection_document.push({
             path: '',
+            pathIndex: $scope.modelPlugin.config.protection_document.length,
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
@@ -300,7 +294,7 @@
             var parent = $scope.modelPlugin.config.protection_document.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
-              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"not\" name=\"condition" + parent + "0\">not" +
+              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + parent + "0\" checked>or | <input type=\"radio\" value=\"and\" name=\"condition" + parent + "0\">and | <input type=\"radio\" value=\"!\" name=\"condition" + parent + "0\">not" +
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
@@ -314,8 +308,17 @@
           }
         }
 
-        function managePlugin(isValid) {
-          if (!isValid) {
+        function managePlugin(fElement) {
+          var isFormValid = true;
+          if (fElement && fElement.$error && fElement.$error.required) {
+            fElement.$error.required.forEach(function (o) {
+              if (document.getElementById(o.$name)) {
+                isFormValid = false;
+              }
+            });
+          }
+
+          if (!isFormValid) {
             MessageService.error("Please fill all the fields marked in red");
             return false;
           }
@@ -341,17 +344,13 @@
           }
 
           if ($scope.isKongUMARSPluginAdded) {
-            updatePlugin(isValid);
+            updatePlugin();
           } else {
-            addPlugin(isValid);
+            addPlugin();
           }
         }
 
-        function addPlugin(isValid) {
-          if (!isValid) {
-            MessageService.error("Please fill all the fields marked in red");
-            return false;
-          }
+        function addPlugin() {
           var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
@@ -378,14 +377,21 @@
             delete model.config.oauth_scope_expression
           }
           if (!model.config.oauth_scope_expression && !model.config.protection_document) {
-            MessageService.error("Invalid request. Configured at least one security.");
+            MessageService.error("Invalid request. Configure at least one type of security.");
             return
+          }
+
+          if (!model.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = ""
+          }
+
+          if (!model.config.protection_document) {
+            model.config.protection_document = ""
           }
 
           PluginHelperService.addPlugin(
             model,
             function success(res) {
-              console.log("create plugin", res)
               $scope.busy = false;
               MessageService.success('Plugin added successfully!')
               $state.go('apis') // return to plugins page if specified
@@ -421,11 +427,7 @@
             });
         }
 
-        function updatePlugin(isValid) {
-          if (!isValid) {
-            MessageService.error("Please fill all the fields marked in red.");
-            return false;
-          }
+        function updatePlugin() {
           var model = angular.copy($scope.modelPlugin);
 
           if (!model) {
@@ -455,14 +457,21 @@
           }
 
           if (!model.config.oauth_scope_expression && !model.config.protection_document) {
-            MessageService.error("Invalid request. Configured at least one security.");
+            MessageService.error("Invalid request. Configure at least one type of security.");
             return
+          }
+
+          if (!model.config.oauth_scope_expression) {
+            model.config.oauth_scope_expression = ""
+          }
+
+          if (!model.config.protection_document) {
+            model.config.protection_document = ""
           }
 
           PluginHelperService.updatePlugin($scope.rsPlugin.id,
             model,
             function success(res) {
-              console.log("update plugin", res)
               $scope.busy = false;
               MessageService.success('Plugin updated successfully!')
               $state.go('apis') // return to plugins page if specified
@@ -519,6 +528,7 @@
               path.conditions.forEach(function (cond, cIndex) {
                 dIndex = 0;
                 sData = [];
+                pIndex = path.pathIndex;
                 var str = '{%s}';
                 for (var i = 0; i < parseInt($("input[name=hdScopeCount" + pIndex + cIndex + "]").val()); i++) {
                   var op = $("input[name=condition" + pIndex + cIndex + i + "]:checked").val();
@@ -551,6 +561,7 @@
                   delete cond.ticketScopes;
                 }
               });
+              delete path.pathIndex
             });
             return JSON.parse(angular.toJson(model.config.protection_document));
           } catch (e) {
@@ -645,6 +656,7 @@
         function addOauthNewPath() {
           $scope.modelPlugin.config.oauth_scope_expression.push({
             path: '',
+            pathIndex: $scope.modelPlugin.config.oauth_scope_expression.length,
             conditions: [
               {
                 httpMethods: [{text: 'GET'}],
@@ -726,6 +738,7 @@
             model.config.oauth_scope_expression.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
                 dIndex = 0;
+                pIndex = path.pathIndex;
                 var str = '{%s}';
                 for (var i = 0; i < parseInt($("input[name=hdOauthScopeCount" + pIndex + cIndex + "]").val()); i++) {
                   var op = $("input[name=oauthCondition" + pIndex + cIndex + i + "]:checked").val();
@@ -747,6 +760,7 @@
                 str = str.replace(', {%s}', '');
                 cond.scope_expression = JSON.parse(str);
               });
+              delete path.pathIndex
             });
             return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
           } catch (e) {

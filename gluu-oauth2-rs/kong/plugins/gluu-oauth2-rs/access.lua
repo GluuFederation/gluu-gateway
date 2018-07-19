@@ -135,16 +135,34 @@ function _M.execute(conf)
     -- Check RPT token is in gluu-oauth2-rs cache
     local clientPluginCacheToken = singletons.cache:get(reqToken, nil, function() end)
 
-    if helper.is_empty(clientPluginCacheToken) then
+    -- Get oauth2-consumer credential for getting all modes(oauth_mode, uma_mode, mix_mode) in here.
+    local oauth2Credential = clientPluginCacheToken.credential
+
+    ngx.log(ngx.DEBUG, PLUGINNAME .. " : Cache token: " .. tostring(helper.is_empty(clientPluginCacheToken) == false) .. " oauth2Credential : " .. tostring(helper.is_empty(oauth2Credential) == false))
+    if helper.is_empty(clientPluginCacheToken) or helper.is_empty(oauth2Credential) then
         ngx.log(ngx.DEBUG, PLUGINNAME .. " : Unauthorized! gluu-oauth2-client-auth cache is not found")
         return responses.send_HTTP_UNAUTHORIZED("Unauthorized! gluu-oauth2-client-auth cache is not found")
     else
+        -- Path filter
+        local filter_path
+        if oauth2Credential.oauth_mode then
+            filter_path = helper.filter_expression_path(conf.oauth_scope_expression, path)
+        elseif oauth2Credential.mix_mode then
+            filter_path = helper.filter_expression_path(conf.protection_document, path)
+        elseif oauth2Credential.uma_mode then
+            filter_path = helper.filter_expression_path(conf.protection_document, path)
+        else
+            filter_path = path
+        end
+
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. filter_path)
+
         -- Check Token is already exist with same path and method
         if not helper.is_empty(clientPluginCacheToken.permissions) then
             local permissionFlag = false
             -- Check requested path in cached paths
             for count = 1, #clientPluginCacheToken.permissions do
-                if clientPluginCacheToken.permissions[count].path == path and clientPluginCacheToken.permissions[count].method == httpMethod then
+                if clientPluginCacheToken.permissions[count].path == filter_path and clientPluginCacheToken.permissions[count].method == httpMethod then
                     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token already exist with same path and method")
                     -- If path is not protected then send header with UMA-Wanrning
                     if not clientPluginCacheToken.permissions[count].path_protected then
@@ -186,9 +204,6 @@ function _M.execute(conf)
     end
 
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token not exist with requested path and method")
-
-    -- Get oauth2-consumer credential for getting all modes(oauth_mode, uma_mode, mix_mode) in here.
-    local oauth2Credential = singletons.cache:get(singletons.dao.gluu_oauth2_client_auth_credentials:cache_key(clientPluginCacheToken.client_id), nil, function() end)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": Token type : " .. clientPluginCacheToken.token_type)
     ngx.log(ngx.DEBUG, PLUGINNAME .. ": oauth_mode : " .. tostring(oauth2Credential.oauth_mode) .. ", uma_mode : " .. tostring(oauth2Credential.uma_mode) .. ", mix_mode : " .. tostring(oauth2Credential.mix_mode))
 
@@ -199,6 +214,10 @@ function _M.execute(conf)
             ngx.log(ngx.DEBUG, PLUGINNAME .. " : 401 Unauthorized. OAuth(not UMA) is required in oauth_mode")
             return responses.send_HTTP_UNAUTHORIZED("Unauthorized! OAuth(not UMA) token required in oauth_mode")
         end
+
+        -- Path filter
+        path = helper.filter_expression_path(conf.protection_document, path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
 
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.check_access(conf, reqToken, path, httpMethod)
@@ -249,6 +268,15 @@ function _M.execute(conf)
                 return -- Access Granted
             end
 
+            if helper.is_empty(conf.oauth_scope_expression) then
+                ngx.log(ngx.DEBUG, PLUGINNAME .. " : OAuth scope flag is true but scope expression is not configured.")
+                return responses.send_HTTP_FORBIDDEN("Please configure OAuth scope expression")
+            end
+
+            -- Path filter
+            path = helper.filter_expression_path(conf.oauth_scope_expression, path)
+            ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
+
             ngx.log(ngx.DEBUG, "Checking scope expression available for path and method or not")
             local scope_expression = helper.fetch_Expression(conf.oauth_scope_expression, path, httpMethod)
 
@@ -273,6 +301,10 @@ function _M.execute(conf)
 
         -- Check UMA Data in header for claim token
         local uma_data = retrieve_uma_data(ngx.req)
+
+        -- Path filter
+        path = helper.filter_expression_path(conf.protection_document, path)
+        ngx.log(ngx.DEBUG, PLUGINNAME .. ": path rule : " .. path)
 
         -- Check UMA-RS access -> oxd
         local umaRSResponse = helper.get_rpt_with_check_access(conf, path, httpMethod, uma_data, clientPluginCacheToken.associated_rpt or nil)
