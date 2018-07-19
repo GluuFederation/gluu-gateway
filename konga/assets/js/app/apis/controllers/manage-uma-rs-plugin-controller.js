@@ -115,6 +115,7 @@
                       });
                     }
                   });
+                  path.pathIndex = pIndex;
                 });
               }
               if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
