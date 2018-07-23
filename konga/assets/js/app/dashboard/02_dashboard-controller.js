@@ -260,7 +260,6 @@
                       }) > -1;
                   }
                 })
-                console.log('Filtered crdentials', $scope.credentials)
               })
         };
 
