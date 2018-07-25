@@ -3,7 +3,6 @@
     <h4>
       <i class="mdi mdi-plug"></i>
       Assigned plugins
-
     </h4>
   </div>
   <div class="col-md-6 text-right">
@@ -27,7 +26,6 @@
   <tr>
     <th width="1"></th>
     <th width="1"></th>
-    <th width="1"></th>
     <th>Name</th>
     <th>Consumer</th>
     <th>Created</th>
@@ -36,23 +34,22 @@
   <tr
     dir-paginate="item in plugins.data | orderBy:'created_at':true | itemsPerPage: 25 | filter : search">
     <td>
-      <img ng-src="images/kong/plugins/{{item.name}}.png" style="height: 42px">
-    </td>
-    <td>
-      <i class="mdi mdi-toggle-switch text-success clickable"
-         ng-show="item.enabled"
-         ng-click="togglePlugin(item)"
-         uib-tooltip="Enabled"></i>
-      <i class="mdi mdi-toggle-switch-off text-muted clickable"
-         ng-show="!item.enabled"
-         ng-click="togglePlugin(item)"
-         uib-tooltip="Disabled"></i>
+      <input
+        bs-switch
+        switch-on-color="primary"
+        ng-change="updatePlugin(item)"
+        ng-model="item.enabled"
+        type="checkbox"
+        switch-size="mini">
     </td>
     <td>
       <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a href ng-click="onEditPlugin(item)">
+      <a ui-sref="apis.uma-plugin({api_id: api_id})" data-ng-if="item.name == 'gluu-oauth2-rs'">
+        {{item.name}}
+      </a>
+      <a href data-ng-if="item.name != 'gluu-oauth2-rs'" ng-click="onEditPlugin(item)">
         {{item.name}}
       </a>
     </th>
@@ -61,7 +58,6 @@
       <span data-ng-if="!item.consumer_id">All consumers</span>
     </td>
     <td>{{item.created_at | date : format : timezone}}</td>
-
     <td>
       <button class="btn btn-link btn-danger" ng-click="deletePlugin(item)">
         <i class="mdi mdi-delete"></i>

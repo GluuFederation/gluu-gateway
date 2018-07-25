@@ -9,16 +9,22 @@
   angular.module('frontend.plugins')
     .controller('AddPluginController', [
       '_', '$scope', '$rootScope', '$log', '$state', 'ListConfig', 'ApiService',
-      'MessageService', 'ConsumerModel', 'SocketHelperService', 'PluginHelperService',
-      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_api', '_consumer', '$localStorage',
+      'MessageService', 'ConsumerModel', 'ServiceService', 'SocketHelperService', 'PluginHelperService',
+      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_context', '$localStorage',
       function controller(_, $scope, $rootScope, $log, $state, ListConfig, ApiService,
-                          MessageService, ConsumerModel, SocketHelperService, PluginHelperService,
-                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _api, _consumer, $localStorage) {
+                          MessageService, ConsumerModel, ServiceService, SocketHelperService, PluginHelperService,
+                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _context, $localStorage) {
 
         $scope.globalInfo = $localStorage.credentials.user;
-        $scope.api = _api
-        $scope.consumer = _consumer;
-        $log.debug("API", $scope.api)
+        if (_.isArray(_context)) {
+          _context.forEach(function (ctx) {
+            $scope[ctx.name] = ctx.data;
+          })
+        } else if (_context) {
+          $scope[_context.name] = _context.data;
+        }
+
+        $scope.context = 'create';
 
         //var pluginOptions = new KongPluginsService().pluginOptions()
         var options = new KongPluginsService().pluginOptions(_pluginName)
@@ -27,10 +33,14 @@
         $scope.pluginName = _pluginName
         $log.debug("Schema", $scope.schema)
         //$log.debug("Options", options)
-        $scope.close = close
+        $scope.close = close;
+
+        // Define the plugins that will have their own custom form
+        // so that it can be included via ng-include in the .html files
+        $scope.customPluginForms = ['statsd'];
 
         $scope.humanizeLabel = function (key) {
-          return key.split("_").join(" ")
+          return key.split("_").join(" ");
         }
 
 
@@ -52,7 +62,6 @@
 
           // Assign extra properties from options to data fields
           PluginHelperService.assignExtraProperties(options, $scope.data.fields);
-
           if (_pluginName == "gluu-oauth2-client-auth") {
             $scope.data.fields.oxd_id.value = $scope.globalInfo.oxdId
             delete $scope.data.fields.op_server
@@ -93,6 +102,16 @@
             request_data.api_id = $scope.api.id;
           }
 
+          // Add service_id to request_data if defined
+          if ($scope.service) {
+            request_data.service_id = $scope.service.id;
+          }
+
+          // Add route_id to request_data if defined
+          if ($scope.route) {
+            request_data.route_id = $scope.route.id;
+          }
+
           // If a consumer is defined, add consumer_id to request data
           if ($scope.consumer) {
             request_data.consumer_id = $scope.consumer.id;
@@ -104,7 +123,6 @@
 
           // Apply monkey patches to request data if needed
           PluginHelperService.applyMonkeyPatches(request_data, $scope.data.fields)
-
           // Create request data "config." properties
           var config = PluginHelperService.createConfigProperties($scope.data.fields)
 
@@ -121,7 +139,6 @@
           }
 
           console.log("REQUEST DATA =>", request_data)
-
           PluginHelperService.addPlugin(
             request_data,
             function success(res) {

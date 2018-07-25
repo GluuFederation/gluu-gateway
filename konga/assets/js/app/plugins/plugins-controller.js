@@ -11,9 +11,9 @@
         PluginModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('plugin',PluginModel)));
         $scope.user = UserService.user();
-        $scope.onEditPlugin = onEditPlugin
-        $scope.updatePlugin = updatePlugin
-
+        $scope.onEditPlugin = onEditPlugin;
+        $scope.updatePlugin = updatePlugin;
+        $scope.getContext   = getContext;
 
         /**
          * ----------------------------------------------------------------------
@@ -77,6 +77,17 @@
           })
         }
 
+        function getContext(plugin) {
+          if(plugin.service_id) {
+            return 'services'
+          } else if(plugin.route_id) {
+            return 'routes'
+          } else if(plugin.api_id) {
+            return 'apis'
+          }else{
+            return 'global'
+          }
+        }
 
         /**
          * ------------------------------------------------------------

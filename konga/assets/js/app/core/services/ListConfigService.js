@@ -326,12 +326,20 @@
               inTitle: true
             },
             {
-              title: 'API',
-              column: 'api_id',
+              title: 'context',
+              column: 'context',
               searchable: true,
               sortable: true,
               inSearch: true,
               inTitle: true
+            },
+            {
+              title: 'apply to',
+              column: 'item_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true,
             },
             {
               title: 'Consumer',

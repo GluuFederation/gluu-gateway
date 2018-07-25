@@ -74,7 +74,6 @@
                 return {
                   name: 'route',
                   data: $scope.route
-
                 }
               },
               _pluginName: function () {
