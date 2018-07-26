@@ -36,8 +36,8 @@
                data-ng-show="sort.column == item.column"
                data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"></i>
           </th>
-          <th width="1"></th>
-          <th width="1"></th>
+          <th></th>
+          <th></th>
         </tr>
         <tr
           dir-paginate="service in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
@@ -55,11 +55,15 @@
           <td>{{ service.host || "-" }}</td>
           <td>{{service.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="services.edit({ service_id: service.id })" class="btn btn-info btn-link">
-              <i class="mdi mdi-pencil"></i>
+            <a ui-sref="apis.uma-plugin({ service_id: service.id })" class="btn btn-primary btn-link"><i
+              class="mdi mdi-lock"></i>
+              Security
             </a>
           </td>
           <td>
+            <a ui-sref="services.edit({ service_id: service.id })" class="btn btn-info btn-link">
+              <i class="mdi mdi-pencil"></i>
+            </a>
             <button type="button" ng-click="deleteItem($index,service)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
             </button>

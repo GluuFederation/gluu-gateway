@@ -42,8 +42,8 @@
                data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"
             ></i>
           </th>
-          <th width="1" ng-if="user.hasPermission($state.name.split('.')[0],'edit')"></th>
-          <th width="1" ng-if="user.hasPermission($state.name.split('.')[0],'delete')"></th>
+          <th></th>
+          <th></th>
         </tr>
         <tr
           dir-paginate="route in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
@@ -80,16 +80,18 @@
           <td>{{ route.paths.join(", ") || "-" }}</td>
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a class="btn btn-warning btn-link" ui-sref="routes.edit({ route_id: route.id })"
-               class="btn btn-default btn-link">
-              <i class="mdi mdi-pencil"></i>
-              edit
+            <a ui-sref="apis.uma-plugin({ route_id: route.id })" class="btn btn-primary btn-link"><i
+              class="mdi mdi-lock"></i>
+              Security
             </a>
           </td>
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
+            <a class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
+               class="btn btn-default btn-link">
+              <i class="mdi mdi-pencil"></i>
+            </a>
             <button type="button" ng-click="deleteItem($index,route)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
-              Delete
             </button>
           </td>
         </tr>

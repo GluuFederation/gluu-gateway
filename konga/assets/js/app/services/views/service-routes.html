@@ -60,15 +60,13 @@
     <td>{{item.regex_priority}}</td>
     <td>{{item.created_at*1000 | date : format : timezone}}</td>
     <td>
-      <a class="clickable btn btn-link btn-warning" data-ui-sref="routes.edit({route_id:item.id})">
+      <a class="clickable btn btn-link btn-info" data-ui-sref="routes.edit({route_id:item.id})">
         <i class="mdi mdi-pencil"></i>
-        edit
       </a>
     </td>
     <td>
       <button class="btn btn-link btn-danger" ng-click="deleteRoute(item)">
         <i class="mdi mdi-delete"></i>
-        delete
       </button>
     </td>
   </tr>

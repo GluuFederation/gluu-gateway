@@ -4,11 +4,11 @@
   angular.module('frontend.apis')
     .controller('ManageUmaRsPluginController', [
       '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_api', '_plugins', '$compile', 'InfoService', '$localStorage',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_context', '_plugins', '$compile', 'InfoService', '$localStorage',
       function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _api, _plugins, $compile, InfoService, $localStorage) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _context, _plugins, $compile, InfoService, $localStorage) {
         $scope.globalInfo = $localStorage.credentials.user;
-        $scope.api = _api.data
+        $scope.api = _context.data
         $scope.plugins = _plugins.data.data
         $scope.rsPlugin = null;
         $scope.addNewCondition = addNewCondition
