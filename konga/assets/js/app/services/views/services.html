@@ -55,7 +55,7 @@
           <td>{{ service.host || "-" }}</td>
           <td>{{service.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="apis.uma-plugin({ service_id: service.id })" class="btn btn-primary btn-link"><i
+            <a ui-sref="services.uma-plugin({service_id: service.id })" class="btn btn-primary btn-link"><i
               class="mdi mdi-lock"></i>
               Security
             </a>

@@ -93,6 +93,50 @@
               }
             }
           })
+          .state('routes.uma-plugin', {
+            url: '/:route_id/uma-plugin',
+            data: {
+              pageName: "UMA-RS plugin",
+              pageDescription: "A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong. <code> It will create a client and register the UMA resources using oxd.</code>",
+              displayName: "UMA-RS plugin",
+              prefix: '<i class="mdi mdi-pencil"></i>'
+            },
+            views: {
+              'content@': {
+                templateUrl: 'js/app/apis/views/manage-uma-rs-plugin.html',
+                controller: 'ManageUmaRsPluginController',
+                resolve: {
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'route';
+                    }
+                  ],
+                  _context_data: [
+                    '$stateParams',
+                    'RoutesService',
+                    '$log',
+                    function resolve($stateParams,
+                                     RoutesService) {
+                      return RoutesService.findById($stateParams.route_id)
+                    }
+                  ],
+                  _plugins: [
+                    'PluginsService', '$stateParams',
+                    function resolve(PluginsService, $stateParams) {
+                      return PluginsService.load({route_id: $stateParams.route_id})
+                    }
+                  ],
+                  _activeNode: [
+                    'NodesService',
+                    function resolve(NodesService) {
+                      return NodesService.isActiveNodeSet()
+                    }
+                  ],
+                }
+              }
+            }
+          })
           .state('routes.plugins', {
             url: '/:route_id/plugins',
             params: {

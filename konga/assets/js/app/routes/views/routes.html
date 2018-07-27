@@ -80,7 +80,7 @@
           <td>{{ route.paths.join(", ") || "-" }}</td>
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="apis.uma-plugin({ route_id: route.id })" class="btn btn-primary btn-link"><i
+            <a ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-primary btn-link"><i
               class="mdi mdi-lock"></i>
               Security
             </a>

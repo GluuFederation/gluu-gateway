@@ -83,6 +83,50 @@
               }
             }
           })
+          .state('services.uma-plugin', {
+            url: '/:service_id/uma-plugin',
+            data: {
+              pageName: "UMA-RS plugin",
+              pageDescription: "A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong. <code> It will create a client and register the UMA resources using oxd.</code>",
+              displayName: "UMA-RS plugin",
+              prefix: '<i class="mdi mdi-pencil"></i>'
+            },
+            views: {
+              'content@': {
+                templateUrl: 'js/app/apis/views/manage-uma-rs-plugin.html',
+                controller: 'ManageUmaRsPluginController',
+                resolve: {
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'service';
+                    }
+                  ],
+                  _context_data: [
+                    '$stateParams',
+                    'ServiceService',
+                    '$log',
+                    function resolve($stateParams,
+                                     ServiceService) {
+                      return ServiceService.findById($stateParams.service_id)
+                    }
+                  ],
+                  _plugins: [
+                    'PluginsService', '$stateParams',
+                    function resolve(PluginsService, $stateParams) {
+                      return PluginsService.load({service_id: $stateParams.service_id})
+                    }
+                  ],
+                  _activeNode: [
+                    'NodesService',
+                    function resolve(NodesService) {
+                      return NodesService.isActiveNodeSet()
+                    }
+                  ],
+                }
+              }
+            }
+          })
           .state('services.plugins', {
             url: '/:service_id/plugins',
             params: {

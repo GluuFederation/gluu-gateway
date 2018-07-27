@@ -92,24 +92,19 @@
                 templateUrl: 'js/app/apis/views/manage-uma-rs-plugin.html',
                 controller: 'ManageUmaRsPluginController',
                 resolve: {
-                  _context: [
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'api';
+                    }
+                  ],
+                  _context_data: [
                     '$stateParams',
                     'ApiService',
-                    'ServiceService',
-                    'RoutesService',
                     '$log',
                     function resolve($stateParams,
-                                     ApiService,
-                                     ServiceService,
-                                     RoutesService,
-                                     $log) {
-                      if ($stateParams.api_id) {
-                        return {name: 'api', data: ApiService.findById($stateParams.api_id)}
-                      } else if ($stateParams.route_id) {
-                        return {name: 'route', data: RoutesService.findById($stateParams.route_id)}
-                      } else if ($stateParams.service_id) {
-                        return {name: 'service', data: ServiceService.findById($stateParams.service_id)}
-                      }
+                                     ApiService) {
+                      return ApiService.findById($stateParams.api_id)
                     }
                   ],
                   _plugins: [
