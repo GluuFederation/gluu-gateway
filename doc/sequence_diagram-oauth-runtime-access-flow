@@ -1,8 +1,8 @@
-title gluu-oauth2-client plugin access phase
+title gluu-oauth2-client plugin access
 
 client->Kong Proxy: call API with header Authorization: Bearer AT
 opt push claim
-    client->Kong Proxy: Add Header "UMA Data": [{"claim_token":"...","claim_token_format":"..."}]
+    client->Kong Proxy: Add Header "UMA Data": {"claim_token":"...","claim_token_format":"..."}
 end
 
 Kong Proxy->gluu-oauth2-client-plugin: *****  call "access" event for Kong OAuth-Consumer plugin priority 999 *****
@@ -14,6 +14,7 @@ end
 gluu-oauth2-client-plugin->kong-cache: Lookup token in cache
 
 opt token not in cache
+    gluu-oauth2-client-plugin<->oxd-web: GET protection_access_token
     gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
     opt OAuth token introspection fails
         gluu-oauth2-client-plugin<->oxd-web: Introspect token at UMA introspection endpoint
@@ -24,27 +25,29 @@ opt token not in cache
     opt active == false | token expired
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token expired
     end
-    gluu-oauth2-client-plugin<->kong_db: fetch oauth2 consumer_id using client_id {id:'..', oxd_id:'..', ..., mix_mode:[t|f], uma_mode:[t|f] }
-    opt &(tokenType == UMA)(uma_mode == false)
+    gluu-oauth2-client-plugin<->kong_db: fetch consumer using client_id
+    opt consumer == null
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Invalid client
+    end
+    opt &(tokenType == UMA)(mode != UMA)
             gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
     end
-
-    opt restricted_api == enabled && req_api is not in restricted_api_list
-        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Out of available Restricted API's
+    opt &(allow_oauth_scope_expression == true and oauth_scope_expression is not match with token scope)
+            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Scope validation failed
     end
-
     gluu-oauth2-client-plugin->kong-cache: write "token": {token JSON}
+    kong-cache->kong_db: add "token": {token JSON}
 end
 
 kong-cache->gluu-oauth2-client-plugin: return token JSON
 
-opt &(token_type == OAuth)(mix_mode == true)
+opt &(token_type == OAuth)(mode == MIX)
     gluu-oauth2-client-plugin->kong-cache: lookup associated RPT JSON
     opt RPT found
         gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: replace Authoriation Header with associated UMA token
     end
 end
-opt &(tokenType == OAuth)(oauth_mode == true)
+opt &(tokenType == OAuth)(mode == OAuth)
     gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
     gluu-oauth2-client-plugin->Kong Proxy: return
 end
