@@ -262,7 +262,7 @@
           try {
             importedSnapshot = JSON.parse($base64.decode($scope.file.data.split(",")[1]))
           } catch (err) {
-            MessageService.error("Invalid file. File must be json type.");
+            MessageService.error("Invalid file type. JSON file required.");
           }
 
           if (!importedSnapshot) return false;
