@@ -1,29 +1,31 @@
 title Gluu OAuth2 RS access phase
 
-note over Kong Proxy,gluu-oauth2-rs: gluu-oauth2-client plugin MUST run first
-note over Kong Proxy,gluu-oauth2-rs: token should be cached
 Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 998  *****
 
 gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
 
-opt no token present
+alt no token present
     note over gluu-oauth2-rs, Kong Proxy: not possible... oauth-client plugin requires token
     gluu-oauth2-rs->Kong Proxy: 401/Unauthorized + ticket
 end
 
 gluu-oauth2-rs->kong-cache: Lookup token
 
-opt oauth2-consumer cache not found
-    note over gluu-oauth2-rs, Kong Proxy: not possible... oauth2-client plugin requires active token
-    gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
+alt oauth2-consumer cache found
+    note over gluu-oauth2-rs
+        token_type = cache.token_type
+        mode = cache.mode
+    end note
+else cache not found
+    note over gluu-oauth2-rs
+        token_type = RPT
+        mode = UMA
+    end note
 end
 
 kong-cache->gluu-oauth2-rs: JSON
 
 opt token_type == RPT
-    opt OAuth Mode
-        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized: "OAuth (not UMA) token required"
-    end
     opt token already authorized for this path/method
         gluu-oauth2-rs->Kong Proxy: return
     end
@@ -47,7 +49,7 @@ opt token_type == RPT
     end
 end
 
-opt token is OAuth
+opt token_type == OAuth
     opt UMA Mode
         gluu-oauth2-rs->Kong Proxy: 401/Forbidden: "UMA token required"
     end
