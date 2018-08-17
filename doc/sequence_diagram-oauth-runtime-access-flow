@@ -30,10 +30,10 @@ opt token not in cache
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Invalid client
     end
     opt &(tokenType == UMA)(mode != UMA)
-            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
     end
     opt &(allow_oauth_scope_expression == true and oauth_scope_expression is not match with token scope)
-            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Scope validation failed
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Scope validation failed
     end
     gluu-oauth2-client-plugin->kong-cache: write "token": {token JSON}
     kong-cache->kong_db: add "token": {token JSON}
