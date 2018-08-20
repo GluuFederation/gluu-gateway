@@ -1,16 +1,9 @@
 title OAuth plugin configuration
 
-loop Create Service&Route
 konga->kong: Create service with url: "https://demo.com"
 kong->konga: Response with service object
 konga->kong: Create route with service_id
 kong->konga: Response with response object
-end
-
-loop Create API(deprecated)
-konga->kong: Create API with url: "https://demo.com"
-kong->konga: Response with API object
-end
 
 alt New Client
     konga->oxd: Create client(register-client)
