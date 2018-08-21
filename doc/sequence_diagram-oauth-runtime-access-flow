@@ -14,23 +14,18 @@ end
 gluu-oauth2-client-plugin->kong-cache: Lookup token in cache
 
 opt token not in cache
-    gluu-oauth2-client-plugin<->oxd-web: GET protection_access_token
-    gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
-    opt OAuth token introspection fails
-        gluu-oauth2-client-plugin<->oxd-web: Introspect token at UMA introspection endpoint
-        opt RPT token introspection fails
-            gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
-        end
+    gluu-oauth2-client-plugin->kong-cache: Lookup permission token in cache
+    opt no permission token in cache
+        gluu-oauth2-client-plugin<->oxd-web: GET protection_access_token
     end
-    opt active == false | token expired
+
+    gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
+    opt active == false || token expired
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token expired
     end
     gluu-oauth2-client-plugin<->kong_db: fetch consumer using client_id
     opt consumer == null
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Invalid client
-    end
-    opt &(tokenType == UMA)(mode != UMA)
-        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token can't be validated
     end
     opt &(allow_oauth_scope_expression == true and oauth_scope_expression is not match with token scope)
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Scope validation failed
@@ -41,13 +36,5 @@ end
 
 kong-cache->gluu-oauth2-client-plugin: return token JSON
 
-opt &(token_type == OAuth)(mode == MIX)
-    gluu-oauth2-client-plugin->kong-cache: lookup associated RPT JSON
-    opt RPT found
-        gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: replace Authoriation Header with associated UMA token
-    end
-end
-opt &(tokenType == OAuth)(mode == OAuth)
-    gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
-    gluu-oauth2-client-plugin->Kong Proxy: return
-end
+gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
+gluu-oauth2-client-plugin->Kong Proxy: return

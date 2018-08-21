@@ -7,8 +7,7 @@ kong->konga: Response with response object
 
 alt New Client
     konga->oxd: Create client(register-client)
-    oxd->OP:
-    OP->oxd:
+    oxd<->OP:
     oxd->konga: Return with client credentials
 else Use Existing Client
     note over konga
@@ -42,6 +41,7 @@ Gluu-OAuth2-Client schema:
 5. oxd_http_url
 6. uma_scope_expression
 7. allow_unprotected_path
+8. Mode {UMA, MIX}
 end note
 kong->kong_DB: Add Gluu-OAuth2-Client
 kong_DB->kong:

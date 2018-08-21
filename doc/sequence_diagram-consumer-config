@@ -1,30 +1,48 @@
-title Consumer configuration
+title RS plugin configuration
 
-loop Add Consumer
+konga->kong: Create service with url: "https://demo.com"
+kong->konga: Response with service object
+konga->kong: Create route with service_id
+kong->konga: Response with response object
+
 alt New Client
-    konga->oxd: Create client(registrer client)
-    oxd->OP:
-    OP->oxd:
+    konga->oxd: Create client(register-client)
+    oxd<->OP:
     oxd->konga: Return with client credentials
-    note over konga
-        Show oxd_id, client_id, client_secret
-    end note
-    konga->konga_DB: Store client_credentials
-    note over konga_DB
-        client_id,
-        [oxd_id: for update client expire time]
-    end note
 else Use Existing Client
     note over konga
         User can use existing client credentials
-        Enter client_id,
-        Enter [oxd_id: for update client expire time]
+        Enter oxd_id
+        Enter client_id
+        Enter client_secret
     end note
-    konga->konga_DB: Store client_credentials
 end
+konga->oxd: Register resources(UMA scope_Expression)
+oxd<->OP:
+oxd->konga: Return oxd_id
+konga->konga_DB: Store Client credentials
+note over konga_DB
+    oxd_id,
+    client_id,
+    uma_scope_expression
+end note
 
-konga->kong: Add consumer with {username: "foo", custom_id: client_id}
-kong->kong_DB: Add consumer
+note over konga
+    Pass client credetial to plugin
+end note
+
+konga->kong: Configure Gluu-OAuth2-RS plugin with [Service|Route|API|Global]
+note over kong
+Gluu-OAuth2-Client schema:
+1. oxd_id
+2. client_id
+3. client_secret
+4. op_server
+5. oxd_http_url
+6. uma_scope_expression
+7. allow_unprotected_path
+8. Mode {UMA, MIX}
+end note
+kong->kong_DB: Add Gluu-OAuth2-Client
 kong_DB->kong:
-kong->konga: Return consumer {id, username, custom_id}
-end
+kong->konga: Return with gluu-oauth2-client config details

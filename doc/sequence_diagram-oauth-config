@@ -37,10 +37,8 @@ Gluu-OAuth2-Client schema:
 3. client_secret
 4. op_server
 5. oxd_http_url
-6. mode {"OAUTH","UMA","MIX"}
-7. anonymous
-8. oauth_scope_expression
-9. allow_oauth_scope_expression
+6. oauth_scope_expression
+7. allow_oauth_scope_expression
 end note
 kong->kong_DB: Add Gluu-OAuth2-Client
 kong_DB->kong:

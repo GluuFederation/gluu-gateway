@@ -9,76 +9,53 @@ alt no token present
     gluu-oauth2-rs->Kong Proxy: 401/Unauthorized + ticket
 end
 
-gluu-oauth2-rs->kong-cache: Lookup token
+kong-cache<->gluu-oauth2-rs: token cache data
+opt token already authorized for this path/method
+    gluu-oauth2-rs->Kong Proxy: return
+end
 
-alt oauth2-consumer cache found
-    note over gluu-oauth2-rs
-        token_type = cache.token_type
-        mode = cache.mode
-    end note
+gluu-oauth2-rs->kong-cache: Lookup oauth2-client plugin cache
+
+alt oauth2-client cache found
+    opt mode == UMA
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Please enable Mix mode
+    end
 else cache not found
-    note over gluu-oauth2-rs
-        token_type = RPT
-        mode = UMA
-    end note
+    opt mode == MIX
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Please enable UMA mode
+    end
+    gluu-oauth2-rs->oxd-web: Introspect RPT
+    opt active == false
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Token inactive
+    end
 end
 
-kong-cache->gluu-oauth2-rs: JSON
-
-opt token_type == RPT
-    opt token already authorized for this path/method
-        gluu-oauth2-rs->Kong Proxy: return
-    end
+opt mode == UMA
     gluu-oauth2-rs->oxd-web: call check_access(token)
-    opt granted
-        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
-        Kong Proxy->API: Send Request
-        API->Kong Proxy: Content
-    end
-    opt invalid_request - when path is not protected
-        opt allow_unprotected_path = false
-            gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
-        end
-        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = false } , ...]
-        gluu-oauth2-rs->gluu-oauth2-rs: Add UMA-WARNING header - "Path is not protected"
-        Kong Proxy->API: Send Request
-        API->Kong Proxy: Content
-    end
-    opt denied or error
-        gluu-oauth2-rs->Kong Proxy: 403/Forbidden
-    end
 end
 
-opt token_type == OAuth
-    opt UMA Mode
-        gluu-oauth2-rs->Kong Proxy: 401/Forbidden: "UMA token required"
+opt mode == MIX
+    gluu-oauth2-rs->oxd-web: get RPT and check_access(token)
+end
+
+note over gluu-oauth2-rs
+    Next step to check response of UMA access
+end note
+
+opt granted
+    gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
+    Kong Proxy->API: Send Request
+    API->Kong Proxy: Content
+end
+opt invalid_request - when path is not protected
+    opt allow_unprotected_path = false
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
     end
-    opt OAuth mode
-        opt requested token scope != oauth scope expression
-            gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
-        end
-        gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
-        Kong Proxy->API: Send Request
-        API->Kong Proxy: Content
-    end
-    opt Mix Mode
-        gluu-oauth2-rs<->oxd-web: get token
-        gluu-oauth2-rs->kong-cache: write token, update OAuth2 JSON (add "associated_rpt" key)
-        gluu-oauth2-rs->oxd-web: check_access(token)
-        opt granted
-            gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
-            gluu-oauth2-rs->Kong Proxy: return
-        end
-        opt invalid_request - when path is not protected
-            opt allow_unprotected_path = false
-                gluu-oauth2-rs->Kong Proxy: 401/Unauthorized
-            end
-            gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = false } , ...]
-            gluu-oauth2-rs->gluu-oauth2-rs: Add UMA-WARNING header - "Path is not protected"
-            gluu-oauth2-rs->Kong Proxy: return
-        end
-        opt denied or error
-            gluu-oauth2-rs->Kong Proxy: 403 forbidden
-        end
-    end
+    gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = false } , ...]
+    gluu-oauth2-rs->gluu-oauth2-rs: Add UMA-WARNING header - "Path is not protected"
+    Kong Proxy->API: Send Request
+    API->Kong Proxy: Content
+end
+opt denied or error
+    gluu-oauth2-rs->Kong Proxy: 403/Forbidden
 end
