@@ -16,8 +16,6 @@ if not token_cache then
 end
 
 return function(conf)
-    kong.log("demo plugin access phase")
-
     local authorization = ngx.var.http_authorization
     local token
     if authorization and #authorization > 0 then
@@ -98,7 +96,18 @@ return function(conf)
         end
     end
 
+    print("calling select_by_custom_id: ", data.client_id)
     -- TODO implement consumer detection
+    local consumer, err = kong.db.consumers:select_by_custom_id(data.client_id)
+    print"after select_by_custom_id"
+    if err then
+        kong.log.err("select_by_custom_id error: ", err)
+    end
+    if not consumer then
+        print("consumer not found")
+        return kong.response.exit(401)
+    end
+    print(consumer.id)
 
     -- TODO implement scope expressions, id any
 end

@@ -115,12 +115,27 @@ test("Simple oxd Kong plugin test", function()
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
     assert(res:find("401"))
 
-    print"test it works with token"
+    print"create a consumer"
+    local res, err = sh_until_ok(10,
+        [[curl --fail -i -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], setup_client_response.data.client_id, [[']]
+    )
+
+    sleep(2) -- give a chance to propogate
+
+    print"test it with with token, consumer is registered"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
+
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
 
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(
