@@ -88,6 +88,21 @@ return function(conf)
 
         data = response.body.data
 
+        print("calling select_by_custom_id: ", data.client_id)
+        -- TODO implement consumer detection
+        local consumer, err = kong.db.consumers:select_by_custom_id(data.client_id)
+        print"after select_by_custom_id"
+        if err then
+            kong.log.err("select_by_custom_id error: ", err)
+        end
+        if not consumer then
+            print("consumer not found")
+            return kong.response.exit(401)
+        end
+
+        -- cache consumer id also, avoid DB call on every request
+        data.consumer_id = consumer.id
+
         if data.exp and data.iat then
             token_cache:set(token, data, data.iat + data.exp - EXPIRE_DELTA)
         else
@@ -96,18 +111,9 @@ return function(conf)
         end
     end
 
-    print("calling select_by_custom_id: ", data.client_id)
-    -- TODO implement consumer detection
-    local consumer, err = kong.db.consumers:select_by_custom_id(data.client_id)
-    print"after select_by_custom_id"
-    if err then
-        kong.log.err("select_by_custom_id error: ", err)
-    end
-    if not consumer then
-        print("consumer not found")
-        return kong.response.exit(401)
-    end
-    print(consumer.id)
+    print("Consumer: ", consumer.id)
 
     -- TODO implement scope expressions, id any
+
+    -- TODO set headers
 end
