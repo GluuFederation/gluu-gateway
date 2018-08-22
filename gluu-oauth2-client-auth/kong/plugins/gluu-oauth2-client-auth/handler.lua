@@ -1,23 +1,22 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-oauth2-client-auth.access"
 
-local Handler = BasePlugin:extend()
-Handler.PRIORITY = 999
-function Handler:new()
-    Handler.super.new(self, "gluu-oauth2-client-auth")
+local handler = BasePlugin:extend()
+-- handler.priority = 999
+
+-- Your plugin handler's constructor. If you are extending the
+-- Base Plugin handler, it's only role is to instanciate itself
+-- with a name. The name is your plugin name as it will be printed in the logs.
+function handler:new()
+    handler.super.new(self, "demo")
 end
 
-function Handler:access(conf)
-    Handler.super.access(self)
-    local response = access.execute_access(conf)
-    if response ~= nil then
-        return response
-    end
+function handler:access(config)
+    -- Eventually, execute the parent implementation
+    -- (will log that your plugin is entering this context)
+    handler.super.access(self)
+
+    return access(config)
 end
 
-function Handler:log(conf)
-    Handler.super.log(self)
-    access.execute_log(conf)
-end
-
-return Handler
+return handler

@@ -1,0 +1,20 @@
+worker_processes 1;
+
+events {
+    worker_connections 512;
+}
+
+error_log logs/error.log debug;
+
+http {
+    server {
+        listen 0.0.0.0:80;
+
+        location / {
+            content_by_lua_block {
+                ngx.say("Backend request_uri: ", ngx.var.request_uri)
+                ngx.say("Method: ", ngx.req.get_method())
+            }
+        }
+    }
+}
