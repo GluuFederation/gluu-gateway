@@ -117,6 +117,7 @@ _M.kong_postgress_custom_plugins = function(opts)
 
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
+        " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
         " -e KONG_DATABASE=postgres ",
         " -e KONG_PG_HOST=kong-database ",
         " -e KONG_PG_DATABASE=kong ",
