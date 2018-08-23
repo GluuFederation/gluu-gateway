@@ -14,6 +14,17 @@ http {
             content_by_lua_block {
                 ngx.say("Backend request_uri: ", ngx.var.request_uri)
                 ngx.say("Method: ", ngx.req.get_method())
+                ngx.say("Headers:")
+                local h, err = ngx.req.get_headers()
+                for k, v in pairs(h) do
+                    if type(v) == "table" then
+                        for i = 1, #v do
+                            ngx.say(k, ": ", v[i])
+                        end
+                    else
+                        ngx.say(k, ": ", v)
+                    end
+                end
             }
         }
     }
