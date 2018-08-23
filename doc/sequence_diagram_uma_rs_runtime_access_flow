@@ -35,7 +35,12 @@ opt mode == UMA
 end
 
 opt mode == MIX
-    gluu-oauth2-rs->oxd-web: get RPT and check_access(token)
+    alt claim_token in header
+        gluu-oauth2-rs->oxd: get_rpt token with claim_token
+    else
+        gluu-oauth2-rs->oxd: get_rpt
+    end
+    gluu-oauth2-rs->oxd-web: check_access(token)
 end
 
 note over gluu-oauth2-rs
