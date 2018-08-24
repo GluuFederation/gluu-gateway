@@ -39,6 +39,7 @@ Gluu-OAuth2-Client schema:
 5. oxd_http_url
 6. oauth_scope_expression
 7. allow_oauth_scope_expression
+8. anonymous
 end note
 kong->kong_DB: Add Gluu-OAuth2-Client
 kong_DB->kong:
