@@ -1,0 +1,19 @@
+worker_processes 1; # one is important here!
+
+events {
+    worker_connections 512;
+}
+
+error_log logs/error.log debug;
+
+http {
+    server {
+        listen 0.0.0.0:80;
+
+        location / {
+            content_by_lua_block {
+                require"gluu.oxd-mock"(require"gluu.oxd-model")
+            }
+        }
+    }
+}
