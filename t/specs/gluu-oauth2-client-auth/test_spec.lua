@@ -48,19 +48,19 @@ test("Simple oxd Kong plugin test", function()
     kong_utils.backend()
     kong_utils.oxd_mock(test_root .. "/oxd-model.lua")
 
-    print"create a Sevice"
+    print"=============== Create a Sevice"
     local res, err = sh_until_ok(10,
         [[curl --fail -i -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/services/ --data 'name=demo-service' --data 'url=http://backend']]
     )
 
-    print"create a Route"
+    print"=============== Create a Route"
     local res, err = sh_until_ok(10,
         [[curl --fail -i -sS -X POST  --url http://localhost:]],
         ctx.kong_admin_port, [[/services/demo-service/routes --data 'hosts[]=backend.com']]
     )
 
-    print"test it works"
+    print"=============== Test it works"
     local res, err = sh_until_ok(10, [[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
@@ -97,23 +97,39 @@ test("Simple oxd Kong plugin test", function()
 
     local access_token = response.access_token
 
-    print"enable plugin for the Service"
-    local res, err = sh_until_ok(10, [[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+    print"=============== Test validation on plugin config"
+    local res, err = sh_ex(
+        [[curl -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/services/demo-service/plugins/ --data 'name=gluu-oauth2-client-auth' ]],
+        [[ --data "config.op_url=stub" ]],
+        [[ --data "config.oxd_url=http://oxd-mock" ]],
+        [[ --data "config.anonymous=123-456" ]],
+        [[ --data "config.oauth_scope_expression=[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\",\"scope_expression\":{\"and\":[\"admin\",{\"not\":[\"employee\"]}]}}]}]" ]],
+        [[ --data "config.client_id=]], register_site_response.client_id, "\" ",
+        [[ --data "config.client_secret=]], register_site_response.client_secret, "\" ",
+        [[ --data "config.oxd_id=]], register_site_response.oxd_id, "\" "
+    )
+    assert(res:find("400"), 1, true)
+
+    print"=============== Enable plugin for the Service"
+    local res, err = sh_until_ok(10,
+        [[curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
         [[/services/demo-service/plugins/  --data 'name=gluu-oauth2-client-auth' ]],
-        [[ --data "config.op_server=stub" ]],
-        [[ --data "config.oxd_http_url=http://oxd-mock" ]],
+        [[ --data "config.op_url=https://gluu-test.org" ]],
+        [[ --data "config.oxd_url=http://oxd-mock" ]],
+        [[ --data "config.allow_oauth_scope_expression=true" ]],
+        [[ --data "config.oauth_scope_expression=[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\"],\"scope_expression\":{\"and\":[\"admin\",{\"not\":[\"employee\"]}]}}]}]" ]],
         [[ --data "config.client_id=]], register_site_response.client_id, "\" ",
         [[ --data "config.client_secret=]], register_site_response.client_secret, "\" ",
         [[ --data "config.oxd_id=]], register_site_response.oxd_id, "\" "
     )
 
-    print"test it fail with 401 without token"
+    print"=============== Test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
     assert(res:find("401"), 1, true)
 
-    print"create a consumer"
+    print"=============== Create a consumer"
     local res, err = sh_until_ok(10,
         [[curl --fail -v -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
@@ -121,7 +137,7 @@ test("Simple oxd Kong plugin test", function()
 
     local consumer_response = JSON:decode(res)
 
-    print"test it work with token, consumer is registered"
+    print"=============== Test it work with token, consumer is registered"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
@@ -141,14 +157,14 @@ test("Simple oxd Kong plugin test", function()
         access_token, [[']]
     )
 
-    print"test it fail with 403 with wrong Bearer token"
+    print"=============== Test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(
         [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']]
     )
     assert(res:find("403"))
 
-    print"test it works with the same token again, oxd-model id completed, token taken from cache"
+    print"=============== Test it works with the same token again, oxd-model id completed, token taken from cache"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],

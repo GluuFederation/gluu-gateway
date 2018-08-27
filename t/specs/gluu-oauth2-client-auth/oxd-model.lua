@@ -24,8 +24,8 @@ local introspect_item =  {
         --extension_field": "twenty-seven",
     },
     response_callback = function(response)
-        response.exp = 60*60
-        response.iat = ngx.now()
+        response.exp = 1535367697
+        response.iat = 1535367397
         return response
     end,
 }
