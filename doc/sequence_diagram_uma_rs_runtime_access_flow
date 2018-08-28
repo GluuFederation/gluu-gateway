@@ -24,14 +24,14 @@ else cache not found
     opt mode == MIX
         gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Please enable UMA mode
     end
-    gluu-oauth2-rs->oxd-web: Introspect RPT
+    gluu-oauth2-rs->oxd: Introspect RPT
     opt active == false
         gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Token inactive
     end
 end
 
 opt mode == UMA
-    gluu-oauth2-rs->oxd-web: call check_access(token)
+    gluu-oauth2-rs->oxd: call check_access(token)
 end
 
 opt mode == MIX
@@ -40,7 +40,7 @@ opt mode == MIX
     else
         gluu-oauth2-rs->oxd: get_rpt
     end
-    gluu-oauth2-rs->oxd-web: check_access(token)
+    gluu-oauth2-rs->oxd: check_access(token)
 end
 
 note over gluu-oauth2-rs
@@ -49,8 +49,7 @@ end note
 
 opt granted
     gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = true } , ...]
-    Kong Proxy->API: Send Request
-    API->Kong Proxy: Content
+    gluu-oauth2-rs->Kong Proxy: Success
 end
 opt invalid_request - when path is not protected
     opt allow_unprotected_path = false
@@ -58,8 +57,7 @@ opt invalid_request - when path is not protected
     end
     gluu-oauth2-rs->kong-cache: token["permissions"] = [ {"path":"/profile", "methods": ["GET", "POST"], path_protected = false } , ...]
     gluu-oauth2-rs->gluu-oauth2-rs: Add UMA-WARNING header - "Path is not protected"
-    Kong Proxy->API: Send Request
-    API->Kong Proxy: Content
+    gluu-oauth2-rs->Kong Proxy: Success
 end
 opt denied or error
     gluu-oauth2-rs->Kong Proxy: 403/Forbidden
