@@ -16,10 +16,10 @@ gluu-oauth2-client-plugin->kong-cache: Lookup token in cache
 opt token not in cache
     gluu-oauth2-client-plugin->kong-cache: Lookup permission token in cache
     opt no permission token in cache
-        gluu-oauth2-client-plugin<->oxd-web: GET protection_access_token
+        gluu-oauth2-client-plugin<->oxd: GET protection_access_token
     end
 
-    gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
+    gluu-oauth2-client-plugin<->oxd: Introspect AT at OAuth Introspection endpoint
     opt active == false || token expired
         gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token expired
     end
