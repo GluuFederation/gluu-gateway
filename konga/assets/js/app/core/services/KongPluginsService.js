@@ -219,6 +219,21 @@
                 plugins: {
                   "gluu-oauth2-client-auth": {
                     description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
+                  },
+                  "pre-function": {
+                    description: "Dynamically run Lua code from Kong during access phase. Runs before other plugins run during access phase."
+                  },
+                  "post-function": {
+                    description: "Dynamically run Lua code from Kong during access phase. Runs after other plugins in the access phase."
+                  },
+                  "zipkin": {
+                    description: "Propagate zipkin spans and report spans to a zipkin server."
+                  },
+                  "azure-functions": {
+                    description: "This plugin invokes Azure Functions. It can be used in combination with other request plugins to secure, manage or extend the function."
+                  },
+                  "prometheus": {
+                    description: "Expose metrics related to Kong and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
                   }
                 }
               }

@@ -92,9 +92,18 @@
                 templateUrl: 'js/app/apis/views/manage-uma-rs-plugin.html',
                 controller: 'ManageUmaRsPluginController',
                 resolve: {
-                  _api: [
-                    'ApiService', '$stateParams',
-                    function resolve(ApiService, $stateParams) {
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'api';
+                    }
+                  ],
+                  _context_data: [
+                    '$stateParams',
+                    'ApiService',
+                    '$log',
+                    function resolve($stateParams,
+                                     ApiService) {
                       return ApiService.findById($stateParams.api_id)
                     }
                   ],

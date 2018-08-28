@@ -9,11 +9,12 @@
   angular.module('frontend.dashboard')
     .controller('DashboardController', [
       '$scope', '$rootScope', '$log', '$state', '$q', 'InfoService', '$localStorage', 'HttpTimeout',
-      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', '$window',
+      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', 'ConsumerService', 'PluginsService', '$window',
       function controller($scope, $rootScope, $log, $state, $q, InfoService, $localStorage, HttpTimeout,
-                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, $window) {
+                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, ConsumerService, PluginsService, $window) {
 
         $scope.globalInfo = $localStorage.credentials.user;
+        $scope.itemsPerPage = 10;
         var loadTime = $rootScope.KONGA_CONFIG.info_polling_interval,
           errorCount = 0,
           hasInitiallyLoaded = false,
@@ -195,6 +196,72 @@
               })
         }
 
+        function fetchPluginData() {
+          var plugins = [];
+          var consumers = [];
+          $scope.activeClient = [];
+          $scope.credentials = [];
+          $scope.oxdLoading = true;
+          var pluginFunc = PluginsService
+            .load({name: 'gluu-oauth2-rs'})
+            .then(function (resp) {
+              plugins = resp.data.data;
+            });
+
+          var consumerFunc = ConsumerService
+            .listOAuthConsumerCredential()
+            .then(function (resp) {
+              consumers = resp.data.data;
+            });
+
+          var getActiveClients = ConsumerService
+            .listActiveClients($scope.globalInfo.oxdServerLicenseId)
+            .then(function (resp) {
+              if (!resp.monthly_statistic) {
+                return
+              }
+
+              Object.keys(resp.monthly_statistic).forEach(function (key) {
+                if ((new Date().getMonth() + 1).toString() == key.substr(key.lastIndexOf('-') + 1)) {
+                  $scope.activeClient = resp.monthly_statistic[key].local_clients;
+                  $scope.activeClient = $scope.activeClient.concat(resp.monthly_statistic[key].web_clients);
+                }
+              });
+            });
+
+          $q
+            .all([pluginFunc, consumerFunc, getActiveClients])
+            .finally(
+              function onFinally() {
+                $scope.oxdLoading = false;
+                $scope.credentials = consumers.concat(plugins)
+                $scope.credentials = $scope.credentials.filter(function (o) {
+                  if (!!o.config) {
+                    return $scope.activeClient.findIndex(function (x) {
+                        if (x.client_id == o.config.client_id) {
+                          o.isSetupOXDIdTrue = true;
+                          return true;
+                        }
+                        if (x.client_id == o.config.client_id_of_oxd_id) {
+                          o.isOXDIdTrue = true;
+                          return true;
+                        }
+                      }) > -1;
+                  } else {
+                    return $scope.activeClient.findIndex(function (x) {
+                        if (x.client_id == o.client_id) {
+                          o.isSetupOXDIdTrue = true;
+                          return true;
+                        }
+                        if (x.client_id == o.client_id_of_oxd_id) {
+                          o.isOXDIdTrue = true;
+                          return true;
+                        }
+                      }) > -1;
+                  }
+                })
+              })
+        };
 
         $scope.kong_versions = SettingsService.getKongVersions()
 
@@ -294,6 +361,9 @@
         $scope.$on('user.node.updated', function (node) {
           fetchData();
         })
+
+        // plugins
+        fetchPluginData();
       }
     ])
   ;

@@ -74,11 +74,11 @@
             size: 'lg',
             controller: 'AddPluginController',
             resolve: {
-              _api: function () {
-                return $scope.api;
-              },
-              _consumer: function () {
-                return null;
+              _context: function () {
+                return {
+                  name: 'api',
+                  data: $scope.api
+                }
               },
               _pluginName: function () {
                 return name

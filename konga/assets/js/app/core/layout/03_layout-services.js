@@ -3,47 +3,65 @@
  *
  * Note that this file should only contain services and nothing else.
  */
-(function() {
+(function () {
   'use strict';
 
   // Generic service to return all available menu items for main level navigation.
   angular.module('frontend.core.layout')
     .factory('HeaderNavigationItems', [
-      'AccessLevels','AuthService','$rootScope','UserService',
-      function factory(AccessLevels,AuthService,$rootScope,UserService) {
+      'AccessLevels', 'AuthService', '$rootScope', 'UserService',
+      function factory(AccessLevels, AuthService, $rootScope, UserService) {
 
         return [
           {
             state: 'dashboard',
-            icon : 'mdi-view-dashboard',
-            show : function() {
+            icon: 'mdi-view-dashboard',
+            show: function () {
               return AuthService.isAuthenticated()
             },
             title: 'Dashboard',
             access: AccessLevels.user
           },
           {
+            state: 'routes',
+            show: function () {
+              return AuthService.isAuthenticated() && $rootScope.Gateway
+            },
+            title: 'Routes',
+            icon: 'mdi-cloud-outline',
+            access: AccessLevels.user
+          },
+          {
+            state: 'services',
+            show: function () {
+              return AuthService.isAuthenticated() && $rootScope.Gateway
+            },
+            title: 'Services',
+            icon: 'mdi-cloud-outline',
+            access: AccessLevels.user
+          },
+          {
             state: 'apis',
-            show : function() {
+            show: function () {
               return AuthService.isAuthenticated() && $rootScope.Gateway
             },
             title: 'APIs',
-            icon : 'mdi-cloud-outline',
+            icon: 'mdi-cloud-outline',
             access: AccessLevels.user
           },
           {
             state: 'consumers',
-            show : function() {
+            show: function () {
               return AuthService.isAuthenticated() && $rootScope.Gateway
             },
             title: 'Consumers',
-            icon : 'mdi-account-outline',
+            icon: 'mdi-account-outline',
             access: AccessLevels.user
           },
           {
             state: 'plugins',
-            icon : 'mdi-power-plug',
-            show : function() {
+            icon: 'mdi-power-plug',
+            show: function () {
               return AuthService.isAuthenticated() && $rootScope.Gateway
             },
             title: 'Plugins',
@@ -51,8 +69,8 @@
           },
           {
             state: 'upstreams',
-            icon : 'mdi-shuffle-variant',
-            show : function() {
+            icon: 'mdi-shuffle-variant',
+            show: function () {
               return AuthService.isAuthenticated() && UserService.user().node && $rootScope.Gateway && $rootScope.Gateway.version.indexOf("0.10.") > -1
             },
             title: 'Upstreams',
@@ -60,8 +78,8 @@
           },
           {
             state: 'certificates',
-            icon : 'mdi-certificate',
-            show : function() {
+            icon: 'mdi-certificate',
+            show: function () {
               return AuthService.isAuthenticated() && UserService.user().node && $rootScope.Gateway && $rootScope.Gateway.version.indexOf("0.10.") > -1
             },
             title: 'Certificates',

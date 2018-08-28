@@ -1,3 +1,8 @@
+<style>
+  .trueColorTd {
+    background: #d4f7d4
+  }
+</style>
 <div class="container margin-top" style="width: 600px;max-width: 100%" ng-if="!loading">
   <div class="row" ng-if="!user.node && !Gateway">
     <div class="col-md-12 text-center">
@@ -61,7 +66,8 @@
             <tr>
               <th>Client Id of OXD Id</th>
               <td><span data-ng-show="isShowOXDClientId">{{globalInfo.clientIdOfOXDId}}</span>
-                <a href data-ng-click="isShowOXDClientId = !isShowOXDClientId" title="{{isShowOXDClientId ? 'Hide': 'Show'}}">
+                <a href data-ng-click="isShowOXDClientId = !isShowOXDClientId"
+                   title="{{isShowOXDClientId ? 'Hide': 'Show'}}">
                   <i class="mdi mdi-eye"></i>
                 </a>
               </td>
@@ -117,6 +123,72 @@
             </td>
           </tr>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <div class="panel panel-default">
+        <div class="panel-heading">
+          <div class="panel-title">
+            <i class="mdi mdi-information-outline"></i>&nbsp;CLIENTS INFO
+          </div>
+        </div>
+        <div class="panel-body">
+          <div class="col-md-12">
+            <span class="pull-left"> Note: <span style="background: #d4f7d4; border: 1px solid;">__</span> The highlighted area shows your active clients.</span>
+            <list-search
+              class="pull-right"
+              data-filters="filters"
+              data-options="[10, 20]"
+              data-items="itemsPerPage">
+            </list-search>
+          </div>
+          <div class="col-md-12 table-responsive">
+            <table class="table no-margin">
+              <thead>
+              <tr>
+                <th width="350px">Name</th>
+                <th width="200px">OXD Id / Client Id of OXD Id</th>
+                <th width="100px">Setup client OXD Id / Client Id</th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr data-ng-if="!oxdLoading"
+                  dir-paginate="o in credentials | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage">
+                <td>{{o.name}}</td>
+                <td data-ng-if="!!o.config" data-ng-class="{'trueColorTd': o.isOXDIdTrue}">{{o.config.oxd_id}} <br/>
+                  {{o.config.client_id_of_oxd_id}}
+                </td>
+                <td data-ng-if="!!o.config" data-ng-class="{'trueColorTd': o.isSetupOXDIdTrue}">
+                  {{o.config.setup_client_oxd_id}} <br/> {{o.config.client_id}}
+                </td>
+                <td data-ng-if="!o.config" data-ng-class="{'trueColorTd': o.isOXDIdTrue}">{{o.oxd_id}} <br/>
+                  {{o.client_id_of_oxd_id}}
+                </td>
+                <td data-ng-if="!o.config" data-ng-class="{'trueColorTd': o.isSetupOXDIdTrue}">{{o.setup_client_oxd_id}}
+                  <br/>
+                  {{o.client_id}}
+                </td>
+              </tr>
+              <tr data-ng-if="credentials.length == 0 && !oxdLoading">
+                <td colspan="5">
+                  No records found
+                </td>
+              </tr>
+              <tr data-ng-if="oxdLoading">
+                <td colspan="5">
+                  <konga-loader message="Loading... Please wait.."></konga-loader>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="col-md-12" style="margin-bottom: 10px;">
+            <dir-pagination-controls></dir-pagination-controls>
+          </div>
+        </div>
       </div>
     </div>
   </div>

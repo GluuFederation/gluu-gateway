@@ -672,7 +672,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -803,7 +803,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -937,7 +937,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1031,7 +1031,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 assert.res_status(200, res)
 
-                -- Request to other register path, 403/Forbidden because RPT token is for path /posts not for /comments
+                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/comments",
@@ -1040,7 +1040,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
@@ -1124,7 +1124,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1249,7 +1249,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Host"] = "jsonplaceholder.typicode.com"
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
             end)
 
@@ -1346,7 +1346,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(200, res)
                 assert.equal(true, auth_helper.is_empty(res.headers["uma-warning"]))
 
-                -- Request to other register path, 403/Forbidden because RPT token is for path /posts not for /comments
+                -- Request to other register path, 401/Unauthorized because RPT token is for path /posts not for /comments
                 local res = assert(proxy_client:send {
                     method = "GET",
                     path = "/comments",
@@ -1355,7 +1355,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                         ["Authorization"] = "Bearer " .. umaGetRPTResponse.data.access_token,
                     }
                 })
-                assert.res_status(403, res)
+                assert.res_status(401, res)
                 assert.is_truthy(string.find(res.headers["WWW-Authenticate"], "ticket"))
 
                 -- Request with unregister path - 401/Unauthorized - allow_unprotected_path = false
@@ -1692,7 +1692,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                     config = {
                         uma_server_host = op_server,
                         oxd_host = oxd_http,
-                        oauth_scope_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\"],\"scope_expression\":{\"and\":[\"openid\", \"calendar\"]}}]},{\"path\":\"/comments\",\"conditions\":[{\"httpMethods\":[\"GET\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}},{\"httpMethods\":[\"POST\"],\"scope_expression\":{\"and\":[\"email\",\"profile\",{\"or\":[\"calendar\"]}]}}]}]"
+                        oauth_scope_expression = "[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\",\"PUT\"],\"scope_expression\":{\"and\":[\"openid\"]}}]},{\"path\":\"/todos\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\",\"PUT\"],\"scope_expression\":{\"and\":[\"openid\"]}}]},{\"path\":\"/todos/users\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\"],\"scope_expression\":{\"and\":[\"openid\",\"uma_protection\"]}}]},{\"path\":\"/todos/users/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"POST\",\"PUT\",\"DELETE\"],\"scope_expression\":{\"and\":[\"openid\",\"uma_protection\",\"calendar\"]}}]}]"
                     },
                 },
                 headers = {
@@ -1728,7 +1728,7 @@ describe("gluu-oauth2-client-auth plugin", function()
                 assert.res_status(401, res)
             end)
 
-            it("200 status when oauth token is active = true", function()
+            it("Check diff path with diff scope", function()
                 -- ------------------GET Client Token-------------------------------
                 local tokenRequest = {
                     oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
@@ -1774,7 +1774,93 @@ describe("gluu-oauth2-client-auth plugin", function()
                 })
                 assert.res_status(200, res)
 
-                -- ------------------GET Client Token-------------------------------
+                -- Post method
+                local res = assert(proxy_client:send {
+                    method = "POST",
+                    path = "/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["Content-Type"] = "application/json"
+                    },
+                    body = {
+                        name = "Test",
+                        description = "Test description",
+                        image = "test.jpg"
+                    }
+                })
+                local json = cjson.decode(assert.res_status(200, res))
+
+                -- Delete method
+                local res = assert(proxy_client:send {
+                    method = "DELETE",
+                    path = "/posts/" .. json._id,
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- ------------------Check with diff endpoints-------------------------------
+                local tokenRequest = {
+                    oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
+                    client_id = oauth2_consumer_oauth_mode_scope_expression.client_id,
+                    client_secret = oauth2_consumer_oauth_mode_scope_expression.client_secret,
+                    scope = { "openid" },
+                    op_host = oauth2_consumer_oauth_mode_scope_expression.op_host
+                };
+
+                local token = oxd.get_client_token(tokenRequest)
+                local req_access_token = token.data.access_token
+
+                -- 1st time request, Cache is not exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request, Cache is exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 403/forbidden request path with incomplete scope
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos/users",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                local json = cjson.decode(assert.res_status(403, res))
+                assert.equal("Failed to validate introspect scope with oauth scope expression", json.message)
+
+                -- 403/forbidden request path with incomplete scope
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos/users/posts",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                local json = cjson.decode(assert.res_status(403, res))
+                assert.equal("Failed to validate introspect scope with oauth scope expression", json.message)
+
+                -- ------------------Check with diff endpoints-------------------------------
                 local tokenRequest = {
                     oxd_host = oauth2_consumer_oauth_mode_scope_expression.oxd_http_url,
                     client_id = oauth2_consumer_oauth_mode_scope_expression.client_id,
@@ -1789,7 +1875,57 @@ describe("gluu-oauth2-client-auth plugin", function()
                 -- 1st time request, Cache is not exist
                 local res = assert(proxy_client:send {
                     method = "GET",
-                    path = "/posts",
+                    path = "/todos/users",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 2nd time request, Cache is exist
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos/users",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- Post method
+                local res = assert(proxy_client:send {
+                    method = "POST",
+                    path = "/todos/users",
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                        ["Content-Type"] = "application/json"
+                    },
+                    body = {
+                        name = "TodoTestCase",
+                        description = "Test description",
+                        image = "test.jpg"
+                    }
+                })
+                local json = cjson.decode(assert.res_status(200, res))
+
+                -- Delete method
+                local res = assert(proxy_client:send {
+                    method = "DELETE",
+                    path = "/todos/users/" .. json._id,
+                    headers = {
+                        ["Host"] = "api4.typicode.com",
+                        ["Authorization"] = "Bearer " .. req_access_token,
+                    }
+                })
+                assert.res_status(200, res)
+
+                -- 403/forbidden request path with incomplete scope
+                local res = assert(proxy_client:send {
+                    method = "GET",
+                    path = "/todos/users/posts",
                     headers = {
                         ["Host"] = "api4.typicode.com",
                         ["Authorization"] = "Bearer " .. req_access_token,

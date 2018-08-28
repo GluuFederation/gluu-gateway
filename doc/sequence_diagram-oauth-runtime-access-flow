@@ -1,0 +1,40 @@
+title gluu-oauth2-client plugin access
+
+client->Kong Proxy: call API with header Authorization: Bearer AT
+opt push claim
+    client->Kong Proxy: Add Header "UMA Data": {"claim_token":"...","claim_token_format":"..."}
+end
+
+Kong Proxy->gluu-oauth2-client-plugin: *****  call "access" event for Kong OAuth-Consumer plugin priority 999 *****
+
+opt no token
+    gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized
+end
+
+gluu-oauth2-client-plugin->kong-cache: Lookup token in cache
+
+opt token not in cache
+    gluu-oauth2-client-plugin->kong-cache: Lookup permission token in cache
+    opt no permission token in cache
+        gluu-oauth2-client-plugin<->oxd-web: GET protection_access_token
+    end
+
+    gluu-oauth2-client-plugin<->oxd-web: Introspect AT at OAuth Introspection endpoint
+    opt active == false || token expired
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - token expired
+    end
+    gluu-oauth2-client-plugin<->kong_db: fetch consumer using client_id
+    opt consumer == null
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Invalid client
+    end
+    opt &(allow_oauth_scope_expression == true and oauth_scope_expression is not match with token scope)
+        gluu-oauth2-client-plugin->Kong Proxy: 401 / Unauthorized - Scope validation failed
+    end
+    gluu-oauth2-client-plugin->kong-cache: write "token": {token JSON}
+    kong-cache->kong_db: add "token": {token JSON}
+end
+
+kong-cache->gluu-oauth2-client-plugin: return token JSON
+
+gluu-oauth2-client-plugin->gluu-oauth2-client-plugin: Add OAUTH_SCOPE, OAUTH_EXP, OAUTH_CLIENT_ID headers
+gluu-oauth2-client-plugin->Kong Proxy: return

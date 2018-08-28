@@ -1,17 +1,19 @@
 local utils = require "kong.tools.utils"
-local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
+local pl_types = require "pl.types"
+local cjson = require "cjson.safe"
 
---- Check op_server_validator is must https and not empty
--- @param given_value: Value of op_server_validator
--- @param given_config: whole config values including op_server_validator
-local function op_server_validator(given_value, given_config)
-    ngx.log(ngx.DEBUG, "op_server_validator: given_value:" .. given_value)
-
-    if not (string.sub(given_value, 0, 8) == "https://") then
-        ngx.log(ngx.DEBUG, "op_server must be 'https'")
-        return false, "op_server must be 'https'"
+--- Check OAuth scope expression
+-- @param v: JSON expression
+-- @param t: All config valus
+local function check_expression(v, t)
+    if pl_types.is_empty(v) then
+        return true
     end
 
+    local _, err = cjson.decode(v)
+    if err then
+        return false, "Invalid OAuth scope json expression"
+    end
     return true
 end
 
@@ -29,17 +31,13 @@ return {
     no_consumer = true,
     fields = {
         hide_credentials = { type = "boolean", default = false },
-        oxd_id = { type = "string" },
-        op_server = { required = true, type = "string", func = op_server_validator },
-        oxd_http_url = { required = true, type = "string" },
-        anonymous = {type = "string", default = "", func = check_user}
+        oxd_id = { required = true, type = "string" },
+        client_id = { required = true, type = "string" },
+        client_secret = { required = true, type = "string" },
+        op_url = { required = true, type = "url" },
+        oxd_url = { required = true, type = "url" },
+        anonymous = { type = "string", default = "", func = check_user },
+        oauth_scope_expression = { required = false, type = "string", func = check_expression },
+        allow_oauth_scope_expression = { required = true, type = "boolean", default = false },
     },
-    self_check = function(schema, plugin_t, dao, is_updating)
-        ngx.log(ngx.DEBUG, "gluu-oauth2-client-auth oxd_id: " .. tostring(helper.is_empty(plugin_t.oxd_id)))
-        if not helper.is_empty(plugin_t.oxd_id) then
-            return true
-        end
-
-        return helper.register(plugin_t), "Failed to register API on oxd server (make sure oxd server is running on oxd_host specified in configuration)"
-    end
 }

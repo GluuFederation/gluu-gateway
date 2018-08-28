@@ -23,6 +23,60 @@
                  *        }}
          */
         var titleItems = {
+          service: [
+            {
+              title: 'name',
+              column: 'name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'host',
+              column: 'host',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            }
+          ],
+          route: [
+            {
+              title: 'hosts',
+              column: 'hosts',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'service',
+              column: 'service',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'paths',
+              column: 'paths',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            }
+          ],
           api: [
             {
               title: 'name',
@@ -272,12 +326,20 @@
               inTitle: true
             },
             {
-              title: 'API',
-              column: 'api_id',
+              title: 'context',
+              column: 'context',
               searchable: true,
               sortable: true,
               inSearch: true,
               inTitle: true
+            },
+            {
+              title: 'apply to',
+              column: 'item_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true,
             },
             {
               title: 'Consumer',

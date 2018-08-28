@@ -1,0 +1,6 @@
+[submodule "third-party/lua-resty-lrucache"]
+	path = third-party/lua-resty-lrucache
+	url = git@github.com:openresty/lua-resty-lrucache.git
+[submodule "third-party/oxd-web-lua"]
+	path = third-party/oxd-web-lua
+	url = git@github.com:GluuFederation/oxd-web-lua.git

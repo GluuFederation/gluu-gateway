@@ -25,7 +25,9 @@
     'frontend.cluster',
     'ngTagsInput',
     'checklist-model',
-    'ngIdle'
+    'ngIdle',
+    'frontend.services',
+    'frontend.routes'
   ]);
 
 
@@ -182,7 +184,7 @@
                    editableOptions, editableThemes, $templateCache, NodesService,
                    AuthService, cfpLoadingBar, UserService, $localStorage, Idle) {
         Idle.watch();
-        $rootScope.$on('IdleTimeout', function() {
+        $rootScope.$on('IdleTimeout', function () {
           $localStorage.$reset();
           return window.location.reload(false)
         });
