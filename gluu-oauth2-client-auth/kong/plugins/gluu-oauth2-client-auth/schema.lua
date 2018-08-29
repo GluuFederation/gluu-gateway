@@ -4,8 +4,7 @@ local cjson = require "cjson.safe"
 
 --- Check OAuth scope expression
 -- @param v: JSON expression
--- @param t: All config valus
-local function check_expression(v, t)
+local function check_expression(v)
     if pl_types.is_empty(v) then
         return true
     end

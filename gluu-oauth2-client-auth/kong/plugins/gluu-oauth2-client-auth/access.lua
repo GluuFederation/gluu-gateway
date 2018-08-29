@@ -39,8 +39,7 @@ local function set_consumer(body)
     kong.service.request.set_headers(new_headers)
 end
 
-local function get_token(conf)
-    local authorization = ngx.var.http_authorization
+local function get_token(authorization)
     if authorization and #authorization > 0 then
         local from, to, err = ngx.re.find(authorization, "\\s*[Bb]earer\\s+(.+)", "jo", nil, 1)
         if from then
@@ -52,18 +51,21 @@ local function get_token(conf)
         end
     end
 
-    -- Hide credentials
-    kong.log.debug("hide_credentials: ", conf.hide_credentials)
-    if conf.hide_credentials then
-        kong.log.debug("Hide authorization header")
-        kong.service.request.clear_header(authorization)
-    end
-
     return nil
 end
 
 return function(conf)
-    local token = get_token(conf)
+    local authorization = ngx.var.http_authorization
+    local token = get_token(authorization)
+
+    -- Hide credentials
+    kong.log.debug("hide_credentials: ", conf.hide_credentials)
+    if conf.hide_credentials then
+        kong.ctx.shared.authorization_token = token
+        kong.log.debug("Hide authorization header")
+        kong.service.request.clear_header("authorization")
+    end
+
     if not token then
         kong.log.err("Token not found")
         return kong.response.exit(401, { message = "Token not found" })
@@ -132,9 +134,9 @@ return function(conf)
 
             if err then
                 kong.log.err(err)
-                return kong.response.exit(500, { message = "An unexpected error ocurred" })
+                return kong.response.exit(500, { message = "An unexpected error occurred" })
             end
-            set_consumer({ consumer })
+            set_consumer({ consumer = consumer })
             return
         end
 

@@ -47,20 +47,37 @@ describe("Simple oxd Kong plugin test", function()
     kong_utils.backend()
     kong_utils.oxd_mock(test_root .. "/oxd-model.lua")
 
-    local access_token, register_site_response
+    local access_token, register_site_response, anonymous_consumer_response
+    local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
 
     setup(function()
         print "---------------- Setup test"
 
-        print "Create a Sevice"
+        print "Create a Sevices"
+        -- This service used to test token authentication with hide_credentials
         local res, err = sh_until_ok(10,
             [[curl --fail -i -sS -X POST --url http://localhost:]],
             ctx.kong_admin_port, [[/services/ --data 'name=demo-service' --data 'url=http://backend']])
 
-        print "Create a Route"
+        -- This service used to test anonymous user
+        local res, err = sh_until_ok(10,
+            [[curl --fail -i -sS -X POST --url http://localhost:]],
+            ctx.kong_admin_port, [[/services/ --data 'name=demo-service2' --data 'url=http://backend']])
+
+        print "Create a Routes"
         local res, err = sh_until_ok(10,
             [[curl --fail -i -sS -X POST  --url http://localhost:]],
             ctx.kong_admin_port, [[/services/demo-service/routes --data 'hosts[]=backend.com']])
+
+        local res, err = sh_until_ok(10,
+            [[curl --fail -i -sS -X POST  --url http://localhost:]],
+            ctx.kong_admin_port, [[/services/demo-service2/routes --data 'hosts[]=backend2.com']])
+
+        print "Create a consumer for anonymous test"
+        local res, err = sh_until_ok(10,
+            [[curl --fail -v -sS -X POST --url http://localhost:]],
+            ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
+        anonymous_consumer_response = JSON:decode(res)
 
         local register_site = {
             scope = { "openid", "uma_protection" },
@@ -94,9 +111,14 @@ describe("Simple oxd Kong plugin test", function()
     describe("Test proxy access point before plugin configuration", function()
         print "---------------- Test proxy access point before plugin configuration"
 
-        it("Test it works", function()
+        it("Test service backend.com", function()
             local res, err = sh_until_ok(10, [[curl --fail -i -sS -X GET --url http://localhost:]],
                 ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+        end)
+
+        it("Test service backend2.com", function()
+            local res, err = sh_until_ok(10, [[curl --fail -i -sS -X GET --url http://localhost:]],
+                ctx.kong_proxy_port, [[/ --header 'Host: backend2.com']])
         end)
     end)
 
@@ -113,17 +135,32 @@ describe("Simple oxd Kong plugin test", function()
                 [[ --data "config.client_secret=]], register_site_response.client_secret, "\" ",
                 [[ --data "config.oxd_id=]], register_site_response.oxd_id, "\" ")
             assert(res:find("400"), 1, true)
-            JSON:decode(res)
         end)
 
         it("Enable plugin for the Service", function()
+            print "Enable plugin for the Service: backend.com"
             local res, err = sh_until_ok(10,
                 [[curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
                 [[/services/demo-service/plugins/  --data 'name=gluu-oauth2-client-auth' ]],
                 [[ --data "config.op_url=https://gluu-test.org" ]],
                 [[ --data "config.oxd_url=http://oxd-mock" ]],
+                [[ --data "config.hide_credentials=true" ]],
                 [[ --data "config.allow_oauth_scope_expression=true" ]],
                 [[ --data "config.oauth_scope_expression=[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\"],\"scope_expression\":{\"and\":[\"admin\",{\"not\":[\"employee\"]}]}}]}]" ]],
+                [[ --data "config.client_id=]], register_site_response.client_id, "\" ",
+                [[ --data "config.client_secret=]], register_site_response.client_secret, "\" ",
+                [[ --data "config.oxd_id=]], register_site_response.oxd_id, "\" ")
+
+            print "Enable plugin for the Service: backend2.com"
+            local res, err = sh_until_ok(10,
+                [[curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+                [[/services/demo-service2/plugins/  --data 'name=gluu-oauth2-client-auth' ]],
+                [[ --data "config.op_url=https://gluu-test.org" ]],
+                [[ --data "config.oxd_url=http://oxd-mock" ]],
+                [[ --data "config.hide_credentials=true" ]],
+                [[ --data "config.allow_oauth_scope_expression=true" ]],
+                [[ --data "config.oauth_scope_expression=[{\"path\":\"/posts\",\"conditions\":[{\"httpMethods\":[\"GET\",\"DELETE\",\"POST\"],\"scope_expression\":{\"and\":[\"admin\",{\"not\":[\"employee\"]}]}}]}]" ]],
+                [[ --data "config.anonymous=]], anonymous_consumer_response.id, "\" ",
                 [[ --data "config.client_id=]], register_site_response.client_id, "\" ",
                 [[ --data "config.client_secret=]], register_site_response.client_secret, "\" ",
                 [[ --data "config.oxd_id=]], register_site_response.oxd_id, "\" ")
@@ -146,43 +183,47 @@ describe("Simple oxd Kong plugin test", function()
                 ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
             local consumer_response = JSON:decode(res)
 
-            local res, err = sh_ex(
-                [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+            local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
                 [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
-                access_token, [[']]
-            )
-
+                access_token, [[']])
+            assert(res:find("200"), 1, true)
             -- backend returns all headrs within body
-            print"check that GG set all required upstream headers"
+            print "check that GG set all required upstream headers"
             assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
             assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
             assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
             assert(res:lower():find("x%-oauth%-expiration: %d+"))
 
-            local res, err = sh_ex(
-                [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+            -- check hide credential
+            assert.equal(nil, res:lower():find("authorization: "))
+
+            local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
                 [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
-                access_token, [[']]
-            )
+                access_token, [[']])
+            assert(res:find("200"), 1, true)
         end)
 
         it("Test it fail with 401 with wrong Bearer token", function()
-            local res, err = sh_ex(
-                [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
-                [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']]
-            )
+            local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+                [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']])
             assert(res:find("401"))
         end)
 
         it("Test it works with the same token again, oxd-model id completed, token taken from cache", function()
-            local res, err = sh_ex(
-                [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+            local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
                 [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
-                access_token, [[']]
-            )
+                access_token, [[']])
+            assert(res:find("200"), 1, true)
+        end)
+
+        it("Test anonymous user with service backend2.com", function()
+            local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+                [[/ --header 'Host: backend2.com' --header 'Authorization: Bearer bla-bla']])
+            assert(res:find("200"))
+            assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
         end)
     end)
 
-    print_logs = false -- comment it out if want to see logs
+    -- print_logs = false -- comment it out if want to see logs
 end)
 
