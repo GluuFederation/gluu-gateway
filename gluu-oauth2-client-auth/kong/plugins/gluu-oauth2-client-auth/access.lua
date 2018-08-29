@@ -14,7 +14,17 @@ if not token_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
-local function load_consumer(consumer_id, anonymous)
+local function load_consumer_custom_id(custom_id)
+    local result, err = kong.db.consumers:select_by_custom_id(custom_id)
+    if err then
+        err = 'anonymous consumer with custom_id "' .. custom_id .. '" not found'
+        return nil, err
+    end
+
+    return result
+end
+
+local function load_consumer_by_id(consumer_id, anonymous)
     local result, err = kong.db.consumers:select({ id = consumer_id })
     if not result then
         if anonymous and not err then
@@ -87,7 +97,7 @@ return function(conf)
         local status = response.status
         local body = response.body
 
-        kong.log.err("Protection access token -- status: ", status)
+        kong.log.debug("Protection access token -- status: ", status)
         if status >= 300 or not body.access_token then
             access_token = nil
             access_token_expire = 0
@@ -123,14 +133,13 @@ return function(conf)
     local status = response.status
 
     if status >= 300 then
-        kong.log.err("TODO")
-        -- should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
+        -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
 
-        -- Check for conf.ananimouse here
+        -- Check anonymous user and set header with anonymous consumer details
         if conf.anonymous ~= "" then
             -- get anonymous user
             local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer, conf.anonymous, true)
+            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous, true)
 
             if err then
                 kong.log.err(err)
@@ -141,19 +150,18 @@ return function(conf)
         end
 
         -- TODO should we distinguish between unexected errors and not valid credentials?
-        return kong.response.exit(401, { message = "Token expired" })
+        return kong.response.exit(401, { message = "Failed to introspect token." })
     end
 
     body = response.body
+    if not body.active then
+        return kong.response.exit(401, { message = "Token is expired" })
+    end
 
-    kong.log.debug("calling select_by_custom_id: ", body.client_id)
-
-    -- TODO implement consumer detection
-    local consumer, err = kong.db.consumers:select_by_custom_id(body.client_id)
-    kong.log.debug("after select_by_custom_id")
+    local consumer, err = kong.cache:get(body.client_id, nil, load_consumer_custom_id, body.client_id)
 
     if err then
-        kong.log.err("select_by_custom_id error: ", err)
+        kong.log.err("Get consumer by custom_id error: ", err)
         return kong.response.exit(500, { message = "An unexpected error ocurred" })
     end
 
@@ -162,7 +170,6 @@ return function(conf)
         return kong.response.exit(401, { message = "Consumer not found" })
     end
 
-    -- cache consumer id also, avoid DB call on every request
     body.consumer = consumer
 
     if body.exp and body.iat then
@@ -176,6 +183,6 @@ return function(conf)
 
     -- TODO implement scope expressions, id any
 
-    -- TODO set headers
+    -- set headers
     set_consumer(body)
 end
