@@ -64,26 +64,9 @@ local function get_token(authorization)
     return nil
 end
 
-return function(conf)
-    local authorization = ngx.var.http_authorization
-    local token = get_token(authorization)
-
-    -- Hide credentials
-    kong.log.debug("hide_credentials: ", conf.hide_credentials)
-    if conf.hide_credentials then
-        kong.ctx.shared.authorization_token = token
-        kong.log.debug("Hide authorization header")
-        kong.service.request.clear_header("authorization")
-    end
-
-    if not token then
-        kong.log.err("Token not found")
-        return kong.response.exit(401, { message = "Token not found" })
-    end
-
+local function get_protection_token(conf)
     local now = ngx.now()
-    kong.log.debug("Current datetime: ", now)
-    kong.log.debug("access_token_expire: ", access_token_expire)
+    kong.log.debug("Current datetime: ", now, " access_token_expire: ", access_token_expire)
     if not access_token or access_token_expire < now + EXPIRE_DELTA then
         access_token_expire = access_token_expire + EXPIRE_DELTA -- avoid multiple token requests
         local response = oxd.get_client_token(conf.oxd_url,
@@ -113,15 +96,35 @@ return function(conf)
             access_token_expire = 0
         end
     end
+end
+
+local function do_authentication(conf)
+    local authorization = ngx.var.http_authorization
+    local token = get_token(authorization)
+
+    -- Hide credentials
+    kong.log.debug("hide_credentials: ", conf.hide_credentials)
+    if conf.hide_credentials then
+        kong.ctx.shared.authorization_token = token
+        kong.log.debug("Hide authorization header")
+        kong.service.request.clear_header("authorization")
+    end
+
+    if not token then
+        kong.log.err("Token not found")
+        return false, { status = 401, message = "Token not found" }
+    end
 
     local body, stale_data = token_cache:get(token)
-
     if body and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
         set_consumer(body)
-        return
+        return true, nil
     end
+
+    -- Get protection access token for OXD API
+    get_protection_token(conf)
 
     kong.log.debug("Token cache not found.")
     local response = oxd.introspect_access_token(conf.oxd_url,
@@ -135,6 +138,47 @@ return function(conf)
     if status >= 300 then
         -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
 
+        -- TODO should we distinguish between unexected errors and not valid credentials?
+        return false, { status = 401, message = "Failed to introspect token" }
+    end
+
+    body = response.body
+    if not body.active then
+        return false, { status = 401, message = "Token is not active" }
+    end
+
+    local consumer, err = kong.cache:get(body.client_id, nil, load_consumer_custom_id, body.client_id)
+
+    if err then
+        kong.log.err("Get consumer by custom_id error: ", err)
+        return kong.response.exit(500, { message = "An unexpected error ocurred" })
+    end
+
+    if not consumer then
+        return false, { status = 401, message = "Consumer not found" }
+    end
+
+    body.consumer = consumer
+
+    if body.exp and body.iat then
+        token_cache:set(token, body, body.exp - body.iat)
+    else
+        kong.log.err(PLUGINNAME .. ": missed exp or iat fields")
+        return kong.response.exit(500, { message = "EXP and IAT fileds missing in introspection response" })
+    end
+
+    -- TODO implement scope expressions, id any
+
+    -- set headers
+    set_consumer(body)
+    return true, nil
+end
+
+return function(conf)
+
+    local result, err = do_authentication(conf);
+
+    if not result then
         -- Check anonymous user and set header with anonymous consumer details
         if conf.anonymous ~= "" then
             -- get anonymous user
@@ -147,42 +191,8 @@ return function(conf)
             end
             set_consumer({ consumer = consumer })
             return
+        else
+            kong.response.exit(err.status, { message = err.message })
         end
-
-        -- TODO should we distinguish between unexected errors and not valid credentials?
-        return kong.response.exit(401, { message = "Failed to introspect token." })
     end
-
-    body = response.body
-    if not body.active then
-        return kong.response.exit(401, { message = "Token is expired" })
-    end
-
-    local consumer, err = kong.cache:get(body.client_id, nil, load_consumer_custom_id, body.client_id)
-
-    if err then
-        kong.log.err("Get consumer by custom_id error: ", err)
-        return kong.response.exit(500, { message = "An unexpected error ocurred" })
-    end
-
-    if not consumer then
-        kong.log.debug("consumer not found")
-        return kong.response.exit(401, { message = "Consumer not found" })
-    end
-
-    body.consumer = consumer
-
-    if body.exp and body.iat then
-        token_cache:set(token, body, body.exp - body.iat)
-    else
-        kong.log.err(PLUGINNAME .. ": missed exp or iat fields")
-        return kong.response.exit(500, { message = "EXP and IAT fileds missing in introspection response" })
-    end
-
-    kong.log.debug("Consumer: ", body.consumer.id)
-
-    -- TODO implement scope expressions, id any
-
-    -- set headers
-    set_consumer(body)
 end

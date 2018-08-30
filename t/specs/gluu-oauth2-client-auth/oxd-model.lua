@@ -101,6 +101,9 @@ model = {
 
     -- plugin check the wrong client token
     introspect_item,
+
+    -- plugin check the wrong client token with another service
+    introspect_item,
 }
 
 return model
