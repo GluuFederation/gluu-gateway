@@ -1,5 +1,7 @@
 local constants = require "kong.constants"
 local oxd = require "oxdweb"
+local helper = require "kong.plugins.gluu-oauth2-client-auth.helper"
+local pl_types = require "pl.types"
 -- we don't store our token in lrucache - we don't want it be pushed out
 local access_token
 local access_token_expire = 0
@@ -27,7 +29,7 @@ end
 local function load_consumer_by_id(consumer_id, anonymous)
     local result, err = kong.db.consumers:select({ id = consumer_id })
     if not result then
-        if anonymous and not err then
+        if anonymous ~= "" and not err then
             err = 'anonymous consumer "' .. consumer_id .. '" not found'
         end
 
@@ -101,6 +103,8 @@ end
 local function do_authentication(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
+    local request_path = ngx.var.request_uri
+    local request_http_method = ngx.req.get_method()
 
     -- Hide credentials
     kong.log.debug("hide_credentials: ", conf.hide_credentials)
@@ -111,8 +115,7 @@ local function do_authentication(conf)
     end
 
     if not token then
-        kong.log.err("Token not found")
-        return false, { status = 401, message = "Token not found" }
+        return false, "Token not found"
     end
 
     local body, stale_data = token_cache:get(token)
@@ -120,7 +123,7 @@ local function do_authentication(conf)
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
         set_consumer(body)
-        return true, nil
+        return true
     end
 
     -- Get protection access token for OXD API
@@ -139,12 +142,12 @@ local function do_authentication(conf)
         -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
 
         -- TODO should we distinguish between unexected errors and not valid credentials?
-        return false, { status = 401, message = "Failed to introspect token" }
+        return false, "Failed to introspect token"
     end
 
     body = response.body
     if not body.active then
-        return false, { status = 401, message = "Token is not active" }
+        return false, "Token is not active"
     end
 
     local consumer, err = kong.cache:get(body.client_id, nil, load_consumer_custom_id, body.client_id)
@@ -155,7 +158,7 @@ local function do_authentication(conf)
     end
 
     if not consumer then
-        return false, { status = 401, message = "Consumer not found" }
+        return false, "Consumer not found"
     end
 
     body.consumer = consumer
@@ -167,11 +170,26 @@ local function do_authentication(conf)
         return kong.response.exit(500, { message = "EXP and IAT fileds missing in introspection response" })
     end
 
-    -- TODO implement scope expressions, id any
+    if conf.allow_oauth_scope_expression then
+        local relative_path = helper.get_relative_path(conf.oauth_scope_expression, request_path)
+        kong.log.debug("Requested path : ", request_path, " Relative path : ", relative_path, " Requested http method : ", request_http_method)
+        local path_scope_expression = helper.get_expression_by_path_method(conf.oauth_scope_expression, relative_path, request_http_method)
+        if pl_types.is_empty(path_scope_expression) then
+            return false, "Path: " .. request_path .. " and method: " .. request_http_method .. " are not protected with oauth scope expression. Configure your oauth scope expression."
+        end
+
+        if helper.check_json_expression(path_scope_expression, body.scope) then
+            kong.log.debug("scope expression check result : true")
+            -- TODO Need to cache token with requested path and http method https://github.com/GluuFederation/gluu-gateway/issues/217
+            return true
+        else
+            return false, "Failed to validate introspect scope with oauth scope expression"
+        end
+    end
 
     -- set headers
     set_consumer(body)
-    return true, nil
+    return true
 end
 
 return function(conf)
@@ -192,7 +210,7 @@ return function(conf)
             set_consumer({ consumer = consumer })
             return
         else
-            kong.response.exit(err.status, { message = err.message })
+            kong.response.exit(401, { message = err })
         end
     end
 end
