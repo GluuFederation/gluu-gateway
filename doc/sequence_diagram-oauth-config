@@ -35,8 +35,8 @@ Gluu-OAuth2-Client schema:
 1. oxd_id
 2. client_id
 3. client_secret
-4. op_server
-5. oxd_http_url
+4. op_url
+5. oxd_url
 6. oauth_scope_expression
 7. allow_oauth_scope_expression
 8. anonymous
