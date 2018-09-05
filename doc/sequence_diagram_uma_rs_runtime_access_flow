@@ -14,34 +14,27 @@ opt token already authorized for this path/method
     gluu-oauth2-rs->Kong Proxy: return
 end
 
-gluu-oauth2-rs->kong-cache: Lookup oauth2-client plugin cache
-
-alt oauth2-client cache found
-    opt mode == UMA
-        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Please enable Mix mode
-    end
-else cache not found
-    opt mode == MIX
-        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Please enable UMA mode
-    end
+opt mode == UMA
     gluu-oauth2-rs->oxd: Introspect RPT
     opt active == false
         gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - Token inactive
     end
 end
 
-opt mode == UMA
-    gluu-oauth2-rs->oxd: call check_access(token)
-end
-
 opt mode == MIX
+    gluu-oauth2-rs->kong-cache: Lookup oauth2-client plugin cache
+    opt oauth2-client cache not found
+        gluu-oauth2-rs->Kong Proxy: 401/Unauthorized - OAuth token cache not found. Configure first OAuth2-client plugin.
+    end
+    
     alt claim_token in header
         gluu-oauth2-rs->oxd: get_rpt token with claim_token
     else
         gluu-oauth2-rs->oxd: get_rpt
     end
-    gluu-oauth2-rs->oxd: check_access(token)
 end
+
+gluu-oauth2-rs->oxd: call check_access(token)
 
 note over gluu-oauth2-rs
     Next step to check response of UMA access
