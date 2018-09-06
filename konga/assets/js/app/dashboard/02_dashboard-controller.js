@@ -196,73 +196,6 @@
               })
         }
 
-        function fetchPluginData() {
-          var plugins = [];
-          var consumers = [];
-          $scope.activeClient = [];
-          $scope.credentials = [];
-          $scope.oxdLoading = true;
-          var pluginFunc = PluginsService
-            .load({name: 'gluu-oauth2-rs'})
-            .then(function (resp) {
-              plugins = resp.data.data;
-            });
-
-          var consumerFunc = ConsumerService
-            .listOAuthConsumerCredential()
-            .then(function (resp) {
-              consumers = resp.data.data;
-            });
-
-          var getActiveClients = ConsumerService
-            .listActiveClients($scope.globalInfo.oxdServerLicenseId)
-            .then(function (resp) {
-              if (!resp.monthly_statistic) {
-                return
-              }
-
-              Object.keys(resp.monthly_statistic).forEach(function (key) {
-                if ((new Date().getMonth() + 1).toString() == key.substr(key.lastIndexOf('-') + 1)) {
-                  $scope.activeClient = resp.monthly_statistic[key].local_clients;
-                  $scope.activeClient = $scope.activeClient.concat(resp.monthly_statistic[key].web_clients);
-                }
-              });
-            });
-
-          $q
-            .all([pluginFunc, consumerFunc, getActiveClients])
-            .finally(
-              function onFinally() {
-                $scope.oxdLoading = false;
-                $scope.credentials = consumers.concat(plugins)
-                $scope.credentials = $scope.credentials.filter(function (o) {
-                  if (!!o.config) {
-                    return $scope.activeClient.findIndex(function (x) {
-                        if (x.client_id == o.config.client_id) {
-                          o.isSetupOXDIdTrue = true;
-                          return true;
-                        }
-                        if (x.client_id == o.config.client_id_of_oxd_id) {
-                          o.isOXDIdTrue = true;
-                          return true;
-                        }
-                      }) > -1;
-                  } else {
-                    return $scope.activeClient.findIndex(function (x) {
-                        if (x.client_id == o.client_id) {
-                          o.isSetupOXDIdTrue = true;
-                          return true;
-                        }
-                        if (x.client_id == o.client_id_of_oxd_id) {
-                          o.isOXDIdTrue = true;
-                          return true;
-                        }
-                      }) > -1;
-                  }
-                })
-              })
-        };
-
         $scope.kong_versions = SettingsService.getKongVersions()
 
         $scope.node = {
@@ -329,7 +262,6 @@
 
         }
 
-
         /**
          * Init UI
          */
@@ -361,9 +293,6 @@
         $scope.$on('user.node.updated', function (node) {
           fetchData();
         })
-
-        // plugins
-        fetchPluginData();
       }
     ])
   ;

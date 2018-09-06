@@ -31,12 +31,6 @@ module.exports = {
 
     var headers = {'Content-Type': 'application/json'}
 
-    // UMA-RS config
-    if (req.method == 'POST' && req.url == '/plugins' && !!req.body.config && req.body.name == "gluu-oauth2-rs") {
-      req.body.config.oxd_host = sails.config.oxdWeb
-      req.body.config.uma_server_host = sails.config.opHost
-    }
-
     // If apikey is set in headers, use it
     if (req.kong_api_key) {
       headers['apikey'] = req.kong_api_key
