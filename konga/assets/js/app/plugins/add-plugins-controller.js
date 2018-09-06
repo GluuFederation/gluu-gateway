@@ -30,10 +30,6 @@
           $scope.pluginGroups.forEach(function (group) {
             console.log(group.plugins);
             for (var key in group.plugins) {
-              if (key == "gluu-oauth2-rs") {
-                delete group.plugins[key];
-                continue;
-              }
               if (!plugins_available[key]) delete group.plugins[key]
             }
           })
