@@ -19,52 +19,122 @@
       <div ba-panel ba-panel-class="with-scroll">
         <form name="PluginForm" novalidate>
           <div class="row">
-            <div class="col-md-12" data-ng-if="isKongUMARSPluginAdded && pluginConfig.oxd_id">
-              <div class="panel panel-default">
-                <div class="panel-heading" data-toggle="collapse" data-target="#pluginDetails"
-                     id="togglePluginDetails">
-                  <div class="panel-title">
-                    <i class="mdi mdi-information-outline"></i>&nbsp;Plugin details
+            <div class="col-md-12">
+              <div class="form-group has-feedback">
+                <label>Other configurations</label>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">OXD Id
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9">
+                  <div class="input-group">
+                    <input ng-attr-type="{{ isShowOXDId ? 'text' : 'password' }}" ng-model="modelPlugin.config.oxd_id"
+                           class="form-control">
+                    <a href class="input-group-addon" data-ng-click="isShowOXDId = !isShowOXDId"
+                       title="{{isShowOXDId ? 'Hide': 'Show'}}">
+                      <i class="mdi mdi-eye"></i>
+                    </a>
                   </div>
+                  <p class="help-block">
+                    It used to introspect the token. By default it takes oxd_id from Config. You can also enter any
+                    other oxd_id. If you leave oxd_id blank during gluu-oauth2-client-auth addition, it will register
+                    the client in oxd and generate an application in the oxd-ecommerce platform when the plugin uses it
+                    for token introspection.
+                  </p>
                 </div>
-                <table class="table no-margin">
-                  <tbody id="pluginDetails" class="collapse">
-                  <tr>
-                    <th width="30%">OXD Id</th>
-                    <td>{{::pluginConfig.oxd_id}}</td>
-                  </tr>
-                  <tr>
-                    <th width="30%">Client Id of OXD Id</th>
-                    <td>{{::pluginConfig.client_id_of_oxd_id}}</td>
-                  </tr>
-                  <tr>
-                    <th width="30%">Setup client OXD Id</th>
-                    <td>{{::pluginConfig.setup_client_oxd_id}}</td>
-                  </tr>
-                  <tr>
-                    <th width="30%">Client Id</th>
-                    <td><span data-ng-show="isShowClientId">{{::pluginConfig.client_id}}</span> <a href
-                                                                                                   data-ng-click="isShowClientId = !isShowClientId"
-                                                                                                   title="{{isShowClientId ? 'Hide': 'Show'}}"><i
-                      class="mdi mdi-eye"></i></a></td>
-                  </tr>
-                  <tr>
-                    <th width="30%">Client Secret</th>
-                    <td><span data-ng-show="isShowClientSecret">{{::pluginConfig.client_secret}}</span> <a href
-                                                                                                           data-ng-click="isShowClientSecret = !isShowClientSecret"
-                                                                                                           title="{{isShowClientSecret ? 'Hide': 'Show'}}"><i
-                      class="mdi mdi-eye"></i></a></td>
-                  </tr>
-                  <tr>
-                    <th width="30%">UMA RS Server</th>
-                    <td>{{::pluginConfig.uma_server_host}}</td>
-                  </tr>
-                  <tr>
-                    <th width="30%">OXD Host</th>
-                    <td>{{::pluginConfig.oxd_host}}</td>
-                  </tr>
-                  </tbody>
-                </table>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Client Id
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9">
+                  <div class="input-group">
+                    <input ng-attr-type="{{ isShowClientId ? 'text' : 'password' }}"
+                           ng-model="modelPlugin.config.client_id" class="form-control"/>
+                    <a href class="input-group-addon" data-ng-click="isShowClientId = !isShowClientId"
+                       title="{{isShowClientId ? 'Hide': 'Show'}}">
+                      <i class="mdi mdi-eye"></i>
+                    </a>
+                  </div>
+                  <p class="help-block">
+                    If you enter oxd id, you also need to enter client id and client secret of existing oxd client.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Client Secret
+                  <br/>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9">
+                  <div class="input-group">
+                    <input ng-attr-type="{{ isShowClientSecret ? 'text' : 'password' }}"
+                           ng-model="modelPlugin.config.client_secret" class="form-control"/>
+                    <a href class="input-group-addon" data-ng-click="isShowClientSecret = !isShowClientSecret"
+                       title="{{isShowClientSecret ? 'Hide': 'Show'}}">
+                      <i class="mdi mdi-eye"></i>
+                    </a>
+                  </div>
+                  <p class="help-block">
+                    If you enter oxd id, you also need to enter client id and client secret of existing oxd client.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Anonymous
+                  <br/>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9">
+                  <input ng-model="modelPlugin.config.anonymous" class="form-control">
+                  <p class="help-block">
+                    An optional string (consumer uuid) value to use as an anonymous consumer if authentication fails. If
+                    empty (default), the request will fail with an authentication failure 4xx. Please note that this
+                    value must refer to the Consumer id attribute which is internal to Kong, and not its custom_id.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Allow expression
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9 check-toggle">
+                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                         ng-model="modelPlugin.config.allow_oauth_scope_expression" class="form-control"/>
+                  <p class="help-block">
+                    If yes, it apply oauth scope expression security otherwise not.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Hide credentials
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9 check-toggle">
+                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                         ng-model="modelPlugin.config.hide_credentials" class="form-control"/>
+                  <p class="help-block">
+                    An optional boolean value telling the plugin to hide the credential to the upstream API server. It
+                    will be removed by Kong before proxying the request
+                  </p>
+                </div>
               </div>
             </div>
             <div class="col-md-12">
@@ -72,7 +142,8 @@
                 <label><span class="text text-danger">*</span>OAUTH Scope expression</label>
                 <span class="help-block error-block basic-block">Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
-              <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression" ng-init="pIndex = $index"
+              <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
+                   ng-init="pIndex = $index"
                    style="border: 1px dotted;">
                 <hr/>
                 <div class="col-md-1">
@@ -83,7 +154,8 @@
                 </div>
                 <div class="col-md-11">
                   <div class="form-group has-feedback col-md-4">
-                    <input type="text" class="form-control" value="{{context_data.protocol}}://{{context_data.host}}" title="Upstream URL" disabled/>
+                    <input type="text" class="form-control" value="{{context_data.protocol}}://{{context_data.host}}"
+                           title="Upstream URL" disabled/>
                     <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
                   </div>
                   <div class="form-group has-feedback col-md-8"
@@ -120,9 +192,9 @@
                       </div>
                       <div class="row">
                         <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
-                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isKongUMARSPluginAdded">
+                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isPluginAdded">
                         </div>
-                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isKongUMARSPluginAdded">
+                        <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isPluginAdded">
                           <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0" checked>or |
                           <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
                           <input type="radio" value="!" name="condition{{pIndex}}{{$index}}0">not
@@ -167,7 +239,7 @@
           <div class="row">
             <hr/>
             <button type="submit" class="btn btn-primary" ng-click="managePlugin(PluginForm)">
-              <i class="mdi mdi-check"></i> {{isKongUMARSPluginAdded ? "Update" : "Add" }}
+              <i class="mdi mdi-check"></i> {{isPluginAdded ? "Update" : "Add" }}
             </button>
           </div>
         </form>

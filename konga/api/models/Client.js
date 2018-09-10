@@ -18,6 +18,10 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
       unique: true,
       autoIncrement: true
     },
+    oxd_id: {
+      type: 'string',
+      required: true
+    },
     client_id: {
       type: 'string',
       required: true

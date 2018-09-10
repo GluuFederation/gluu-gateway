@@ -27,18 +27,23 @@
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
-            oauth_scope_expression: []
+            oxd_id: $scope.globalInfo.oxdId,
+            client_id: $scope.globalInfo.clientId,
+            client_secret: $scope.globalInfo.clientSecret,
+            oauth_scope_expression: [],
+            allow_oauth_scope_expression: false,
+            hide_credentials: false
           }
         };
         $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
 
-        $scope.isKongUMARSPluginAdded = false;
+        $scope.isPluginAdded = false;
 
         $scope.plugins.forEach(function (o) {
           if (o.name == "gluu-oauth2-client-auth") {
             $scope.pluginConfig = o.config;
             $scope.rsPlugin = o;
-            $scope.isKongUMARSPluginAdded = true;
+            $scope.isPluginAdded = true;
             $scope.ruleScope = {};
             $scope.ruleOauthScope = {};
             $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(o.config.oauth_scope_expression || "[]");
@@ -121,8 +126,8 @@
           InfoService
             .getInfo()
             .then(function (resp) {
-              $scope.info = resp.data
-              $log.debug("DashboardController:fetchData:info", $scope.info)
+              $scope.info = resp.data;
+              $log.debug("DashboardController:fetchData:info", $scope.info);
             })
         }
 
@@ -157,7 +162,7 @@
               ticketScopes: []
             });
 
-          if ($scope.isKongUMARSPluginAdded) {
+          if ($scope.isPluginAdded) {
             var parent = pIndex + '' + ($scope.modelPlugin.config.oauth_scope_expression[pIndex].conditions.length - 1);
             var id = 0;
             setTimeout(function () {
@@ -216,7 +221,7 @@
             ]
           });
 
-          if ($scope.isKongUMARSPluginAdded) {
+          if ($scope.isPluginAdded) {
             var parent = $scope.modelPlugin.config.oauth_scope_expression.length - 1 + '0';
             var id = 0;
             setTimeout(function () {
@@ -250,16 +255,16 @@
           }
 
           if (checkDuplicatePath()) {
-            MessageService.error("UMA Resources: PATH must be unique (but occurs more than one once).");
+            MessageService.error("PATH must be unique (but occurs more than one once).");
             return false;
           }
 
           if (checkDuplicateMethod()) {
-            MessageService.error("UMA Resources: HTTP method must be unique within the given PATH (but occurs more than one once).");
+            MessageService.error("HTTP method must be unique within the given PATH (but occurs more than one once).");
             return false;
           }
 
-          if ($scope.isKongUMARSPluginAdded) {
+          if ($scope.isPluginAdded) {
             updatePlugin();
           } else {
             addPlugin();
@@ -268,58 +273,39 @@
 
         function addPlugin() {
           var model = angular.copy($scope.modelPlugin);
-
-          if (!model) {
-            return false;
-          }
-
-          var oauthScopeExpression = makeJSON($scope.modelPlugin)
+          var oauthScopeExpression = makeJSON($scope.modelPlugin);
           if (oauthScopeExpression && oauthScopeExpression.length > 0) {
             model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
           } else {
             delete model.config.oauth_scope_expression
           }
+          PluginsService.addOAuthClient({
+            client_id: model.config.client_id,
+            client_secret: model.config.client_secret
+          })
+            .then(function (response) {
+              var oauthClient = response.data;
+              model.config.client_id = oauthClient.client_id;
+              model.config.client_secret = oauthClient.client_secret;
 
-          if (!model.config.oauth_scope_expression) {
-            MessageService.error("Please configure a oauth scope expression");
-            return
-          }
+              PluginHelperService.addPlugin(
+                model,
+                function success(res) {
+                  $state.go($scope.context_name + "s");
+                  MessageService.success('Plugin added successfully!');
+                }, function (err) {
+                  debugger
+                  $scope.busy = false;
+                  console.log("Failed to add plugin : ", err);
+                  $log.error("create plugin", err);
+                  MessageService.error("Invalid OAuth scope expression");
+                  $scope.errors = errors
+                });
 
-          PluginHelperService.addPlugin(
-            model,
-            function success(res) {
-              $scope.busy = false;
-              MessageService.success('Plugin added successfully!')
-              $state.go('apis') // return to plugins page if specified
-            }, function (err) {
-              $scope.busy = false;
-              $log.error("create plugin", err)
-              var errors = {}
-
-              if (err.status && err.status == 400) {
-                MessageService.error("OXD Error: Please check the oxd server log");
-                return;
-              }
-
-              if (err.data.customMessage) {
-                Object.keys(err.data.customMessage).forEach(function (key) {
-                  errors[key.replace('config.', '')] = err.data.customMessage[key];
-                  MessageService.error(key + " : " + err.data.customMessage[key]);
-                })
-              } else if (err.data.body) {
-                Object.keys(err.data.body).forEach(function (key) {
-                  errors[key] = err.data.body[key];
-                  MessageService.error(key + " : " + err.data.body[key]);
-                })
-              } else {
-                MessageService.error("Invalid UMA Resources");
-              }
-
-              $scope.errors = errors
-            }, function evt(event) {
-              // Only used for ssl plugin certs upload
-              var progressPercentage = parseInt(100.0 * event.loaded / event.total);
-              $log.debug('progress: ' + progressPercentage + '% ' + event.config.data.file.name);
+            })
+            .catch(function (error) {
+              console.log(error);
+              MessageService.error("Failed to register client");
             });
         }
 
@@ -371,7 +357,7 @@
                   MessageService.error(key + " : " + err.data.body[key]);
                 })
               } else {
-                MessageService.error("Invalid UMA Resources");
+                MessageService.error("Invalid OAuth scope expression");
               }
 
               $scope.errors = errors
@@ -440,7 +426,7 @@
             });
             return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
           } catch (e) {
-            MessageService.error("Invalid UMA resources");
+            MessageService.error("Invalid OAuth scope expression");
             return null;
           }
         }
