@@ -154,7 +154,7 @@
                 </div>
                 <div class="col-md-11">
                   <div class="form-group has-feedback col-md-4">
-                    <input type="text" class="form-control" value="{{context_data.protocol}}://{{context_data.host}}"
+                    <input type="text" class="form-control" value="{{context_upstream}}"
                            title="Upstream URL" disabled/>
                     <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
                   </div>

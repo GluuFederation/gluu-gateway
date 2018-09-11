@@ -18,38 +18,33 @@
                           _route) {
 
 
-        var pluginOptions = new KongPluginsService().pluginOptions()
+        var pluginOptions = new KongPluginsService().pluginOptions();
 
-        $scope.route = _route
-        $scope.pluginOptions = pluginOptions
+        $scope.route = _route;
+        $scope.pluginOptions = pluginOptions;
 
         new KongPluginsService().makePluginGroups().then(function (groups) {
-          $scope.pluginGroups = groups
+          $scope.pluginGroups = groups;
 
           // Remove ssl plugin if Kong > 0.9.x
-          if ($rootScope.Gateway.version.indexOf('0.9.') < 0) {
-            $scope.pluginGroups.forEach(function (group) {
-              Object.keys(group.plugins).forEach(function (key) {
-                if (key == "gluu-oauth2-rs") {
-                  delete group.plugins[key];
-                  return;
-                }
-
-                if (key == 'ssl') delete group.plugins[key]
-              })
+          $scope.pluginGroups.forEach(function (group) {
+            Object.keys(group.plugins).forEach(function (key) {
+              if (key == "gluu-oauth2-client-auth") {
+                delete group.plugins[key];
+              }
             })
-          }
+          });
 
           $log.debug("Plugin Groups", $scope.pluginGroups)
-        })
+        });
 
-        $scope.activeGroup = 'Authentication'
-        $scope.setActiveGroup = setActiveGroup
-        $scope.filterGroup = filterGroup
-        $scope.onAddPlugin = onAddPlugin
+        $scope.activeGroup = 'Authentication';
+        $scope.setActiveGroup = setActiveGroup;
+        $scope.filterGroup = filterGroup;
+        $scope.onAddPlugin = onAddPlugin;
         $scope.close = function () {
           return $uibModalInstance.dismiss()
-        }
+        };
 
 
         /**
@@ -104,7 +99,7 @@
         // Listeners
         $scope.$on('plugin.added', function () {
           fetchPlugins()
-        })
+        });
 
         /**
          * ------------------------------------------------------------
@@ -113,11 +108,11 @@
          */
         $scope.$on("plugin.added", function () {
           fetchPlugins()
-        })
+        });
 
         $scope.$on("plugin.updated", function (ev, plugin) {
           fetchPlugins()
-        })
+        });
 
 
         function fetchPlugins() {
@@ -143,6 +138,5 @@
         getRoutePlugins();
 
       }
-    ])
-  ;
+    ]);
 }());

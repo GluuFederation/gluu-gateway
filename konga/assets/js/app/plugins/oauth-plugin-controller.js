@@ -10,8 +10,9 @@
         $scope.globalInfo = $localStorage.credentials.user;
         $scope.context_data = _context_data.data;
         $scope.context_name = _context_name;
+        $scope.context_upstream = '';
         $scope.plugins = _plugins.data.data;
-        $scope.rsPlugin = null;
+        $scope.oauthPlugin = null;
         $scope.addNewCondition = addNewCondition;
         $scope.addNewPath = addNewPath;
         $scope.showResourceJSON = showResourceJSON;
@@ -21,6 +22,14 @@
         $scope.addGroup = addGroup;
         $scope.removeGroup = removeGroup;
         $scope.fetchData = fetchData;
+
+        if (_context_name == 'service') {
+          $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
+        } else if (_context_name == 'route') {
+          $scope.context_upstream = $scope.context_data.protocols[0] + "://" + (($scope.context_data.hosts && $scope.context_data.hosts[0]) || ($scope.context_data.paths && $scope.context_data.paths[0]) || ($scope.context_data['methods'] && $scope.context_data['methods'][0]));
+        } else {
+          $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
+        }
 
         $scope.modelPlugin = {
           name: 'gluu-oauth2-client-auth',
@@ -41,8 +50,7 @@
 
         $scope.plugins.forEach(function (o) {
           if (o.name == "gluu-oauth2-client-auth") {
-            $scope.pluginConfig = o.config;
-            $scope.rsPlugin = o;
+            $scope.modelPlugin = o;
             $scope.isPluginAdded = true;
             $scope.ruleScope = {};
             $scope.ruleOauthScope = {};
@@ -280,6 +288,7 @@
             delete model.config.oauth_scope_expression
           }
           PluginsService.addOAuthClient({
+            oxd_id: model.config.oxd_id,
             client_id: model.config.client_id,
             client_secret: model.config.client_secret
           })
@@ -294,12 +303,15 @@
                   $state.go($scope.context_name + "s");
                   MessageService.success('Plugin added successfully!');
                 }, function (err) {
-                  debugger
                   $scope.busy = false;
-                  console.log("Failed to add plugin : ", err);
                   $log.error("create plugin", err);
-                  MessageService.error("Invalid OAuth scope expression");
-                  $scope.errors = errors
+                  if (err.data.body) {
+                    Object.keys(err.data.body).forEach(function (key) {
+                      MessageService.error(key + " : " + err.data.body[key]);
+                    })
+                  } else {
+                    MessageService.error("Invalid OAuth scope expression");
+                  }
                 });
 
             })
@@ -311,12 +323,6 @@
 
         function updatePlugin() {
           var model = angular.copy($scope.modelPlugin);
-
-          if (!model) {
-            return false;
-          }
-
-          model.config = angular.copy($scope.rsPlugin.config);
           model.config.oauth_scope_expression = $scope.modelPlugin.config.oauth_scope_expression;
 
           if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
@@ -325,46 +331,21 @@
             delete model.config.oauth_scope_expression
           }
 
-          if (!model.config.oauth_scope_expression) {
-            MessageService.error("Please configure a oauth scope expression");
-            return
-          }
-
-          PluginHelperService.updatePlugin($scope.rsPlugin.id,
+          PluginHelperService.updatePlugin(model.id,
             model,
             function success(res) {
               $scope.busy = false;
               MessageService.success('Plugin updated successfully!');
-              $state.go('apis'); // return to plugins page if specified
+              $state.go($scope.context_name + "s"); // return to plugins page if specified
             }, function (err) {
-              $scope.busy = false;
-              $log.error("update plugin", err);
-              var errors = {};
-
-              if (err.status && err.status == 400) {
-                MessageService.error("OXD Error: Please check the oxd server log");
-                return
-              }
-
-              if (err.data.customMessage) {
-                Object.keys(err.data.customMessage).forEach(function (key) {
-                  errors[key.replace('config.', '')] = err.data.customMessage[key];
-                  MessageService.error(key + " : " + err.data.customMessage[key]);
-                })
-              } else if (err.data.body) {
+              $log.error("create plugin", err);
+              if (err.data.body) {
                 Object.keys(err.data.body).forEach(function (key) {
-                  errors[key] = err.data.body[key];
                   MessageService.error(key + " : " + err.data.body[key]);
                 })
               } else {
                 MessageService.error("Invalid OAuth scope expression");
               }
-
-              $scope.errors = errors
-            }, function evt(event) {
-              // Only used for ssl plugin certs upload
-              var progressPercentage = parseInt(100.0 * event.loaded / event.total);
-              $log.debug('progress: ' + progressPercentage + '% ' + event.config.data.file.name);
             });
         }
 

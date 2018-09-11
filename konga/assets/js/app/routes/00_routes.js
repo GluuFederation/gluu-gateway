@@ -93,6 +93,50 @@
               }
             }
           })
+          .state('routes.oauth-plugin', {
+            url: '/:route_id/oauth-plugin',
+            data: {
+              pageName: "OAuth plugin",
+              pageDescription: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
+              displayName: "OAuth plugin",
+              prefix: '<i class="mdi mdi-pencil"></i>'
+            },
+            views: {
+              'content@': {
+                templateUrl: 'js/app/plugins/oauth-plugin.html',
+                controller: 'OAuthPluginController',
+                resolve: {
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'route';
+                    }
+                  ],
+                  _context_data: [
+                    '$stateParams',
+                    'RoutesService',
+                    '$log',
+                    function resolve($stateParams,
+                                     RoutesService) {
+                      return RoutesService.findById($stateParams.route_id)
+                    }
+                  ],
+                  _plugins: [
+                    'PluginsService', '$stateParams',
+                    function resolve(PluginsService, $stateParams) {
+                      return PluginsService.load({route_id: $stateParams.route_id})
+                    }
+                  ],
+                  _activeNode: [
+                    'NodesService',
+                    function resolve(NodesService) {
+                      return NodesService.isActiveNodeSet()
+                    }
+                  ],
+                }
+              }
+            }
+          })
           .state('routes.uma-plugin', {
             url: '/:route_id/uma-plugin',
             data: {
