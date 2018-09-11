@@ -10,7 +10,6 @@ alt New Client
     oxd->OP:
     OP->oxd:
     oxd->konga: Return with client credentials
-    konga->konga_DB: Store client_credentials
 else Use Existing Client
     note over konga
         User can use existing client credentials
@@ -18,12 +17,7 @@ else Use Existing Client
         Enter client_id
         Enter client_secret
     end note
-    konga->konga_DB: Store client_credentials
 end
-note over konga_DB
-    oxd_id,
-    client_id
-end note
 
 note over konga
     Pass client credetial to plugin
