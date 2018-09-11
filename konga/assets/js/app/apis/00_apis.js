@@ -79,18 +79,18 @@
               }
             }
           })
-          .state('apis.uma-plugin', {
-            url: '/:api_id/uma-plugin',
+          .state('apis.oauth-plugin', {
+            url: '/:api_id/oauth-plugin',
             data: {
-              pageName: "UMA-RS plugin",
-              pageDescription: "A Plugin entity represents a plugin configuration that will be executed during the HTTP request/response workflow, and it's how you can add functionalities to APIs that run behind Kong. <code> It will create a client and register the UMA resources using oxd.</code>",
-              displayName: "UMA-RS plugin",
+              pageName: "OAuth plugin",
+              pageDescription: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
+              displayName: "OAuth plugin",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
               'content@': {
-                templateUrl: 'js/app/apis/views/manage-uma-rs-plugin.html',
-                controller: 'ManageUmaRsPluginController',
+                templateUrl: 'js/app/plugins/oauth-plugin.html',
+                controller: 'OAuthPluginController',
                 resolve: {
                   _context_name: [
                     '$log',

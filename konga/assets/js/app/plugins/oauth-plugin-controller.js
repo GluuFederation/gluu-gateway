@@ -28,7 +28,7 @@
         } else if (_context_name == 'route') {
           $scope.context_upstream = $scope.context_data.protocols[0] + "://" + (($scope.context_data.hosts && $scope.context_data.hosts[0]) || ($scope.context_data.paths && $scope.context_data.paths[0]) || ($scope.context_data['methods'] && $scope.context_data['methods'][0]));
         } else {
-          $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
+          $scope.context_upstream = $scope.context_data.upstream_url;
         }
 
         $scope.modelPlugin = {
@@ -294,6 +294,7 @@
           })
             .then(function (response) {
               var oauthClient = response.data;
+              model.config.oxd_id = oauthClient.oxd_id;
               model.config.client_id = oauthClient.client_id;
               model.config.client_secret = oauthClient.client_secret;
 
