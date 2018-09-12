@@ -11,26 +11,20 @@ local PLUGINNAME = "gluu-oauth2-client-auth"
 
 local lrucache = require "resty.lrucache"
 -- it can be shared by all the requests served by each nginx worker process:
-local token_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
-if not token_cache then
+local worker_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
+if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
-local function load_consumer_custom_id(custom_id)
-    local result, err = kong.db.consumers:select_by_custom_id(custom_id)
-    if err then
-        err = 'anonymous consumer with custom_id "' .. custom_id .. '" not found'
-        return nil, err
-    end
-
-    return result
+local function unexpected_error()
+    kong.response.exit(500, { message = "An unexpected error ocurred" })
 end
 
-local function load_consumer_by_id(consumer_id, anonymous)
+local function load_consumer_by_id(consumer_id)
     local result, err = kong.db.consumers:select({ id = consumer_id })
     if not result then
-        if anonymous ~= "" and not err then
-            err = 'anonymous consumer "' .. consumer_id .. '" not found'
+        if not err then
+            err = 'consumer "' .. consumer_id .. '" not found'
         end
 
         return nil, err
@@ -59,7 +53,7 @@ local function get_token(authorization)
         end
         if err then
             kong.log.err(err)
-            return kong.response.exit(500, { message = "Failed to get token from header" })
+            return unexpected_error()
         end
     end
 
@@ -87,7 +81,7 @@ local function get_protection_token(conf)
             access_token = nil
             access_token_expire = 0
             kong.log.err("Failed to get access token.")
-            return kong.response.exit(status, { message = "Failed to get access token" })
+            return unexpected_error()
         end
 
         access_token = body.access_token
@@ -100,10 +94,24 @@ local function get_protection_token(conf)
     end
 end
 
+local function build_cache_key(token, allow_oauth_scope_expression)
+    if not allow_oauth_scope_expression then
+        return token
+    end
+    local t = {
+        token,
+        ":",
+        ngx.var.uri,
+        ":",
+        ngx.req.get_method()
+    }
+    return table.concat(t)
+end
+
 local function do_authentication(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
-    local request_path = ngx.var.request_uri
+    local request_path = ngx.var.uri
     local request_http_method = ngx.req.get_method()
 
     -- Hide credentials
@@ -115,15 +123,16 @@ local function do_authentication(conf)
     end
 
     if not token then
-        return false, "Token not found"
+        return 401, "Failed to get bearer token from Authorization header"
     end
 
-    local body, stale_data = token_cache:get(token)
+    -- alex: IMO Kong cache is too heavy for this use case, we don't have custon entities stored in DB
+    local body, stale_data = worker_cache:get(build_cache_key(token, conf.allow_oauth_scope_expression))
     if body and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
         set_consumer(body)
-        return true
+        return 200
     end
 
     -- Get protection access token for OXD API
@@ -138,79 +147,88 @@ local function do_authentication(conf)
         access_token)
     local status = response.status
 
-    if status >= 300 then
+    if status == 403 then
         -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
+        return 401, "Invalid access token provided in Authorization header"
+    end
 
-        -- TODO should we distinguish between unexected errors and not valid credentials?
-        return false, "Failed to introspect token"
+    if status ~= 200 then
+        kong.log.err("introspect-access-token error, status: ", status)
+        return unexpected_error()
     end
 
     body = response.body
     if not body.active then
-        return false, "Token is not active"
+        return 401, "Token is not active"
     end
 
-    local consumer, err = kong.cache:get(body.client_id, nil, load_consumer_custom_id, body.client_id)
-
-    if err then
-        kong.log.err("Get consumer by custom_id error: ", err)
-        return kong.response.exit(500, { message = "An unexpected error ocurred" })
-    end
+    local consumer = worker_cache:get(body.client_id)
 
     if not consumer then
-        return false, "Consumer not found"
+        local consumer_local, err = kong.db.consumers:select_by_custom_id(body.client_id)
+        if not consumer_local and not err then
+            err = 'consumer with custom_id "' .. custom_id .. '" not found'
+        end
+        if err then
+            kong.log.err("select_by_custom_id error: ", err)
+            return unexpected_error()
+        end
+        consumer = consumer_local
+        worker_cache:set(body.client_id, consumer)
     end
 
     body.consumer = consumer
 
-    if body.exp and body.iat then
-        token_cache:set(token, body, body.exp - body.iat)
-    else
-        kong.log.err(PLUGINNAME .. ": missed exp or iat fields")
-        return kong.response.exit(500, { message = "EXP and IAT fileds missing in introspection response" })
+    if not body.exp or not body.iat then
+        kong.log.err("missed exp or iat fields")
+        return unexpected_error()
     end
 
     if conf.allow_oauth_scope_expression then
-        local relative_path = helper.get_relative_path(conf.oauth_scope_expression, request_path)
-        kong.log.debug("Requested path : ", request_path, " Relative path : ", relative_path, " Requested http method : ", request_http_method)
-        local path_scope_expression = helper.get_expression_by_path_method(conf.oauth_scope_expression, relative_path, request_http_method)
+        kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
+        local path_scope_expression = helper.get_expression_by_request_path_method(
+            conf.oauth_scope_expression, request_path, request_http_method
+        )
         if pl_types.is_empty(path_scope_expression) then
-            return false, "Path: " .. request_path .. " and method: " .. request_http_method .. " are not protected with oauth scope expression. Configure your oauth scope expression."
+            kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
+            return 403, "" -- TODO is it unexpected error?!
         end
 
-        if helper.check_json_expression(path_scope_expression, body.scope) then
+        if not helper.check_json_expression(path_scope_expression, body.scope) then
             kong.log.debug("scope expression check result : true")
-            -- TODO Need to cache token with requested path and http method https://github.com/GluuFederation/gluu-gateway/issues/217
-            return true
-        else
-            return false, "Failed to validate introspect scope with oauth scope expression"
+            -- TODO should we cache negative result?
+        kong.log.debug("Not authorized for this path/method")
+            return 403, "You are not authorized for this path/method"
         end
+        worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression). body, body.exp - body.iat)
+    else
+        worker_cache:set(token, body, body.exp - body.iat)
     end
 
     -- set headers
     set_consumer(body)
-    return true
+    return 200
 end
 
 return function(conf)
 
-    local result, err = do_authentication(conf);
+    local status, err = do_authentication(conf);
 
-    if not result then
+    if status ~= 200 then
         -- Check anonymous user and set header with anonymous consumer details
-        if conf.anonymous ~= "" then
+        if conf.anonymous then
             -- get anonymous user
             local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous, true)
+            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id)
 
             if err then
-                kong.log.err(err)
-                return kong.response.exit(500, { message = "An unexpected error occurred" })
+                kong.log.err("Anonymous customer: ", err)
+                return unexpected_error()
             end
-            set_consumer({ consumer = consumer })
+            set_consumer(consumer)
             return
         else
-            kong.response.exit(401, { message = err })
+            kong.response.exit(status, { message = err })
         end
     end
 end

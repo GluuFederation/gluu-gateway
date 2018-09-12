@@ -44,38 +44,6 @@ function _M.check_json_expression(scope_expression, requested_scopes)
     return result
 end
 
---- Fetch oauth scope expression based on path and http methods
--- @param json_exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}]
--- @param path: requested api endpoint(path) Example: "/posts"
--- @param method: requested http method Example: GET
--- @return json expression Example: {path: "/posts", ...}
-function _M.get_expression_by_path_method(json_exp, path, method)
-    if pl_types.is_empty(json_exp) then
-        return nil
-    end
-
-    local json_expression = cjson.decode(json_exp or "{}")
-    local found_path_condition
-    for k, v in pairs(json_expression) do
-        if v['path'] == path then
-            found_path_condition = v['conditions']
-            break
-        end
-    end
-
-    if not found_path_condition then
-        return nil
-    end
-
-    for k, v in pairs(found_path_condition) do
-        if pl_tablex.find(v['httpMethods'], method) then
-            return v['scope_expression']
-        end
-    end
-
-    return nil
-end
-
 --- Check requested path match to register path
 -- @param request_path: Example: "/posts/one/two"
 -- @param register_path: Example: "/posts"
@@ -97,32 +65,32 @@ function _M.is_path_match(request_path, register_path)
     return request_path == register_path or string.sub(request_path, start, last + 1) == register_path .. "/" or string.sub(request_path, start, last + 1) == register_path .. "?"
 end
 
---- Get path from scope exression as relative to requested path
+--- Fetch oauth scope expression based on path and http methods
 -- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
--- @param json_exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}]
+-- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
 -- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
--- @return path: ralative path Example: "/posts"
-function _M.get_relative_path(json_exp, request_path)
-    if pl_types.is_empty(json_exp) then
-        return request_path
-    end
-
-    local json_expression = cjson.decode(json_exp or "{}")
-    local register_paths = {}
-    for k, v in pairs(json_expression) do
-        table.insert(register_paths, v['path'])
-    end
-
-    table.sort(register_paths, function(first, second)
-        return string.len(first) > string.len(second)
-    end)
-
-    for k, v in pairs(register_paths) do
-        if _M.is_path_match(request_path, v) then
-            return v
+-- @param method: requested http method Example: GET
+-- @return json expression Example: {path: "/posts", ...}
+function _M.get_expression_by_request_path_method(exp, request_path, method)
+    -- TODO the complexity is O(N), think how to optimize
+    local found_path_condition
+    for i = 1, #exp do
+        if _M.is_path_match(request_path, exp[i]["path"]) then
+            found_path_condition = exp[i]["conditions"]
         end
     end
-    return request_path
+    if not found_path_condition then
+        return
+    end
+
+    for i = 1, #found_path_condition do
+        local rule = found_path_condition[i]
+        if pl_tablex.find(rule.httpMethods, method) then
+            return rule.scope_expression
+        end
+    end
+
+    return nil
 end
 
 return _M

@@ -5,21 +5,14 @@ local cjson = require "cjson.safe"
 --- Check OAuth scope expression
 -- @param v: JSON expression
 local function check_expression(v)
-    if pl_types.is_empty(v) then
-        return true
-    end
-
-    local _, err = cjson.decode(v)
-    if err then
-        return false, "Invalid OAuth scope json expression"
-    end
+    -- TODO check the structure, required fields, etc
     return true
 end
 
 --- Check user valid UUID
 -- @param anonymous: anonymous consumer id
 local function check_user(anonymous)
-    if anonymous == "" or utils.is_valid_uuid(anonymous) then
+    if anonymous == nil or utils.is_valid_uuid(anonymous) then
         return true
     end
 
@@ -35,8 +28,15 @@ return {
         client_secret = { required = true, type = "string" },
         op_url = { required = true, type = "url" },
         oxd_url = { required = true, type = "url" },
-        anonymous = { type = "string", default = "", func = check_user },
-        oauth_scope_expression = { required = false, type = "string", func = check_expression },
+        anonymous = { type = "string", func = check_user },
+        oauth_scope_expression = { required = false, type = "table", func = check_expression }, --TODO decode once
         allow_oauth_scope_expression = { required = true, type = "boolean", default = false },
     },
+    self_check = function(schema, plugin_t, dao, is_updating)
+        if plugin_t.allow_oauth_scope_expression then
+            table.sort(plugin_t.oauth_scope_expression, function(first, second)
+                return #first.path > #second.path
+            end)
+        end
+    end
 }
