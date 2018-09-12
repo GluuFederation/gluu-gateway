@@ -1,0 +1,31 @@
+<div class="modal-header primary">
+    <h4 class="modal-title" id="modal-title">
+        Create Consumer
+        <a  class="modal-close pull-right" ng-click="close()">
+            <i class="mdi mdi-close"></i>
+        </a>
+    </h4>
+</div>
+
+<div class="modal-body" id="modal-body">
+    <form novalidate class="form-horizontal" name="createClientForm" ng-submit="submit(createClientForm.$valid)">
+        <div class="form-group" ng-class="{'has-error' : createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)}">
+            <label class="col-sm-4 control-label">Client Name <br><em><small class="help-block">required</small></em></label>
+            <div class="col-sm-7">
+                <input ng-model="client_name" class="form-control" name="client_name" required>
+                <div class="text-danger" ng-if="createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)"> This field is required</div>
+                <p class="help-block">Use to create client with name.</p>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-4 col-sm-7">
+                <button type="submit" class="btn btn-primary btn-block">
+                    <i class="mdi mdi-check"></i>
+                    Add
+                </button>
+            </div>
+        </div>
+
+    </form>
+</div>

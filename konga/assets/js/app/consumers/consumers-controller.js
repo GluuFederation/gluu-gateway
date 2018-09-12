@@ -18,9 +18,10 @@
         ConsumerModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('consumer', ConsumerModel)));
         $scope.user = UserService.user();
-        $scope.importConsumers = importConsumers
-        $scope.openCreateConsumerModal = openCreateConsumerModal
-        $scope.importClick = false
+        $scope.importConsumers = importConsumers;
+        $scope.openCreateConsumerModal = openCreateConsumerModal;
+        $scope.openCreateClientModal = openCreateClientModal;
+        $scope.importClick = false;
         function importConsumers() {
           $scope.importClick = true;
           $uibModal.open({
@@ -42,9 +43,8 @@
           });
         }
 
-
         function openCreateConsumerModal() {
-          if($scope.openingModal) return;
+          if ($scope.openingModal) return;
 
           $scope.openingModal = true;
           setTimeout(function () {
@@ -61,16 +61,16 @@
               $scope.consumer = {
                 username: '',
                 custom_id: ''
-              }
+              };
 
-              $scope.close = close
-              $scope.submit = submit
+              $scope.close = close;
+              $scope.submit = submit;
 
               function submit() {
 
-                $scope.errors = {}
+                $scope.errors = {};
 
-                var data = _.cloneDeep($scope.consumer)
+                var data = _.cloneDeep($scope.consumer);
                 if (!data.custom_id) {
                   delete data.custom_id;
                 }
@@ -93,7 +93,7 @@
               }
 
               function handleErrors(err) {
-                $scope.errors = {}
+                $scope.errors = {};
                 if (err.data) {
 
                   for (var key in err.data.body) {
@@ -110,43 +110,125 @@
           })
         }
 
+        function openCreateClientModal() {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
+          $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/consumers/create-op-client-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, PluginsService) {
+              $scope.client_name = '';
+
+              $scope.close = close;
+              $scope.submit = submit;
+
+              function submit(valid) {
+                if (!valid) {
+                  return
+                }
+
+                PluginsService
+                  .addOAuthClient({
+                    client_name: $scope.client_name
+                  })
+                  .then(function (res) {
+                    prompt(res.data);
+                    MessageService.success("Client created successfully!");
+                    close();
+                  })
+                  .catch(function (err) {
+                    MessageService.success("Failed to create client");
+                    $log.error("Failed to create client", err);
+                  });
+              }
+
+              function close() {
+                $uibModalInstance.dismiss()
+              }
+            },
+            controllerAs: '$ctrl',
+          })
+        }
+
+        function prompt(data) {
+          var modalInstance = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            windowClass: 'dialog',
+            template: '' +
+            '<div class="modal-header dialog no-margin">' +
+            '<h5 class="modal-title">Client Registration Success</h5>' +
+            '</div>' +
+            '<div class="modal-body">' +
+            '<table class="table table-bordered">' +
+            '<tbody>' +
+            '<tr>' +
+            '<td>OXD Id</td>' +
+            '<td>' + data.oxd_id + ' </td>' +
+            '</tr>' +
+            '<td>Client Id</td>' +
+            '<td>' + data.client_id + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<td>Client Secret</td>' +
+            '<td>' + data.client_secret + '</td>' +
+            '</tr>' +
+            '</tbody>' +
+            '</table>' +
+            '<label class="label label-danger"> * Write this down because there is no other way to recover the client secret!. </label>' +
+            '<label class="label label-info"> * You need to use client_id as custom_id in kong consumer creation. </label>' +
+            '</div>' +
+            '<div class="modal-footer dialog">' +
+            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+            '</div>',
+            controller: function ($scope, $uibModalInstance) {
+              $scope.accept = function () {
+                $uibModalInstance.dismiss()
+              }
+            },
+            size: 'lg'
+          });
+        }
 
         function _fetchData() {
-
           $scope.loading = true;
           ConsumerModel.load({
             size: $scope.itemsFetchSize
           }).then(function (response) {
             $scope.items = response;
             $scope.loading = false;
-
           })
         }
 
-
         $scope.$on('consumer.created', function (ev, user) {
           _fetchData()
-        })
-
+        });
 
         $scope.$on('consumer.updated', function (ev, user) {
           _fetchData()
-        })
+        });
 
         $scope.$on('credentials.assigned', function (ev, user) {
           _fetchData()
-        })
+        });
 
         $scope.$on('search', function (ev, user) {
           _fetchData()
-        })
+        });
 
         $scope.$on('user.node.updated', function (ev, node) {
           _fetchData()
-        })
+        });
 
-        _fetchData()
-
+        _fetchData();
       }
     ])
 }());
