@@ -288,9 +288,10 @@
             delete model.config.oauth_scope_expression
           }
           PluginsService.addOAuthClient({
-            oxd_id: model.config.oxd_id,
-            client_id: model.config.client_id,
-            client_secret: model.config.client_secret
+            oxd_id: model.config.oxd_id || null,
+            client_id: model.config.client_id || null,
+            client_secret: model.config.client_secret || null,
+            client_name: 'gluu-oauth2-introspect-client'
           })
             .then(function (response) {
               var oauthClient = response.data;

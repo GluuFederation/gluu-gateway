@@ -25,8 +25,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       body: {
         op_host: sails.config.opHost,
         authorization_redirect_uri: 'https://client.example.com/cb',
-        client_name: 'gluu-oauth2-introspect-client',
-        setup_client_name: 'gluu-oauth2-introspect-setup-client'
+        client_name: req.body.client_name || 'gluu-oauth2-client'
       },
       resolveWithFullResponse: true,
       json: true
