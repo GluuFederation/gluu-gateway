@@ -190,7 +190,7 @@
 
         function showResourceJSON() {
           var model = angular.copy($scope.modelPlugin);
-          model.config.oauth_scope_expression = makeJSON(model);
+          model.config.oauth_scope_expression = makeExpression(model);
           if (model.config.oauth_scope_expression == null) {
             return
           }
@@ -281,9 +281,9 @@
 
         function addPlugin() {
           var model = angular.copy($scope.modelPlugin);
-          var oauthScopeExpression = makeJSON($scope.modelPlugin);
+          var oauthScopeExpression = makeExpression($scope.modelPlugin);
           if (oauthScopeExpression && oauthScopeExpression.length > 0) {
-            model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
+            model.config.oauth_scope_expression = oauthScopeExpression;
           } else {
             delete model.config.oauth_scope_expression
           }
@@ -328,7 +328,7 @@
           model.config.oauth_scope_expression = $scope.modelPlugin.config.oauth_scope_expression;
 
           if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
-            model.config.oauth_scope_expression = JSON.stringify(makeJSON($scope.modelPlugin));
+            model.config.oauth_scope_expression = makeExpression($scope.modelPlugin);
           } else {
             delete model.config.oauth_scope_expression
           }
@@ -363,7 +363,7 @@
           return [];
         }
 
-        function makeJSON(data) {
+        function makeExpression(data) {
           try {
             var model = angular.copy(data);
             var dIndex = 0;
@@ -407,7 +407,7 @@
               });
               delete path.pathIndex
             });
-            return JSON.parse(angular.toJson(model.config.oauth_scope_expression));
+            return model.config.oauth_scope_expression;
           } catch (e) {
             MessageService.error("Invalid OAuth scope expression");
             return null;
