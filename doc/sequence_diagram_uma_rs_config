@@ -20,12 +20,6 @@ end
 konga->oxd: Register resources(UMA scope_Expression)
 oxd<->OP:
 oxd->konga: Return oxd_id
-konga->konga_DB: Store Client credentials
-note over konga_DB
-    oxd_id,
-    client_id,
-    uma_scope_expression
-end note
 
 note over konga
     Pass client credetial to plugin
@@ -33,16 +27,16 @@ end note
 
 konga->kong: Configure Gluu-OAuth2-RS plugin with [Service|Route|API|Global]
 note over kong
-Gluu-OAuth2-Client schema:
+Gluu-OAuth2-RS schema:
 1. oxd_id
 2. client_id
 3. client_secret
-4. op_server
-5. oxd_http_url
+4. op_url
+5. oxd_url
 6. uma_scope_expression
 7. allow_unprotected_path
 8. Mode {UMA, MIX}
 end note
-kong->kong_DB: Add Gluu-OAuth2-Client
+kong->kong_DB: Add Gluu-OAuth2-RS
 kong_DB->kong:
-kong->konga: Return with gluu-oauth2-client config details
+kong->konga: Return with gluu-oauth2-RS config details
