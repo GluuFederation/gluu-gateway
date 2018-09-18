@@ -15,27 +15,24 @@
 
         $scope.tags = [];
         $scope.service = angular.copy(ServiceService.getProperties($rootScope.Gateway.version));
-        $log.debug("$scope.service", $scope.service)
+        $log.debug("$scope.service", $scope.service);
 
         $scope.close = function () {
           $uibModalInstance.dismiss()
-        }
+        };
 
 
         $scope.submit = function () {
-
-          clearService()
-
-
+          clearService();
           ServiceService.add($scope.service)
             .then(function (res) {
-              $rootScope.$broadcast('service.created')
-              MessageService.success('Service created!')
+              $rootScope.$broadcast('service.created');
+              MessageService.success('Service created!');
               $uibModalInstance.dismiss()
             }).catch(function (err) {
-            $log.error("Create new service error:", err)
-            MessageService.error("Submission failed. Make sure you have completed all required fields.")
-            $scope.errors = {}
+            $log.error("Create new service error:", err);
+            MessageService.error("Submission failed. Make sure you have completed all required fields.");
+            $scope.errors = {};
             if (err.data && err.data.body) {
               if (err.data.body.fields) {
                 Object.keys(err.data.body.fields).forEach(function (key) {
@@ -49,8 +46,7 @@
 
             }
           })
-        }
-
+        };
 
         function clearService() {
           for (var key in $scope.service) {
