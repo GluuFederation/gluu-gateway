@@ -218,7 +218,10 @@
                 icon: "mdi-account-box-outline",
                 plugins: {
                   "gluu-oauth2-client-auth": {
-                    description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
+                    description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
+                  },
+                  "gluu-oauth2-rs": {
+                    description: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
                   },
                   "pre-function": {
                     description: "Dynamically run Lua code from Kong during access phase. Runs before other plugins run during access phase."
@@ -913,11 +916,10 @@
                   help: "List of property:value pairs. If the property is not present in the JSON body, add it with the given value. If it is already present, the two values (old and new) will be aggregated in an array."
                 },
               },
-
             },
             "gluu-oauth2-client-auth": {
               meta: {
-                description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
+                description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
               },
               'hide_credentials': {
                 type: 'boolean',

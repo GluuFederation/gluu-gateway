@@ -66,10 +66,7 @@
             <raw-view data-item="item"></raw-view>
           </td>
           <th>
-            <a ui-sref="apis.uma-plugin({api_id: item.api_id})" data-ng-if="item.name == 'gluu-oauth2-rs'">
-              {{item.name}}
-            </a>
-            <a href ng-click="onEditPlugin(item)" data-ng-if="item.name != 'gluu-oauth2-rs'">{{item.name}}</a>
+            <a href ng-click="onEditPlugin(item)">{{item.name}}</a>
           </th>
           <td>{{::getContext(item)}}</td>
           <td>

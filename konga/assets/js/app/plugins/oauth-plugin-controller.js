@@ -8,8 +8,8 @@
       function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
                           $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _context_name, _context_data, _plugins, $compile, InfoService, $localStorage) {
         $scope.globalInfo = $localStorage.credentials.user;
-        $scope.context_data = _context_data.data;
-        $scope.context_name = _context_name;
+        $scope.context_data = (_context_data && _context_data.data) || null;
+        $scope.context_name = _context_name || null;
         $scope.context_upstream = '';
         $scope.plugins = _plugins.data.data;
         $scope.oauthPlugin = null;
@@ -27,7 +27,7 @@
           $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
         } else if (_context_name == 'route') {
           $scope.context_upstream = $scope.context_data.protocols[0] + "://" + (($scope.context_data.hosts && $scope.context_data.hosts[0]) || ($scope.context_data.paths && $scope.context_data.paths[0]) || ($scope.context_data['methods'] && $scope.context_data['methods'][0]));
-        } else {
+        } else if (_context_name == 'api') {
           $scope.context_upstream = $scope.context_data.upstream_url;
         }
 
@@ -44,7 +44,10 @@
             hide_credentials: false
           }
         };
-        $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
+
+        if ($scope.context_name) {
+          $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
+        }
 
         $scope.isPluginAdded = false;
 
@@ -135,6 +138,9 @@
             .getInfo()
             .then(function (resp) {
               $scope.info = resp.data;
+              if (!$scope.context_name) {
+                $scope.context_upstream = "http://" + $scope.info.hostname + ":" + $scope.info.configuration.proxy_listeners[0].port;
+              }
               $log.debug("DashboardController:fetchData:info", $scope.info);
             })
         }
@@ -454,6 +460,5 @@
         //init
         $scope.fetchData()
       }
-    ])
-  ;
+    ]);
 }());
