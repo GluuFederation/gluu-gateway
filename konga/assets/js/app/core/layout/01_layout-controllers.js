@@ -215,7 +215,6 @@
                           SettingsService, MessageService, UserService, $log,
                           $rootScope, AccessLevels, SocketHelperService, $uibModal, Semver) {
 
-
         $scope.auth = AuthService;
         $scope.user = UserService.user();
         $scope.showCluster = false;
@@ -265,7 +264,7 @@
           {
             state: 'services',
             show: function () {
-              return AuthService.hasPermission('apis', 'read') && $rootScope.Gateway
+              return AuthService.hasPermission('services', 'read') && $rootScope.Gateway
             },
             title: 'Services',
             icon: 'mdi-cloud-outline',
@@ -274,7 +273,7 @@
           {
             state: 'routes',
             show: function () {
-              return AuthService.hasPermission('apis', 'read') && $rootScope.Gateway
+              return AuthService.hasPermission('routes', 'read') && $rootScope.Gateway
             },
             title: 'Routes',
             icon: 'mdi-directions-fork',

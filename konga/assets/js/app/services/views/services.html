@@ -36,7 +36,7 @@
                data-ng-show="sort.column == item.column"
                data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"></i>
           </th>
-          <th></th>
+          <th>Config</th>
           <th></th>
         </tr>
         <tr
@@ -55,9 +55,9 @@
           <td>{{ service.host || "-" }}</td>
           <td>{{service.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="services.uma-plugin({service_id: service.id })" class="btn btn-primary btn-link"><i
+            <a ui-sref="services.oauth-plugin({service_id: service.id })" class="btn btn-primary btn-link"><i
               class="mdi mdi-lock"></i>
-              Security
+              OAuth
             </a>
           </td>
           <td>
