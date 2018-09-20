@@ -123,6 +123,50 @@
               }
             }
           })
+          .state('apis.uma-plugin', {
+            url: '/:api_id/uma-plugin',
+            data: {
+              pageName: "UMA plugin",
+              pageDescription: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
+              displayName: "UMA plugin",
+              prefix: '<i class="mdi mdi-pencil"></i>'
+            },
+            views: {
+              'content@': {
+                templateUrl: 'js/app/plugins/uma-plugin.html',
+                controller: 'UMAPluginController',
+                resolve: {
+                  _context_name: [
+                    '$log',
+                    function resolve() {
+                      return 'api';
+                    }
+                  ],
+                  _context_data: [
+                    '$stateParams',
+                    'ApiService',
+                    '$log',
+                    function resolve($stateParams,
+                                     ApiService) {
+                      return ApiService.findById($stateParams.api_id)
+                    }
+                  ],
+                  _plugins: [
+                    'PluginsService', '$stateParams',
+                    function resolve(PluginsService, $stateParams) {
+                      return PluginsService.load({api_id: $stateParams.api_id})
+                    }
+                  ],
+                  _activeNode: [
+                    'NodesService',
+                    function resolve(NodesService) {
+                      return NodesService.isActiveNodeSet()
+                    }
+                  ],
+                }
+              }
+            }
+          })
           .state('apis.plugins', {
             url: '/:api_id/plugins',
             params: {

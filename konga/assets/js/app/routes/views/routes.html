@@ -62,9 +62,7 @@
               ng-click="route.preserve_host=!route.preserve_host;updateRoute(route.id,{preserve_host : route.preserve_host})"
               class="mdi clickable"
               ng-class="route.preserve_host ? 'mdi-cloud-outline text-primary' : 'mdi-cloud-off-outline text-muted'">
-
             </i>
-
           </td>
           <td>
             <raw-view data-item="route"></raw-view>
@@ -83,6 +81,10 @@
             <a ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-primary btn-link"><i
               class="mdi mdi-lock"></i>
               OAuth
+            </a>
+            <a ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-primary btn-link"><i
+              class="mdi mdi-lock"></i>
+              UMA
             </a>
           </td>
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">

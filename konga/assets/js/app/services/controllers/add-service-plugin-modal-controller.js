@@ -29,7 +29,7 @@
           // Remove ssl plugin if Kong > 0.9.x
           $scope.pluginGroups.forEach(function (group) {
             Object.keys(group.plugins).forEach(function (key) {
-              if (key == "gluu-oauth2-client-auth") {
+              if (key == "gluu-oauth2-client-auth" || key == "gluu-oauth2-rs") {
                 delete group.plugins[key];
                 return;
               }
@@ -45,7 +45,6 @@
         $scope.close = function () {
           return $uibModalInstance.dismiss()
         };
-
 
         /**
          * -------------------------------------------------------------

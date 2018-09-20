@@ -13,7 +13,6 @@
       function controller(_, $scope, $rootScope, $log, $state, RoutesService, SettingsService,
                           $uibModalInstance, MessageService, _service) {
 
-
         var availableFormattedVersion = RoutesService.getLastAvailableFormattedVersion($rootScope.Gateway.version);
         $scope.service = _service;
         $scope.route = angular.copy(RoutesService.getProperties($rootScope.Gateway.version));
@@ -24,18 +23,14 @@
 
         $scope.partial = 'js/app/routes/partials/form-route-' + availableFormattedVersion + '.html?r=' + Date.now();
 
-        console.log("$scope.route", $scope.route, _service.id)
+        console.log("$scope.route", $scope.route, _service.id);
 
         $scope.close = function () {
           $uibModalInstance.dismiss()
-        }
-
+        };
 
         $scope.submit = function () {
-
-          clearRoute()
-
-
+          clearRoute();
           RoutesService.add($scope.route)
             .then(function (res) {
               $rootScope.$broadcast('route.created')
@@ -57,7 +52,7 @@
               }
             }
           })
-        }
+        };
 
 
         function clearRoute() {
@@ -72,9 +67,6 @@
             }
           }
         }
-
-
       }
-    ])
-  ;
+    ]);
 }());
