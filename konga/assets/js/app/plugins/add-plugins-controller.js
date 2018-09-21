@@ -18,25 +18,25 @@
                           _plugins, _info) {
 
 
-        var info = _info.data
-        var plugins_available = info.plugins.available_on_server
-        var pluginOptions = new KongPluginsService().pluginOptions()
+        var info = _info.data;
+        var plugins_available = info.plugins.available_on_server;
+        var pluginOptions = new KongPluginsService().pluginOptions();
 
-        $scope.pluginOptions = pluginOptions
+        $scope.pluginOptions = pluginOptions;
         new KongPluginsService().makePluginGroups().then(function (groups) {
-          $scope.pluginGroups = groups
-          $log.debug("Plugin Groups", $scope.pluginGroups)
+          $scope.pluginGroups = groups;
+          $log.debug("Plugin Groups", $scope.pluginGroups);
 
           $scope.pluginGroups.forEach(function (group) {
             console.log(group.plugins);
             for (var key in group.plugins) {
               if (!plugins_available[key]) delete group.plugins[key]
             }
-          })
+          });
 
           // Init
           syncPlugins(_plugins.data.data)
-        })
+        });
         $scope.activeGroup = 'Authentication'
         $scope.setActiveGroup = setActiveGroup
         $scope.filterGroup = filterGroup
@@ -48,11 +48,11 @@
           ' in the <a href="#!/apis">APIs section</a>.' +
           '<br>If you need to add plugins to a specific Consumer, you can do it' +
           ' in the respective Consumer page.'
-        }
+        };
 
         $scope.closeAlert = function () {
           $scope.alert = undefined
-        }
+        };
 
 
         /**
@@ -70,6 +70,14 @@
         }
 
         function onAddPlugin(name) {
+          if (name == "gluu-oauth2-client-auth") {
+            return $state.go("plugins.oauth-plugin");
+          }
+
+          if (name == "gluu-oauth2-rs") {
+            return $state.go("plugins.uma-plugin");
+          }
+
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -78,10 +86,7 @@
             size: 'lg',
             controller: 'AddPluginController',
             resolve: {
-              _api: function () {
-                return null;
-              },
-              _consumer: function () {
+              _context: function () {
                 return null;
               },
               _pluginName: function () {
@@ -107,7 +112,7 @@
 
           var addedMap = added.map(function (item) {
             return item.name
-          })
+          });
 
           $scope.pluginGroups.forEach(function (group) {
             for (var key in group.plugins) {
@@ -137,7 +142,7 @@
         // Listeners
         $scope.$on('plugin.added', function () {
           fetchPlugins()
-        })
+        });
 
         /**
          * ------------------------------------------------------------
@@ -146,14 +151,11 @@
          */
         $scope.$on("plugin.added", function () {
           fetchPlugins()
-        })
+        });
 
         $scope.$on("plugin.updated", function (ev, plugin) {
           fetchPlugins()
         })
-
-
       }
-    ])
-  ;
+    ]);
 }());

@@ -27,11 +27,11 @@
         $scope.context = 'create';
 
         //var pluginOptions = new KongPluginsService().pluginOptions()
-        var options = new KongPluginsService().pluginOptions(_pluginName)
+        var options = new KongPluginsService().pluginOptions(_pluginName);
 
-        $scope.schema = _schema.data
-        $scope.pluginName = _pluginName
-        $log.debug("Schema", $scope.schema)
+        $scope.schema = _schema.data;
+        $scope.pluginName = _pluginName;
+        $log.debug("Schema", $scope.schema);
         //$log.debug("Options", options)
         $scope.close = close;
 
@@ -46,27 +46,22 @@
 
         function initialize() {
           // Initialize plugin fields data
-          $scope.data = _.merge(options.fields, $scope.schema)
+          $scope.data = _.merge(options.fields, $scope.schema);
 
           // Define general modal window content
           $scope.description = $scope.data.meta ? $scope.data.meta.description
-            : 'Configure the Plugin.'
+            : 'Configure the Plugin.';
 
           // Remove unwanted data fields that start with "_"
           Object.keys($scope.data.fields).forEach(function (key) {
             if (key.startsWith("_")) delete $scope.data.fields[key]
-          })
+          });
 
           // Customize data fields according to plugin
-          PluginHelperService.customizeDataFieldsForPlugin(_pluginName, $scope.data.fields)
+          PluginHelperService.customizeDataFieldsForPlugin(_pluginName, $scope.data.fields);
 
           // Assign extra properties from options to data fields
           PluginHelperService.assignExtraProperties(options, $scope.data.fields);
-          if (_pluginName == "gluu-oauth2-client-auth") {
-            $scope.data.fields.oxd_id.value = $scope.globalInfo.oxdId
-            delete $scope.data.fields.op_server
-            delete $scope.data.fields.oxd_http_url
-          }
 
           console.log("Extra properties added to fields =>", $scope.data.fields);
         }
@@ -80,13 +75,13 @@
             obj.custom_fields = {};
           }
 
-          obj.custom_fields[obj.custom_field] = _.cloneDeep(obj.schema.fields)
+          obj.custom_fields[obj.custom_field] = _.cloneDeep(obj.schema.fields);
           obj.custom_field = "";
-        }
+        };
 
         $scope.removeCustomField = function (object, key) {
           delete object.custom_fields[key]
-        }
+        };
 
         $scope.addPlugin = function (back) {
 
@@ -95,7 +90,7 @@
           // Initialize request data
           var request_data = {
             name: _pluginName,
-          }
+          };
 
           // Add api_id to request_data if defined
           if ($scope.api) {
@@ -122,47 +117,42 @@
           }
 
           // Apply monkey patches to request data if needed
-          PluginHelperService.applyMonkeyPatches(request_data, $scope.data.fields)
+          PluginHelperService.applyMonkeyPatches(request_data, $scope.data.fields);
           // Create request data "config." properties
-          var config = PluginHelperService.createConfigProperties($scope.data.fields)
+          var config = PluginHelperService.createConfigProperties($scope.data.fields);
 
-          request_data = _.merge(request_data, config)
+          request_data = _.merge(request_data, config);
 
           // Delete unset fields
           Object.keys(request_data).forEach(function (key) {
             if (!request_data[key]) delete request_data[key]
-          })
+          });
 
-          if (_pluginName == "gluu-oauth2-client-auth") {
-            request_data['config.op_server'] = $scope.globalInfo.opHost;
-            request_data['config.oxd_http_url'] = $scope.globalInfo.oxdWeb;
-          }
-
-          console.log("REQUEST DATA =>", request_data)
+          console.log("REQUEST DATA =>", request_data);
           PluginHelperService.addPlugin(
             request_data,
             function success(res) {
-              console.log("create plugin", res)
+              console.log("create plugin", res);
               $scope.busy = false;
-              $rootScope.$broadcast('plugin.added', res.data)
-              MessageService.success('Plugin added successfully!')
-              $uibModalInstance.dismiss(res.data)
-              if (back) $state.go('plugins') // return to plugins page if specified
+              $rootScope.$broadcast('plugin.added', res.data);
+              MessageService.success('Plugin added successfully!');
+              $uibModalInstance.dismiss(res.data);
+              if (back) $state.go('plugins'); // return to plugins page if specified
             }, function (err) {
               $scope.busy = false;
-              $log.error("create plugin", err)
-              var errors = {}
+              $log.error("create plugin", err);
+              var errors = {};
 
               if (err.data.customMessage) {
                 Object.keys(err.data.customMessage).forEach(function (key) {
-                  errors[key.replace('config.', '')] = err.data.customMessage[key]
-                  MessageService.error(key + " : " + err.data.customMessage[key])
+                  errors[key.replace('config.', '')] = err.data.customMessage[key];
+                  MessageService.error(key + " : " + err.data.customMessage[key]);
                 })
               }
 
               if (err.data.body) {
                 Object.keys(err.data.body).forEach(function (key) {
-                  errors[key] = err.data.body[key]
+                  errors[key] = err.data.body[key];
                   MessageService.error(key + " : " + err.data.body[key])
                 })
               }
@@ -172,7 +162,7 @@
               var progressPercentage = parseInt(100.0 * event.loaded / event.total);
               $log.debug('progress: ' + progressPercentage + '% ' + event.config.data.file.name);
             })
-        }
+        };
 
 
         // Initialize used title items
