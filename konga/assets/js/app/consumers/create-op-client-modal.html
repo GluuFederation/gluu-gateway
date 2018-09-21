@@ -1,12 +1,16 @@
 <div class="modal-header primary">
     <h4 class="modal-title" id="modal-title">
-        Create Consumer
+        Create Client
         <a  class="modal-close pull-right" ng-click="close()">
             <i class="mdi mdi-close"></i>
         </a>
     </h4>
 </div>
-
+<div class="col-md-12 bg-light-grey padding">
+  <p class="text-muted no-margin">
+    It will create client with given name in your OP server using OXD server.
+  </p>
+</div>
 <div class="modal-body" id="modal-body">
     <form novalidate class="form-horizontal" name="createClientForm" ng-submit="submit(createClientForm.$valid)">
         <div class="form-group" ng-class="{'has-error' : createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)}">
@@ -22,7 +26,7 @@
             <div class="col-sm-offset-4 col-sm-7">
                 <button type="submit" class="btn btn-primary btn-block">
                     <i class="mdi mdi-check"></i>
-                    Add
+                    Create Client
                 </button>
             </div>
         </div>
