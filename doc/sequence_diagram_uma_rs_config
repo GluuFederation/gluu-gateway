@@ -35,7 +35,6 @@ Gluu-OAuth2-RS schema:
 5. oxd_url
 6. uma_scope_expression
 7. allow_unprotected_path
-8. Mode {UMA, MIX}
 end note
 kong->kong_DB: Add Gluu-OAuth2-RS
 kong_DB->kong:
