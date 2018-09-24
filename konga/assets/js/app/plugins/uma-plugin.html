@@ -21,21 +21,6 @@
           <div class="row">
             <div class="col-md-12">
               <div class="form-group">
-                <label class="col-sm-3 control-label">Mode</label>
-                <div class="col-sm-9">
-                  <select class="form-control" ng-model="modelPlugin.config.mode"
-                          ng-options="x for x in ['UMA', 'MIX']"></select>
-                  <p class="help-block">
-                    1. UMA mode, indicates your client is a valid UMA client, and obtains and sends an RPT as the access
-                    token.
-                  </p>
-                  <p class="help-block">
-                    2. MIX mode, gluu-oauth2-rs plugin will try to obtain an UMA RPT token if the RS returns
-                    401/Unauthorized.
-                  </p>
-                </div>
-              </div>
-              <div class="form-group">
                 <label class="col-sm-3 control-label">OXD Id
                   <br>
                   <em>

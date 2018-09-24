@@ -40,8 +40,7 @@
             client_id: $scope.globalInfo.clientId,
             client_secret: $scope.globalInfo.clientSecret,
             uma_scope_expression: [],
-            allow_unprotected_path: false,
-            mode: 'UMA'
+            allow_unprotected_path: false
           }
         };
 
