@@ -6,7 +6,7 @@ Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 9
 
 gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
 alt missed token
-    gluu-oauth2-rs->client: 401/Unauthorized
+    gluu-oauth2-rs->client: 401/Unauthorized + ticket
 end
 
 gluu-oauth2-rs<->gluu-oauth2-rs: Lookup protected path
