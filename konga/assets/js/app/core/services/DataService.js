@@ -92,6 +92,12 @@
               .get(_parseEndPointUrl(endPoint, identifier), _parseParameters(parameters));
           },
 
+
+          get: function get(endPoint, parameters) {
+            return $sailsSocket
+              .get(_parseEndPointUrl(endPoint), _parseParameters(parameters));
+          },
+
           /**
            * Service method to create new object to specified end point.
            *
@@ -123,7 +129,7 @@
           // Change to http because kong doesn't allow PUT and $sailsSocket doesn't support PATCH
           updateOrCreate: function update(endPoint, data) {
             return $http
-                .put(_parseEndPointUrl(endPoint), data);
+              .put(_parseEndPointUrl(endPoint), data);
           },
 
           /**

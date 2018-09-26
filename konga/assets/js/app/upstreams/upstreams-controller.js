@@ -35,7 +35,7 @@
             animation: true,
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
-            templateUrl: 'js/app/upstreams/add-upstream-modal.html',
+            templateUrl: 'js/app/upstreams/add-upstream-modal.html?v=' + $rootScope.konga_version,
             controller: 'AddUpstreamModalController',
             controllerAs: '$ctrl',
             //size: 'lg',
@@ -49,7 +49,7 @@
           Upstream.load({
             size: $scope.itemsFetchSize
           }).then(function (response) {
-            $scope.items = response
+            $scope.items = response;
             $scope.loading = false;
           });
         }
@@ -57,7 +57,7 @@
 
         // Listeners
         $scope.$on('kong.upstream.created', function (ev, data) {
-          _fetchData()
+          _fetchData();
         });
 
 
@@ -70,10 +70,8 @@
 
         });
 
-
         _fetchData()
 
       }
-    ])
-  ;
+    ]);
 }());

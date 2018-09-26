@@ -3,37 +3,36 @@
  *
  * Note that this file should only contain controllers and nothing else.
  */
-(function() {
+(function () {
   'use strict';
 
   angular.module('frontend.upstreams')
     .service('UpstreamsService', [
-        '$log', '$state','$http',
-      function( $log, $state, $http) {
+      '$log', '$state', '$http',
+      function ($log, $state, $http) {
 
-          var path = '/upstreams'
+        var path = '/upstreams';
 
-          function clean(obj) {
-              // Delete empty keys
-              Object.keys(obj).forEach(function(key){
-                  if(!obj[key]) delete obj[key]
-              })
+        function clean(obj) {
+          // Delete empty keys
+          Object.keys(obj).forEach(function (key) {
+            if (!obj[key]) delete obj[key]
+          });
 
-              return obj
+          return obj
+        }
+
+        return {
+
+          load: function (query) {
+            return $http({
+              url: 'kong' + path,
+              method: "GET",
+              params: query
+            })
           }
 
-          return {
-
-              load : function(query) {
-                  return $http({
-                      url : 'kong' + path,
-                      method: "GET",
-                      params : query
-                  })
-              }
-
-          }
+        }
       }
-    ])
-  ;
+    ]);
 }());

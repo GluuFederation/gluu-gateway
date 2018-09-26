@@ -3,34 +3,56 @@
  *
  * Note that this file should only contain controllers and nothing else.
  */
-(function() {
+(function () {
   'use strict';
 
   angular.module('frontend.upstreams')
     .controller('EditUpstreamDetailsController', [
-      '$scope', '$rootScope','$stateParams',
-        '$log', '$state','Upstream','MessageService',
-      function controller($scope,$rootScope,$stateParams,
-                          $log, $state,Upstream, MessageService ) {
+      '_', '$scope', '$rootScope', '$stateParams',
+      '$log', '$state', 'Upstream', 'MessageService',
+      function controller(_, $scope, $rootScope, $stateParams,
+                          $log, $state, Upstream, MessageService) {
 
-          $scope.submit = function() {
 
-              $scope.busy = true
-              Upstream.update($scope.upstream.id,angular.copy($scope.upstream))
-                  .then(
-                      function onSuccess(result) {
-                          $log.debug("UpdateUpstreamModalController:created upstream",result)
-                          MessageService.success('Upstream updated successfully');
-                          $scope.busy = false;
-                          $rootScope.$broadcast('kong.upstream.updated',result.data)
-                      },function(err){
-                          $log.error("UpdateUpstreamModalController:update upstream error",err)
-                          $scope.busy = false
-                          Upstream.handleError($scope,err)
-                      }
-                  )
-          }
+        $scope.submit = function () {
+
+          $scope.busy = true;
+          var data = angular.copy($scope.upstream);
+          fixHealthChecksHttpStatusesType(data);
+          Upstream.update($scope.upstream.id, data)
+            .then(
+              function onSuccess(result) {
+                $log.debug("UpdateUpstreamModalController:created upstream", result);
+                MessageService.success('Upstream updated successfully');
+                $scope.busy = false;
+                $rootScope.$broadcast('kong.upstream.updated', result.data);
+                $scope.errors = null;
+              }, function (err) {
+                $log.error("UpdateUpstreamModalController:update upstream error", err);
+                $scope.busy = false;
+                Upstream.handleError($scope, err)
+              }
+            )
+        };
+
+
+        function fixHealthChecksHttpStatusesType(upstream) {
+          // Fix non numeric arrays
+          var arr = ["active.healthy", "active.unhealthy", "passive.healthy", "passive.unhealthy"];
+          arr.forEach(function (item) {
+            if (_.get(upstream, 'healthchecks.' + item + '.http_statuses')) {
+              _.update(upstream, 'healthchecks.' + item + '.http_statuses', function (statuses) {
+                return _.map(statuses, function (status) {
+                  try {
+                    return parseInt(status);
+                  } catch (e) {
+                    return status;
+                  }
+                })
+              })
+            }
+          });
+        }
       }
-    ])
-  ;
+    ]);
 }());
