@@ -163,6 +163,7 @@
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
             windowClass: 'dialog',
+            backdrop: 'static',
             template: '' +
             '<div class="modal-header dialog no-margin">' +
             '<h5 class="modal-title">Client Registration Success</h5>' +
