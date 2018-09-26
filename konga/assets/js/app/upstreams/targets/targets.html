@@ -15,8 +15,7 @@
       are effectuated on the fly.</p>
 
     <p class="help-block">
-      Because the upstream maintains a history of target changes, the targets cannot be deleted or modified. To disable
-      a target, post a new one with <code>weight=0</code>.
+      To disable a target, post a new one with <code>weight=0</code> or click on the DISABLE button next to its name, which will automatically assign 0 to its weight.
     </p>
     <div class="col-md-12 bg-light-grey padding">
       <list-search
@@ -73,7 +72,7 @@
           <td>
             <button type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
-              Delete
+              DISABLE
             </button>
           </td>
         </tr>
