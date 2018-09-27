@@ -35,12 +35,23 @@
               $uibModalInstance.dismiss()
             }).catch(function (err) {
             $log.error("Create new api error:", err);
-            MessageService.error("Submission failed. Make sure you have completed all required fields.")
+
             $scope.errors = {};
             if (err.data && err.data.body) {
               Object.keys(err.data.body).forEach(function (key) {
                 $scope.errors[key] = err.data.body[key]
-              })
+              });
+
+              if (err.data.body.message && err.data.body.message == "at least one of 'hosts', 'uris' or 'methods' must be specified") {
+                $scope.errors = {
+                  hosts: ' ',
+                  uris: ' ',
+                  methods: ' '
+                };
+                MessageService.error(err.data.body.message);
+              }
+            } else {
+              MessageService.error("Submission failed. Make sure you have completed all required fields.")
             }
           })
         };
