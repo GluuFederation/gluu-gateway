@@ -1,10 +1,10 @@
 <div class="modal-header primary">
-    <h4 class="modal-title" id="modal-title">
-        Create Client
-        <a  class="modal-close pull-right" ng-click="close()">
-            <i class="mdi mdi-close"></i>
-        </a>
-    </h4>
+  <h4 class="modal-title" id="modal-title">
+    Create Client
+    <a class="modal-close pull-right" ng-click="close()">
+      <i class="mdi mdi-close"></i>
+    </a>
+  </h4>
 </div>
 <div class="col-md-12 bg-light-grey padding">
   <p class="text-muted no-margin">
@@ -12,24 +12,46 @@
   </p>
 </div>
 <div class="modal-body" id="modal-body">
-    <form novalidate class="form-horizontal" name="createClientForm" ng-submit="submit(createClientForm.$valid)">
-        <div class="form-group" ng-class="{'has-error' : createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)}">
-            <label class="col-sm-4 control-label">Client Name <br><em><small class="help-block">required</small></em></label>
-            <div class="col-sm-7">
-                <input ng-model="client_name" class="form-control" name="client_name" required>
-                <div class="text-danger" ng-if="createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)"> This field is required</div>
-                <p class="help-block">Use to create client with name.</p>
-            </div>
+  <form novalidate class="form-horizontal" name="createClientForm" ng-submit="submit(createClientForm.$valid)">
+    <div class="form-group"
+         ng-class="{'has-error' : createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)}">
+      <label class="col-sm-4 control-label">Client Name <br><em>
+        <small class="help-block">required</small>
+      </em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_name" class="form-control" name="client_name" required>
+        <div class="text-danger"
+             ng-if="createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)">
+          This field is required
         </div>
+        <p class="help-block">Use to create client with name.</p>
+      </div>
+    </div>
 
-        <div class="form-group">
-            <div class="col-sm-offset-4 col-sm-7">
-                <button type="submit" class="btn btn-primary btn-block">
-                    <i class="mdi mdi-check"></i>
-                    Create Client
-                </button>
-            </div>
-        </div>
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Client Id <br><em><small class="help-block">optional</small></em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_id" class="form-control" name="client_id">
+        <p class="help-block">Use any existing OP Client's client_id. If you leave it blank, OXD server will create new client in your OP server.</p>
+      </div>
+    </div>
 
-    </form>
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Client Secret<br><em><small class="help-block">optional</small></em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_secret" class="form-control" name="client_secret">
+        <p class="help-block">Use any existing OP Client's client_secret. If you leave it blank, OXD server will create new client in your OP server.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-offset-4 col-sm-7">
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="mdi mdi-check"></i>
+          Create Client
+        </button>
+      </div>
+    </div>
+
+  </form>
 </div>

@@ -124,7 +124,11 @@
             ariaDescribedBy: 'modal-body',
             templateUrl: 'js/app/consumers/create-op-client-modal.html',
             controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, PluginsService) {
-              $scope.client_name = '';
+              $scope.opClient = {
+                client_name: '',
+                client_id: '',
+                client_secret: ''
+              };
 
               $scope.close = close;
               $scope.submit = submit;
@@ -135,9 +139,7 @@
                 }
 
                 PluginsService
-                  .addOAuthClient({
-                    client_name: $scope.client_name
-                  })
+                  .addOAuthClient($scope.opClient)
                   .then(function (res) {
                     prompt(res.data);
                     MessageService.success("Client created successfully!");
