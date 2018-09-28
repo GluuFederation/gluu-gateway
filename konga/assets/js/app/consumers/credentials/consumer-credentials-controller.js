@@ -8,51 +8,66 @@
 
   angular.module('frontend.consumers')
     .controller('ConsumerCredentialsController', [
-      '_', '$scope', '$log', '$state',
+      '_', '$scope','$rootScope','Semver', '$log', '$state',
       'ConsumerService', 'MessageService', '$uibModal',
       'DialogService',
-      '_keys', '_jwts', '_basic_auth_credentials', '_hmac_auth_credentials', '_gluu_oauth2_client_auth_credentials',
-      function controller(_, $scope, $log, $state,
+      function controller(_, $scope, $rootScope, Semver, $log, $state,
                           ConsumerService, MessageService, $uibModal,
-                          DialogService,
-                          _keys, _jwts, _basic_auth_credentials, _hmac_auth_credentials, _gluu_oauth2_client_auth_credentials) {
+                          DialogService) {
 
 
-        $scope.keys = _keys.data
-        $scope.jwts = _jwts.data
-        $scope.basic_auth_credentials = _basic_auth_credentials.data
-        $scope.hmac_auth_credentials = _hmac_auth_credentials.data
-        $scope.oauth2_credentials = _gluu_oauth2_client_auth_credentials.data
+        $scope.keys;
+        $scope.jwts;
+        $scope.basic_auth_credentials;
+        $scope.hmac_auth_credentials;
+        $scope.oauth2_credentials;
+
         $scope.credentialGroups = [
           {
             id: 'basic-auth',
             name: 'BASIC',
-            icon: 'mdi-account-outline'
+            icon: 'mdi-account-outline',
+            fetchFunc: fetchBasicAuthCredentials
           },
           {
             id: 'key-auth',
             name: 'API KEYS',
-            icon: 'mdi-key'
+            icon: 'mdi-key',
+            fetchFunc: fetchKeys
           },
           {
-            id: 'hmac',
+            id: 'hmac-auth',
             name: 'HMAC',
-            icon: 'mdi-code-tags'
+            icon: 'mdi-code-tags',
+            fetchFunc: fetchHMACAuthCredentials
           },
           {
             id: 'oauth2',
             name: 'OAUTH2',
-            icon: 'mdi-security'
+            icon: 'mdi-security',
+            fetchFunc: fetchOAuth2
           },
           {
             id: 'jwt',
             name: 'JWT',
-            icon: 'mdi-fingerprint'
+            icon: 'mdi-fingerprint',
+            fetchFunc: fetchJWTs
           },
         ]
 
-        $scope.activeGroup = 'basic-auth';
+        $scope.availablePlugins = $rootScope.Gateway.plugins.available_on_server;
 
+        // Remove credentials that are not available on the server
+        $scope.credentialGroups = _.filter($scope.credentialGroups, function (item) {
+          return $scope.availablePlugins[item.id];
+        })
+
+        // Fetch the remaining ones
+        $scope.credentialGroups.forEach(function (item) {
+          item.fetchFunc.call();
+        })
+
+        $scope.activeGroup = $scope.credentialGroups.length ? $scope.credentialGroups[0].id : null;
 
         $scope.updateConsumerDetails = updateConsumerDetails
         $scope.createApiKey = createApiKey
@@ -67,7 +82,6 @@
         $scope.deleteHMACAuthCredentials = deleteHMACAuthCredentials
         $scope.setActiveGroup = setActiveGroup;
         $scope.filterGroup = filterGroup;
-        $scope.showClientId = showClientId;
 
 
         function setActiveGroup(id) {
@@ -121,7 +135,7 @@
             ['CANCEL', 'YES'],
             function accept() {
               ConsumerService
-                .removeCredential($scope.consumer.id, 'gluu-oauth2-client-auth', oauth.id)
+                .removeCredential($scope.consumer.id, 'oauth2', oauth.id)
                 .then(
                   function onSuccess(result) {
                     MessageService.success('OAuth2 deleted successfully');
@@ -202,7 +216,7 @@
           });
         }
 
-        function createOAuth2(cred) {
+        function createOAuth2() {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -210,13 +224,9 @@
             templateUrl: 'js/app/consumers/credentials/create-oauth2-modal.html',
             controller: 'CreateOAuth2Controller',
             controllerAs: '$ctrl',
-            size: 'lg',
             resolve: {
               _consumer: function () {
                 return $scope.consumer
-              },
-              _cred: function () {
-                return cred;
               }
             }
           });
@@ -274,14 +284,15 @@
         function fetchBasicAuthCredentials() {
           ConsumerService.loadCredentials($scope.consumer.id, 'basic-auth')
             .then(function (res) {
+              console.log("FETCH BASIC AUTH CREDS =>", res.data);
               $scope.basic_auth_credentials = res.data;
             })
         }
 
-
         function fetchHMACAuthCredentials() {
           ConsumerService.loadCredentials($scope.consumer.id, 'hmac-auth')
             .then(function (res) {
+              console.log("FETCH HMAC AUTH CREDS =>", res.data);
               $scope.hmac_auth_credentials = res.data;
             })
         }
@@ -289,6 +300,7 @@
         function fetchKeys() {
           ConsumerService.loadCredentials($scope.consumer.id, 'key-auth')
             .then(function (res) {
+              console.log("FETCH KEYS CREDS =>", res.data);
               $scope.keys = res.data
             })
 
@@ -297,16 +309,18 @@
         function fetchJWTs() {
           ConsumerService.loadCredentials($scope.consumer.id, 'jwt')
             .then(function (res) {
+              console.log("FETCH JWT AUTH CREDS =>", res.data);
               $scope.jwts = res.data
             })
 
         }
 
         function fetchOAuth2() {
-          ConsumerService.loadCredentials($scope.consumer.id, 'gluu-oauth2-client-auth')
+          ConsumerService.loadCredentials($scope.consumer.id, 'oauth2')
             .then(function (res) {
+              console.log("FETCH OAUTH2 CREDS =>", res.data);
               $scope.oauth2_credentials = res.data
-            })
+            });
         }
 
         function showClientId(id) {

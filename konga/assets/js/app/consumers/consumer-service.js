@@ -15,7 +15,7 @@
           // Delete empty keys
           Object.keys(obj).forEach(function (key) {
             if (!obj[key]) delete obj[key]
-          })
+          });
 
           return obj
         }
@@ -85,15 +85,22 @@
             return $http.get('api/kong_consumers/' + consumerId + '/apis');
           },
 
+          listServices: function (consumerId) {
+            return $http.get('api/kong_consumers/' + consumerId + '/services');
+          },
+
+          listRoutes: function (consumerId) {
+            return $http.get('api/kong_consumers/' + consumerId + '/routes');
+          },
+
           listCredentials: function (consumerId) {
             return $http.get('kong/consumers/' + consumerId + '/credentials')
           },
 
           removeCredential: function (consumerId, credential, credential_id) {
             return $http.delete('kong/consumers/' + consumerId + '/' + credential + '/' + credential_id)
-          }
+          },
         }
       }
-    ])
-  ;
+    ]);
 }());

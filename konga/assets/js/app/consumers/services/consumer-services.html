@@ -1,3 +1,4 @@
+
 <div class="col-md-12 bg-light-grey padding">
     <list-search
             class="pull-right"
@@ -6,14 +7,25 @@
             data-items="itemsPerPage"
     ></list-search>
 </div>
-
+<!--<div class="col-md-12 padding">-->
+    <!--<p>The services this consumer can access based on ACLs.</p>-->
+<!--</div>-->
 <div class="clearfix"></div>
-
-<div class="row">
+<konga-loader ng-if="loading && !items.data.length"></konga-loader>
+<div class="row" ng-show="!loading || items.data.length">
+    <div class="col-md-12 padding">
+        <i class="mdi mdi-account-group text-success"></i>
+        <small>Not access controlled</small>&nbsp;&nbsp;
+        <i class="mdi mdi-security-account text-warning"></i>
+        <small>Access Controlled</small>&nbsp;&nbsp;
+        <i class="mdi mdi-security-lock text-danger"></i>
+        <small>Secured with at least one authentication mechanism</small>&nbsp;&nbsp;
+    </div>
     <div class="col-md-12">
         <div class="table-responsive">
             <table class="table table-hover">
                 <tr>
+                    <th></th>
                     <th width="{{item.width}}" class="text-nowrap"
                         data-ng-repeat="item in titleItems | filter:titleFilter"
                     >
@@ -34,7 +46,7 @@
                         ></i>
                     </th>
                     <th width="250" class="no-wrap">
-                        API PLUGINS
+                        SERVICE PLUGINS
                     </th>
                     <th class="no-wrap">
                         CONSUMER PLUGINS
@@ -44,45 +56,49 @@
                 </tr>
                 <tr>
                     <td></td>
+                    <td></td>
+                    <td></td>
                     <td class="text-nowrap">
                         <p class="text-muted text-small no-margin">
-                            API Plugins targeting all consumers
+                            Service Plugins
                         </p>
                     </td>
                     <td class="text-nowrap">
                         <p class="text-muted text-small no-margin">
-                            API Plugins targeting this consumer
+                            Service Plugins targeting this consumer
                         </p>
                     </td>
                     <td></td>
                 </tr>
                 <tr
-                        dir-paginate="api in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
+                        dir-paginate="service in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
 
                     <td>
+
+                        <i class="mdi mdi-account-group text-success" ng-if="isOpen(service)"></i>
+                        <i class="mdi mdi-security-account text-warning" ng-if="isAccessControlled(service)"></i>
+                        <i class="mdi mdi-security-lock text-danger" ng-if="needsAuth(service)"></i>
+                    </td>
+                    <td>
                         <strong class="no-margin">
-                            {{ api.name || "-" }}
+                            {{ service.name || "-" }}
                         </strong>
-                        <div class="clearfix"></div>
-                        <span class="label label-success" ng-if="isOpen(api)" uib-tooltip="This api is public. Anyone can consume it.">PUBLIC</span>
-                        <span class="label label-warning" ng-if="isAccessControlled(api)"
-                              uib-tooltip="This api is access controlled">AC</span>
-                        <span class="label label-danger" ng-if="needsAuth(api)"
-                              uib-tooltip="This api is secured with at least one authentication mechanism"
-                        >SECURE</span>
+                    </td>
+                    <td>
+                        {{service.host || "-"}}
                     </td>
 
                     <td>
                             <span class="badge badge-api-plugin"
                                   ng-class="{'badge-success badge-inverse' : item.enabled}"
-                                  ng-repeat="item in getGeneralPlugins(api)">
+                                  ng-repeat="item in getGeneralPlugins(service)">
                                 {{item.name.toUpperCase().split("-").join(" ")}}
                             </span>
                     </td>
                     <td>
                             <span class="badge badge-api-plugin"
                                   ng-class="{'badge-success badge-inverse' : item.enabled}"
-                                  ng-repeat="item in getConsumerPlugins(api)">
+                                  ng-repeat="item in getConsumerPlugins(service)">
                                 <span class="text">{{item.name.toUpperCase().split("-").join(" ")}}</span>
                                 <raw-view data-item="item"></raw-view>
                                 <i class="mdi mdi-18px mdi-pencil clickable"
@@ -90,13 +106,13 @@
                                    ng-click="onEditPlugin(item)"></i>&nbsp;
                                 <i class="mdi mdi-18px mdi-delete clickable"
                                    uib-tooltip="Delete"
-                                   ng-click="deletePlugin(api,item)"></i>
+                                   ng-click="deletePlugin(service,item)"></i>
 
                             </span>
-                            <button class="btn btn-sm btn-link" ng-click="onAddPlugin(api)">
-                                <i class="mdi mdi-18px mdi-plus"
-                                >ADD PLUGINS</i>
-                            </button>
+                        <button class="btn btn-sm btn-link" ng-click="onAddPlugin(service)">
+                            <i class="mdi mdi-18px mdi-plus"
+                            >ADD PLUGINS</i>
+                        </button>
                     </td>
                     <td>
                         <div class="btn-group" uib-dropdown is-open="status.isopen" dropdown-append-to-body="true">
@@ -104,11 +120,11 @@
                                 MORE... <span class="caret"></span>
                             </button>
                             <ul class="dropdown-menu animated fadeInUpShort go" uib-dropdown-menu role="menu" aria-labelledby="single-button">
-                                <li role="menuitem"><a href><raw-view data-item="api" data-text="'Raw View'"></raw-view></a></li>
+                                <li role="menuitem"><a href><raw-view data-item="service" data-text="'Raw View'"></raw-view></a></li>
                                 <li role="menuitem">
-                                    <a ui-sref="apis.edit({ api_id: api.id })">
+                                    <a ui-sref="services.read({ service_id: service.id })">
                                         <i class="mdi mdi-pencil"></i>&nbsp;&nbsp;
-                                        Edit API
+                                        Edit Service
                                     </a>
                                 </li>
 
@@ -130,3 +146,5 @@
         <dir-pagination-controls class="pull-right"></dir-pagination-controls>
     </div>
 </div>
+
+

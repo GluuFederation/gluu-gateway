@@ -9,28 +9,36 @@
         </div>
         <input type="text" data-ng-model="search" class="form-control" placeholder="search plugins...">
     </div>
-    <dir-pagination-controls class="pull-right" pagination-id="pluginData"></dir-pagination-controls>
+    <dir-pagination-controls class="pull-right"></dir-pagination-controls>
 </div>
 <table class="table">
     <tr>
         <th width="1"></th>
         <th width="1"></th>
+        <th width="1"></th>
         <th>Name</th>
-        <th>API</th>
+        <th>Scope</th>
+        <th>Apply to</th>
         <th>Created</th>
         <th width="1"></th>
     </tr>
     <tr
-            dir-paginate="item in plugins.data | orderBy:'created_at':true | itemsPerPage: 25 | filter : search" pagination-id="pluginData">
+            dir-paginate="item in plugins.data | orderBy:'created_at':true | itemsPerPage: 25 | filter : search">
+        <td>
+            <img ng-src="images/kong/plugins/{{item.name}}.png"
+                 onerror="this.src='images/kong/plugins/kong.svg'"
+                 style="height: 42px">
+        </td>
         <td>
 
-            <input
-                    bs-switch
-                    switch-on-color="primary"
-                    ng-change="updatePlugin(item)"
-                    ng-model="item.enabled"
-                    type="checkbox"
-                    switch-size="mini">
+            <i class="mdi mdi-toggle-switch text-success clickable"
+               ng-show="item.enabled"
+               ng-click="togglePlugin(item)"
+               uib-tooltip="Enabled"></i>
+            <i class="mdi mdi-toggle-switch-off text-muted clickable"
+               ng-show="!item.enabled"
+               ng-click="togglePlugin(item)"
+               uib-tooltip="Disabled"></i>
         </td>
         <td>
             <raw-view data-item="item"></raw-view>
@@ -40,12 +48,13 @@
                 {{item.name}}
             </a>
         </th>
-        <th>
-            <a  ng-if="item.api_id" ui-sref="apis.edit({ api_id: item.api_id })">
-                {{item.api_id}}
-            </a>
-            <span ng-if="!item.api_id">All APIs</span>
-        </th>
+        <td>{{::getContext(item)}}</td>
+        <td>
+            <a data-ng-if="item.api_id" data-ui-sref="apis.edit({api_id:item.api_id})">{{item.api_id}}</a>
+            <a data-ng-if="item.service_id" data-ui-sref="services.read({service_id:item.service_id})">{{item.service_id}}</a>
+            <a data-ng-if="item.route_id" data-ui-sref="routes.read({route_id:item.route_id})">{{item.route_id}}</a>
+            <span data-ng-if="!item.api_id && !item.service_id && !item.route_id" > All Entrypoints </span>
+        </td>
         <td>{{item.created_at | date : format : timezone}}</td>
 
         <td>

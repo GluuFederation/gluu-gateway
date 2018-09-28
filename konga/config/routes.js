@@ -66,12 +66,10 @@ module.exports.routes = {
   'POST /remote/consumers': 'RemoteStorageController.loadConsumers',
   'GET /remote/connection/test': 'RemoteStorageController.testConnection',
 
-
   // Kong 0.10.x certificates routes
   // These must be handled by KONGA
   'POST /kong/certificates': 'KongCertificatesController.upload',
   'PATCH /kong/certificates/:id': 'KongCertificatesController.update',
-
 
   // Snapshots
   'POST /api/snapshots/take': 'SnapshotController.takeSnapShot',
@@ -84,14 +82,17 @@ module.exports.routes = {
   'GET /api/apis/healthchecks/subscribe': 'ApiHealthCheckController.subscribeHealthChecks',
   'GET /api/user/:id/subscribe': 'UserController.subscribe',
 
-
   // Rich Plugins List
   'GET /api/kong_plugins/list': 'KongPluginsController.list',
   'GET /api/schemas/authentication': 'KongSchemasController.authentication',
 
-
   // Consumer portal
   'GET /api/kong_consumers/:id/apis': 'KongConsumersController.apis',
+  'GET /api/kong_consumers/:id/services': 'KongConsumersController.services',
+  'GET /api/kong_consumers/:id/routes': 'KongConsumersController.routes',
+
+  'GET /api/kong_services/:id/consumers': 'KongServicesController.consumers',
+  'GET /api/kong_routes/:id/consumers': 'KongRoutesController.consumers',
 
   'GET /api/settings': 'SettingsController.find',
 
