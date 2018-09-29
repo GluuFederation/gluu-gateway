@@ -5,7 +5,7 @@ local sh, stdout, stderr, sleep, sh_ex, sh_until_ok =
 
 local _M = {}
 
-local kong_image = "kong:0.14.0-alpine"
+local kong_image = "kong:0.14.1-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
 --local oxd_image = "gluu/oxd:4.0-beta-1"
@@ -94,6 +94,9 @@ _M.kong_postgress_custom_plugins = function(opts)
     -- TODO use Postgress client and try to connect
     sleep(10)
 
+    local plugins = opts.plugins or {}
+    local modules = opts.modules or {}
+
     -- run in foreground to get a chance to finish
     sh("docker run --rm ",
         " --network=", ctx.network_name,
@@ -104,16 +107,15 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
         " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
+        " -e KONG_PLUGINS=", build_plugins_list(plugins), " ",
+        build_plugins_volumes(plugins),
+        build_modules_volumes(modules),
         opts.kong_image or kong_image,
         " kong migrations up"
     )
 
     -- TODO something better?
     sleep(2)
-
-    local docker_run_plugin
-    local plugins = opts.plugins or {}
-    local modules = opts.modules or {}
 
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,

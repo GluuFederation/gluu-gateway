@@ -12,7 +12,7 @@ end
 --- Check user valid UUID
 -- @param anonymous: anonymous consumer id
 local function check_user(anonymous)
-    if anonymous == nil or utils.is_valid_uuid(anonymous) then
+    if anonymous == "" or utils.is_valid_uuid(anonymous) then
         return true
     end
 
@@ -26,11 +26,11 @@ return {
         oxd_id = { required = true, type = "string" },
         client_id = { required = true, type = "string" },
         client_secret = { required = true, type = "string" },
-        op_url = { required = true, type = "url" },
-        oxd_url = { required = true, type = "url" },
-        anonymous = { type = "string", func = check_user },
-        oauth_scope_expression = { required = false, type = "table", func = check_expression }, --TODO decode once
-        allow_oauth_scope_expression = { required = true, type = "boolean", default = false },
+        op_url = { required = true, type = "string" },
+        oxd_url = { required = true, type = "string" },
+        anonymous = { type = "string", func = check_user, default = "" },
+        oauth_scope_expression = { required = true, type = "table", func = check_expression },
+        allow_oauth_scope_expression = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         if plugin_t.allow_oauth_scope_expression then
@@ -38,5 +38,6 @@ return {
                 return #first.path > #second.path
             end)
         end
+        return true
     end
 }

@@ -16,7 +16,8 @@ if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
-local function unexpected_error()
+local function unexpected_error(...)
+    kong.log.err(...)
     kong.response.exit(500, { message = "An unexpected error ocurred" })
 end
 
@@ -52,8 +53,7 @@ local function get_token(authorization)
             return authorization:sub(from, to) -- Return token
         end
         if err then
-            kong.log.err(err)
-            return unexpected_error()
+            return unexpected_error(err)
         end
     end
 
@@ -80,8 +80,7 @@ local function get_protection_token(conf)
         if status >= 300 or not body.access_token then
             access_token = nil
             access_token_expire = 0
-            kong.log.err("Failed to get access token.")
-            return unexpected_error()
+            return unexpected_error("Failed to get access token.")
         end
 
         access_token = body.access_token
@@ -153,8 +152,7 @@ local function do_authentication(conf)
     end
 
     if status ~= 200 then
-        kong.log.err("introspect-access-token error, status: ", status)
-        return unexpected_error()
+        return unexpected_error("introspect-access-token error, status: ", status)
     end
 
     body = response.body
@@ -170,8 +168,7 @@ local function do_authentication(conf)
             err = 'consumer with custom_id "' .. custom_id .. '" not found'
         end
         if err then
-            kong.log.err("select_by_custom_id error: ", err)
-            return unexpected_error()
+            return unexpected_error("select_by_custom_id error: ", err)
         end
         consumer = consumer_local
         worker_cache:set(body.client_id, consumer)
@@ -180,8 +177,7 @@ local function do_authentication(conf)
     body.consumer = consumer
 
     if not body.exp or not body.iat then
-        kong.log.err("missed exp or iat fields")
-        return unexpected_error()
+        return unexpected_error("missed exp or iat fields")
     end
 
     if conf.allow_oauth_scope_expression then
@@ -195,9 +191,8 @@ local function do_authentication(conf)
         end
 
         if not helper.check_json_expression(path_scope_expression, body.scope) then
-            kong.log.debug("scope expression check result : true")
             -- TODO should we cache negative result?
-        kong.log.debug("Not authorized for this path/method")
+            kong.log.debug("Not authorized for this path/method")
             return 403, "You are not authorized for this path/method"
         end
         worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression). body, body.exp - body.iat)
@@ -216,14 +211,13 @@ return function(conf)
 
     if status ~= 200 then
         -- Check anonymous user and set header with anonymous consumer details
-        if conf.anonymous then
+        if conf.anonymous ~= "" then
             -- get anonymous user
             local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
             local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id)
 
             if err then
-                kong.log.err("Anonymous customer: ", err)
-                return unexpected_error()
+                return unexpected_error("Anonymous customer: ", err)
             end
             set_consumer(consumer)
             return
