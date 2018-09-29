@@ -9,15 +9,15 @@ local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
 local test_root = host_git_root .. "/t/specs/gluu-oauth2-client-auth"
 
-test("Simple oxd Kong plugin test", function()
+local function setup(model)
     _G.ctx = {}
     local ctx = _G.ctx
     ctx.finalizeres = {}
     ctx.host_git_root = host_git_root
 
-    local print_logs = true
+    ctx.print_logs = true
     finally(function()
-        if print_logs then
+        if ctx.print_logs then
             if ctx.kong_id then
                 sh("docker logs ", ctx.kong_id, " || true") -- don't fail
             end
@@ -47,8 +47,10 @@ test("Simple oxd Kong plugin test", function()
         }
     }
     kong_utils.backend()
-    kong_utils.oxd_mock(test_root .. "/oxd-model.lua")
+    kong_utils.oxd_mock(test_root .. "/" .. model)
+end
 
+local function configure_service_route()
     print"create a Sevice"
     local res, err = sh_until_ok(10,
         [[curl --fail -sS -X POST --url http://localhost:]],
@@ -63,11 +65,10 @@ test("Simple oxd Kong plugin test", function()
         ctx.kong_admin_port, [[/services/demo-service/routes --data 'hosts[]=backend.com']]
     )
 
-    print"test it works"
-    local res, err = sh_until_ok(10, [[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    return create_service_response
+end
 
-
+local function configure_plugin(create_service_response, plugin_config)
     local register_site = {
         scope = { "openid", "uma_protection" },
         op_host = "just_stub",
@@ -98,22 +99,18 @@ test("Simple oxd Kong plugin test", function()
 
     local response = JSON:decode(res)
 
-    local access_token = response.access_token
+    plugin_config.op_url = "http://stub"
+    plugin_config.oxd_url = "http://oxd-mock"
+    plugin_config.client_id = register_site_response.client_id
+    plugin_config.client_secret = register_site_response.client_secret
+    plugin_config.oxd_id = register_site_response.oxd_id
 
-    local config = {
-        op_url = "http://stub",
-        oxd_url = "http://oxd-mock",
-        client_id = register_site_response.client_id,
-        client_secret = register_site_response.client_secret,
-        oxd_id = register_site_response.oxd_id,
-        oauth_scope_expression = {},
-        allow_oauth_scope_expression = false,
-    }
     local payload = {
         name = "gluu-oauth2-client-auth",
-        config = config,
+        config = plugin_config,
         service_id = create_service_response.id,
     }
+
     local payload_json = JSON:encode(payload)
 
     print"enable plugin for the Service"
@@ -123,14 +120,33 @@ test("Simple oxd Kong plugin test", function()
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
 
+    return register_site_response, response.access_token
+end
+
+test("with and without token", function()
+
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            allow_oauth_scope_expression = false,
+        }
+    )
+
     print"test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
     assert(res:find("401"), 1, true)
 
     print"create a consumer"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -v -sS -X POST --url http://localhost:]],
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
     )
 
@@ -164,6 +180,33 @@ test("Simple oxd Kong plugin test", function()
         access_token, [[']]
     )
 
-    print_logs = false -- comment it out if want to see logs
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
 
+if true then return end
+
+test("Anonymouse test", function()
+
+    setup("oxd-model2.lua")
+
+    local create_service_response = configure_service_route()
+
+    print "Create a anonymous consumer"
+    local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
+    local anonymous_consumer_response = JSON:decode(res)
+
+    configure_plugin(create_service_response,
+        {
+            anonymous = anonymous_consumer_response.id,
+        }
+    )
+
+    local stdout, err = stdout([[curl --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)

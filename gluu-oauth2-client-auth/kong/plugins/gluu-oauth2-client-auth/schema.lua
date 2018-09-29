@@ -29,7 +29,7 @@ return {
         op_url = { required = true, type = "string" },
         oxd_url = { required = true, type = "string" },
         anonymous = { type = "string", func = check_user, default = "" },
-        oauth_scope_expression = { required = true, type = "table", func = check_expression },
+        oauth_scope_expression = { required = false, type = "table", func = check_expression },
         allow_oauth_scope_expression = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)
