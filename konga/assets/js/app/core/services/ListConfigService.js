@@ -41,12 +41,29 @@
               inTitle: true
             },
             {
+              title: 'tags',
+              column: 'extras.tags',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
               title: 'created',
               column: 'created_at',
               sortable: true,
             }
           ],
           route: [
+            {
+              title: 'id',
+              column: 'id',
+              width: 100,
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
             {
               title: 'hosts',
               column: 'hosts',
@@ -119,6 +136,25 @@
             //     inTitle: true
             // }
           ],
+          consumerService: [
+            {
+              title: 'name',
+              width: 200,
+              column: 'name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'host',
+              column: 'host',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            }
+          ],
           target: [
             {
               title: '',
@@ -165,12 +201,7 @@
               title: 'created',
               column: 'created_at',
               sortable: true,
-            },
-            {
-              title: '',
-              column: '',
-              width: 1
-            },
+            }
           ],
           kongnode: [
             {
@@ -192,16 +223,16 @@
               inTitle: true
             },
             {
-              title: 'kong admin url',
-              column: 'kong_admin_url',
+              title: 'type',
+              column: 'type',
               searchable: true,
               sortable: true,
               inSearch: true,
               inTitle: true
             },
             {
-              title: 'api key',
-              column: 'kong_api_key',
+              title: 'kong admin url',
+              column: 'kong_admin_url',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -215,6 +246,45 @@
               title: 'created',
               column: 'createdAt',
               sortable: true,
+            },
+          ],
+          consumerWithCreds: [
+            {
+              title: '',
+              width: 1
+            },
+            {
+              title: 'username',
+              column: 'username',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'custom_id',
+              column: 'custom_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'Matching Credentials',
+              column: 'plugins',
+              searchable: true,
+              sortable: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            },
+            {
+              title: '',
+              hide: !AuthService.hasPermission('consumers', 'delete'),
+              column: false,
+              width: 1
             },
           ],
           consumer: [
@@ -261,8 +331,24 @@
               width: 1
             },
             {
-              title: 'User Id',
+              title: 'username',
               column: 'username',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'first name',
+              column: 'firstName',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'last name',
+              column: 'lastName',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -274,7 +360,7 @@
               sortable: true,
             },
             {
-              title: 'Last Login',
+              title: 'updated',
               column: 'updatedAt',
               sortable: true,
             },
@@ -303,10 +389,29 @@
               inTitle: true
             },
             {
-              title: 'kong version',
-              column: 'kong_version',
+              title: 'node',
+              column: 'kong_node_name',
               searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created at',
+              column: 'createdAt',
+              sortable: true,
+              inTitle: true
+            }
+          ],
+          snapshotschedule: [
+            {
+              title: 'connection',
+              column: 'connection',
+              inTitle: true
+            },
+            {
+              title: 'Schedule',
+              column: 'cron',
               inTitle: true
             },
             {
@@ -326,8 +431,8 @@
               inTitle: true
             },
             {
-              title: 'context',
-              column: 'context',
+              title: 'scope',
+              column: 'scope',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -458,7 +563,44 @@
               inSearch: true,
               inTitle: true
             }
-          ]
+          ],
+          hc: [
+            {
+              title: '',
+              column: 'active',
+              sortable: true
+            },
+            {
+              title: 'api',
+              column: 'api.name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'hc endpoint',
+              column: 'health_check_endpoint',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'notification endpoint',
+              column: 'notification_endpoint',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'Created',
+              column: 'created_at',
+              class: 'col-xs-2',
+              sortable: false
+            }
+          ],
         };
 
         return {

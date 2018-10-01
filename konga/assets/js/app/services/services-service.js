@@ -10,8 +10,6 @@
     .service('ServiceService', [
       '$log', '$state', '$http', 'Semver',
       function ($log, $state, $http, Semver) {
-
-
         /**
          *
          * IMPORTANT!!
@@ -29,12 +27,10 @@
             write_timeout: 60000,
             read_timeout: 60000
           }
-        }
+        };
 
         return {
-
           getProperties: function (version) {
-
             var fver = version.split('.').slice(0, -1).join('');
             var props = properties[fver] || properties[Object.keys(properties)[Object.keys(properties).length - 1]];
 
@@ -67,6 +63,10 @@
             return $http.patch('kong/services/' + service.id, service)
           },
 
+          getTags: function () {
+            return $http.get('api/kongservices/tags')
+          },
+
           delete: function (service) {
             return $http.delete('kong/services/' + service.id)
           },
@@ -75,10 +75,17 @@
             return $http.post('kong/services/', service)
           },
 
-          plugins: function (serviceId) {
-            return $http.get('kong/services/' + serviceId + '/plugins')
+          plugins: function (serviceId, params) {
+            return $http.get('kong/services/' + serviceId + '/plugins', {
+              params: params
+            })
           },
 
+          consumers: function (serviceId, params) {
+            return $http.get('api/kong_services/' + serviceId + '/consumers', {
+              params: params
+            })
+          },
 
           addPlugin: function (serviceId, plugin) {
             for (var key in plugin) {
@@ -111,6 +118,5 @@
           }
         }
       }
-    ])
-  ;
+    ]);
 }());

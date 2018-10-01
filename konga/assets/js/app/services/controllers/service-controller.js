@@ -11,12 +11,12 @@
       '$scope', '$rootScope', '$state', 'SettingsService', '$log', '_service',
       function controller($scope, $rootScope, $state, SettingsService, $log, _service) {
 
-        $scope.service = _service.data
+        $scope.service = _service.data;
 
         // Fix empty object properties
-        fixProperties()
+        fixProperties();
 
-        $state.current.data.pageName = "Service " + ( $scope.service.name || $scope.service.id )
+        $state.current.data.pageName = "Service " + ( $scope.service.name || $scope.service.id );
         $scope.activeSection = 0;
         $scope.sections = [
           {
@@ -34,20 +34,20 @@
             icon: 'mdi mdi-power-plug',
             isVisible: true
           },
-          // {
-          //     name : 'Health Checks',
-          //     icon : 'mdi mdi-heart-pulse',
-          //     isVisible : true
-          // }
-        ]
+          {
+            name: 'Eligible consumers',
+            icon: 'mdi mdi-account-multiple-outline',
+            isVisible: true
+          },
+        ];
 
 
         $scope.showSection = function (index) {
           $scope.activeSection = index
-        }
+        };
 
         function fixProperties() {
-          var problematicProperties = ['uris', 'hosts', 'methods']
+          var problematicProperties = ['uris', 'hosts', 'methods'];
           problematicProperties.forEach(function (property) {
             if ($scope.service[property] && isObject($scope.service[property]) && !Object.keys($scope.service[property]).length) {
               $scope.service[property] = ""
@@ -59,12 +59,9 @@
           return obj === Object(obj);
         }
 
-
         $scope.$on('user.node.updated', function (node) {
           $state.go('services')
-        })
-
+        });
       }
-    ])
-  ;
+    ]);
 }());

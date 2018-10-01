@@ -77,6 +77,10 @@
                   ]
                 }
               },
+              'consumers@services.edit': {
+                templateUrl: 'js/app/services/views/service-consumers.html',
+                controller: 'ServiceConsumersController'
+              },
               'healthchecks@services.edit': {
                 templateUrl: 'js/app/services/views/service-health-checks.html',
                 controller: 'ServiceHealthChecksController',
