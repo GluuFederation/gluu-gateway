@@ -212,3 +212,76 @@ test("Anonymous test", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
+
+
+test("allow_unprotected_path = false", function()
+
+    setup("oxd-model1.lua") -- yes, model1 should work
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            allow_oauth_scope_expression = true,
+            allow_unprotected_path = false,
+        }
+    )
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it fail with 403"
+    local res, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    assert(res:find("403"), 1, true)
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+
+test("allow_unprotected_path = true", function()
+
+    setup("oxd-model1.lua") -- yes, model1 should work
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            allow_oauth_scope_expression = true,
+            allow_unprotected_path = true,
+        }
+    )
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)

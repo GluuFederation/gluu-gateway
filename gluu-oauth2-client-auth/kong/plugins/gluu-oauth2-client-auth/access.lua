@@ -196,8 +196,14 @@ local function do_authentication(conf)
             conf.oauth_scope_expression, request_path, request_http_method
         )
         if pl_types.is_empty(path_scope_expression) then
-            kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
-            return 403, "" -- TODO is it unexpected error?!
+            if conf.allow_unprotected_path then
+                kong.log.info("Path is not proteced, but allow_unprotected_path")
+                -- TODO should we cache?
+                return 200
+            else
+                kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
+                return 403, "Path/method is not protected with scope expression"
+            end
         end
 
         if not helper.check_json_expression(path_scope_expression, body.scope) then
