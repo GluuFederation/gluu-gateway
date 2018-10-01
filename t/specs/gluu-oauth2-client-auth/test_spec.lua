@@ -183,9 +183,7 @@ test("with and without token", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-if true then return end
-
-test("Anonymouse test", function()
+test("Anonymous test", function()
 
     setup("oxd-model2.lua")
 
@@ -198,13 +196,17 @@ test("Anonymouse test", function()
         ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
     local anonymous_consumer_response = JSON:decode(res)
 
+    print("anonymous_consumer_response.id: ", anonymous_consumer_response.id)
+
     configure_plugin(create_service_response,
         {
             anonymous = anonymous_consumer_response.id,
         }
     )
 
-    local stdout, err = stdout([[curl --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+    sleep(1)
+
+    local res, err = sh_ex([[curl --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']])
     assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
 

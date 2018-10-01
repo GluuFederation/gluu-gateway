@@ -24,25 +24,36 @@ end
 local function load_consumer_by_id(consumer_id)
     local result, err = kong.db.consumers:select({ id = consumer_id })
     if not result then
+        print(err)
         if not err then
             err = 'consumer "' .. consumer_id .. '" not found'
         end
 
         return nil, err
     end
-
+    kong.log.debug("consumer loaded")
     return result
 end
 
-local function set_consumer(body)
+local function set_consumer(consumer, client_id, exp)
     local const = constants.HEADERS
     local new_headers = {
-        [const.CONSUMER_ID] = body.consumer.id,
-        [const.CONSUMER_CUSTOM_ID] = tostring(body.consumer.custom_id),
-        [const.CONSUMER_USERNAME] = tostring(body.consumer.username),
-        ["X-OAuth-Client-ID"] = tostring(body.client_id),
-        ["X-OAuth-Expiration"] = tostring(body.exp)
+        [const.CONSUMER_ID] = consumer.id,
+        [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
+        [const.CONSUMER_USERNAME] = tostring(consumer.username),
     }
+    -- https://github.com/Kong/kong/blob/2cdd07e34a362e86d95d5e88615e217fa4f6f0d2/kong/plugins/key-auth/handler.lua#L52
+    kong.ctx.shared.authenticated_consumer = consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = consumer -- backward compatibility
+
+    if client_id then
+        new_headers["X-OAuth-Client-ID"] = tostring(client_id)
+        new_headers["X-OAuth-Expiration"] = tostring(exp)
+        -- TODO what about kong.ctx.shared.authenticated_credential?
+        kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
+    else
+        new_headers[const.ANONYMOUS] = true
+    end
     kong.service.request.set_headers(new_headers)
 end
 
@@ -125,12 +136,11 @@ local function do_authentication(conf)
         return 401, "Failed to get bearer token from Authorization header"
     end
 
-    -- alex: IMO Kong cache is too heavy for this use case, we don't have custon entities stored in DB
     local body, stale_data = worker_cache:get(build_cache_key(token, conf.allow_oauth_scope_expression))
     if body and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
-        set_consumer(body)
+        set_consumer(body.consumer, body.client_id, body.exp)
         return 200
     end
 
@@ -200,8 +210,7 @@ local function do_authentication(conf)
         worker_cache:set(token, body, body.exp - body.iat)
     end
 
-    -- set headers
-    set_consumer(body)
+    set_consumer(body.consumer, body.client_id, body.exp)
     return 200
 end
 
@@ -213,8 +222,9 @@ return function(conf)
         -- Check anonymous user and set header with anonymous consumer details
         if conf.anonymous ~= "" then
             -- get anonymous user
+            print(conf.anonymous)
             local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id)
+            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
 
             if err then
                 return unexpected_error("Anonymous customer: ", err)
