@@ -211,7 +211,7 @@ local function do_authentication(conf)
             kong.log.debug("Not authorized for this path/method")
             return 403, "You are not authorized for this path/method"
         end
-        worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression). body, body.exp - body.iat)
+        worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression), body.exp - body.iat)
     else
         worker_cache:set(token, body, body.exp - body.iat)
     end

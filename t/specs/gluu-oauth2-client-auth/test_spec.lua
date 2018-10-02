@@ -285,3 +285,126 @@ test("allow_unprotected_path = true", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
+
+test("check oauth_scope_expression", function()
+
+    setup("oxd-model3.lua")
+
+    local create_service_response = configure_service_route()
+
+    print "test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {
+                {
+                    path = "/posts",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        },
+                                        {
+                                            var = 1
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin",
+                                    "employee"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "DELETE",
+                                "POST"
+                            }
+                        }
+                    }
+                },
+                {
+                    path = "/comments",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["or"] = {
+                                        {
+                                            var = 0
+                                        },
+                                        {
+                                            var = 1
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin",
+                                    "employee"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "POST",
+                                "DELETE"
+                            }
+                        }
+                    }
+                },
+                {
+                    path = "/todos",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["!"] = {
+                                        {
+                                            var = 0
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "customer"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "POST",
+                                "DELETE"
+                            }
+                        }
+                    }
+                }
+            },
+            allow_oauth_scope_expression = true,
+            allow_unprotected_path = false,
+        });
+
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
+
+    local consumer_response = JSON:decode(res)
+
+    print "test it work"
+    print "test with path /posts"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test with path /comments"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/comments --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test with path /todos"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    -- ctx.print_logs = false -- comment it out if want to see logs
+end)

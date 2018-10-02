@@ -1,6 +1,4 @@
 local utils = require "kong.tools.utils"
-local pl_types = require "pl.types"
-local cjson = require "cjson.safe"
 
 --- Check OAuth scope expression
 -- @param v: JSON expression

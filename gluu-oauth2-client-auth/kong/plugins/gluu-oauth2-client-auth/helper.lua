@@ -1,4 +1,3 @@
-local cjson = require "cjson.safe"
 local logic = require('rucciva.json_logic')
 local pl_types = require "pl.types"
 local pl_tablex = require "pl.tablex"
