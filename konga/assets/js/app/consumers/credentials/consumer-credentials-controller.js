@@ -8,7 +8,7 @@
 
   angular.module('frontend.consumers')
     .controller('ConsumerCredentialsController', [
-      '_', '$scope','$rootScope','Semver', '$log', '$state',
+      '_', '$scope', '$rootScope', 'Semver', '$log', '$state',
       'ConsumerService', 'MessageService', '$uibModal',
       'DialogService',
       function controller(_, $scope, $rootScope, Semver, $log, $state,
@@ -183,7 +183,7 @@
             })
         }
 
-        function createApiKey() {
+        function createApiKey(cred) {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -194,13 +194,16 @@
             resolve: {
               _consumer: function () {
                 return $scope.consumer
+              },
+              _cred: function () {
+                return cred;
               }
             }
           });
         }
 
 
-        function createBasicAuthCredentials() {
+        function createBasicAuthCredentials(cred) {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -211,12 +214,15 @@
             resolve: {
               _consumer: function () {
                 return $scope.consumer
+              },
+              _cred: function () {
+                return cred;
               }
             }
           });
         }
 
-        function createOAuth2() {
+        function createOAuth2(cred) {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -227,12 +233,15 @@
             resolve: {
               _consumer: function () {
                 return $scope.consumer
+              },
+              _cred: function () {
+                return cred;
               }
             }
           });
         }
 
-        function createHMAC() {
+        function createHMAC(cred) {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -243,12 +252,15 @@
             resolve: {
               _consumer: function () {
                 return $scope.consumer
+              },
+              _cred: function () {
+                return cred;
               }
             }
           });
         }
 
-        function createJWT() {
+        function createJWT(cred) {
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -259,6 +271,9 @@
             resolve: {
               _consumer: function () {
                 return $scope.consumer
+              },
+              _cred: function () {
+                return cred;
               }
             }
           });
