@@ -10,8 +10,6 @@
     .service('RoutesService', [
       '$log', '$state', '$http', 'Semver',
       function ($log, $state, $http, Semver) {
-
-
         /**
          *
          * IMPORTANT!!
@@ -28,7 +26,7 @@
             preserve_host: false,
             regex_priority: 0
           }
-        }
+        };
 
         return {
 
@@ -80,8 +78,10 @@
             }
 
             return $http.post('kong/routes/' + routeId + '/plugins', plugin)
+          },
 
-
+          consumers: function (routeId) {
+            return $http.get('api/kong_routes/' + routeId + '/consumers')
           },
 
           updatePlugin: function (routeId, pluginId, data) {
@@ -101,6 +101,5 @@
           }
         }
       }
-    ])
-  ;
+    ]);
 }());

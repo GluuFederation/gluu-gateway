@@ -10,15 +10,14 @@
     .controller('RouteController', [
       '$scope', '$rootScope', '$state', 'SettingsService', '$log', '_route',
       function controller($scope, $rootScope, $state, SettingsService, $log, _route) {
-
         console.log("RouteController loaded");
 
-        $scope.route = _route.data
+        $scope.route = _route.data;
 
         // Fix empty object properties
-        fixProperties()
+        fixProperties();
 
-        $state.current.data.pageName = "Route " + ( $scope.route.name || $scope.route.id )
+        $state.current.data.pageName = "Route " + ( $scope.route.name || $scope.route.id );
         $scope.activeSection = 0;
         $scope.sections = [
           {
@@ -30,16 +29,20 @@
             name: 'Plugins',
             icon: 'mdi mdi-power-plug',
             isVisible: true
-          }
-        ]
-
+          },
+          {
+            name: 'Eligible consumers',
+            icon: 'mdi mdi-account-multiple-outline',
+            isVisible: true
+          },
+        ];
 
         $scope.showSection = function (index) {
           $scope.activeSection = index
-        }
+        };
 
         function fixProperties() {
-          var problematicProperties = ['uris', 'hosts', 'methods']
+          var problematicProperties = ['uris', 'hosts', 'methods'];
           problematicProperties.forEach(function (property) {
             if ($scope.route[property] && isObject($scope.route[property]) && !Object.keys($scope.route[property]).length) {
               $scope.route[property] = ""
@@ -51,12 +54,9 @@
           return obj === Object(obj);
         }
 
-
         $scope.$on('user.node.updated', function (node) {
           $state.go('routes')
         })
-
       }
-    ])
-  ;
+    ]);
 }());

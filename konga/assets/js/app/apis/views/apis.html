@@ -36,7 +36,7 @@
                data-ng-show="sort.column == item.column"
                data-ng-class="{'mdi-chevron-down': !sort.direction, 'mdi-chevron-up': sort.direction}"></i>
           </th>
-          <th></th>
+          <th>Gluu Security</th>
           <th></th>
         </tr>
         <tr
@@ -64,12 +64,10 @@
           <td>{{ api.upstream_url || "-" }}</td>
           <td>{{api.created_at | date : format : timezone}}</td>
           <td>
-            <a ui-sref="apis.oauth-plugin({api_id: api.id })" class="btn btn-primary btn-link"><i
-              class="mdi mdi-lock"></i>
+            <a ui-sref="apis.oauth-plugin({api_id: api.id })" class="btn btn-sm btn-primary">
               OAuth
             </a>
-            <a ui-sref="apis.uma-plugin({api_id: api.id })" class="btn btn-primary btn-link"><i
-              class="mdi mdi-lock"></i>
+            <a ui-sref="apis.uma-plugin({api_id: api.id })" class="btn btn-sm btn-primary">
               UMA
             </a>
           </td>
