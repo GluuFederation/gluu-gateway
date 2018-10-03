@@ -361,11 +361,7 @@ test("check oauth_scope_expression", function()
                         {
                             scope_expression = {
                                 rule = {
-                                    ["!"] = {
-                                        {
-                                            var = 0
-                                        }
-                                    }
+                                    ["!"] = { var = 0 }
                                 },
                                 data = {
                                     "customer"

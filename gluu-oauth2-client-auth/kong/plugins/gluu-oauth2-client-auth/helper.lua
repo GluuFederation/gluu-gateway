@@ -35,9 +35,11 @@ end
 -- @return true or false
 function _M.check_json_expression(scope_expression, requested_scopes)
     scope_expression = scope_expression or {}
+    kong.log.inspect(scope_expression)
     local data = {}
-    for _, v in pairs(scope_expression.data) do
-        table.insert(data, not pl_types.is_empty(pl_tablex.find(requested_scopes, v)))
+    local scope_expression_data = scope_expression.data
+    for i = 1, #scope_expression_data do
+        data[#data + 1] = pl_tablex.find(requested_scopes, scope_expression_data[i]) and true or false
     end
     local result = logic_apply(scope_expression.rule, mark_as_array(data))
     return result
