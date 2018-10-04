@@ -147,6 +147,25 @@
               inTitle: true
             }
           ],
+          consumerRoute: [
+            {
+              title: 'id',
+              width: 200,
+              column: 'id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'hosts',
+              column: 'hosts',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            }
+          ],
           target: [
             {
               title: '',

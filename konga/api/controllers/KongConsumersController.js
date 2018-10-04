@@ -81,7 +81,7 @@ var KongConsumersController = {
 
     var consumerId = req.param("id");
 
-// Fetch all acls of the specified consumer
+    // Fetch all acls of the specified consumer
     Kong.listAllCb(req, '/consumers/' + consumerId + '/acls', function (err, _acls) {
       if (err) return res.negotiate(err);
 
@@ -148,11 +148,78 @@ var KongConsumersController = {
         });
       });
     });
-
   },
 
   routes: function (req, res) {
+    var consumerId = req.param("id");
 
+    // Fetch all acls of the specified consumer
+    Kong.listAllCb(req, '/consumers/' + consumerId + '/acls', function (err, _acls) {
+      if (err) return res.negotiate(err);
+
+      // Make an array of group names
+      var consumerGroups = _.map(_acls.data, function (item) {
+        return item.group;
+      });
+
+      // Fetch all routes
+      Kong.listAllCb(req, '/routes', function (err, data) {
+        if (err) return res.negotiate(err);
+
+        var routes = data.data;
+
+        var routePluginsFns = [];
+
+        // Prepare route objects
+        routes.forEach(function (route) {
+          // Add consumer id
+          route.consumer_id = consumerId;
+
+          routePluginsFns.push(function (cb) {
+            return Kong.listAllCb(req, '/routes/' + route.id + '/plugins', cb);
+          });
+        });
+
+
+        // Foreach route, fetch it's assigned plugins
+        async.series(routePluginsFns, function (err, data) {
+          if (err) return res.negotiate(err);
+
+          data.forEach(function (plugins, index) {
+
+            // Separate acl plugins in an acl property
+            var acl = _.find(plugins.data, function (item) {
+              return item.name === "acl" && item.enabled === true;
+            });
+
+            if (acl) {
+              routes[index].acl = acl;
+            }
+
+            // Add plugins to their respective route
+            routes[index].plugins = plugins;
+          });
+
+
+          // Gather apis with no access control restrictions whatsoever
+          var open = _.filter(routes, function (route) {
+            return !route.acl;
+          });
+
+
+          // Gather apis with access control restrictions whitelisting at least one of the consumer's groups.
+          var whitelisted = _.filter(routes, function (route) {
+            return route.acl && _.intersection(route.acl.config.whitelist, consumerGroups).length > 0;
+          });
+
+
+          return res.json({
+            total: open.length + whitelisted.length,
+            data: open.concat(whitelisted)
+          });
+        });
+      });
+    });
   }
 };
 module.exports = KongConsumersController;
