@@ -41,6 +41,7 @@
             client_secret: $scope.globalInfo.clientSecret,
             oauth_scope_expression: [],
             allow_oauth_scope_expression: false,
+            allow_unprotected_path: false,
             hide_credentials: false
           }
         };
@@ -57,7 +58,7 @@
             $scope.isPluginAdded = true;
             $scope.ruleScope = {};
             $scope.ruleOauthScope = {};
-            $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(o.config.oauth_scope_expression || "[]");
+            $scope.modelPlugin.config.oauth_scope_expression = o.config.oauth_scope_expression || [];
             setTimeout(function () {
               if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
                 $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
@@ -75,6 +76,10 @@
                     _repeat(pRule[op], op, 0);
 
                     function _repeat(rule, op, id) {
+                      if (op == "!") {
+                        rule = rule['or'];
+                      }
+
                       $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
                       rule.forEach(function (oRule, oRuleIndex) {
                         if (oRule['var'] == 0 || oRule['var']) {
@@ -336,7 +341,7 @@
           if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
             model.config.oauth_scope_expression = makeExpression($scope.modelPlugin);
           } else {
-            delete model.config.oauth_scope_expression
+            model.config.oauth_scope_expression = null;
           }
 
           PluginHelperService.updatePlugin(model.id,
@@ -390,7 +395,12 @@
                   scopes.forEach(function (item) {
                     s += JSON.stringify(item) + ","
                   });
-                  str = str.replace('%s', "\"" + op + "\":[" + s + " {%s}]");
+
+                  if (op == '!') {
+                    str = str.replace('%s', "\"" + op + "\":{\"or\":[" + s + " {%s}]}");
+                  } else {
+                    str = str.replace('%s', "\"" + op + "\":[" + s + " {%s}]");
+                  }
 
                   if (!!cond["scopes" + pIndex + cIndex + i]) {
                     delete cond["scopes" + pIndex + cIndex + i]

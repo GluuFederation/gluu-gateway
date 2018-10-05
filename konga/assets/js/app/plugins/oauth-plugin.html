@@ -133,6 +133,21 @@
                   </p>
                 </div>
               </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Allow Unprotected path
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9 check-toggle">
+                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                         ng-model="modelPlugin.config.allow_unprotected_path" class="form-control"/>
+                  <p class="help-block">
+                    If yes, allow unprotected path otherwise not.
+                  </p>
+                </div>
+              </div>
             </div>
             <div class="col-md-12">
               <div class="form-group has-feedback">
