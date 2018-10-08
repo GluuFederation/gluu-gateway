@@ -34,7 +34,7 @@
 
         $scope.modelPlugin = {
           api_id: $scope.api.id,
-          name: 'gluu-oauth2-rs',
+          name: 'gluu-pep',
           config: {
             oxd_host: $scope.globalInfo.oxdWeb,
             uma_server_host: $scope.globalInfo.opHost,
@@ -46,7 +46,7 @@
         $scope.isKongUMARSPluginAdded = false;
 
         $scope.plugins.forEach(function (o) {
-          if (o.name == "gluu-oauth2-rs") {
+          if (o.name == "gluu-pep") {
             $scope.pluginConfig = o.config;
             $scope.rsPlugin = o;
             $scope.isKongUMARSPluginAdded = true;

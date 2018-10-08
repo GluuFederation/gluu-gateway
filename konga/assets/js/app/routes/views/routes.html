@@ -15,12 +15,12 @@
 <konga-loader ng-if="loading && !items.data.length"></konga-loader>
 <div class="row" ng-show="!loading || items.data.length">
   <div class="col-md-12">
-    <div class="table-responsive">
+    <div class="table-responsive" id="routeTable">
       <table class="table table-hover table-striped">
         <tr>
-          <th width="1"></th>
-          <th width="1"></th>
-          <th width="1"></th>
+          <th></th>
+          <th></th>
+          <th></th>
           <th width="{{item.width}}" class="text-nowrap" data-ng-repeat="item in titleItems | filter:titleFilter">
             <a
               data-ng-show="item.column"
@@ -37,19 +37,17 @@
         <tr
           dir-paginate="route in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
           <td>
-            <i
-              uib-tooltip="Strip Path"
-              ng-click="toggleStripPath(route)"
-              data-ng-class="{'text-primary' : route.strip_path,'text-muted' : !route.strip_path}"
-              class="mdi mdi-link-off clickable">
+            <i uib-tooltip="Strip Path"
+               ng-click="toggleStripPath(route)"
+               data-ng-class="{'text-primary' : route.strip_path,'text-muted' : !route.strip_path}"
+               class="mdi mdi-link-off clickable">
             </i>
           </td>
           <td>
-            <i
-              uib-tooltip="Preserve Host"
-              ng-click="route.preserve_host=!route.preserve_host;updateRoute(route.id,{preserve_host : route.preserve_host})"
-              class="mdi clickable"
-              ng-class="route.preserve_host ? 'mdi-cloud-outline text-primary' : 'mdi-cloud-off-outline text-muted'">
+            <i uib-tooltip="Preserve Host"
+               ng-click="route.preserve_host=!route.preserve_host;updateRoute(route.id,{preserve_host : route.preserve_host})"
+               class="mdi clickable"
+               ng-class="route.preserve_host ? 'mdi-cloud-outline text-primary' : 'mdi-cloud-off-outline text-muted'">
             </i>
           </td>
           <td>
@@ -57,13 +55,10 @@
           </td>
           <td>
             <strong>
-              <a class="clickable"
-                 data-ui-sref="routes.edit({route_id:route.id})">{{ route.id}}</a>
+              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">{{ route.id}}</a>
             </strong>
           </td>
-          <td>
-            {{ route.hosts.join(", ") || "-" }}
-          </td>
+          <td>{{ route.hosts.join(", ") || "-" }}</td>
           <td><a data-ui-sref="services.edit({service_id:route.service.id})">{{route.service.name ||
             route.service.id}}</a></td>
           <td>{{ route.paths.join(", ") || "-" }}</td>
@@ -76,7 +71,7 @@
               UMA
             </a>
           </td>
-          <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
+          <td>
             <a class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
                class="btn btn-default btn-link">
               <i class="mdi mdi-pencil"></i>

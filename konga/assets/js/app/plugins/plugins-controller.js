@@ -43,7 +43,7 @@
 
 
         function onEditPlugin(item) {
-          if (item.name == "gluu-oauth2-client-auth") {
+          if (item.name == "gluu-client-auth") {
             if (item.service_id) {
               return $state.go("services.oauth-plugin", {service_id: item.service_id});
             } else if (plugin.route_id) {
@@ -55,7 +55,7 @@
             }
           }
 
-          if (item.name == "gluu-oauth2-rs") {
+          if (item.name == "gluu-pep") {
             if (item.service_id) {
               return $state.go("services.uma-plugin", {service_id: item.service_id});
             } else if (plugin.route_id) {

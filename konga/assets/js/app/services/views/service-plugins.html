@@ -46,10 +46,13 @@
       <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a ui-sref="apis.uma-plugin({api_id: api_id})" data-ng-if="item.name == 'gluu-oauth2-rs'">
+      <a ui-sref="services.uma-plugin({service_id: service.id})" data-ng-if="item.name == 'gluu-pep'">
         {{item.name}}
       </a>
-      <a href data-ng-if="item.name != 'gluu-oauth2-rs'" ng-click="onEditPlugin(item)">
+      <a ui-sref="services.oauth-plugin({service_id: service.id})" data-ng-if="item.name == 'gluu-client-auth'">
+        {{item.name}}
+      </a>
+      <a href data-ng-if="item.name != 'gluu-pep' && item.name != 'gluu-client-auth'" ng-click="onEditPlugin(item)">
         {{item.name}}
       </a>
     </th>

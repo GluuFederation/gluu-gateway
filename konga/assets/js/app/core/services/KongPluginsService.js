@@ -217,10 +217,10 @@
                 description: "Custom Plugins",
                 icon: "mdi-account-box-outline",
                 plugins: {
-                  "gluu-oauth2-client-auth": {
+                  "gluu-client-auth": {
                     description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
                   },
-                  "gluu-oauth2-rs": {
+                  "gluu-pep": {
                     description: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
                   },
                   "pre-function": {
@@ -917,7 +917,7 @@
                 },
               },
             },
-            "gluu-oauth2-client-auth": {
+            "gluu-client-auth": {
               meta: {
                 description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
               },

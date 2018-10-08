@@ -50,7 +50,6 @@
             {
               title: 'id',
               column: 'id',
-              width: 100,
               searchable: true,
               sortable: true,
               inSearch: true,
