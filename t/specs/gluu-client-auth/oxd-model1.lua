@@ -1,35 +1,4 @@
 local model
-
-local introspect_item =  {
-    expect = "/introspect-access-token",
-    required_fields = {
-        "oxd_id",
-        "access_token",
-    },
-    request_check = function(json, token)
-        assert(json.oxd_id == model[1].response.oxd_id)
-        assert(json.access_token == model[2].response.access_token)
-        assert(token == model[3].response.access_token, 401)
-    end,
-    response = {
-        active = true,
-        client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-        username = "John Black",
-        scopes = "read write",
-        token_type = "bearer",
-        sub = "jblack",
-        aud = "l238j323ds-23ij4",
-        iss = "https://as.gluu.org/",
-        --acr_values": ["basic","duo"],
-        --extension_field": "twenty-seven",
-    },
-    response_callback = function(response)
-        response.exp = 60*60
-        response.iat = ngx.now()
-        return response
-    end,
-}
-
 model = {
     -- array part start, scenario
 
@@ -56,11 +25,11 @@ model = {
         },
         response_callback = function(response)
             response.client_id_issued_at = ngx.now()
-            response.client_secret_expires_at = ngx.now() + 60*60
+            response.client_secret_expires_at = ngx.now() + 60 * 60
             return response
         end,
     },
-    -- client request access token
+    -- #2, client request access token
     {
         expect = "/get-client-token",
         required_fields = {
@@ -73,12 +42,12 @@ model = {
             assert(json.client_secret == model[1].response.client_secret)
         end,
         response = {
-            scope = "openid profile email",
+            scope = { "openid", "profile", "email" },
             access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f2",
             expires_in = 299,
         }
     },
-    -- plugin request access token
+    -- #3, plugin request access token
     {
         expect = "/get-client-token",
         required_fields = {
@@ -91,16 +60,58 @@ model = {
             assert(json.client_secret == model[1].response.client_secret)
         end,
         response = {
-            scope = "openid profile email",
+            scope = { "openid", "profile", "email" },
             access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f3",
             expires_in = 299,
         }
     },
-    -- plugin check the client token
-    introspect_item,
+    -- #4, plugin check the client token
+    {
+        expect = "/introspect-access-token",
+        required_fields = {
+            "oxd_id",
+            "access_token",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.access_token == model[2].response.access_token)
+            assert(token == model[3].response.access_token, 403)
+        end,
+        response = {
+            active = true,
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
+            username = "John Black",
+            scope = { "openid" },
+            token_type = "bearer",
+            sub = "jblack",
+            aud = "l238j323ds-23ij4",
+            iss = "https://as.gluu.org/",
+            --acr_values": ["basic","duo"],
+            --extension_field": "twenty-seven",
+        },
+        response_callback = function(response)
+            response.exp = ngx.now() + 60 * 60
+            response.iat = ngx.now()
+            return response
+        end,
+    },
 
-    -- plugin check the wrong client token
-    introspect_item,
+    -- #5, plugin check the wrong client token
+    {
+        expect = "/introspect-access-token",
+        required_fields = {
+            "oxd_id",
+            "access_token",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.access_token ~= model[2].response.access_token)
+            assert(token == model[3].response.access_token, 403)
+        end,
+        response = {
+            active = false,
+        },
+    },
 }
 
 return model

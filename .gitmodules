@@ -4,3 +4,6 @@
 [submodule "third-party/oxd-web-lua"]
 	path = third-party/oxd-web-lua
 	url = git@github.com:GluuFederation/oxd-web-lua.git
+[submodule "third-party/json-logic-lua"]
+	path = third-party/json-logic-lua
+	url = https://git.rucciva.one/rucciva/json-logic-lua.git

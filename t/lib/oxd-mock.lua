@@ -31,7 +31,7 @@ local function get_body_data()
 end
 
 local endpoint_without_token = {
-    ["/setup-client"] = true,
+    ["/register-site"] = true,
     ["/get-client-token"] = true,
 }
 
@@ -64,6 +64,10 @@ return function(model)
                 print(token)
             end
         end
+        if not token then
+            print"401"
+            return ngx.exit(401)
+        end
     end
 
     local content_type = ngx.var.http_content_type
@@ -86,7 +90,7 @@ return function(model)
     if required_fields then
         for i = 1, #required_fields do
             if not params[required_fields[i]] then
-                ngx.log(ngx.ERR, "missed parameter: ", required_fields[i])
+                ngx.log(ngx.INFO, "missed parameter: ", required_fields[i])
                 return ngx.exit(400)
             end
         end
@@ -95,10 +99,11 @@ return function(model)
     if item.request_check then
         print(body)
         local ok , status = pcall(item.request_check, params, token)
-        if type(status) ~= "number" then
-            status = "400"
-        end
         if not ok then
+            if type(status) ~= "number" then
+                status = "400"
+            end
+            ngx.log(ngx.INFO, "request_check() failed, status: ", status)
             return ngx.exit(status)
         end
     end
