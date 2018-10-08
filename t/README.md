@@ -44,5 +44,5 @@ Mock oxd-server
 ===============
 
 It uses mock oxd server.
-The `t/specs/gluu-oauth2-client-auth/oxd-model.lua` defines the sequence of expected endpoints calls and responses.
+The `t/specs/gluu-client-auth/oxd-model.lua` defines the sequence of expected endpoints calls and responses.
 
