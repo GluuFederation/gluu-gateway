@@ -309,7 +309,6 @@ var AuthController = {
             req.body.identifier = user.username;
             req.body.password = 'adminadmin';
             sails.services.passport.callback(req, res, function callback(error, user) {
-              user.info = userInfo.data;
               user.oxdWeb = sails.config.oxdWeb;
               user.opHost = sails.config.opHost;
               user.oxdId = sails.config.oxdId;

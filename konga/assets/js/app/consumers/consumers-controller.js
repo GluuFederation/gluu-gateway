@@ -81,23 +81,27 @@
 
                 ConsumerModel.create(data)
                   .then(function (res) {
-                    MessageService.success("Consumer created successfully!")
-                    $rootScope.$broadcast('consumer.created', res.data)
+                    MessageService.success("Consumer created successfully!");
+                    $rootScope.$broadcast('consumer.created', res.data);
                     close()
-                  }).catch(function (err) {
-                  $log.error("Failed to create consumer", err)
-
-                  handleErrors(err);
-
-                });
+                  })
+                  .catch(function (err) {
+                    $log.error("Failed to create consumer", err);
+                    handleErrors(err);
+                  });
               }
 
               function handleErrors(err) {
                 $scope.errors = {};
-                if (err.data) {
-
-                  for (var key in err.data.body) {
-                    $scope.errors[key] = err.data.body[key]
+                if (err.data && err.data.body) {
+                  if (err.data.body.fields) {
+                    Object.keys(err.data.body.fields).forEach(function (key) {
+                      $scope.errors[key] = err.data.body.fields[key]
+                    })
+                  } else {
+                    Object.keys(err.data.body).forEach(function (key) {
+                      $scope.errors[key] = err.data.body[key]
+                    })
                   }
                 }
               }

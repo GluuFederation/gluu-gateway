@@ -8,6 +8,9 @@
 </div>
 
 <div class="modal-body" id="modal-body">
+
+  <label class="label label-danger" ng-if="errors['@entity']" data-ng-bind="errors['@entity']"></label>
+
   <form class="form-horizontal">
     <div class="form-group" ng-class="{'has-error' : errors.username}">
       <label class="col-sm-4 control-label">username <br><em>
