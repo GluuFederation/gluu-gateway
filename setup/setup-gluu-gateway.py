@@ -58,6 +58,7 @@ class KongSetup(object):
         self.hostname = '/bin/hostname'
         self.cmd_touch = '/bin/touch'
         self.cmd_mv = '/bin/mv'
+        self.cmd_cp = '/bin/cp'
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
         self.cmd_sh = '/bin/sh'
@@ -76,11 +77,14 @@ class KongSetup(object):
         self.kongAdminListenSsl = '8445'
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
-        self.distKongPluginsFolder = '/usr/local/share/lua/5.1/kong/plugins'
+        self.distLuaFolder = '/usr/local/share/lua/5.1'
+        self.distKongFolder = '%s/kong' % self.distLuaFolder
+        self.distKongPluginsFolder = '%s/plugins' % self.distKongFolder
 
         self.optFolder = '/opt'
         self.distGluuGatewayFolder = '%s/gluu-gateway' % self.optFolder
         self.distKongaFolder = '%s/konga' % self.distGluuGatewayFolder
+        self.distKongaAssestFolder = '%s/assets' % self.distKongaFolder
         self.distKongaConfigPath = '%s/config' % self.distKongaFolder
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
@@ -90,26 +94,22 @@ class KongSetup(object):
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
-        self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
-        self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
+        self.distOxdServerConfigFile = '%s/oxd-server.yml' % self.distOxdServerConfigPath
 
         self.kongaService = 'gluu-gateway'
         self.oxdServerService = 'oxd-server'
-        self.oxdHTTPExtensionService = 'oxd-https-extension'
 
         # oxd kong Property values
         self.kongaPort = '1338'
         self.kongaPolicyType = 'uma_rpt_policy'
         self.kongaOxdId = ''
-        self.kongaClientIdOfOXDId = ''
-        self.kongaSetupClientOXDId = ''
         self.kongaOPHost = ''
         self.kongaClientId = ''
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
         self.kongaKongAdminWebURL = 'http://localhost:8001'
-        self.kongaOxdVersion = '3.1.3'
-        self.ggVersion = '3.1.3'
+        self.kongaOxdVersion = '4.0.0'
+        self.ggVersion = '4.0.0'
 
         # oxd licence configuration
         self.oxdHost = ''
@@ -125,7 +125,8 @@ class KongSetup(object):
         # JRE setup properties
         self.jre_version = '162'
         self.jreDestinationPath = '/opt/jdk1.8.0_%s' % self.jre_version
-        self.distAppFolder = '%s/dist/app' % self.distGluuGatewayFolder
+        self.distFolder = '%s/dist' % self.distGluuGatewayFolder
+        self.distAppFolder = '%s/app' % self.distFolder
         self.jre_home = '/opt/jre'
         self.jreSHFileName = 'jre-gluu.sh'
         self.isPrompt = True
@@ -141,6 +142,16 @@ class KongSetup(object):
         # PostgreSQL config file path
         self.distPGhbaConfigPath = '/var/lib/pgsql/10/data'
         self.distPGhbaConfigFile = '%s/pg_hba.conf' % self.distPGhbaConfigPath
+
+        # dependency zips
+        self.ggNodeModulesDir = "%s/node_modules" % self.distKongaFolder
+        self.ggBowerModulesDir = "%s/bower_components" % self.distKongaAssestFolder
+        self.ggNodeModulesArchive = 'gg_node_modules.tar.gz'
+        self.ggBowerModulesArchive = 'gg_bower_components.tar.gz'
+
+        # third party lua library
+        self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
+        self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -172,8 +183,6 @@ class KongSetup(object):
             if not self.generateClient:
                 self.oxdServerLicenseId = data['oxdServerLicenseId']
                 self.kongaOxdId = data['kongaOxdId']
-                self.kongaClientIdOfOXDId = data['kongaClientIdOfOXDId']
-                self.kongaSetupClientOXDId = data['kongaSetupClientOXDId']
                 self.kongaClientId = data['kongaClientId']
                 self.kongaClientSecret = data['kongaClientSecret']
 
@@ -219,11 +228,8 @@ class KongSetup(object):
     def configureOxd(self):
         if self.installOxd:
             self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
-            self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
-                                     self.distOxdServerConfigPath)
 
         self.run([self.cmd_service, self.oxdServerService, 'start'])
-        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'start'])
 
     def detectHostname(self):
         detectedHostname = None
@@ -236,18 +242,6 @@ class KongSetup(object):
                 self.logIt("No detected hostname", True)
                 self.logIt(traceback.format_exc(), True)
         return detectedHostname
-
-    def getExternalCassandraInfo(self):
-        return True
-
-    def getExternalOxdInfo(self):
-        return True
-
-    def getExternalPostgressInfo(self):
-        return True
-
-    def getExternalRedisInfo(self):
-        return True
 
     def gen_cert(self, serviceName, password, user='root', cn=None):
         self.logIt('Generating Certificate for %s' % serviceName)
@@ -356,9 +350,13 @@ class KongSetup(object):
 
     def installPlugins(self):
         self.logIt('Installing luarocks packages...')
-        self.run(['luarocks', 'install', 'json-lua', '0.1-3'])
-        self.run(['luarocks', 'install', 'oxd-web-lua', '1.0-0'])
-        self.run(['luarocks', 'install', 'json-logic-lua', '0.2.0-1'])
+        # Move and Copy libs to kong path
+        self.run([self.cmd_cp, self.oxdWebFilePath, self.distLuaFolder])
+
+        # Make extra folder for Json logic lib
+        self.run([self.cmd_mkdir, '-p', '%s/rucciva' % self.distLuaFolder])
+        self.run([self.cmd_cp, self.jsonLogicFilePath, '%s/rucciva/json_logic.lua' % self.distLuaFolder])
+
         self.run([self.cmd_mv, self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_mv, self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
 
@@ -389,9 +387,21 @@ class KongSetup(object):
         if not os.path.exists(self.cmd_node):
             self.run([self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
 
-        self.run(['npm', 'install', '-g', 'bower@1.8.4', 'gulp@3.9.1', 'sails@1.0.0'])
-        self.run(['npm', 'install', '--unsafe-perm'], self.distKongaFolder, os.environ.copy(), True)
-        self.run(['bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
+        try:
+            self.run([self.cmd_mkdir, '-p', self.ggNodeModulesDir])
+            self.logIt("Extracting %s into %s" % (self.ggNodeModulesArchive, self.ggNodeModulesDir))
+            self.run(['tar', '--strip', '1', '-xzf', '%s/%s' % (self.distFolder, self.ggNodeModulesArchive), '-C', self.ggNodeModulesDir, '--no-xattrs', '--no-same-owner', '--no-same-permissions'])
+        except:
+            self.logIt("Error encountered while extracting archive %s" % self.ggNodeModulesArchive)
+            self.logIt(traceback.format_exc(), True)
+
+        try:
+            self.run([self.cmd_mkdir, '-p', self.ggBowerModulesDir])
+            self.logIt("Extracting %s into %s" % (self.ggBowerModulesArchive, self.ggBowerModulesDir))
+            self.run(['tar', '--strip', '1', '-xzf', '%s/%s' % (self.distFolder, self.ggBowerModulesArchive), '-C', self.ggBowerModulesDir, '--no-xattrs', '--no-same-owner', '--no-same-permissions'])
+        except:
+            self.logIt("Error encountered while extracting archive %s" % self.ggBowerModulesArchive)
+            self.logIt(traceback.format_exc(), True)
 
         if self.generateClient:
             AuthorizationRedirectUri = 'https://' + self.oxdAuthorizationRedirectUri + ':' + self.kongaPort
@@ -401,7 +411,7 @@ class KongSetup(object):
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
                 'scope': ['openid', 'uma_protection'],
                 'grant_types': ['authorization_code'],
-                'client_name': 'konga_client'
+                'client_name': 'KONGA_GG_UI_CLIENT'
             }
             self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
             print 'Creating konga oxd client used to call oxd-https endpoints...'
@@ -411,8 +421,6 @@ class KongSetup(object):
 
                 if resJson['status'] == 'ok':
                     self.kongaOxdId = resJson['data']['oxd_id']
-                    self.kongaClientIdOfOXDId = resJson['data']['client_id_of_oxd_id']
-                    self.kongaSetupClientOXDId = resJson['data']['setup_client_oxd_id']
                     self.kongaClientSecret = resJson['data']['client_secret']
                     self.kongaClientId = resJson['data']['client_id']
                 else:
@@ -485,11 +493,10 @@ class KongSetup(object):
         self.installOxd = self.makeBoolean(self.getPrompt(
             'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
 
-        #We are going to ask for 'OP hostname' regardless of whether we're installing oxd or not
+        # We are going to ask for 'OP hostname' regardless of whether we're installing oxd or not
         self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
 
         if self.installOxd:
-            #self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
             self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
             self.oxdServerLicenseId = self.getPrompt('License Id')
             self.oxdServerPublicKey = self.getPrompt('Public key')
@@ -503,20 +510,15 @@ class KongSetup(object):
             """
         print msg
 
-        #if not self.installOxd:
-            #self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
 
-        #https://xyz.domain.com:8443 is split to: //xyz.domain.com to xyz.domain.com
+        # https://xyz.domain.com:8443 is split to: //xyz.domain.com to xyz.domain.com
         self.oxdHost = self.kongaOxdWeb.split(":")[1][2:]
 
         self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
-            self.kongaClientIdOfOXDId = self.getPrompt('client_id_of_oxd_id')
-            self.kongaSetupClientOXDId = self.getPrompt('setup_client_oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
@@ -560,7 +562,6 @@ class KongSetup(object):
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
         self.run([self.cmd_service, self.oxdServerService, 'stop'])
-        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'stop'])
         self.run([self.cmd_service, self.kongaService, 'stop'])
         self.run([self.cmd_service, self.kongaService, 'start'])
         if self.os_type in [Distribution.Ubuntu, Distribution.Debian]:
@@ -620,24 +621,24 @@ if __name__ == "__main__":
     try:
         if kongSetup.isPrompt:
             msg = "------------------------------------------------------------------------------------- \n" \
-              + "The MIT License (MIT) \n\n" \
-              + "Copyright (c) 2018 Gluu \n\n" \
-              + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
-              + "of this software and associated documentation files (the 'Software'), to deal \n" \
-              + "in the Software without restriction, including without limitation the rights \n" \
-              + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
-              + "copies of the Software, and to permit persons to whom the Software is \n" \
-              + "furnished to do so, subject to the following conditions: \n\n" \
-              + "The above copyright notice and this permission notice shall be included in all \n" \
-              + "copies or substantial portions of the Software. \n\n" \
-              + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
-              + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
-              + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
-              + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
-              + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
-              + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
-              + "SOFTWARE. \n" \
-              + "------------------------------------------------------------------------------------- \n"
+                  + "The MIT License (MIT) \n\n" \
+                  + "Copyright (c) 2018 Gluu \n\n" \
+                  + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
+                  + "of this software and associated documentation files (the 'Software'), to deal \n" \
+                  + "in the Software without restriction, including without limitation the rights \n" \
+                  + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
+                  + "copies of the Software, and to permit persons to whom the Software is \n" \
+                  + "furnished to do so, subject to the following conditions: \n\n" \
+                  + "The above copyright notice and this permission notice shall be included in all \n" \
+                  + "copies or substantial portions of the Software. \n\n" \
+                  + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
+                  + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
+                  + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
+                  + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
+                  + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
+                  + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
+                  + "SOFTWARE. \n" \
+                  + "------------------------------------------------------------------------------------- \n"
             print msg
             kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
             print ""
@@ -657,19 +658,17 @@ if __name__ == "__main__":
 
             if kongSetup.installOxd:
                 cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
-                      + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
-                      + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
-                      + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
-                      + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
+                       + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
+                       + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
+                       + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
+                       + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
             else:
                 cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
 
             if not kongSetup.generateClient:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
-                      + 'client_id_of_oxd_id'.ljust(30) + kongSetup.kongaClientIdOfOXDId.rjust(35) + "\n" \
-                      + 'setup_client_oxd_id'.ljust(30) + kongSetup.kongaSetupClientOXDId.rjust(35) + "\n" \
-                      + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
-                      + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
+                       + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
+                       + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
             else:
                 cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
 
