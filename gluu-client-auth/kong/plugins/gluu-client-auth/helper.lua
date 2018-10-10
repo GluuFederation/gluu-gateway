@@ -33,7 +33,7 @@ end
 -- @param scope_expression: example: { rule = { ["or"] = { { var = 0 }, { var = 1 }, { ["!"] = { { var = 2 } } } } }, data = { "admin", "hrr", "employee" } }
 -- @param data: Array of scopes example: { "admin", "hrr" }
 -- @return true or false
-function _M.check_json_expression(scope_expression, requested_scopes)
+function _M.check_scope_expression(scope_expression, requested_scopes)
     scope_expression = scope_expression or {}
     kong.log.inspect(scope_expression)
     local data = {}

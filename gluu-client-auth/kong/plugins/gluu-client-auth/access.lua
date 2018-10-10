@@ -75,6 +75,7 @@ local function get_protection_token(conf)
     local now = ngx.now()
     kong.log.debug("Current datetime: ", now, " access_token_expire: ", access_token_expire)
     if not access_token or access_token_expire < now + EXPIRE_DELTA then
+        -- TODO possible race condition when access_token == nil
         access_token_expire = access_token_expire + EXPIRE_DELTA -- avoid multiple token requests
         local response = oxd.get_client_token(conf.oxd_url,
             {
@@ -121,8 +122,6 @@ end
 local function do_authentication(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
-    local request_path = ngx.var.uri
-    local request_http_method = ngx.req.get_method()
 
     -- Hide credentials
     kong.log.debug("hide_credentials: ", conf.hide_credentials)
@@ -207,7 +206,7 @@ local function do_authentication(conf)
             end
         end
 
-        if not helper.check_json_expression(path_scope_expression, body.scope) then
+        if not helper.check_scope_expression(path_scope_expression, body.scope) then
             -- TODO should we cache negative result?
             kong.log.debug("Not authorized for this path/method")
             return 403, "You are not authorized for this path/method"
