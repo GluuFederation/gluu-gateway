@@ -15,49 +15,42 @@
                           SocketHelperService, MessageService, SnapshotsService,
                           $state, $uibModal, DialogService, Snapshot, AuthService) {
 
-
         $scope.token = AuthService.token();
 
-
         $scope.showRestoreModal = function () {
-          if ($scope.openingModal) return;
-
-          $scope.openingModal = true;
-          setTimeout(function () {
-            $scope.openingModal = false;
-          }, 1000);
 
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
-            templateUrl: 'js/app/snapshots/snapshot-apply-modal.html',
+            templateUrl: 'js/app/snapshots/views/snapshot-apply-modal.html',
             controller: function ($scope, $uibModalInstance, SnapshotsService, UserService, _snapshot) {
 
-              $scope.user = UserService.user()
+              $scope.user = UserService.user();
 
               $scope.ready = false;
-              $scope.imports = []
+              $scope.imports = [];
 
-              $scope.objects = {}
+              $scope.objects = {};
               Object.keys(_snapshot.data).forEach(function (item) {
                 $scope.objects[item] = {
                   isChecked: false
-                }
-              })
+                };
+              });
+
 
               $scope.updateImports = function () {
-                $scope.imports = []
+                $scope.imports = [];
                 Object.keys($scope.objects).forEach(function (key) {
                   if ($scope.objects[key].isChecked) {
                     $scope.imports.push(key)
                   }
-                })
-              }
+                });
+              };
 
               $scope.close = function () {
                 $uibModalInstance.dismiss()
-              }
+              };
 
 
               $scope.selectNode = function () {
@@ -83,25 +76,26 @@
                     ]
                   }
                 });
-              }
+              };
 
               $scope.restore = function () {
                 $scope.ready = true;
-                $scope.restoring = true
+                $scope.restoring = true;
                 SnapshotsService.restoreSnapshot(_snapshot.id, $scope.imports)
                   .then(function (success) {
-                    $scope.results = success.data
+                    $scope.results = success.data;
                     $scope.restoring = false;
                   })
                   .catch(function (err) {
-                    $log.debug("restoreSnapshot:error", err)
+                    console.error("restoreSnapshot:error", err);
                     $scope.restoring = false;
-                  })
-              }
+                    if (err.data && err.data.message) {
+                      MessageService.error(err.data ? (err.data.message || 'Undefined error') : 'Server error');
+                    }
+                  });
+              };
 
               //restore()
-
-
             },
             resolve: {
               _snapshot: function () {
@@ -115,8 +109,7 @@
           }, function (result) {
 
           });
-
-        }
+        };
 
 
         function _fetchData() {
@@ -125,11 +118,10 @@
 
           Snapshot.fetch($stateParams.id)
             .then(function (result) {
-
+              // Delete `data.routes` since the routes are embedded in the `data.services`
+              delete result.data.routes;
               $scope.originalSnapshot = result;
               $scope.snapshot = _.cloneDeep(result);
-
-
               // $scope.snapshotCopy = angular.copy(_snapshot)
               // delete $scope.snapshotCopy.data;
               // $scope.snapshot = $scope.snapshotCopy
@@ -141,9 +133,7 @@
                 })
               }
 
-
               if ($scope.snapshot.data.apis) {
-
                 // $scope.snapshot.data.apis = $scope.snapshot.data.apis.slice(0,25)
 
                 // $scope.snapshot.data.upstreams.forEach(function(item){
@@ -152,19 +142,12 @@
               }
 
               $scope.loading = false;
-
-
             }).catch(function (err) {
             $scope.loading = false;
 
           })
-
         }
-
-
         _fetchData();
-
       }
-    ])
-  ;
+    ]);
 }());

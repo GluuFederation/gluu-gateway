@@ -7,7 +7,7 @@
   'use strict';
 
   angular.module('frontend.snapshots')
-    .controller('SnapshotsController', [
+    .controller('SnapshotsListController', [
       '_', '$scope', '$rootScope', '$q', '$log', '$ngBootbox', 'UserModel',
       'SocketHelperService', 'UserService', 'SettingsService', 'MessageService',
       '$state', '$uibModal', 'DialogService', 'Snapshot', '$localStorage',
@@ -90,7 +90,7 @@
             animation: true,
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
-            templateUrl: 'js/app/snapshots/take-snapshot-modal.html',
+            templateUrl: 'js/app/snapshots/views/take-snapshot-modal.html',
             size: 'sm',
             backdrop: 'static',
             keyboard: false,
@@ -125,24 +125,26 @@
                     // })
                     $uibModalInstance.dismiss({
                       result: response.data
-                    })
+                    });
                   }).catch(function (err) {
                   $scope.submitting = false;
                   if (err.data && err.data.message) {
-                    $scope.error = err.data.message
+                    $scope.error = err.data.message;
                   }
-                })
-              }
+                });
+              };
             }
           });
 
 
           modalInstance.result.then(function (data) {
           }, function (data) {
-            if (data && data.result) _triggerFetchData()
+            if (data && data.result) {
+              _triggerFetchData();
+            }
           });
 
-        }
+        };
 
 
         // User delete dialog buttons configuration
@@ -163,18 +165,16 @@
 
 
         $scope.deleteSnapshot = function deleteSnapshot(snapshot) {
-          DialogService.prompt(
-            "CONFIRM", "Do you want to delete the selected item?",
-            ['CANCEL', 'YES'],
-            function accept() {
-              Snapshot
-                .delete(snapshot.id)
-                .then(function onSuccess(data) {
-                  MessageService.success('Snapshot deleted successfully');
-                  _triggerFetchData()
-                });
-            }, function decline() {
-            });
+
+          Snapshot
+            .delete(snapshot.id)
+            .then(
+              function onSuccess(data) {
+                MessageService.success('Snapshot deleted successfully');
+                _triggerFetchData()
+              }
+            )
+          ;
         };
 
 
@@ -252,7 +252,7 @@
 
 
         $scope.importSnapshot = function () {
-          $("#import-snapshot").click()
+          $("#import-snapshot").click();
         }
 
         $scope.onSnapshotLoaded = function (data) {
@@ -262,7 +262,7 @@
           try {
             importedSnapshot = JSON.parse($base64.decode($scope.file.data.split(",")[1]))
           } catch (err) {
-            MessageService.error("Invalid file type. JSON file required.");
+            MessageService.error(err)
           }
 
           if (!importedSnapshot) return false;
@@ -293,6 +293,5 @@
 
         _triggerFetchData();
       }
-    ])
-  ;
+    ]);
 }());

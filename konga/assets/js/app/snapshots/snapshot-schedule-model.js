@@ -5,12 +5,12 @@
    * Model for Author API, this is used to wrap all Author objects specified actions and data change actions.
    */
   angular.module('frontend.snapshots')
-    .service('Snapshot', [
+    .service('SnapshotSchedule', [
       'DataModel',
       function (DataModel) {
 
 
-        var model = new DataModel('snapshot');
+        var model = new DataModel('snapshotschedule');
 
         model.handleError = function ($scope, err) {
           $scope.errors = {}
