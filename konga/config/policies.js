@@ -155,5 +155,9 @@ module.exports.policies = {
 
   KongProxyController: {
     "*": ['authenticated', 'dynamicNode']
+  },
+
+  ClientsController: {
+    "*": ['authenticated']
   }
 };

@@ -45,6 +45,10 @@
 
           addOAuthClient: function (data) {
             return $http.post('api/clients/oauth', data)
+          },
+
+          registerClientAndResources: function (data) {
+            return $http.post('api/clients/uma', data)
           }
         }
       }

@@ -98,6 +98,7 @@ module.exports.routes = {
 
   // Client controller
   'POST /api/clients/oauth': 'ClientsController.addOAuthClient',
+  'POST /api/clients/uma': 'ClientsController.registerClientAndResources',
 
   /**
    * Fallback to proxy

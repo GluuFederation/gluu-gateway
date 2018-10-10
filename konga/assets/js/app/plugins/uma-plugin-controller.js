@@ -296,11 +296,12 @@
           } else {
             return MessageService.error('UMA Scope Expression is required');
           }
-          PluginsService.addOAuthClient({
+          PluginsService.registerClientAndResources({
             oxd_id: model.config.oxd_id || null,
             client_id: model.config.client_id || null,
             client_secret: model.config.client_secret || null,
-            client_name: 'gluu-introspect-client'
+            uma_scope_expression: model.config.uma_scope_expression,
+            client_name: 'gluu-uma-client'
           })
             .then(function (response) {
               var oauthClient = response.data;
@@ -324,11 +325,10 @@
                     MessageService.error("Invalid UMA scope expression");
                   }
                 });
-
             })
             .catch(function (error) {
               console.log(error);
-              MessageService.error("Failed to register client");
+              MessageService.error("Failed to register client and UMA resources");
             });
         }
 
