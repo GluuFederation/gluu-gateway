@@ -1,5 +1,4 @@
 local logic = require('rucciva.json_logic')
-local pl_types = require "pl.types"
 local pl_tablex = require "pl.tablex"
 local _M = {}
 local array_mt = {}
@@ -74,20 +73,20 @@ end
 -- @return json expression Example: {path: "/posts", ...}
 function _M.get_expression_by_request_path_method(exp, request_path, method)
     -- TODO the complexity is O(N), think how to optimize
-    local found_path_condition
+    local found_paths = {}
     for i = 1, #exp do
         if _M.is_path_match(request_path, exp[i]["path"]) then
-            found_path_condition = exp[i]["conditions"]
+            found_paths[#found_paths + 1] = exp[i]
         end
     end
-    if not found_path_condition then
-        return
-    end
 
-    for i = 1, #found_path_condition do
-        local rule = found_path_condition[i]
-        if pl_tablex.find(rule.httpMethods, method) then
-            return rule.scope_expression
+    for i = 1, #found_paths do
+        local conditions = found_paths[i].conditions
+        for k = 1, #conditions do
+            local rule = conditions[k]
+            if pl_tablex.find(rule.httpMethods, method) then
+                return rule.scope_expression
+            end
         end
     end
 
