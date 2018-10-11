@@ -43,13 +43,21 @@
             return $http.delete('kong/plugins/' + id)
           },
 
+          getOAuthClient: function (oxd_id) {
+            return $http.get('api/clients/oauth/' + oxd_id)
+          },
+
           addOAuthClient: function (data) {
             return $http.post('api/clients/oauth', data)
           },
 
           registerClientAndResources: function (data) {
             return $http.post('api/clients/uma', data)
-          }
+          },
+
+          updateResources: function (data) {
+            return $http.put('api/clients/uma', data)
+          },
         }
       }
     ]);

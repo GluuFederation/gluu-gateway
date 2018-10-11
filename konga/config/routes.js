@@ -97,8 +97,10 @@ module.exports.routes = {
   'GET /api/settings': 'SettingsController.find',
 
   // Client controller
+  'GET /api/clients/oauth/:oxd_id': 'ClientsController.getClient',
   'POST /api/clients/oauth': 'ClientsController.addOAuthClient',
   'POST /api/clients/uma': 'ClientsController.registerClientAndResources',
+  'PUT /api/clients/uma': 'ClientsController.updateResources',
 
   /**
    * Fallback to proxy

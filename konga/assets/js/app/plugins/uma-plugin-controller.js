@@ -52,82 +52,90 @@
 
         $scope.plugins.forEach(function (o) {
           if (o.name == "gluu-pep") {
-            $scope.modelPlugin = o;
-            $scope.isPluginAdded = true;
-            $scope.ruleScope = {};
-            $scope.ruleOauthScope = {};
-            $scope.modelPlugin.config.uma_scope_expression = o.config.uma_scope_expression || [];
-            setTimeout(function () {
-              if ($scope.modelPlugin.config.uma_scope_expression && $scope.modelPlugin.config.uma_scope_expression.length > 0) {
-                $scope.modelPlugin.config.uma_scope_expression.forEach(function (path, pIndex) {
-                  path.conditions.forEach(function (cond, cIndex) {
-                    var pRule = cond.scope_expression.rule;
-                    var op = '';
-                    if (pRule['and']) {
-                      op = 'and'
-                    } else if (pRule['or']) {
-                      op = 'or'
-                    } else if (pRule['!']) {
-                      op = '!'
-                    }
-
-                    _repeat(pRule[op], op, 0);
-
-                    function _repeat(rule, op, id) {
-                      if (op == "!") {
-                        rule = rule['or'];
-                      }
-
-                      $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
-                      rule.forEach(function (oRule, oRuleIndex) {
-                        if (oRule['var'] == 0 || oRule['var']) {
-                          if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
-                            $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
-                          }
-
-                          $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+            PluginsService
+              .getOAuthClient(o.config.oxd_id)
+              .then(function (response) {
+                $scope.modelPlugin = o;
+                $scope.isPluginAdded = true;
+                $scope.ruleScope = {};
+                $scope.ruleOauthScope = {};
+                $scope.modelPlugin.config.uma_scope_expression = (response.data && response.data.data)|| [];
+                setTimeout(function () {
+                  if ($scope.modelPlugin.config.uma_scope_expression && $scope.modelPlugin.config.uma_scope_expression.length > 0) {
+                    $scope.modelPlugin.config.uma_scope_expression.forEach(function (path, pIndex) {
+                      path.conditions.forEach(function (cond, cIndex) {
+                        var pRule = cond.scope_expression.rule;
+                        var op = '';
+                        if (pRule['and']) {
+                          op = 'and'
+                        } else if (pRule['or']) {
+                          op = 'or'
+                        } else if (pRule['!']) {
+                          op = '!'
                         }
 
-                        if (rule.length - 1 == oRuleIndex) {
-                          // show remove button
-                          var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
-                          if (id == 0) {
-                            removeBtn = "";
+                        _repeat(pRule[op], op, 0);
+
+                        function _repeat(rule, op, id) {
+                          if (op == "!") {
+                            rule = rule['or'];
                           }
-                          // render template
-                          var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
-                            "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                            "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
-                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
-                            removeBtn +
-                            "<div class=\"form-group has-feedback\"> " +
-                            "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
-                            "</div>" +
-                            "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
-                          $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
-                          $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
-                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
-                          // end
-                        }
+                          $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                          rule.forEach(function (oRule, oRuleIndex) {
+                            if (oRule['var'] == 0 || oRule['var']) {
+                              if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                                $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
+                              }
 
-                        if (oRule['and']) {
-                          _repeat(oRule['and'], 'and', ++id);
-                        } else if (oRule['or']) {
-                          _repeat(oRule['or'], 'or', ++id);
-                        } else if (oRule['!']) {
-                          _repeat(oRule['!'], '!', ++id);
-                        } else {
-                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
+                              $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+                            }
+
+                            if (rule.length - 1 == oRuleIndex) {
+                              // show remove button
+                              var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
+                              if (id == 0) {
+                                removeBtn = "";
+                              }
+                              // render template
+                              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                                "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                                "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
+                                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                                removeBtn +
+                                "<div class=\"form-group has-feedback\"> " +
+                                "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                                "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                                "</div>" +
+                                "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+
+                              $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                              $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
+                              // end
+                            }
+
+                            if (oRule['and']) {
+                              _repeat(oRule['and'], 'and', ++id);
+                            } else if (oRule['or']) {
+                              _repeat(oRule['or'], 'or', ++id);
+                            } else if (oRule['!']) {
+                              _repeat(oRule['!'], '!', ++id);
+                            } else {
+                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
+                            }
+                          });
                         }
                       });
-                    }
-                  });
-                  path.pathIndex = pIndex;
-                });
-              }
-            }, 500);
+                      path.pathIndex = pIndex;
+                    });
+                  }
+                }, 500);
+              })
+              .catch(function (error) {
+                console.log(error);
+                MessageService.error((error.data && error.data.message) || "Failed to update UMA resources");
+              });
           }
         });
 
@@ -296,19 +304,20 @@
           } else {
             return MessageService.error('UMA Scope Expression is required');
           }
-          PluginsService.registerClientAndResources({
-            oxd_id: model.config.oxd_id || null,
-            client_id: model.config.client_id || null,
-            client_secret: model.config.client_secret || null,
-            uma_scope_expression: model.config.uma_scope_expression,
-            client_name: 'gluu-uma-client'
-          })
+          PluginsService
+            .registerClientAndResources({
+              oxd_id: model.config.oxd_id || null,
+              client_id: model.config.client_id || null,
+              client_secret: model.config.client_secret || null,
+              uma_scope_expression: model.config.uma_scope_expression,
+              client_name: 'gluu-uma-client'
+            })
             .then(function (response) {
               var oauthClient = response.data;
               model.config.oxd_id = oauthClient.oxd_id;
               model.config.client_id = oauthClient.client_id;
               model.config.client_secret = oauthClient.client_secret;
-
+              model.config.uma_scope_expression = removeExtraScope(model.config.uma_scope_expression);
               PluginHelperService.addPlugin(
                 model,
                 function success(res) {
@@ -328,7 +337,7 @@
             })
             .catch(function (error) {
               console.log(error);
-              MessageService.error("Failed to register client and UMA resources");
+              MessageService.error((error.data && error.data.message) || "Failed to update UMA resources");
             });
         }
 
@@ -342,21 +351,37 @@
             return MessageService.error('UMA Scope Expression is required');
           }
 
-          PluginHelperService.updatePlugin(model.id,
-            model,
-            function success(res) {
-              $scope.busy = false;
-              MessageService.success('Plugin updated successfully!');
-              $state.go($scope.context_name + "s"); // return to plugins page if specified
-            }, function (err) {
-              $log.error("create plugin", err);
-              if (err.data.body) {
-                Object.keys(err.data.body).forEach(function (key) {
-                  MessageService.error(key + " : " + err.data.body[key]);
-                })
-              } else {
-                MessageService.error("Invalid UMA scope expression");
+          PluginsService
+            .updateResources({
+              oxd_id: model.config.oxd_id || null,
+              uma_scope_expression: model.config.uma_scope_expression
+            })
+            .then(function (response) {
+              if (!response.data.oxd_id) {
+                console.log(response);
+                return MessageService.error("Failed to update UMA resources");
               }
+              model.config.uma_scope_expression = removeExtraScope(model.config.uma_scope_expression);
+              PluginHelperService.updatePlugin(model.id,
+                model,
+                function success(res) {
+                  $scope.busy = false;
+                  MessageService.success('Plugin updated successfully!');
+                  $state.go($scope.context_name + "s"); // return to plugins page if specified
+                }, function (err) {
+                  $log.error("create plugin", err);
+                  if (err.data.body) {
+                    Object.keys(err.data.body).forEach(function (key) {
+                      MessageService.error(key + " : " + err.data.body[key]);
+                    })
+                  } else {
+                    MessageService.error("Invalid UMA scope expression");
+                  }
+                });
+            })
+            .catch(function (error) {
+              console.log(error);
+              MessageService.error((error.data && error.data.message) || "Failed to update UMA resources");
             });
         }
 
@@ -465,6 +490,15 @@
           return pathFlag;
         }
 
+        function removeExtraScope(expression) {
+          return expression.map(path => {
+            path.conditions.map(condition => {
+              delete condition.scope_expression;
+              return condition;
+            });
+            return path;
+          })
+        }
         //init
         $scope.fetchData()
       }
