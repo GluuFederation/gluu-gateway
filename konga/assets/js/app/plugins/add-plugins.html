@@ -39,7 +39,7 @@
         <div class="panel-title">
           <span class="capitalize">{{key.split('-').join(" ")}}</span>
           <div class="pull-right">
-            <button
+            <button ng-hide="value.isAdded"
               class="btn btn-primary btn-link btn-icon"
               angular-ripple data-ng-click="onAddPlugin(key)">
               <i class="mdi mdi-plus plugin_i" data-ng-class="{'text-white':value.isAdded}"></i>

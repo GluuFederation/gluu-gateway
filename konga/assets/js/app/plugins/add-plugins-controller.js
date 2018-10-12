@@ -43,11 +43,11 @@
         $scope.onAddPlugin = onAddPlugin
 
         $scope.alert = {
-          msg: 'Plugins added in this section will be applied to <strong>all APIs</strong>.' +
-          '<br>If you need to add plugins to a specific API, you can do it' +
-          ' in the <a href="#!/apis">APIs section</a>.' +
-          '<br>If you need to add plugins to a specific Consumer, you can do it' +
-          ' in the respective Consumer page.'
+          msg: '<strong>Plugins added in this section will be applied Globally</strong>.' +
+          '<br>- If you need to add plugins to a specific Service or Route, you can do it' +
+          ' in the respective section.' +
+          '<br>- If you need to add plugins to a specific Consumer, you can do it' +
+          ' in the respective Consumer\'s page.'
         };
 
         $scope.closeAlert = function () {
@@ -109,9 +109,12 @@
         }
 
         function syncPlugins(added) {
+          var addedMap = [];
 
-          var addedMap = added.map(function (item) {
-            return item.name
+          added.forEach(function (item) {
+            if (!(item.service_id || item.route_id || item.api_id)) {
+              addedMap.push(item.name)
+            }
           });
 
           $scope.pluginGroups.forEach(function (group) {

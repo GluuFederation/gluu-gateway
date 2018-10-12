@@ -48,6 +48,10 @@
 
         if ($scope.context_name) {
           $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
+        } else {
+          $scope.plugins = $scope.plugins.filter(function (item) {
+            return (!(item.service_id || item.route_id || item.api_id))
+          });
         }
 
         $scope.isPluginAdded = false;
@@ -313,7 +317,7 @@
               PluginHelperService.addPlugin(
                 model,
                 function success(res) {
-                  $state.go($scope.context_name + "s");
+                  $state.go(($scope.context_name || "plugin") + "s");
                   MessageService.success('Plugin added successfully!');
                 }, function (err) {
                   $scope.busy = false;
@@ -349,7 +353,7 @@
             function success(res) {
               $scope.busy = false;
               MessageService.success('Plugin updated successfully!');
-              $state.go($scope.context_name + "s"); // return to plugins page if specified
+              $state.go(($scope.context_name || "plugin") + "s"); // return to plugins page if specified
             }, function (err) {
               $log.error("create plugin", err);
               if (err.data.body) {

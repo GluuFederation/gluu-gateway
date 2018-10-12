@@ -42,10 +42,9 @@
               <div class="panel-title">
                 <span class="capitalize">{{key.split('-').join(" ")}}</span>
                 <div class="pull-right">
-                  <button
-                    data-ng-class="{'text-white' : existingPlugins.indexOf(key) > -1, 'btn-primary' : existingPlugins.indexOf(key) < 0}"
-                    class="btn btn-link btn-icon"
-                    angular-ripple data-ng-click="onAddPlugin(key)">
+                  <button data-ng-if="existingPlugins.indexOf(key) < 0"
+                          class="btn btn-link btn-icon btn-primary"
+                          angular-ripple data-ng-click="onAddPlugin(key)">
                     <i class="mdi mdi-plus plugin_i"></i>
                   </button>
                   <i class="mdi mdi-check-all" data-ng-if="existingPlugins.indexOf(key) > -1"></i>

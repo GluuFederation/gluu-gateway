@@ -316,7 +316,7 @@ var AuthController = {
               user.clientSecret = sails.config.clientSecret;
               user.oxdVersion = sails.config.oxdVersion;
 
-              return res.send({
+              return res.status(200).send({
                 user: user,
                 token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)
               });
@@ -353,10 +353,13 @@ var AuthController = {
             return Promise.reject(urlData.data)
           }
 
-          return res.send({authURL: urlData.data.authorization_url});
+          return res.status(200).send({authURL: urlData.data.authorization_url});
         })
         .catch(function (error) {
           console.log(error);
+          if (error.name == 'RequestError') {
+            return res.status(500).send({message: "Failed to connect OXD. Please check your OXD service is running or not."});
+          }
           return res.status(500).send({error: error});
         });
 

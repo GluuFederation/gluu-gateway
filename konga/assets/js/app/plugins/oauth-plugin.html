@@ -35,9 +35,12 @@
                   <div class="input-group">
                     <input ng-attr-type="{{ isShowOXDId ? 'text' : 'password' }}" ng-model="modelPlugin.config.oxd_id"
                            class="form-control">
-                    <a href class="input-group-addon" data-ng-click="isShowOXDId = !isShowOXDId"
+                    <a href class="input-group-addon btn-sm" data-ng-click="isShowOXDId = !isShowOXDId"
                        title="{{isShowOXDId ? 'Hide': 'Show'}}">
-                      <i class="mdi mdi-eye"></i>
+                      <i class="mdi mdi-eye text-primary"></i>
+                    </a>
+                    <a href class="input-group-addon btn-sm" title="Clear" data-ng-click="modelPlugin.config.oxd_id = ''">
+                      <i class="mdi mdi-close text-warning"></i>
                     </a>
                   </div>
                   <p class="help-block">
@@ -59,9 +62,12 @@
                   <div class="input-group">
                     <input ng-attr-type="{{ isShowClientId ? 'text' : 'password' }}"
                            ng-model="modelPlugin.config.client_id" class="form-control"/>
-                    <a href class="input-group-addon" data-ng-click="isShowClientId = !isShowClientId"
+                    <a href class="input-group-addon btn-sm" data-ng-click="isShowClientId = !isShowClientId"
                        title="{{isShowClientId ? 'Hide': 'Show'}}">
-                      <i class="mdi mdi-eye"></i>
+                      <i class="mdi mdi-eye text-primary"></i>
+                    </a>
+                    <a href class="input-group-addon btn-sm" title="Clear" data-ng-click="modelPlugin.config.client_id = ''">
+                      <i class="mdi mdi-close text-warning"></i>
                     </a>
                   </div>
                   <p class="help-block">
@@ -80,9 +86,12 @@
                   <div class="input-group">
                     <input ng-attr-type="{{ isShowClientSecret ? 'text' : 'password' }}"
                            ng-model="modelPlugin.config.client_secret" class="form-control"/>
-                    <a href class="input-group-addon" data-ng-click="isShowClientSecret = !isShowClientSecret"
+                    <a href class="input-group-addon btn-sm" data-ng-click="isShowClientSecret = !isShowClientSecret"
                        title="{{isShowClientSecret ? 'Hide': 'Show'}}">
-                      <i class="mdi mdi-eye"></i>
+                      <i class="mdi mdi-eye text-primary"></i>
+                    </a>
+                    <a href class="input-group-addon btn-sm" title="Clear" data-ng-click="modelPlugin.config.client_secret = ''">
+                      <i class="mdi mdi-close text-warning"></i>
                     </a>
                   </div>
                   <p class="help-block">

@@ -46,9 +46,9 @@
           if (item.name == "gluu-client-auth") {
             if (item.service_id) {
               return $state.go("services.oauth-plugin", {service_id: item.service_id});
-            } else if (plugin.route_id) {
+            } else if (item.route_id) {
               return $state.go("routes.oauth-plugin", {route_id: item.route_id});
-            } else if (plugin.api_id) {
+            } else if (item.api_id) {
               return $state.go("apis.oauth-plugin", {api_id: item.api_id});
             } else {
               return $state.go("plugins.oauth-plugin");
@@ -58,9 +58,9 @@
           if (item.name == "gluu-pep") {
             if (item.service_id) {
               return $state.go("services.uma-plugin", {service_id: item.service_id});
-            } else if (plugin.route_id) {
+            } else if (item.route_id) {
               return $state.go("routes.uma-plugin", {route_id: item.route_id});
-            } else if (plugin.api_id) {
+            } else if (item.api_id) {
               return $state.go("apis.uma-plugin", {api_id: item.api_id});
             } else {
               return $state.go("plugins.uma-plugin");
