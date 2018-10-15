@@ -11,6 +11,42 @@ var httpRequest = require('request-promise');
  */
 module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
+  // Register client
+  registerClient: function (clientRequest) {
+    return new Promise(function (resolve, reject) {
+      // Create new client
+      const option = {
+        method: 'POST',
+        uri: sails.config.oxdWeb + '/register-site',
+        body: {
+          op_host: sails.config.opHost,
+          authorization_redirect_uri: clientRequest.authorization_redirect_uri || 'https://client.example.com/cb',
+          client_name: clientRequest.client_name || 'gg-client',
+          client_id: clientRequest.client_id || '',
+          client_secret: clientRequest.client_secret || '',
+          scope: clientRequest.scope || ['openid', 'uma_protection'],
+          grant_types: clientRequest.grant_types || ['client_credentials'],
+        },
+        resolveWithFullResponse: true,
+        json: true
+      };
+
+      return httpRequest(option)
+        .then(function (response) {
+          var clientInfo = response.body.data;
+          return resolve({
+            oxd_id: clientInfo.oxd_id,
+            client_id: clientInfo.client_id,
+            client_secret: clientInfo.client_secret
+          })
+        })
+        .catch(function (error) {
+          console.log('----- Error Client registration -----', error);
+          return reject(error);
+        });
+    });
+  },
+
   // Get Client info
   getClient: function (req, res) {
     return sails.models.client
@@ -40,23 +76,16 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
     // Create new client
     const option = {
-      method: 'POST',
-      uri: sails.config.oxdWeb + '/register-site',
-      body: {
-        op_host: sails.config.opHost,
-        authorization_redirect_uri: 'https://client.example.com/cb',
-        client_name: req.body.client_name || 'gluu-oauth-client',
-        client_id: req.body.client_id || '',
-        client_secret: req.body.client_secret || '',
-        grant_types: ['client_credentials'],
-      },
-      resolveWithFullResponse: true,
-      json: true
+      op_host: sails.config.opHost,
+      authorization_redirect_uri: 'https://client.example.com/cb',
+      client_name: req.body.client_name || 'gg-oauth-client',
+      client_id: req.body.client_id || '',
+      client_secret: req.body.client_secret || ''
     };
 
-    return httpRequest(option)
+    return this.registerClient(option)
       .then(function (response) {
-        var clientInfo = response.body.data;
+        var clientInfo = response.data;
         return res.send({
           oxd_id: clientInfo.oxd_id,
           client_id: clientInfo.client_id,
@@ -75,7 +104,34 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       return res.status(400).send({message: "uma_scope_expression is required"});
     }
     var opClient;
-    registerClient()
+    var that = this;
+    new Promise(function (resolve, reject) {
+      if (req.body.oxd_id && req.body.client_id && req.body.client_secret) {
+        return resolve({
+          oxd_id: req.body.oxd_id,
+          client_id: req.body.client_id,
+          client_secret: req.body.client_secret
+        })
+      } else {
+        const option = {
+          op_host: sails.config.opHost,
+          authorization_redirect_uri: 'https://client.example.com/cb',
+          client_name: req.body.client_name || 'gg-uma-client',
+          client_id: req.body.client_id || '',
+          client_secret: req.body.client_secret || '',
+          scope: ['openid', 'uma_protection'],
+          grant_types: ['client_credentials'],
+        };
+
+        return that.registerClient(option)
+          .then(function (clientInfo) {
+            return resolve(clientInfo);
+          })
+          .catch(function (error) {
+            return resolve(error);
+          });
+      }
+    })
       .then(function (clientInfo) {
         opClient = clientInfo;
         if (!clientInfo.client_id && !clientInfo.client_secret && !clientInfo.oxd_id) {
@@ -143,52 +199,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         });
       })
       .catch(function (error) {
-        console.log(error);
+        console.log('---- registerClientAndResources ----', error);
         return res.status(500).send(error);
       });
-
-    function registerClient() {
-      return new Promise(function (resolve, reject) {
-        if (req.body.oxd_id && req.body.client_id && req.body.client_secret) {
-          return resolve({
-            oxd_id: req.body.oxd_id,
-            client_id: req.body.client_id,
-            client_secret: req.body.client_secret
-          })
-        }
-
-        // Create new client
-        const option = {
-          method: 'POST',
-          uri: sails.config.oxdWeb + '/register-site',
-          body: {
-            op_host: sails.config.opHost,
-            authorization_redirect_uri: 'https://client.example.com/cb',
-            client_name: req.body.client_name || 'gluu-uma-client',
-            client_id: req.body.client_id || '',
-            client_secret: req.body.client_secret || '',
-            scope: ['openid', 'uma_protection'],
-            grant_types: ['client_credentials'],
-          },
-          resolveWithFullResponse: true,
-          json: true
-        };
-
-        return httpRequest(option)
-          .then(function (response) {
-            var clientInfo = response.body.data;
-            return resolve({
-              oxd_id: clientInfo.oxd_id,
-              client_id: clientInfo.client_id,
-              client_secret: clientInfo.client_secret
-            })
-          })
-          .catch(function (error) {
-            console.log(error);
-            return reject(error);
-          });
-      });
-    }
   },
 
   // Update UMA resources
@@ -240,7 +253,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         var umaProtect = response.body.data;
         if (!umaProtect.oxd_id) {
           console.log("Failed to update resources", response);
-          return res.status(500).send({message: "Failed to update resources"});
+          return Promise.reject({message: "Failed to update resources"});
         }
 
         return sails.models.client
@@ -253,7 +266,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       .then(function (dbClient) {
         if (dbClient.length < 1) {
           console.log("Failed to update client in konga db", dbClient);
-          return res.status(500).send({message: "Failed to update client in konga db"});
+          return Promise.reject({message: "Failed to update client in konga db"});
         }
         return res.status(200).send({
           oxd_id: req.body.oxd_id
@@ -263,5 +276,236 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         console.log(error);
         return res.status(500).send(error);
       });
-  }
+  },
+
+  // add client for consumer
+  addOAuthConsumerClient: function (req, res) {
+    var opClient;
+    // Create new client
+    const option = {
+      op_host: sails.config.opHost,
+      authorization_redirect_uri: 'https://client.example.com/cb',
+      client_name: req.body.client_name || 'gg-oauth-consumer-client',
+      client_id: req.body.client_id || '',
+      client_secret: req.body.client_secret || ''
+    };
+
+    this.registerClient(option)
+      .then(function (clientInfo) {
+        opClient = clientInfo;
+        if (!clientInfo.client_id && !clientInfo.client_secret && !clientInfo.oxd_id) {
+          console.log("Failed to register client", clientInfo);
+          return Promise.reject({message: "Failed to register client"});
+        }
+
+        return sails.models.client
+          .create({
+            oxd_id: clientInfo.oxd_id,
+            client_id: clientInfo.client_id
+          })
+      })
+      .then(function (dbClient) {
+        if (!dbClient.oxd_id) {
+          console.log("Failed to add client and resources in konga db", dbClient);
+          return Promise.reject({message: "Failed to add client and resources in konga db"});
+        }
+
+        return res.status(200).send({
+          oxd_id: dbClient.oxd_id,
+          client_id: opClient.client_id,
+          client_secret: opClient.client_secret
+        });
+      })
+      .catch(function (error) {
+        console.log('--- addOAuthConsumerClient ---', error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // delete consumer client
+  deleteConsumerClient: function (req, res) {
+    var kongaDBClient;
+
+    return sails.models.client
+      .findOne({
+        client_id: req.params.client_id
+      })
+      .then(function (oClient) {
+        kongaDBClient = oClient;
+        if (!oClient) {
+          console.log("Client does not exists in GG.");
+          return Promise.reject({message: "Client does not exists in GG."});
+        }
+
+        var option = {
+          method: 'POST',
+          uri: sails.config.oxdWeb + '/get-client-token',
+          body: {
+            op_host: sails.config.opHost,
+            client_id: sails.config.clientId,
+            client_secret: sails.config.clientSecret,
+            scope: ['openid', 'uma_protection']
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      }).then(function (response) {
+        var clientToken = response.body.data;
+
+        var option = {
+          method: 'POST',
+          uri: sails.config.oxdWeb + '/remove-site',
+          body: {
+            oxd_id: kongaDBClient.oxd_id
+          },
+          headers: {
+            Authorization: 'Bearer ' + clientToken.access_token
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      })
+      .then(function (response) {
+        var deletedClient = response.body.data;
+
+        if (!deletedClient.oxd_id) {
+          console.log('Failed to delete client from oxd', deletedClient);
+          return Promise.reject({message: "Failed to delete client from oxd"});
+        }
+
+        return sails.models.client
+          .remove({
+            oxd_id: deletedClient.oxd_id
+          });
+      })
+      .then(function (deletedClient) {
+        return res.status(200).send(deletedClient);
+      })
+      .catch(function (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // delete client from oxd for client-auth plugin
+  deleteOAuthClient: function (req, res) {
+    var option = {
+      method: 'POST',
+      uri: sails.config.oxdWeb + '/get-client-token',
+      body: {
+        op_host: sails.config.opHost,
+        client_id: sails.config.clientId,
+        client_secret: sails.config.clientSecret,
+        scope: ['openid', 'uma_protection']
+      },
+      resolveWithFullResponse: true,
+      json: true
+    };
+
+    return httpRequest(option)
+      .then(function (response) {
+        var clientToken = response.body.data;
+
+        var option = {
+          method: 'POST',
+          uri: sails.config.oxdWeb + '/remove-site',
+          body: {
+            oxd_id: req.params.oxd_id
+          },
+          headers: {
+            Authorization: 'Bearer ' + clientToken.access_token
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      })
+      .then(function (response) {
+        var deletedClient = response.body.data;
+
+        if (!deletedClient.oxd_id) {
+          console.log('Failed to delete client from oxd', deletedClient);
+          return Promise.reject({message: 'Failed to delete client from oxd'});
+        }
+
+        return res.status(200).send(deletedClient);
+      })
+      .catch(function (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // delete client from oxd for PEP plugin
+  deletePEPClient: function (req, res) {
+    var kongaDBClient;
+
+    return sails.models.client
+      .findOne({
+        oxd_id: req.params.oxd_id
+      })
+      .then(function (oClient) {
+        kongaDBClient = oClient;
+        if (!oClient) {
+          console.log("Client does not exists in GG.");
+          return Promise.reject({message: "Client does not exists in GG."});
+        }
+
+        var option = {
+          method: 'POST',
+          uri: sails.config.oxdWeb + '/get-client-token',
+          body: {
+            op_host: sails.config.opHost,
+            client_id: sails.config.clientId,
+            client_secret: sails.config.clientSecret,
+            scope: ['openid', 'uma_protection']
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      }).then(function (response) {
+        var clientToken = response.body.data;
+
+        var option = {
+          method: 'POST',
+          uri: sails.config.oxdWeb + '/remove-site',
+          body: {
+            oxd_id: kongaDBClient.oxd_id
+          },
+          headers: {
+            Authorization: 'Bearer ' + clientToken.access_token
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        return httpRequest(option);
+      })
+      .then(function (response) {
+        var deletedClient = response.body.data;
+
+        if (!deletedClient.oxd_id) {
+          console.log('Failed to delete client from oxd', deletedClient);
+          return Promise.reject({message: "Failed to delete client from oxd"});
+        }
+        return sails.models.client
+          .remove({
+            oxd_id: deletedClient.oxd_id
+          });
+      })
+      .then(function (deletedClient) {
+        return res.status(200).send(deletedClient);
+      })
+      .catch(function (error) {
+        console.log(error);
+        return res.status(500).send(error);
+      });
+  },
 });

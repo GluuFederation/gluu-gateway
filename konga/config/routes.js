@@ -101,6 +101,10 @@ module.exports.routes = {
   'POST /api/clients/oauth': 'ClientsController.addOAuthClient',
   'POST /api/clients/uma': 'ClientsController.registerClientAndResources',
   'PUT /api/clients/uma': 'ClientsController.updateResources',
+  'POST /api/clients/consumer': 'ClientsController.addOAuthConsumerClient',
+  'DELETE /api/clients/consumer/:client_id': 'ClientsController.deleteConsumerClient',
+  'DELETE /api/clients/oauth/:oxd_id': 'ClientsController.deleteOAuthClient',
+  'DELETE /api/clients/uma/:oxd_id': 'ClientsController.deletePEPClient',
 
   /**
    * Fallback to proxy

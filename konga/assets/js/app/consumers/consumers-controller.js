@@ -21,6 +21,7 @@
         $scope.importConsumers = importConsumers;
         $scope.openCreateConsumerModal = openCreateConsumerModal;
         $scope.openCreateClientModal = openCreateClientModal;
+        $scope.deleteConsumer = deleteConsumer;
         $scope.importClick = false;
         function importConsumers() {
           $scope.importClick = true;
@@ -143,14 +144,14 @@
                 }
 
                 PluginsService
-                  .addOAuthClient($scope.opClient)
+                  .addOAuthConsumerClient($scope.opClient)
                   .then(function (res) {
                     prompt(res.data);
                     MessageService.success("Client created successfully!");
                     close();
                   })
                   .catch(function (err) {
-                    MessageService.success("Failed to create client");
+                    MessageService.error("Failed to create client");
                     $log.error("Failed to create client", err);
                   });
               }
@@ -161,6 +162,41 @@
             },
             controllerAs: '$ctrl',
           })
+        }
+
+        function deleteConsumer(item) {
+          var modalInstance = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            windowClass : 'dialog',
+            template: '' +
+            '<div class="modal-header dialog no-margin">' +
+            '<h5 class="modal-title">CONFIRM</h5>' +
+            '</div>' +
+            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+            '<input type="checkbox" ng-model="doWantDeleteClient"/> delete OP Client?' +
+            '</div>' +
+            '<div class="modal-footer dialog">' +
+            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+            '</div>',
+            controller: function($scope,$uibModalInstance){
+              $scope.doWantDeleteClient = false;
+              $scope.accept =  function() {
+                $uibModalInstance.close($scope.doWantDeleteClient);
+              };
+
+              $scope.decline =  function(){
+                $uibModalInstance.dismiss();
+              };
+            },
+            size: 'sm'
+          });
+
+          modalInstance.result.then(function(doWantDeleteClient) {
+            console.log('' + doWantDeleteClient);
+          });
         }
 
         function prompt(data) {

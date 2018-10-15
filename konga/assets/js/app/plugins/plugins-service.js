@@ -58,6 +58,22 @@
           updateResources: function (data) {
             return $http.put('api/clients/uma', data)
           },
+
+          addOAuthConsumerClient: function (data) {
+            return $http.post('api/clients/consumer', data)
+          },
+
+          deleteConsumerClient: function (client_id) {
+            return $http.delete('api/clients/consumer/' + client_id, data)
+          },
+
+          deleteOAuthClient: function (oxd_id) {
+            return $http.post('api/clients/oauth/' + oxd_id, data)
+          },
+
+          deletePEPClient: function (oxd_id) {
+            return $http.post('api/clients/uma/' + oxd_id, data)
+          },
         }
       }
     ]);
