@@ -147,7 +147,7 @@ return function(conf)
     local method = ngx.req.get_method()
     local path = ngx.var.uri
 
-    local path = helper.get_path_by_request_path_method(conf.protection_document, path, method)
+    local path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
     print(path)
     if not path then
         unexpected_error("Unprotected path")

@@ -133,7 +133,7 @@ test("gluu-pep", function()
 
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
-            protection_document = {
+            uma_scope_expression = {
                 {
                     path = "/",
                     conditions = {
