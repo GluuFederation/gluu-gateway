@@ -37,7 +37,7 @@ local function setup(model)
     kong_utils.docker_unique_network()
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
-            ["gluu-pep"] = host_git_root .. "/gluu-pep/kong/plugins/gluu-pep",
+            ["gluu-pep"] = host_git_root .. "/kong/plugins/gluu-pep",
         },
         modules = {
             ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",

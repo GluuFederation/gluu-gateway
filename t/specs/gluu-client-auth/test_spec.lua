@@ -37,7 +37,7 @@ local function setup(model)
     kong_utils.docker_unique_network()
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
-            ["gluu-client-auth"] = host_git_root .. "/gluu-client-auth/kong/plugins/gluu-client-auth",
+            ["gluu-client-auth"] = host_git_root .. "/kong/plugins/gluu-client-auth",
         },
         modules = {
             ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
@@ -386,7 +386,6 @@ test("check oauth_scope_expression", function()
 
     local consumer_response = JSON:decode(res)
 
-    print "test it work"
     print "test with path /posts"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],

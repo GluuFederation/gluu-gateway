@@ -190,6 +190,8 @@ local function do_authentication(conf)
     end
 
     if conf.allow_oauth_scope_expression then
+        local request_path = ngx.var.uri
+        local request_http_method = ngx.req.get_method()
         kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
         local path_scope_expression = helper.get_expression_by_request_path_method(
             conf.oauth_scope_expression, request_path, request_http_method
