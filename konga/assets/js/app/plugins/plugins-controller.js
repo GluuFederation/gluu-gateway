@@ -4,9 +4,9 @@
   angular.module('frontend.plugins')
     .controller('PluginsController', [
       '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', '$rootScope',
       function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, $rootScope) {
 
         PluginModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('plugin', PluginModel)));
@@ -14,6 +14,8 @@
         $scope.onEditPlugin = onEditPlugin;
         $scope.updatePlugin = updatePlugin;
         $scope.getContext = getContext;
+        $scope.deletePEPClient = deletePEPClient;
+        $scope.deleteOAuthClient = deleteOAuthClient;
 
         /**
          * ----------------------------------------------------------------------
@@ -40,7 +42,6 @@
             $log.error("updatePlugin", err)
           })
         }
-
 
         function onEditPlugin(item) {
           if (item.name == "gluu-client-auth") {
@@ -110,6 +111,120 @@
           } else {
             return 'global'
           }
+        }
+
+        function deletePEPClient(item) {
+          var modalInstance = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            windowClass: 'dialog',
+            template: '' +
+            '<div class="modal-header dialog no-margin">' +
+            '<h5 class="modal-title">CONFIRM</h5>' +
+            '</div>' +
+            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Delete OP Client?</label>' +
+            '</div>' +
+            '<div class="modal-footer dialog">' +
+            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+            '</div>',
+            controller: function ($scope, $uibModalInstance) {
+              $scope.doWantDeleteClient = false;
+              $scope.accept = function () {
+                $uibModalInstance.close($scope.doWantDeleteClient);
+              };
+
+              $scope.decline = function () {
+                $uibModalInstance.dismiss();
+              };
+            },
+            size: 'sm'
+          });
+
+          modalInstance.result.then(function (doWantDeleteClient) {
+            console.log('doWantDeleteClient : ', doWantDeleteClient);
+            PluginsService
+              .delete(item.id)
+              .then(function (cResponse) {
+                MessageService.success("Plugin deleted successfully");
+                $rootScope.$broadcast('plugin.added');
+
+                PluginsService
+                  .deletePEPClient(item.config.oxd_id, doWantDeleteClient)
+                  .then(function (pResponse) {
+                    if (doWantDeleteClient) {
+                      MessageService.success("Client deleted successfully from OXD");
+                    }
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                    MessageService.error((error.data && error.data.message) || "Failed to delete client");
+                  });
+              })
+              .catch(function (error) {
+                console.log(error);
+                MessageService.error((error.data && error.data.message) || "Failed to delete Plugin");
+              });
+          });
+        }
+
+        function deleteOAuthClient(item) {
+          var modalInstance = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            windowClass: 'dialog',
+            template: '' +
+            '<div class="modal-header dialog no-margin">' +
+            '<h5 class="modal-title">CONFIRM</h5>' +
+            '</div>' +
+            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Delete OP Client?</label>' +
+            '</div>' +
+            '<div class="modal-footer dialog">' +
+            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+            '</div>',
+            controller: function ($scope, $uibModalInstance) {
+              $scope.doWantDeleteClient = false;
+              $scope.accept = function () {
+                $uibModalInstance.close($scope.doWantDeleteClient);
+              };
+
+              $scope.decline = function () {
+                $uibModalInstance.dismiss();
+              };
+            },
+            size: 'sm'
+          });
+
+          modalInstance.result.then(function (doWantDeleteClient) {
+            console.log('doWantDeleteClient : ', doWantDeleteClient);
+            PluginsService
+              .delete(item.id)
+              .then(function (cResponse) {
+                MessageService.success("Plugin deleted successfully");
+                $rootScope.$broadcast('plugin.added');
+
+                if (doWantDeleteClient) {
+                  PluginsService
+                    .deleteOAuthClient(item.config.oxd_id)
+                    .then(function (pResponse) {
+                      MessageService.success("Client deleted successfully from OXD");
+                    })
+                    .catch(function (error) {
+                      console.log(error);
+                      MessageService.error((error.data && error.data.message) || "Failed to delete client");
+                    });
+                }
+              })
+              .catch(function (error) {
+                console.log(error);
+                MessageService.error((error.data && error.data.message) || "Failed to delete Plugin");
+              });
+          });
         }
 
         /**

@@ -84,8 +84,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     };
 
     return this.registerClient(option)
-      .then(function (response) {
-        var clientInfo = response.data;
+      .then(function (clientInfo) {
         return res.send({
           oxd_id: clientInfo.oxd_id,
           client_id: clientInfo.client_id,
@@ -359,7 +358,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           };
 
           return httpRequest(option);
-        }).then(function (response) {
+        })
+        .then(function (response) {
           var clientToken = response.body.data;
 
           var option = {
@@ -485,68 +485,98 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   deletePEPClient: function (req, res) {
     var kongaDBClient;
 
+    // doWantDeleteClient=true Delete client from GG and OXD
+    if (req.params.doWantDeleteClient == "true") {
+      return sails.models.client
+        .findOne({
+          oxd_id: req.params.oxd_id
+        })
+        .then(function (oClient) {
+          kongaDBClient = oClient;
+          if (!kongaDBClient) {
+            console.log("Client does not exists in GG");
+            return Promise.reject({message: "Client does not exists in GG"});
+          }
+
+          if (kongaDBClient.oxd_id == sails.config.oxdId) {
+            console.log("Not allow to delete GG Admin login client");
+            return Promise.reject({message: "Not allow to delete GG Admin login client"});
+          }
+
+          var option = {
+            method: 'POST',
+            uri: sails.config.oxdWeb + '/get-client-token',
+            body: {
+              op_host: sails.config.opHost,
+              client_id: sails.config.clientId,
+              client_secret: sails.config.clientSecret,
+              scope: ['openid', 'uma_protection']
+            },
+            resolveWithFullResponse: true,
+            json: true
+          };
+
+          return httpRequest(option);
+        })
+        .then(function (response) {
+          var clientToken = response.body.data;
+
+          var option = {
+            method: 'POST',
+            uri: sails.config.oxdWeb + '/remove-site',
+            body: {
+              oxd_id: kongaDBClient.oxd_id
+            },
+            headers: {
+              Authorization: 'Bearer ' + clientToken.access_token
+            },
+            resolveWithFullResponse: true,
+            json: true
+          };
+
+          return httpRequest(option);
+        })
+        .then(function (response) {
+          var deletedClient = response.body.data;
+
+          if (!deletedClient.oxd_id) {
+            console.log('Failed to delete client from oxd', deletedClient);
+            return Promise.reject({message: "Failed to delete client from oxd"});
+          }
+          return sails.models.client
+            .destroy({
+              oxd_id: deletedClient.oxd_id
+            });
+        })
+        .then(function (deletedClient) {
+          if (deletedClient.length <= 0) {
+            console.log('Failed to delete client from GG', deletedClient);
+            return Promise.reject({message: "Failed to delete client from GG"});
+          }
+
+          return res.status(200).send(deletedClient);
+        })
+        .catch(function (error) {
+          console.log(error);
+          return res.status(500).send(error);
+        });
+    }
+
+    // doWantDeleteClient=false Delete client from GG
     return sails.models.client
       .findOne({
         oxd_id: req.params.oxd_id
       })
       .then(function (oClient) {
-        kongaDBClient = oClient;
-        if (!kongaDBClient) {
-          console.log("Client does not exists in GG");
-          return Promise.reject({message: "Client does not exists in GG"});
+        if (oClient) {
+          // delete client from GG
+          sails.models.client
+            .destroy({oxd_id: oClient.oxd_id})
+            .then(function (deleteClient) {
+              console.log('deleteClient:', deleteClient);
+            });
         }
-
-        if (kongaDBClient.oxd_id == sails.config.oxdId) {
-          console.log("Not allow to delete GG Admin login client");
-          return Promise.reject({message: "Not allow to delete GG Admin login client"});
-        }
-
-        var option = {
-          method: 'POST',
-          uri: sails.config.oxdWeb + '/get-client-token',
-          body: {
-            op_host: sails.config.opHost,
-            client_id: sails.config.clientId,
-            client_secret: sails.config.clientSecret,
-            scope: ['openid', 'uma_protection']
-          },
-          resolveWithFullResponse: true,
-          json: true
-        };
-
-        return httpRequest(option);
-      }).then(function (response) {
-        var clientToken = response.body.data;
-
-        var option = {
-          method: 'POST',
-          uri: sails.config.oxdWeb + '/remove-site',
-          body: {
-            oxd_id: kongaDBClient.oxd_id
-          },
-          headers: {
-            Authorization: 'Bearer ' + clientToken.access_token
-          },
-          resolveWithFullResponse: true,
-          json: true
-        };
-
-        return httpRequest(option);
-      })
-      .then(function (response) {
-        var deletedClient = response.body.data;
-
-        if (!deletedClient.oxd_id) {
-          console.log('Failed to delete client from oxd', deletedClient);
-          return Promise.reject({message: "Failed to delete client from oxd"});
-        }
-        return sails.models.client
-          .remove({
-            oxd_id: deletedClient.oxd_id
-          });
-      })
-      .then(function (deletedClient) {
-        return res.status(200).send(deletedClient);
+        return res.status(200).send();
       })
       .catch(function (error) {
         console.log(error);

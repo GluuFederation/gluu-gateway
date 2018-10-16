@@ -68,11 +68,11 @@
           },
 
           deleteOAuthClient: function (oxd_id) {
-            return $http.post('api/clients/oauth/' + oxd_id)
+            return $http.delete('api/clients/oauth/' + oxd_id)
           },
 
-          deletePEPClient: function (oxd_id) {
-            return $http.post('api/clients/uma/' + oxd_id)
+          deletePEPClient: function (oxd_id, doWantDeleteClient) {
+            return $http.delete('api/clients/uma/' + oxd_id + '/' + doWantDeleteClient)
           },
         }
       }
