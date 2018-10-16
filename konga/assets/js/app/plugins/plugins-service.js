@@ -63,16 +63,16 @@
             return $http.post('api/clients/consumer', data)
           },
 
-          deleteConsumerClient: function (client_id) {
-            return $http.delete('api/clients/consumer/' + client_id, data)
+          deleteConsumerClient: function (client_id, doWantDeleteClient) {
+            return $http.delete('api/clients/consumer/' + client_id + '/' + doWantDeleteClient)
           },
 
           deleteOAuthClient: function (oxd_id) {
-            return $http.post('api/clients/oauth/' + oxd_id, data)
+            return $http.post('api/clients/oauth/' + oxd_id)
           },
 
           deletePEPClient: function (oxd_id) {
-            return $http.post('api/clients/uma/' + oxd_id, data)
+            return $http.post('api/clients/uma/' + oxd_id)
           },
         }
       }
