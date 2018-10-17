@@ -165,16 +165,48 @@
 
 
         $scope.deleteSnapshot = function deleteSnapshot(snapshot) {
+          var modalInstance = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            windowClass: 'dialog',
+            template: '' +
+            '<div class="modal-header dialog no-margin">' +
+            '<h5 class="modal-title">CONFIRM</h5>' +
+            '</div>' +
+            '<div class="modal-body">Do you want to delete the selected item?' +
+            '</div>' +
+            '<div class="modal-footer dialog">' +
+            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+            '</div>',
+            controller: function ($scope, $uibModalInstance) {
+              $scope.accept = function () {
+                $uibModalInstance.close(true);
+              };
 
-          Snapshot
-            .delete(snapshot.id)
-            .then(
-              function onSuccess(data) {
+              $scope.decline = function () {
+                $uibModalInstance.dismiss();
+              };
+            },
+            size: 'sm'
+          });
+
+          modalInstance.result.then(function (doWantDeleteClient) {
+            if (!doWantDeleteClient) {
+              return;
+            }
+
+            Snapshot
+              .delete(snapshot.id)
+              .then(function onSuccess(data) {
                 MessageService.success('Snapshot deleted successfully');
                 _triggerFetchData()
-              }
-            )
-          ;
+              })
+              .catch(function (error) {
+                MessageService.error('Failed to delete Snapshot');
+              });
+          });
         };
 
 
