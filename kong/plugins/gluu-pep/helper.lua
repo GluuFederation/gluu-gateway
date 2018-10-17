@@ -1,4 +1,3 @@
-local oxd = require "oxdweb"
 local pl_tablex = require "pl.tablex"
 
 local _M = {}

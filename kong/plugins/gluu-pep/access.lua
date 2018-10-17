@@ -1,6 +1,6 @@
 local oxd = require "oxdweb"
 local helper = require "kong.plugins.gluu-pep.helper"
-local pl_types = require "pl.types"
+
 -- we don't store our token in lrucache - we don't want it be pushed out
 local access_token
 local access_token_expire = 0
@@ -148,9 +148,12 @@ return function(conf)
     local path = ngx.var.uri
 
     local path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
-    print(path)
+    kong.log.debug("resource path: ", path)
     if not path then
-        unexpected_error("Unprotected path")
+        if conf.allow_unprotected_path then
+            return -- access granted
+        end
+        return kong.response.exit(403, "Unauthorized")
     end
 
     if not token then
@@ -164,7 +167,7 @@ return function(conf)
                 ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]
             })
         end
-        -- access == "granted", without RPT token, what shall we do?
+        unexpected_error("check_access without RPT token, responds with access == \"granted\"")
     end
 
     local body, stale_data = worker_cache:get(build_cache_key(token))
