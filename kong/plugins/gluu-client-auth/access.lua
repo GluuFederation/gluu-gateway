@@ -126,7 +126,6 @@ local function do_authentication(conf)
     -- Hide credentials
     kong.log.debug("hide_credentials: ", conf.hide_credentials)
     if conf.hide_credentials then
-        kong.ctx.shared.authorization_token = token
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
     end

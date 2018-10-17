@@ -68,11 +68,11 @@ local function get_token(authorization)
     return nil
 end
 
-local function build_cache_key(token)
+local function build_cache_key(token, path)
     local t = {
         token,
         ":",
-        ngx.var.uri,
+        path,
         ":",
         ngx.req.get_method()
     }
@@ -139,6 +139,14 @@ local function try_introspect_rpt(conf, token)
     unexpected_error("introspect_rpt() responds with unexpected status: ", status)
 end
 
+local function hide_credentials(conf)
+    if not conf.hide_credentials then
+        return
+    end
+    kong.log.debug("Hide authorization header")
+    kong.service.request.clear_header("authorization")
+end
+
 
 return function(conf)
     local authorization = ngx.var.http_authorization
@@ -151,7 +159,7 @@ return function(conf)
     kong.log.debug("resource path: ", path)
     if not path then
         if conf.allow_unprotected_path then
-            return -- access granted
+            return hide_credentials(conf)-- access granted
         end
         return kong.response.exit(403, "Unauthorized")
     end
@@ -170,11 +178,12 @@ return function(conf)
         unexpected_error("check_access without RPT token, responds with access == \"granted\"")
     end
 
-    local body, stale_data = worker_cache:get(build_cache_key(token))
+    local cache_key = build_cache_key(token, path)
+    local body, stale_data = worker_cache:get(cache_key)
     if body and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
-        return
+        return hide_credentials(conf)
     end
 
     get_protection_token(conf)
@@ -187,11 +196,11 @@ return function(conf)
     local check_access_response = try_check_access(conf, path, method, token)
 
     if check_access_response.access == "granted" then
-        worker_cache:set(build_cache_key(token),
+        worker_cache:set(cache_key,
              introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
         )
 
-        return -- access granted
+        return hide_credentials(conf) -- access granted
     end
     -- access == "denied"
     return kong.response.exit(403)
