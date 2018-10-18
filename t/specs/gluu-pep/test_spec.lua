@@ -122,6 +122,7 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
+
 test("gluu-pep", function()
     setup("oxd-model1.lua")
 
@@ -143,7 +144,7 @@ test("gluu-pep", function()
                     }
                 },
                 {
-                    path = "/post",
+                    path = "/posts",
                     conditions = {
                         {
                             httpMethods = {"POST"},
@@ -166,6 +167,58 @@ test("gluu-pep", function()
     local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
 
+    -- posts: request with wrong token
+    local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS_INVALID_1234567890']])
+    assert(stdout:find("403"), 1, true)
+
+    -- posts: request
+    local _, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS1234567890']])
+
+    -- posts: plugin shouldn't call oxd, must use cache
+    local _, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS1234567890']])
+
+    -- todos: not register then apply rules under path / with same token `1234567890`
+    local _, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
 
     ctx.print_logs = false
+end)
+
+test("gluu-pep allow_unprotected_path = true", function()
+    setup("oxd-model2.lua")
+
+    local create_service_response = configure_service_route()
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            uma_scope_expression = {
+                {
+                    path = "/posts",
+                    conditions = {
+                        {
+                            httpMethods = {"GET"},
+                        }
+                    }
+                }
+            },
+            allow_unprotected_path = true,
+        }
+    )
+
+    -- posts: request to protected path
+    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
+    assert(stdout:find("401"), 1, true)
+    assert(stdout:find("ticket"), 1, true)
+
+    -- /todos: request to not protected
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' ]]
+    )
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)

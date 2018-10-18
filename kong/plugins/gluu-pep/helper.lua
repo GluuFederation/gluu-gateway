@@ -7,6 +7,10 @@ local _M = {}
 -- @param register_path: Example: "/posts"
 -- @return boolean
 function _M.is_path_match(request_path, register_path)
+    if register_path == "/" then
+        return true
+    end
+
     if request_path == nil then
         return false
     end

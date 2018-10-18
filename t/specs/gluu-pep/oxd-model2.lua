@@ -65,106 +65,7 @@ model = {
             expires_in = 299,
         }
     },
-    -- #4, plugin check_access with empty RPT, "/", GET
-    {
-        expect = "/uma-rs-check-access",
-        required_fields = {
-            "oxd_id",
-            "rpt",
-            "path",
-            "http_method",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(token == model[3].response.access_token, 403)
-            assert(json.path == "/")
-            assert(json.http_method == "GET")
-            assert(json.rpt == "")
-        end,
-        response = {
-            access = "denied",
-            ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
-        },
-    },
-    -- #5, plugin check_access with RPT, "/", GET
-    {
-        expect = "/introspect-rpt",
-        required_fields = {
-            "oxd_id",
-            "rpt",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(token == model[3].response.access_token, 403)
-            assert(json.rpt ~= "")
-        end,
-        response = {
-            active = true,
-        },
-        response_callback = function(response)
-            response.iat = ngx.now()
-            response.exp = ngx.now() + 60 * 60
-            return response
-        end,
-    },
-    -- #6, plugin check_access with RPT, "/", GET
-    {
-        expect = "/uma-rs-check-access",
-        required_fields = {
-            "oxd_id",
-            "rpt",
-            "path",
-            "http_method",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(token == model[3].response.access_token, 403)
-            assert(json.path == "/")
-            assert(json.http_method == "GET")
-            assert(json.rpt == "1234567890")
-        end,
-        response = {
-            access = "granted",
-        },
-    },
-    -- #7, plugin check_access with wrong RPT, "/posts", POST
-    {
-        expect = "/introspect-rpt",
-        required_fields = {
-            "oxd_id",
-            "rpt",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(token == model[3].response.access_token, 403)
-            assert(json.rpt ~= "")
-        end,
-        response = {
-            active = false,
-        }
-    },
-    -- #8, plugin check_access with valid RPT, "/posts", POST
-    {
-        expect = "/introspect-rpt",
-        required_fields = {
-            "oxd_id",
-            "rpt",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(token == model[3].response.access_token, 403)
-            assert(json.rpt ~= "")
-        end,
-        response = {
-            active = true,
-        },
-        response_callback = function(response)
-            response.iat = ngx.now()
-            response.exp = ngx.now() + 60 * 60
-            return response
-        end,
-    },
-    -- #9, plugin check_access with RPT, "/posts", POST
+    -- #4, plugin check_access with empty RPT, "/posts", GET
     {
         expect = "/uma-rs-check-access",
         required_fields = {
@@ -177,11 +78,12 @@ model = {
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[3].response.access_token, 403)
             assert(json.path == "/posts")
-            assert(json.http_method == "POST")
-            assert(json.rpt == "POSTS1234567890")
+            assert(json.http_method == "GET")
+            assert(json.rpt == "")
         end,
         response = {
-            access = "granted",
+            access = "denied",
+            ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
         },
     },
 }

@@ -155,7 +155,7 @@ return function(conf)
     local method = ngx.req.get_method()
     local path = ngx.var.uri
 
-    local path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
+    path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
     kong.log.debug("resource path: ", path)
     if not path then
         if conf.allow_unprotected_path then
