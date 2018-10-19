@@ -97,7 +97,7 @@ function _M.get_expression_by_request_path_method(exp, request_path, method)
         for k = 1, #conditions do
             local rule = conditions[k]
             if pl_tablex.find(rule.httpMethods, method) then
-                return rule.scope_expression
+                return rule.scope_expression, found_paths[i].path
             end
         end
     end
