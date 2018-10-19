@@ -215,7 +215,7 @@ local function do_authentication(conf)
         if not scope_expression then
             if conf.allow_unprotected_path then
                 kong.log.info("Path is not proteced, but allow_unprotected_path")
-                worker_cache:set(build_cache_key(token, request_path, request_http_method), body.exp - body.iat)
+                worker_cache:set(build_cache_key(token, request_path, request_http_method), body, body.exp - body.iat)
                 set_consumer(body.consumer, body.client_id, body.exp)
                 return 200
             else

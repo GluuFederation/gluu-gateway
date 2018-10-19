@@ -205,6 +205,7 @@ test("gluu-pep allow_unprotected_path = true", function()
                 }
             },
             allow_unprotected_path = true,
+            hide_credentials = true
         }
     )
 
@@ -213,6 +214,16 @@ test("gluu-pep allow_unprotected_path = true", function()
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
     assert(stdout:find("401"), 1, true)
     assert(stdout:find("ticket"), 1, true)
+
+    -- posts: request and check hide_credential
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert.equal(nil, stdout:lower():find("authorization: "))
+
+    -- plugin shouldn't call oxd, must use cache
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert.equal(nil, stdout:lower():find("authorization: "))
 
     -- /todos: request to not protected
     local res, err = sh_ex(

@@ -86,6 +86,47 @@ model = {
             ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
         },
     },
+    -- #5, plugin check_access with RPT, "/posts", GET
+    {
+        expect = "/introspect-rpt",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[3].response.access_token, 403)
+            assert(json.rpt ~= "")
+        end,
+        response = {
+            active = true,
+        },
+        response_callback = function(response)
+            response.iat = ngx.now()
+            response.exp = ngx.now() + 60 * 60
+            return response
+        end,
+    },
+    -- #6, plugin check_access with RPT, "/posts", GET
+    {
+        expect = "/uma-rs-check-access",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+            "path",
+            "http_method",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[3].response.access_token, 403)
+            assert(json.path == "/posts")
+            assert(json.http_method == "GET")
+            assert(json.rpt == "1234567890")
+        end,
+        response = {
+            access = "granted",
+        },
+    },
 }
 
 return model
