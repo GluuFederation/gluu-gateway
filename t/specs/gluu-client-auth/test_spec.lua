@@ -300,6 +300,30 @@ test("check oauth_scope_expression", function()
         {
             oauth_scope_expression = {
                 {
+                    path = "/",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "DELETE",
+                                "POST"
+                            }
+                        }
+                    }
+                },
+                {
                     path = "/posts",
                     conditions = {
                         {
@@ -399,6 +423,21 @@ test("check oauth_scope_expression", function()
     print "test with path /todos"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test with path /todos, second time request, plugin shouldn't call oxd, must use cache"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test with path /"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test with path /photos, not register then apply rules under path /. plugin shouldn't call oxd, must use cache because / path is already authenticated. "
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/photos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
 
     -- ctx.print_logs = false -- comment it out if want to see logs

@@ -173,7 +173,7 @@ local function do_authentication(conf)
     if not consumer then
         local consumer_local, err = kong.db.consumers:select_by_custom_id(body.client_id)
         if not consumer_local and not err then
-            err = 'consumer with custom_id "' .. custom_id .. '" not found'
+            err = 'consumer with custom_id "' .. body.client_id .. '" not found'
         end
         if err then
             return unexpected_error("select_by_custom_id error: ", err)
