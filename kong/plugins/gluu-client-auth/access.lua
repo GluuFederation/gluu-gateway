@@ -75,6 +75,7 @@ local function get_protection_token(conf)
     local now = ngx.now()
     kong.log.debug("Current datetime: ", now, " access_token_expire: ", access_token_expire)
     if not access_token or access_token_expire < now + EXPIRE_DELTA then
+        -- TODO possible race condition when access_token == nil
         access_token_expire = access_token_expire + EXPIRE_DELTA -- avoid multiple token requests
         local response = oxd.get_client_token(conf.oxd_url,
             {
@@ -104,16 +105,13 @@ local function get_protection_token(conf)
     end
 end
 
-local function build_cache_key(token, allow_oauth_scope_expression)
-    if not allow_oauth_scope_expression then
-        return token
-    end
+local function build_cache_key(token, path, method)
     local t = {
         token,
         ":",
-        ngx.var.uri,
+        path,
         ":",
-        ngx.req.get_method()
+        method
     }
     return table.concat(t)
 end
@@ -121,13 +119,10 @@ end
 local function do_authentication(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
-    local request_path = ngx.var.uri
-    local request_http_method = ngx.req.get_method()
 
     -- Hide credentials
     kong.log.debug("hide_credentials: ", conf.hide_credentials)
     if conf.hide_credentials then
-        kong.ctx.shared.authorization_token = token
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
     end
@@ -136,7 +131,33 @@ local function do_authentication(conf)
         return 401, "Failed to get bearer token from Authorization header"
     end
 
-    local body, stale_data = worker_cache:get(build_cache_key(token, conf.allow_oauth_scope_expression))
+    local request_path = ngx.var.uri
+    local request_http_method = ngx.req.get_method()
+    local scope_expression, protected_path
+    local body, stale_data
+    kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
+    if conf.allow_oauth_scope_expression then
+        scope_expression, protected_path = helper.get_expression_by_request_path_method(
+            conf.oauth_scope_expression, request_path, request_http_method
+        )
+        if scope_expression then
+            body, stale_data = worker_cache:get(
+                build_cache_key(token, protected_path, request_http_method)
+            )
+        else
+            if not conf.allow_unprotected_path then
+                kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
+                return 403, "Path/method is not protected with scope expression"
+            end
+
+            body, stale_data = worker_cache:get(
+                build_cache_key(token, request_path, request_http_method)
+            )
+        end
+    else
+        body, stale_data = worker_cache:get(token)
+    end
+
     if body and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
@@ -175,7 +196,7 @@ local function do_authentication(conf)
     if not consumer then
         local consumer_local, err = kong.db.consumers:select_by_custom_id(body.client_id)
         if not consumer_local and not err then
-            err = 'consumer with custom_id "' .. custom_id .. '" not found'
+            err = 'consumer with custom_id "' .. body.client_id .. '" not found'
         end
         if err then
             return unexpected_error("select_by_custom_id error: ", err)
@@ -191,28 +212,23 @@ local function do_authentication(conf)
     end
 
     if conf.allow_oauth_scope_expression then
-        kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
-        local path_scope_expression = helper.get_expression_by_request_path_method(
-            conf.oauth_scope_expression, request_path, request_http_method
-        )
-        if pl_types.is_empty(path_scope_expression) then
+        if not scope_expression then
             if conf.allow_unprotected_path then
                 kong.log.info("Path is not proteced, but allow_unprotected_path")
-                worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression), body.exp - body.iat)
+                worker_cache:set(build_cache_key(token, request_path, request_http_method), body, body.exp - body.iat)
                 set_consumer(body.consumer, body.client_id, body.exp)
                 return 200
             else
-                kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
-                return 403, "Path/method is not protected with scope expression"
+                error("this should be never reached, because must be handled early")
             end
         end
 
-        if not helper.check_json_expression(path_scope_expression, body.scope) then
+        if not helper.check_scope_expression(scope_expression, body.scope) then
             -- TODO should we cache negative result?
             kong.log.debug("Not authorized for this path/method")
             return 403, "You are not authorized for this path/method"
         end
-        worker_cache:set(build_cache_key(token, conf.allow_oauth_scope_expression), body.exp - body.iat)
+        worker_cache:set(build_cache_key(token, protected_path, request_http_method), body, body.exp - body.iat)
     else
         worker_cache:set(token, body, body.exp - body.iat)
     end

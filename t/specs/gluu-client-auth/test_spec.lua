@@ -37,7 +37,7 @@ local function setup(model)
     kong_utils.docker_unique_network()
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
-            ["gluu-client-auth"] = host_git_root .. "/gluu-client-auth/kong/plugins/gluu-client-auth",
+            ["gluu-client-auth"] = host_git_root .. "/kong/plugins/gluu-client-auth",
         },
         modules = {
             ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
@@ -251,7 +251,7 @@ test("allow_unprotected_path = false", function()
 end)
 
 
-test("allow_unprotected_path = true", function()
+test("allow_unprotected_path = true, hide_credentials = true", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -266,6 +266,7 @@ test("allow_unprotected_path = true", function()
             oauth_scope_expression = {},
             allow_oauth_scope_expression = true,
             allow_unprotected_path = true,
+            hide_credentials = true
         }
     )
 
@@ -276,12 +277,29 @@ test("allow_unprotected_path = true", function()
 
     local consumer_response = JSON:decode(res)
 
-    print"test it work"
+    print"test with unprotected path"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
-        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+    assert.equal(nil, res:lower():find("authorization: "))
+
+    print"test with unprotected path second time, plugin shouldn't call oxd, must use cache"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+    assert.equal(nil, res:lower():find("authorization: "))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
@@ -299,6 +317,30 @@ test("check oauth_scope_expression", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {
+                {
+                    path = "/",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "DELETE",
+                                "POST"
+                            }
+                        }
+                    }
+                },
                 {
                     path = "/posts",
                     conditions = {
@@ -386,21 +428,76 @@ test("check oauth_scope_expression", function()
 
     local consumer_response = JSON:decode(res)
 
-    print "test it work"
     print "test with path /posts"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
 
     print "test with path /comments"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/comments --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
 
     print "test with path /todos"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
 
+    print "test with path /todos, second time request, plugin shouldn't call oxd, must use cache"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print "test with path /"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print "test with path /, second time request, plugin shouldn't call oxd, must use cache"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print "test with path /photos, not register then apply rules under path /. plugin shouldn't call oxd, must use cache because / path is already authenticated. "
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/photos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print "test with path /photos, second time request, plugin shouldn't call oxd, must use cache"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/photos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
     -- ctx.print_logs = false -- comment it out if want to see logs
 end)

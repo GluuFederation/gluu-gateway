@@ -1,5 +1,4 @@
 local logic = require('rucciva.json_logic')
-local pl_types = require "pl.types"
 local pl_tablex = require "pl.tablex"
 local _M = {}
 local array_mt = {}
@@ -33,7 +32,7 @@ end
 -- @param scope_expression: example: { rule = { ["or"] = { { var = 0 }, { var = 1 }, { ["!"] = { { var = 2 } } } } }, data = { "admin", "hrr", "employee" } }
 -- @param data: Array of scopes example: { "admin", "hrr" }
 -- @return true or false
-function _M.check_json_expression(scope_expression, requested_scopes)
+function _M.check_scope_expression(scope_expression, requested_scopes)
     scope_expression = scope_expression or {}
     kong.log.inspect(scope_expression)
     local data = {}
@@ -50,20 +49,32 @@ end
 -- @param register_path: Example: "/posts"
 -- @return boolean
 function _M.is_path_match(request_path, register_path)
-    if request_path == nil then
+    assert(request_path)
+    assert(register_path)
+
+    if register_path == "/" then
+        return true
+    end
+
+    if request_path == register_path then
+        return true
+    end
+
+    local register_path_len = #register_path
+    -- check is register_path a prefix of request_path
+    if register_path ~= request_path:sub(1, register_path_len) then
         return false
     end
 
-    if register_path == nil then
-        return false
+    -- check that prefix match is not partial
+    if request_path:sub(register_path_len + 1, register_path_len + 1) == "/" then
+        return true
     end
 
-    local start, last = request_path:find(register_path)
-    if start == nil or last == nil or start ~= 1 then
-        return false
-    end
+    -- we cannot have '?' in request_path, because we get it from ngx.var.uri
+    -- it doesn't contain arguments
 
-    return request_path == register_path or string.sub(request_path, start, last + 1) == register_path .. "/" or string.sub(request_path, start, last + 1) == register_path .. "?"
+    return false
 end
 
 --- Fetch oauth scope expression based on path and http methods
@@ -74,20 +85,20 @@ end
 -- @return json expression Example: {path: "/posts", ...}
 function _M.get_expression_by_request_path_method(exp, request_path, method)
     -- TODO the complexity is O(N), think how to optimize
-    local found_path_condition
+    local found_paths = {}
     for i = 1, #exp do
         if _M.is_path_match(request_path, exp[i]["path"]) then
-            found_path_condition = exp[i]["conditions"]
+            found_paths[#found_paths + 1] = exp[i]
         end
     end
-    if not found_path_condition then
-        return
-    end
 
-    for i = 1, #found_path_condition do
-        local rule = found_path_condition[i]
-        if pl_tablex.find(rule.httpMethods, method) then
-            return rule.scope_expression
+    for i = 1, #found_paths do
+        local conditions = found_paths[i].conditions
+        for k = 1, #conditions do
+            local rule = conditions[k]
+            if pl_tablex.find(rule.httpMethods, method) then
+                return rule.scope_expression, found_paths[i].path
+            end
         end
     end
 

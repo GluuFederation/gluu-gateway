@@ -92,7 +92,7 @@ _M.kong_postgress_custom_plugins = function(opts)
     check_container_is_running(ctx.postgress_id, "postgress")
 
     -- TODO use Postgress client and try to connect
-    sleep(10)
+    sleep(30)
 
     local plugins = opts.plugins or {}
     local modules = opts.modules or {}
