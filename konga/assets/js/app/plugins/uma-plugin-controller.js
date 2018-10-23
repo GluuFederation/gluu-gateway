@@ -36,11 +36,9 @@
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
-            oxd_id: $scope.globalInfo.oxdId,
-            client_id: $scope.globalInfo.clientId,
-            client_secret: $scope.globalInfo.clientSecret,
             uma_scope_expression: [],
-            allow_unprotected_path: false
+            allow_unprotected_path: false,
+            hide_credentials: false
           }
         };
 
