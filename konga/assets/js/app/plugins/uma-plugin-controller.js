@@ -356,6 +356,8 @@
           PluginsService
             .updateResources({
               oxd_id: model.config.oxd_id || null,
+              client_id: model.config.client_id || null,
+              client_secret: model.config.client_secret || null,
               uma_scope_expression: model.config.uma_scope_expression
             })
             .then(function (response) {

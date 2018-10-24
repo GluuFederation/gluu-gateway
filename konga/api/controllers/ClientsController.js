@@ -24,7 +24,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           client_name: clientRequest.client_name || 'gg-client',
           client_id: clientRequest.client_id || '',
           client_secret: clientRequest.client_secret || '',
-          scope: clientRequest.scope || ['openid', 'uma_protection'],
+          scope: clientRequest.scope || ['openid', 'oxd'],
           grant_types: clientRequest.grant_types || ['client_credentials'],
         },
         resolveWithFullResponse: true,
@@ -33,7 +33,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
       return httpRequest(option)
         .then(function (response) {
-          var clientInfo = response.body.data;
+          var clientInfo = response.body;
           return resolve({
             oxd_id: clientInfo.oxd_id,
             client_id: clientInfo.client_id,
@@ -118,7 +118,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           client_name: req.body.client_name || 'gg-uma-client',
           client_id: req.body.client_id || '',
           client_secret: req.body.client_secret || '',
-          scope: ['openid', 'uma_protection'],
+          scope: ['openid', 'oxd', 'uma_protection'],
           grant_types: ['client_credentials'],
         };
 
@@ -143,9 +143,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           uri: sails.config.oxdWeb + '/get-client-token',
           body: {
             op_host: sails.config.opHost,
-            client_id: sails.config.clientId,
-            client_secret: sails.config.clientSecret,
-            scope: ['openid', 'uma_protection']
+            client_id: opClient.client_id,
+            client_secret: opClient.client_secret,
+            scope: ['openid', 'oxd']
           },
           resolveWithFullResponse: true,
           json: true
@@ -154,7 +154,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option);
       })
       .then(function (response) {
-        var clientToken = response.body.data;
+        var clientToken = response.body;
         var option = {
           method: 'POST',
           uri: sails.config.oxdWeb + '/uma-rs-protect',
@@ -172,7 +172,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option);
       })
       .then(function (response) {
-        var umaProtect = response.body.data;
+        var umaProtect = response.body;
         if (!umaProtect.oxd_id) {
           console.log("Failed to register resources", response);
           return Promise.reject({message: "Failed to register resources"});
@@ -215,14 +215,24 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       return res.status(500).send({message: "Provide oxd_id to update resources"});
     }
 
+    if (!req.body.client_id) {
+      console.log("Provide client_id to update resources");
+      return res.status(500).send({message: "Provide client_id to update resources"});
+    }
+
+    if (!req.body.client_secret) {
+      console.log("Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide client_secret to update resources"});
+    }
+
     var option = {
       method: 'POST',
       uri: sails.config.oxdWeb + '/get-client-token',
       body: {
         op_host: sails.config.opHost,
-        client_id: sails.config.clientId,
-        client_secret: sails.config.clientSecret,
-        scope: ['openid', 'uma_protection']
+        client_id: req.body.client_id,
+        client_secret: req.body.client_secret,
+        scope: ['openid', 'oxd']
       },
       resolveWithFullResponse: true,
       json: true
@@ -230,7 +240,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
     return httpRequest(option)
       .then(function (response) {
-        var clientToken = response.body.data;
+        var clientToken = response.body;
         var option = {
           method: 'POST',
           uri: sails.config.oxdWeb + '/uma-rs-protect',
@@ -249,7 +259,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option);
       })
       .then(function (response) {
-        var umaProtect = response.body.data;
+        var umaProtect = response.body;
         if (!umaProtect.oxd_id) {
           console.log("Failed to update resources", response);
           return Promise.reject({message: "Failed to update resources"});
@@ -300,7 +310,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return sails.models.client
           .create({
             oxd_id: clientInfo.oxd_id,
-            client_id: clientInfo.client_id
+            client_id: clientInfo.client_id,
+            client_secret: clientInfo.client_secret
           })
       })
       .then(function (dbClient) {
@@ -349,9 +360,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             uri: sails.config.oxdWeb + '/get-client-token',
             body: {
               op_host: sails.config.opHost,
-              client_id: sails.config.clientId,
-              client_secret: sails.config.clientSecret,
-              scope: ['openid', 'uma_protection']
+              client_id: kongaDBClient.client_id,
+              client_secret: kongaDBClient.client_decret,
+              scope: ['openid', 'oxd']
             },
             resolveWithFullResponse: true,
             json: true
@@ -360,7 +371,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return httpRequest(option);
         })
         .then(function (response) {
-          var clientToken = response.body.data;
+          var clientToken = response.body;
 
           var option = {
             method: 'POST',
@@ -378,7 +389,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return httpRequest(option);
         })
         .then(function (response) {
-          var deletedClient = response.body.data;
+          var deletedClient = response.body;
 
           if (!deletedClient.oxd_id) {
             console.log('Failed to delete client from OXD', deletedClient);
@@ -435,7 +446,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         op_host: sails.config.opHost,
         client_id: sails.config.clientId,
         client_secret: sails.config.clientSecret,
-        scope: ['openid', 'uma_protection']
+        scope: ['openid', 'oxd']
       },
       resolveWithFullResponse: true,
       json: true
@@ -443,7 +454,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
     return httpRequest(option)
       .then(function (response) {
-        var clientToken = response.body.data;
+        var clientToken = response.body;
 
         if (req.params.oxd_id == sails.config.oxdId) {
           console.log("Not allow to delete GG Admin login client");
@@ -466,7 +477,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option);
       })
       .then(function (response) {
-        var deletedClient = response.body.data;
+        var deletedClient = response.body;
 
         if (!deletedClient.oxd_id) {
           console.log('Failed to delete client from oxd', deletedClient);
@@ -510,7 +521,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
               op_host: sails.config.opHost,
               client_id: sails.config.clientId,
               client_secret: sails.config.clientSecret,
-              scope: ['openid', 'uma_protection']
+              scope: ['openid', 'oxd']
             },
             resolveWithFullResponse: true,
             json: true
@@ -519,7 +530,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return httpRequest(option);
         })
         .then(function (response) {
-          var clientToken = response.body.data;
+          var clientToken = response.body;
 
           var option = {
             method: 'POST',
@@ -537,7 +548,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return httpRequest(option);
         })
         .then(function (response) {
-          var deletedClient = response.body.data;
+          var deletedClient = response.body;
 
           if (!deletedClient.oxd_id) {
             console.log('Failed to delete client from oxd', deletedClient);
