@@ -42,7 +42,7 @@ class KongSetup(object):
         self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'gluu-oauth2-rs,gluu-oauth2-client-auth'
+        self.kongCustomPlugins = 'gluu-pep,gluu-client-auth'
 
         self.oxdLicense = ''
 
@@ -112,11 +112,6 @@ class KongSetup(object):
         self.ggVersion = '4.0.0'
 
         # oxd licence configuration
-        self.oxdHost = ''
-        self.oxdServerLicenseId = ''
-        self.oxdServerPublicKey = ''
-        self.oxdServerPublicPassword = ''
-        self.oxdServerLicensePassword = ''
         self.oxdServerAuthorizationRedirectUri = ''
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
@@ -152,6 +147,7 @@ class KongSetup(object):
         # third party lua library
         self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
         self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
+        self.lrucacheFilesPath = '%s/third-party/lua-resty-lrucache/lib/resty' % self.distGluuGatewayFolder
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -168,20 +164,11 @@ class KongSetup(object):
             self.pgPwd = data['pgPwd']
             self.oxdAuthorizationRedirectUri = data['oxdAuthorizationRedirectUri']
             self.installOxd = data['installOxd']
-            if self.installOxd:
-                self.oxdHost = data['oxdHost']
-                self.kongaOPHost = 'https://' + data['kongaOPHost']
-                self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
-                self.oxdServerLicenseId = data['oxdServerLicenseId']
-                self.oxdServerPublicKey = data['oxdServerPublicKey']
-                self.oxdServerPublicPassword = data['oxdServerPublicPassword']
-                self.oxdServerLicensePassword = data['oxdServerLicensePassword']
-            if not self.installOxd:
-                self.kongaOPHost = 'https://' + data['kongaOPHost']
+            self.kongaOPHost = 'https://' + data['kongaOPHost']
+            self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
             self.kongaOxdWeb = data['kongaOxdWeb']
             self.generateClient = data['generateClient']
             if not self.generateClient:
-                self.oxdServerLicenseId = data['oxdServerLicenseId']
                 self.kongaOxdId = data['kongaOxdId']
                 self.kongaClientId = data['kongaClientId']
                 self.kongaClientSecret = data['kongaClientSecret']
@@ -226,9 +213,7 @@ class KongSetup(object):
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
 
     def configureOxd(self):
-        if self.installOxd:
-            self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
-
+        self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
         self.run([self.cmd_service, self.oxdServerService, 'start'])
 
     def detectHostname(self):
@@ -357,8 +342,10 @@ class KongSetup(object):
         self.run([self.cmd_mkdir, '-p', '%s/rucciva' % self.distLuaFolder])
         self.run([self.cmd_cp, self.jsonLogicFilePath, '%s/rucciva/json_logic.lua' % self.distLuaFolder])
 
-        self.run([self.cmd_mv, self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
-        self.run([self.cmd_mv, self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', '%s/lrucache' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
@@ -489,19 +476,9 @@ class KongSetup(object):
         pg = self.getPW()
         self.pgPwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
 
-        # OXD Configuration
-        self.installOxd = self.makeBoolean(self.getPrompt(
-            'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
-
         # We are going to ask for 'OP hostname' regardless of whether we're installing oxd or not
         self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-
-        if self.installOxd:
-            self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
-            self.oxdServerLicenseId = self.getPrompt('License Id')
-            self.oxdServerPublicKey = self.getPrompt('Public key')
-            self.oxdServerPublicPassword = self.getPrompt('Public password')
-            self.oxdServerLicensePassword = self.getPrompt('License password')
+        self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
 
         # Konga Configuration
         msg = """The next few questions are used to configure Konga.
@@ -511,10 +488,6 @@ class KongSetup(object):
         print msg
 
         self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-
-        # https://xyz.domain.com:8443 is split to: //xyz.domain.com to xyz.domain.com
-        self.oxdHost = self.kongaOxdWeb.split(":")[1][2:]
-
         self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
@@ -653,17 +626,8 @@ if __name__ == "__main__":
                   + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
                   + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
                   + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
-                  + 'Configure oxd-server'.ljust(30) + repr(kongSetup.installOxd).rjust(35) + "\n" \
-                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n"
-
-            if kongSetup.installOxd:
-                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
-                       + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
-                       + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
-                       + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
-                       + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
-            else:
-                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
+                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
+                  + 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
 
             if not kongSetup.generateClient:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
