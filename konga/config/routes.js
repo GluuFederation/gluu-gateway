@@ -98,13 +98,13 @@ module.exports.routes = {
 
   // Client controller
   'GET /api/clients/oauth/:oxd_id': 'ClientsController.getClient',
-  'POST /api/clients/oauth': 'ClientsController.addOAuthClient',
-  'POST /api/clients/uma': 'ClientsController.registerClientAndResources',
-  'PUT /api/clients/uma': 'ClientsController.updateResources',
-  'POST /api/clients/consumer': 'ClientsController.addOAuthConsumerClient',
+  'POST /api/clients/oauth': 'ClientsController.addGluuClientAuth',
+  'POST /api/clients/uma': 'ClientsController.addGluuPEP',
+  'PUT /api/clients/uma': 'ClientsController.updateGluuPEP',
+  'POST /api/clients/consumer': 'ClientsController.addConsumerClient',
   'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
-  'DELETE /api/clients/oauth/:oxd_id': 'ClientsController.deleteOAuthClient',
-  'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deletePEPClient',
+  'POST /api/clients/oauth/delete': 'ClientsController.deleteGluuClientAuth',
+  'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deleteGluuPEP',
 
   /**
    * Fallback to proxy

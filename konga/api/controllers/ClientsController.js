@@ -68,7 +68,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // User to register client for OAuth plugin
-  addOAuthClient: function (req, res) {
+  addGluuClientAuth: function (req, res) {
     // Existing client id and secret
     if (req.body.oxd_id && req.body.client_id && req.body.client_secret) {
       return res.send({oxd_id: req.body.oxd_id, client_id: req.body.client_id, client_secret: req.body.client_secret})
@@ -97,7 +97,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // Register OP client and register UMA resources
-  registerClientAndResources: function (req, res) {
+  addGluuPEP: function (req, res) {
     // Existing client id and secret
     if (!req.body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
@@ -182,6 +182,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           .create({
             oxd_id: umaProtect.oxd_id,
             client_id: opClient.client_id,
+            client_secret: opClient.client_secret,
+            context: 'GLUU-PEP',
             data: req.body.uma_scope_expression
           })
       })
@@ -203,8 +205,54 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       });
   },
 
+  // add client for consumer
+  addConsumerClient: function (req, res) {
+    var opClient;
+    // Create new client
+    const option = {
+      op_host: sails.config.opHost,
+      authorization_redirect_uri: 'https://client.example.com/cb',
+      client_name: req.body.client_name || 'gg-oauth-consumer-client',
+      client_id: req.body.client_id || '',
+      client_secret: req.body.client_secret || ''
+    };
+
+    this.registerClient(option)
+      .then(function (clientInfo) {
+        opClient = clientInfo;
+        if (!clientInfo.client_id && !clientInfo.client_secret && !clientInfo.oxd_id) {
+          console.log("Failed to register client", clientInfo);
+          return Promise.reject({message: "Failed to register client"});
+        }
+
+        return sails.models.client
+          .create({
+            oxd_id: clientInfo.oxd_id,
+            client_id: clientInfo.client_id,
+            client_secret: clientInfo.client_secret,
+            context: 'CONSUMER'
+          })
+      })
+      .then(function (dbClient) {
+        if (!dbClient.oxd_id) {
+          console.log("Failed to add client and resources in konga db", dbClient);
+          return Promise.reject({message: "Failed to add client and resources in konga db"});
+        }
+
+        return res.status(200).send({
+          oxd_id: dbClient.oxd_id,
+          client_id: opClient.client_id,
+          client_secret: opClient.client_secret
+        });
+      })
+      .catch(function (error) {
+        console.log('--- addOAuthConsumerClient ---', error);
+        return res.status(500).send(error);
+      });
+  },
+
   // Update UMA resources
-  updateResources: function (req, res) {
+  updateGluuPEP: function (req, res) {
     // Existing client id and secret
     if (!req.body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
@@ -287,51 +335,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       });
   },
 
-  // add client for consumer
-  addOAuthConsumerClient: function (req, res) {
-    var opClient;
-    // Create new client
-    const option = {
-      op_host: sails.config.opHost,
-      authorization_redirect_uri: 'https://client.example.com/cb',
-      client_name: req.body.client_name || 'gg-oauth-consumer-client',
-      client_id: req.body.client_id || '',
-      client_secret: req.body.client_secret || ''
-    };
-
-    this.registerClient(option)
-      .then(function (clientInfo) {
-        opClient = clientInfo;
-        if (!clientInfo.client_id && !clientInfo.client_secret && !clientInfo.oxd_id) {
-          console.log("Failed to register client", clientInfo);
-          return Promise.reject({message: "Failed to register client"});
-        }
-
-        return sails.models.client
-          .create({
-            oxd_id: clientInfo.oxd_id,
-            client_id: clientInfo.client_id,
-            client_secret: clientInfo.client_secret
-          })
-      })
-      .then(function (dbClient) {
-        if (!dbClient.oxd_id) {
-          console.log("Failed to add client and resources in konga db", dbClient);
-          return Promise.reject({message: "Failed to add client and resources in konga db"});
-        }
-
-        return res.status(200).send({
-          oxd_id: dbClient.oxd_id,
-          client_id: opClient.client_id,
-          client_secret: opClient.client_secret
-        });
-      })
-      .catch(function (error) {
-        console.log('--- addOAuthConsumerClient ---', error);
-        return res.status(500).send(error);
-      });
-  },
-
   // delete consumer client
   deleteConsumerClient: function (req, res) {
     var kongaDBClient;
@@ -361,7 +364,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             body: {
               op_host: sails.config.opHost,
               client_id: kongaDBClient.client_id,
-              client_secret: kongaDBClient.client_decret,
+              client_secret: kongaDBClient.client_secret,
               scope: ['openid', 'oxd']
             },
             resolveWithFullResponse: true,
@@ -438,14 +441,29 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // delete client from oxd for client-auth plugin
-  deleteOAuthClient: function (req, res) {
+  deleteGluuClientAuth: function (req, res) {
+    if (!req.body.oxd_id) {
+      console.log("Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide oxd_id to update resources"});
+    }
+
+    if (!req.body.client_id) {
+      console.log("Provide client_id to update resources");
+      return res.status(500).send({message: "Provide client_id to update resources"});
+    }
+
+    if (!req.body.client_secret) {
+      console.log("Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide client_secret to update resources"});
+    }
+
     var option = {
       method: 'POST',
       uri: sails.config.oxdWeb + '/get-client-token',
       body: {
         op_host: sails.config.opHost,
-        client_id: sails.config.clientId,
-        client_secret: sails.config.clientSecret,
+        client_id: req.body.client_id,
+        client_secret: req.body.client_secret,
         scope: ['openid', 'oxd']
       },
       resolveWithFullResponse: true,
@@ -456,7 +474,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       .then(function (response) {
         var clientToken = response.body;
 
-        if (req.params.oxd_id == sails.config.oxdId) {
+        if (req.body.oxd_id == sails.config.oxdId) {
           console.log("Not allow to delete GG Admin login client");
           return Promise.reject({message: "Not allow to delete GG Admin login client"});
         }
@@ -465,7 +483,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           method: 'POST',
           uri: sails.config.oxdWeb + '/remove-site',
           body: {
-            oxd_id: req.params.oxd_id
+            oxd_id: req.body.oxd_id
           },
           headers: {
             Authorization: 'Bearer ' + clientToken.access_token
@@ -493,7 +511,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // delete client from oxd for PEP plugin
-  deletePEPClient: function (req, res) {
+  deleteGluuPEP: function (req, res) {
     var kongaDBClient;
 
     // doWantDeleteClient=true Delete client from GG and OXD
@@ -519,8 +537,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             uri: sails.config.oxdWeb + '/get-client-token',
             body: {
               op_host: sails.config.opHost,
-              client_id: sails.config.clientId,
-              client_secret: sails.config.clientSecret,
+              client_id: kongaDBClient.client_id,
+              client_secret: kongaDBClient.client_secret,
               scope: ['openid', 'oxd']
             },
             resolveWithFullResponse: true,

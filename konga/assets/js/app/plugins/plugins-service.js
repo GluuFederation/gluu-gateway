@@ -67,8 +67,8 @@
             return $http.delete('api/clients/consumer/' + client_id + '/' + doWantDeleteClient)
           },
 
-          deleteOAuthClient: function (oxd_id) {
-            return $http.delete('api/clients/oauth/' + oxd_id)
+          deleteOAuthClient: function (data) {
+            return $http.post('api/clients/oauth/delete', data)
           },
 
           deletePEPClient: function (oxd_id, doWantDeleteClient) {

@@ -26,6 +26,14 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
       type: 'string',
       required: true
     },
+    client_secret: {
+      type: 'string',
+      required: true
+    },
+    context: {
+      type: 'string',
+      required: true
+    },
     data: {
       type: 'json'
     }

@@ -175,7 +175,7 @@
             '<h5 class="modal-title">CONFIRM</h5>' +
             '</div>' +
             '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Delete OP Client?</label>' +
+            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
             '</div>' +
             '<div class="modal-footer dialog">' +
             '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +

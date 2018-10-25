@@ -302,6 +302,12 @@
           } else {
             delete model.config.oauth_scope_expression
           }
+
+          if (model.config.allow_oauth_scope_expression && !model.config.oauth_scope_expression) {
+            MessageService.error("OAuth scope expression is required when allow expression is Yes");
+            return;
+          }
+
           PluginsService.addOAuthClient({
             oxd_id: model.config.oxd_id || null,
             client_id: model.config.client_id || null,
@@ -346,6 +352,11 @@
             model.config.oauth_scope_expression = makeExpression($scope.modelPlugin);
           } else {
             model.config.oauth_scope_expression = null;
+          }
+
+          if (model.config.allow_oauth_scope_expression && !model.config.oauth_scope_expression) {
+            MessageService.error("OAuth scope expression is required when allow expression is Yes");
+            return;
           }
 
           PluginHelperService.updatePlugin(model.id,
