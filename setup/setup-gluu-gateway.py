@@ -89,8 +89,8 @@ class KongSetup(object):
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
         self.ggPluginsFolder = '%s/plugins' % self.distGluuGatewayFolder
-        self.gluuOAuth2ClientAuthPlugin = '%s/gluu-oauth2-client-auth' % self.ggPluginsFolder
-        self.gluuOAuth2RSPlugin = '%s/gluu-oauth2-rs' % self.ggPluginsFolder
+        self.gluuClientAuthPlugin = '%s/gluu-client-auth' % self.ggPluginsFolder
+        self.gluuPEPlugin = '%s/gluu-pep' % self.ggPluginsFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
@@ -342,8 +342,8 @@ class KongSetup(object):
         self.run([self.cmd_mkdir, '-p', '%s/rucciva' % self.distLuaFolder])
         self.run([self.cmd_cp, self.jsonLogicFilePath, '%s/rucciva/json_logic.lua' % self.distLuaFolder])
 
-        self.run([self.cmd_cp, '-R', self.gluuOAuth2ClientAuthPlugin, self.distKongPluginsFolder])
-        self.run([self.cmd_cp, '-R', self.gluuOAuth2RSPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuClientAuthPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuPEPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_cp, '-R', '%s/lrucache' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
         self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
 
