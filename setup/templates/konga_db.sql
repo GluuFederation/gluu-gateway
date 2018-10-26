@@ -77,6 +77,48 @@ ALTER SEQUENCE public.konga_api_health_checks_id_seq OWNED BY public.konga_api_h
 
 
 --
+-- Name: konga_clients; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS public.konga_clients (
+  id integer NOT NULL,
+  oxd_id text,
+  client_id text,
+  client_secret text,
+  context text,
+  data json,
+  "createdAt" timestamp with time zone,
+  "updatedAt" timestamp with time zone,
+  "createdUserId" integer,
+  "updatedUserId" integer
+);
+
+
+ALTER TABLE public.konga_clients OWNER TO postgres;
+
+--
+-- Name: konga_clients_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE IF NOT EXISTS public.konga_clients_id_seq
+  AS integer
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1;
+
+
+ALTER TABLE public.konga_clients_id_seq OWNER TO postgres;
+
+--
+-- Name: konga_clients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.konga_clients_id_seq OWNED BY public.konga_clients.id;
+
+
+--
 -- Name: konga_email_transports; Type: TABLE; Schema: public; Owner: postgres
 --
 
@@ -160,6 +202,47 @@ ALTER TABLE public.konga_kong_nodes_id_seq OWNER TO postgres;
 --
 
 ALTER SEQUENCE public.konga_kong_nodes_id_seq OWNED BY public.konga_kong_nodes.id;
+
+
+--
+-- Name: konga_kong_snapshot_schedules; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE IF NOT EXISTS public.konga_kong_snapshot_schedules (
+  id integer NOT NULL,
+  connection integer,
+  active boolean,
+  cron text,
+  "lastRunAt" date,
+  "createdAt" timestamp with time zone,
+  "updatedAt" timestamp with time zone,
+  "createdUserId" integer,
+  "updatedUserId" integer
+);
+
+
+ALTER TABLE public.konga_kong_snapshot_schedules OWNER TO postgres;
+
+--
+-- Name: konga_kong_snapshot_schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.konga_kong_snapshot_schedules_id_seq
+  AS integer
+  START WITH 1
+  INCREMENT BY 1
+  NO MINVALUE
+  NO MAXVALUE
+  CACHE 1;
+
+
+ALTER TABLE public.konga_kong_snapshot_schedules_id_seq OWNER TO postgres;
+
+--
+-- Name: konga_kong_snapshot_schedules_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.konga_kong_snapshot_schedules_id_seq OWNED BY public.konga_kong_snapshot_schedules.id;
 
 
 --
@@ -337,6 +420,13 @@ ALTER TABLE ONLY public.konga_api_health_checks ALTER COLUMN id SET DEFAULT next
 
 
 --
+-- Name: konga_clients id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.konga_clients ALTER COLUMN id SET DEFAULT nextval('public.konga_clients_id_seq'::regclass);
+
+
+--
 -- Name: konga_email_transports id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
@@ -348,6 +438,13 @@ ALTER TABLE ONLY public.konga_email_transports ALTER COLUMN id SET DEFAULT nextv
 --
 
 ALTER TABLE ONLY public.konga_kong_nodes ALTER COLUMN id SET DEFAULT nextval('public.konga_kong_nodes_id_seq'::regclass);
+
+
+--
+-- Name: konga_kong_snapshot_schedules id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.konga_kong_snapshot_schedules ALTER COLUMN id SET DEFAULT nextval('public.konga_kong_snapshot_schedules_id_seq'::regclass);
 
 
 --
@@ -387,6 +484,12 @@ COPY public.konga_api_health_checks (id, api_id, api, health_check_endpoint, not
 
 
 --
+-- Data for Name: konga_clients; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+COPY public.konga_clients (id, oxd_id, client_id, client_secret, context, data, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
+\.
+
+--
 -- Delete data if exist
 --
 DELETE FROM public.konga_email_transports;
@@ -414,6 +517,14 @@ DELETE FROM public.konga_kong_nodes;
 
 COPY public.konga_kong_nodes (id, name, kong_admin_url, kong_api_key, kong_version, health_checks, health_check_details, active, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
 1	default	http://localhost:8001		0-11-x	f	\N	t	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
+\.
+
+
+--
+-- Data for Name: konga_kong_snapshot_schedules; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.konga_kong_snapshot_schedules (id, connection, active, cron, "lastRunAt", "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
 \.
 
 
@@ -463,6 +574,13 @@ SELECT pg_catalog.setval('public.konga_api_health_checks_id_seq', 1, false);
 
 
 --
+-- Name: konga_clients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.konga_clients_id_seq', 1, false);
+
+
+--
 -- Name: konga_email_transports_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
@@ -474,6 +592,13 @@ SELECT pg_catalog.setval('public.konga_email_transports_id_seq', 3, true);
 --
 
 SELECT pg_catalog.setval('public.konga_kong_nodes_id_seq', 1, true);
+
+
+--
+-- Name: konga_kong_snapshot_schedules_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.konga_kong_snapshot_schedules_id_seq', 1, false);
 
 
 --
@@ -529,6 +654,18 @@ END IF;
 END$$;
 
 --
+-- Name: konga_clients konga_clients_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_clients_pkey')
+THEN
+ALTER TABLE ONLY public.konga_clients ADD CONSTRAINT konga_clients_pkey PRIMARY KEY (id);
+END IF;
+END$$;
+
+--
 -- Name: konga_email_transports konga_email_transports_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -561,6 +698,18 @@ BEGIN
 IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_kong_nodes_pkey')
 THEN
 ALTER TABLE ONLY public.konga_kong_nodes ADD CONSTRAINT konga_kong_nodes_pkey PRIMARY KEY (id);
+END IF;
+END$$;
+
+--
+-- Name: konga_kong_snapshot_schedules konga_kong_snapshot_schedules_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+DO $$
+BEGIN
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_kong_snapshot_schedules_pkey')
+THEN
+ALTER TABLE ONLY public.konga_kong_snapshot_schedules ADD CONSTRAINT konga_kong_snapshot_schedules_pkey PRIMARY KEY (id);
 END IF;
 END$$;
 
