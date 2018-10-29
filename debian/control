@@ -18,6 +18,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  lua-cjson,
  python-requests,
  npm,
- kong-community-edition (>= 0.14.0),
+ kong-community-edition (= 0.14.1),
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
