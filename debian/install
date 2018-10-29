@@ -2,3 +2,5 @@ konga opt/gluu-gateway
 debian/konga etc/init.d
 setup opt/gluu-gateway
 debian/kong etc/init.d
+kong/plugins/gluu-client-auth opt/gluu-gateway/plugins
+kong/plugins/gluu-pep opt/gluu-gateway/plugins
