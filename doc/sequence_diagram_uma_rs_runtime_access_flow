@@ -1,39 +1,39 @@
-title Gluu OAuth2 RS access phase UMA mode
+title Gluu PEP access
 
 client->Kong Proxy: HTTP request
 
-Kong Proxy->gluu-oauth2-rs: ***** call "access" event for Kong plugin priority 998  *****
+Kong Proxy->gluu-pep: ***** call "access" event for Kong plugin priority 998  *****
 
-gluu-oauth2-rs->gluu-oauth2-rs: Get token from Authorization Header
+gluu-pep->gluu-pep: Get token from Authorization Header
 alt missed token
-    gluu-oauth2-rs->client: 401/Unauthorized + ticket
+    gluu-pep->client: 401/Unauthorized + ticket
 end
 
-gluu-oauth2-rs<->gluu-oauth2-rs: Lookup protected path
+gluu-pep<->gluu-pep: Lookup protected path
 
-gluu-oauth2-rs<->gluu-oauth2-rs: Lookup token in cache
+gluu-pep<->gluu-pep: Lookup token in cache
 
 alt cache found
     opt token already authorized for this path/method
-        gluu-oauth2-rs->Kong Proxy: Access granted
+        gluu-pep->Kong Proxy: Access granted
     end
 end
 
-gluu-oauth2-rs->gluu-oauth2-rs: Lookup permission token in cache
+gluu-pep->gluu-pep: Lookup permission token in cache
 opt no permission token in cache
-    gluu-oauth2-rs<->oxd: GET protection_access_token
+    gluu-pep<->oxd: GET protection_access_token
 end
 
-gluu-oauth2-rs<->oxd: introspect_rpt(rpt, protected path)
+gluu-pep<->oxd: introspect_rpt(rpt, protected path)
 alt token not active
-    gluu-oauth2-rs->client: 401/Unauthorized
+    gluu-pep->client: 401/Unauthorized
 end
 
-gluu-oauth2-rs<->oxd: uma_rs_check_access(rpt, protected path)
+gluu-pep<->oxd: uma_rs_check_access(rpt, protected path)
 
 alt access granted
-    gluu-oauth2-rs<->gluu-oauth2-rs: update cache
-    gluu-oauth2-rs->Kong Proxy: Access granted
+    gluu-pep<->gluu-pep: update cache
+    gluu-pep->Kong Proxy: Access granted
 else
-    gluu-oauth2-rs->client: 403/Forbidden
+    gluu-pep->client: 403/Forbidden
 end
