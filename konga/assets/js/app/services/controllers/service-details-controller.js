@@ -20,12 +20,11 @@
 
         $scope.updateService = function () {
 
-          $scope.loading = true
+          $scope.loading = true;
           var data = angular.copy($scope.service);
 
-          // workaround, name field creates constraint violation in v0.13.x when using Cassandra
-          if (!isKongUsingPostgres() && originalService.name === data.name) {
-            delete data.name;
+          if (data.name == "") {
+            data.name = null;
           }
 
           ServiceService.update(data)
