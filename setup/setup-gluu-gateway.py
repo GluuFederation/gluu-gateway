@@ -396,14 +396,14 @@ class KongSetup(object):
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
-                'scope': ['openid', 'uma_protection'],
+                'scope': ['openid', 'oxd'],
                 'grant_types': ['authorization_code'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }
             self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
             print 'Creating konga oxd client used to call oxd-https endpoints...'
             try:
-                res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
+                res = requests.post(self.kongaOxdWeb + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
 
                 if resJson['status'] == 'ok':
@@ -417,6 +417,10 @@ class KongSetup(object):
                     self.logIt(msg, True)
                     self.logIt('OXD Error %s' % resJson, True)
                     sys.exit()
+            except KeyError, e:
+                self.logIt(resJson, True)
+                self.logIt('Error: Failed to register client', True)
+                sys.exit()
             except requests.exceptions.HTTPError as e:
                 self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb, True)
                 self.logIt('%s' % e, True)
