@@ -1,5 +1,5 @@
 return {
-    no_consumer = true,
+    no_consumer = false,
     fields = {
         oxd_url = { required = true, type = "url" },
         client_id = { required = true, type = "string" },
