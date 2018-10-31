@@ -7,7 +7,7 @@ local JSON = require"JSON"
 
 local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
-local test_root = host_git_root .. "/t/specs/gluu-client-auth"
+local test_root = host_git_root .. "/t/specs/gluu-oauth-pep"
 
 local function setup(model)
     _G.ctx = {}
@@ -37,7 +37,7 @@ local function setup(model)
     kong_utils.docker_unique_network()
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
-            ["gluu-client-auth"] = host_git_root .. "/kong/plugins/gluu-client-auth",
+            ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
         },
         modules = {
             ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
@@ -106,7 +106,7 @@ local function configure_plugin(create_service_response, plugin_config)
     plugin_config.oxd_id = register_site_response.oxd_id
 
     local payload = {
-        name = "gluu-client-auth",
+        name = "gluu-oauth-pep",
         config = plugin_config,
         service_id = create_service_response.id,
     }

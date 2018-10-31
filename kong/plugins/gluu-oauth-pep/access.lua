@@ -1,13 +1,13 @@
 local constants = require "kong.constants"
 local oxd = require "oxdweb"
-local helper = require "kong.plugins.gluu-client-auth.helper"
+local helper = require "kong.plugins.gluu-oauth-pep.helper"
 local pl_types = require "pl.types"
 -- we don't store our token in lrucache - we don't want it be pushed out
 local access_token
 local access_token_expire = 0
 local EXPIRE_DELTA = 10
 
-local PLUGINNAME = "gluu-client-auth"
+local PLUGINNAME = "gluu-oauth-pep"
 
 local lrucache = require "resty.lrucache"
 -- it can be shared by all the requests served by each nginx worker process:

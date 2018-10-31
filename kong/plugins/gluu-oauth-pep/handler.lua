@@ -1,5 +1,5 @@
 local BasePlugin = require "kong.plugins.base_plugin"
-local access = require "kong.plugins.gluu-client-auth.access"
+local access = require "kong.plugins.gluu-oauth-pep.access"
 
 local handler = BasePlugin:extend()
 handler.priority = 999
@@ -8,7 +8,7 @@ handler.priority = 999
 -- Base Plugin handler, it's only role is to instanciate itself
 -- with a name. The name is your plugin name as it will be printed in the logs.
 function handler:new()
-    handler.super.new(self, "gluu-client-auth")
+    handler.super.new(self, "gluu-oauth-pep")
 end
 
 function handler:access(config)
