@@ -8,9 +8,9 @@
 
   angular.module('frontend.upstreams')
     .controller('UpdateUpstreamModalController', [
-      '$scope', '$rootScope', '$log', '$state', 'ApiService', 'SettingsService',
+      '$scope', '$rootScope', '$log', '$state', 'SettingsService',
       '$uibModalInstance', 'Upstream', 'MessageService', '_item',
-      function controller($scope, $rootScope, $log, $state, ApiService, SettingsService,
+      function controller($scope, $rootScope, $log, $state, SettingsService,
                           $uibModalInstance, Upstream, MessageService, _item) {
 
         $scope.upstream = _item;

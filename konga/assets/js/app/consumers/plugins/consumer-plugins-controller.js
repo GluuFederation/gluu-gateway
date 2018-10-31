@@ -27,9 +27,8 @@
          * ----------------------------------------------------------------------
          */
 
-        function togglePlugin(plugin) {
-          plugin.enabled = !plugin.enabled;
-          updatePlugin(plugin);
+        function togglePlugin(enabled, id) {
+          updatePlugin(!enabled, id);
         }
 
         function onAddPlugin() {
@@ -78,15 +77,14 @@
           }
         }
 
-        function updatePlugin(plugin) {
-          PluginsService.update(plugin.id, {
+        function updatePlugin(plugin, id) {
+          PluginsService.update(id, {
             enabled: plugin.enabled,
             //config : plugin.config
           })
             .then(function (res) {
               $log.debug("updatePlugin", res)
               $scope.plugins.data[$scope.plugins.data.indexOf(plugin)] = res.data;
-
             }).catch(function (err) {
             $log.error("updatePlugin", err);
           });

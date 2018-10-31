@@ -3,10 +3,10 @@
 
   angular.module('frontend.plugins')
     .controller('UMAPluginController', [
-      '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ApiModel', 'PluginHelperService', '_context_name', '_context_data', '_plugins', '$compile', 'InfoService', '$localStorage',
-      function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ApiModel, PluginHelperService, _context_name, _context_data, _plugins, $compile, InfoService, $localStorage) {
+      '_', '$scope', '$log', '$state', 'PluginsService', 'MessageService',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'PluginHelperService', '_context_name', '_context_data', '_plugins', '$compile', 'InfoService', '$localStorage',
+      function controller(_, $scope, $log, $state, PluginsService, MessageService,
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, PluginHelperService, _context_name, _context_data, _plugins, $compile, InfoService, $localStorage) {
         $scope.globalInfo = $localStorage.credentials.user;
         $scope.context_data = (_context_data && _context_data.data) || null;
         $scope.context_name = _context_name || null;

@@ -278,15 +278,6 @@
             access: AccessLevels.user
           },
           {
-            state: 'apis',
-            show: function () {
-              return AuthService.hasPermission('apis', 'read') && $rootScope.Gateway
-            },
-            title: 'APIs <sup>(deprecated)</sup>',
-            icon: 'mdi-cloud-outline',
-            access: AccessLevels.user
-          },
-          {
             state: 'consumers',
             show: function () {
               return AuthService.hasPermission('consumers', 'read') && $rootScope.Gateway

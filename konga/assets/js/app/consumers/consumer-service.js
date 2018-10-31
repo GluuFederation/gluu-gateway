@@ -81,10 +81,6 @@
             return $http.get('kong/consumers/' + consumerId + '/plugins');
           },
 
-          listApis: function (consumerId) {
-            return $http.get('api/kong_consumers/' + consumerId + '/apis');
-          },
-
           listServices: function (consumerId) {
             return $http.get('api/kong_consumers/' + consumerId + '/services');
           },

@@ -26,15 +26,15 @@
               $scope.loading = false;
 
               if(response.data.acl && response.data.acl.config.whitelist && response.data.acl.config.whitelist.length) {
-                $scope.explanatoryMessage += `<br> - included in one of the groups: <strong>${response.data.acl.config.whitelist.join(", ")}</strong>, `
+                $scope.explanatoryMessage += '<br> - included in one of the groups: <strong>' + response.data.acl.config.whitelist.join(", ") + '</strong>, '
               }
 
               if(response.data.acl && response.data.acl.config.blacklist && response.data.acl.config.blacklist.length) {
-                $scope.explanatoryMessage += `<br> - excluded from any of the groups: <strong>${response.data.acl.config.blacklist.join(", ")}</strong>, `
+                $scope.explanatoryMessage += '<br> - excluded from any of the groups: <strong>' + response.data.acl.config.blacklist.join(", ") + '</strong>, '
               }
 
               if(response.data.authenticationPlugins) {
-                $scope.explanatoryMessage += `<br> - carrying at least one of the following credentials: <strong>${response.data.authenticationPlugins.join(", ")}</strong>, `
+                $scope.explanatoryMessage += '<br> - carrying at least one of the following credentials: <strong>' + response.data.authenticationPlugins.join(", ") + '</strong>, '
               }
             }else{
               $scope.isOpenService = true;

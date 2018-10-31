@@ -8,9 +8,9 @@
 
   angular.module('frontend.certificates')
     .controller('CertificatesController', [
-      '$scope', '$rootScope', '$log', '$state', 'ApiService', '$uibModal', 'DialogService', 'UserService',
+      '$scope', '$rootScope', '$log', '$state', '$uibModal', 'DialogService', 'UserService',
       'MessageService', 'SettingsService', '$http', 'Upload', 'Semver', '$timeout', 'CertificateModel', 'ListConfig',
-      function controller($scope, $rootScope, $log, $state, ApiService, $uibModal, DialogService, UserService,
+      function controller($scope, $rootScope, $log, $state, $uibModal, DialogService, UserService,
                           MessageService, SettingsService, $http, Upload, Semver, $timeout, CertificateModel, ListConfig) {
 
 

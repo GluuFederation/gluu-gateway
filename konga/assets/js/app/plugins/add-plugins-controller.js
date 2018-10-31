@@ -9,11 +9,11 @@
   angular.module('frontend.plugins')
     .controller('AddPluginsController', [
       '_', '$scope', '$rootScope', '$log',
-      '$state', 'ApiService', 'MessageService', 'DialogService',
+      '$state', 'MessageService', 'DialogService',
       'KongPluginsService', 'PluginsService', '$uibModal',
       '_plugins', '_info',
       function controller(_, $scope, $rootScope, $log,
-                          $state, ApiService, MessageService, DialogService,
+                          $state, MessageService, DialogService,
                           KongPluginsService, PluginsService, $uibModal,
                           _plugins, _info) {
 

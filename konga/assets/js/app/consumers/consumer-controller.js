@@ -31,11 +31,6 @@
             icon: 'mdi-security'
           },
           {
-            id: 'apis',
-            name: 'Accessible APIs',
-            icon: 'mdi-cloud-outline'
-          },
-          {
             id: 'services',
             name: 'Accessible Services',
             icon: 'mdi-cloud-outline'
@@ -53,13 +48,11 @@
           })
         }
 
-        if (Semver.cmp($rootScope.Gateway.version, "0.11.0") >= 0) {
-          $scope.sections.push({
-            id: 'plugins',
-            name: 'Plugins',
-            icon: 'mdi-power-plug'
-          });
-        }
+        $scope.sections.push({
+          id: 'plugins',
+          name: 'Plugins',
+          icon: 'mdi-power-plug'
+        });
 
         $scope.showPluginsSection = Semver.cmp($rootScope.Gateway.version, "0.11.0") >= 0;
 

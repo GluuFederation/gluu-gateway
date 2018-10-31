@@ -9,9 +9,9 @@
   angular.module('frontend.consumers')
     .controller('ConsumerRoutesController', [
       '_', '$scope', '$q', '$stateParams', '$log', '$state', '$uibModal', 'DialogService',
-      'ConsumerService', 'ApiModel', 'ListConfig', 'UserService', 'PluginsService', 'RouteModel',
+      'ConsumerService', 'ListConfig', 'UserService', 'PluginsService', 'RouteModel',
       function controller(_, $scope, $q, $stateParams, $log, $state, $uibModal, DialogService,
-                          ConsumerService, ApiModel, ListConfig, UserService, PluginsService, RouteModel) {
+                          ConsumerService, ListConfig, UserService, PluginsService, RouteModel) {
 
 
         RouteModel.setScope($scope, false, 'items', 'itemCount');

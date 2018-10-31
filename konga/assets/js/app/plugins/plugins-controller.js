@@ -3,9 +3,9 @@
 
   angular.module('frontend.plugins')
     .controller('PluginsController', [
-      '_', '$scope', '$log', '$state', 'ApiService', 'PluginsService', 'MessageService',
+      '_', '$scope', '$log', '$state', 'PluginsService', 'MessageService',
       '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', '$rootScope',
-      function controller(_, $scope, $log, $state, ApiService, PluginsService, MessageService,
+      function controller(_, $scope, $log, $state, PluginsService, MessageService,
                           $uibModal, DialogService, PluginModel, ListConfig, UserService, $rootScope) {
 
         PluginModel.setScope($scope, false, 'items', 'itemCount');

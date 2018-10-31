@@ -6,16 +6,16 @@
 (function () {
   'use strict';
 
-  angular.module('frontend.apis')
+  angular.module('frontend.plugins')
     .controller('AddPluginModalController', [
       '_', '$scope', '$rootScope', '$log',
-      '$state', 'ApiService', 'ConsumerService', 'MessageService', 'DialogService', 'Semver',
+      '$state', 'ConsumerService', 'MessageService', 'DialogService', 'Semver',
       'KongPluginsService', 'PluginsService', '$uibModal', '$uibModalInstance',
-      '_context',
+      '_context', 'ServiceService', 'RoutesService',
       function controller(_, $scope, $rootScope, $log,
-                          $state, ApiService, ConsumerService, MessageService, DialogService, Semver,
+                          $state, ConsumerService, MessageService, DialogService, Semver,
                           KongPluginsService, PluginsService, $uibModal, $uibModalInstance,
-                          _context) {
+                          _context, ServiceService, RoutesService) {
 
         if (_.isArray(_context)) {
           _context.forEach(function (ctx) {
@@ -146,8 +146,8 @@
         }
 
         function getExistingPlugins() {
-          if ($scope.api) {
-            ApiService.plugins($scope.api.id)
+          if ($scope.consumer) {
+            ConsumerService.listPlugins($scope.consumer.id)
               .then(function (response) {
                 $scope.existingPlugins = response.data.data.map(function (item) {
                   return item.name;
@@ -158,8 +158,20 @@
               });
           }
 
-          if ($scope.consumer) {
-            ConsumerService.listPlugins($scope.consumer.id)
+          if ($scope.service) {
+            ServiceService.plugins($scope.service.id)
+              .then(function (response) {
+                $scope.existingPlugins = response.data.data.map(function (item) {
+                  return item.name;
+                });
+              })
+              .catch(function (err) {
+
+              });
+          }
+
+          if ($scope.route) {
+            RoutesService.listPlugins($scope.route.id)
               .then(function (response) {
                 $scope.existingPlugins = response.data.data.map(function (item) {
                   return item.name;
