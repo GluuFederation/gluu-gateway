@@ -155,13 +155,23 @@ test("gluu-pep", function()
         }
     )
 
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+
+    local consumer_response = JSON:decode(res)
+
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-    assert(stdout:find("401"), 1, true)
-    assert(stdout:find("ticket"), 1, true)
+    assert(stdout:find("401", 1, true))
+    assert(stdout:find("ticket", 1, true))
 
     local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- plugin shouldn't call oxd, must use cache
     local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
@@ -170,7 +180,7 @@ test("gluu-pep", function()
     -- posts: request with wrong token
     local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS_INVALID_1234567890']])
-    assert(stdout:find("403"), 1, true)
+    assert(stdout:find("401", 1, true))
 
     -- posts: request
     local _, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
@@ -209,11 +219,17 @@ test("gluu-pep allow_unprotected_path = true", function()
         }
     )
 
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+
+    local consumer_response = JSON:decode(res)
+
     -- posts: request to protected path
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
-    assert(stdout:find("401"), 1, true)
-    assert(stdout:find("ticket"), 1, true)
+    assert(stdout:find("401", 1, true))
+    assert(stdout:find("ticket", 1, true))
 
     -- posts: request and check hide_credential
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],

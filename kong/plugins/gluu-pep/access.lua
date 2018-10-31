@@ -1,3 +1,4 @@
+local constants = require "kong.constants"
 local oxd = require "oxdweb"
 local helper = require "kong.plugins.gluu-pep.helper"
 
@@ -69,6 +70,7 @@ local function get_token(authorization)
 end
 
 local function build_cache_key(token, path)
+    path = path or ""
     local t = {
         token,
         ":",
@@ -147,24 +149,50 @@ local function hide_credentials(conf)
     kong.service.request.clear_header("authorization")
 end
 
+local function set_consumer(client_id, consumer, exp)
+    local const = constants.HEADERS
+    local new_headers = {
+        [const.CONSUMER_ID] = consumer.id,
+        [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
+        [const.CONSUMER_USERNAME] = tostring(consumer.username),
+    }
+    -- https://github.com/Kong/kong/blob/2cdd07e34a362e86d95d5e88615e217fa4f6f0d2/kong/plugins/key-auth/handler.lua#L52
+    kong.ctx.shared.authenticated_consumer = consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = consumer -- backward compatibility
 
-return function(conf)
+    if client_id then
+        new_headers["X-OAuth-Client-ID"] = tostring(client_id)
+        new_headers["X-OAuth-Expiration"] = tostring(exp)
+        -- TODO what about kong.ctx.shared.authenticated_credential?
+        kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
+    else
+        new_headers[const.ANONYMOUS] = true
+    end
+    kong.service.request.set_headers(new_headers)
+end
+
+local function set_anonymous(conf)
+    print(conf.anonymous)
+    local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
+    local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
+
+    if err then
+        return unexpected_error("Anonymous customer: ", err)
+    end
+
+    set_consumer(nil, consumer)
+end
+
+return function (conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
-
     local method = ngx.req.get_method()
     local path = ngx.var.uri
 
     path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
-    kong.log.debug("resource path: ", path)
-    if not path then
-        if conf.allow_unprotected_path then
-            return hide_credentials(conf)-- access granted
-        end
-        return kong.response.exit(403, "Unauthorized")
-    end
+    kong.log.debug("registered resource path: ", path)
 
-    if not token then
+    if path and not token then
         get_protection_token(conf) -- this may exit with 500
 
         local check_access_no_rpt_response = try_check_access(conf, path, method, nil)
@@ -178,30 +206,69 @@ return function(conf)
         unexpected_error("check_access without RPT token, responds with access == \"granted\"")
     end
 
+    if not path and not token then
+        if conf.allow_unprotected_path then
+            if conf.anonymous ~= "" then
+                set_anonymous(conf)
+            end
+            return -- access granted
+        end
+        return kong.response.exit(403, "Unprotected path are not allowed") -- TODO ?!
+    end
+
     local cache_key = build_cache_key(token, path)
-    local body, stale_data = worker_cache:get(cache_key)
-    if body and not stale_data then
+    local data, stale_data = worker_cache:get(cache_key)
+    if data and not stale_data then
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
-        return hide_credentials(conf)
+        set_consumer(data.client_id, data.consumer, data.exp)
+        hide_credentials(conf)
+        return -- access granted
     end
 
     get_protection_token(conf)
 
     local introspect_rpt_response_data = try_introspect_rpt(conf, token)
     if not introspect_rpt_response_data.active then
-        return kong.response.exit(403)
+        return kong.response.exit(401, "Invalid access token provided in Authorization header")
+    end
+
+    local client_id = assert(introspect_rpt_response_data.client_id)
+    local exp = assert(introspect_rpt_response_data.exp)
+
+    local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
+    if not consumer and not err then
+        kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
+        return kong.response.exit(401, "Unknown consumer")
+    end
+    if err then
+        return unexpected_error("select_by_custom_id error: ", err)
+    end
+    introspect_rpt_response_data.consumer = consumer
+
+    if not path then
+        if conf.allow_unprotected_path then
+            worker_cache:set(cache_key, introspect_rpt_response_data,
+                introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
+            )
+            set_consumer(client_id, consumer, exp)
+            hide_credentials(conf)
+            return -- access granted
+        end
+        return kong.response.exit(403, "Unauthorized")
     end
 
     local check_access_response = try_check_access(conf, path, method, token)
 
     if check_access_response.access == "granted" then
-        worker_cache:set(cache_key,
+        worker_cache:set(cache_key, introspect_rpt_response_data,
              introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
         )
-
-        return hide_credentials(conf) -- access granted
+        set_consumer(client_id, consumer, exp)
+        hide_credentials(conf)
+        return -- access granted
     end
+
     -- access == "denied"
     return kong.response.exit(403)
 end

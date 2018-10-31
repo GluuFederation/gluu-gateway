@@ -100,6 +100,7 @@ model = {
         end,
         response = {
             active = true,
+            client_id = "1234567890",
         },
         response_callback = function(response)
             response.iat = ngx.now()

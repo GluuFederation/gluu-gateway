@@ -8,6 +8,7 @@ return {
         op_url = { required = true, type = "url" },
         uma_scope_expression = { required = true, type = "table" }, --TODO check structure
         allow_unprotected_path = { type = "boolean", default = false },
+        anonymous = { type = "string", func = check_user, default = "" },
         hide_credentials = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)

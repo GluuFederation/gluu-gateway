@@ -100,6 +100,7 @@ model = {
         end,
         response = {
             active = true,
+            client_id = "1234567890",
         },
         response_callback = function(response)
             response.iat = ngx.now()
@@ -141,6 +142,7 @@ model = {
         end,
         response = {
             active = false,
+            client_id = "1234567890",
         }
     },
     -- #8, plugin check_access with valid RPT, "/posts", POST
@@ -157,6 +159,7 @@ model = {
         end,
         response = {
             active = true,
+            client_id = "1234567890",
         },
         response_callback = function(response)
             response.iat = ngx.now()
