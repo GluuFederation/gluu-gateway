@@ -60,14 +60,6 @@
               'plugins@consumers.edit': {
                 templateUrl: 'js/app/consumers/plugins/consumer-plugins.html',
                 controller: 'ConsumerPluginsController'
-              },
-              'services@consumers.edit': {
-                templateUrl: 'js/app/consumers/services/consumer-services.html',
-                controller: 'ConsumerServicesController'
-              },
-              'routes@consumers.edit': {
-                templateUrl: 'js/app/consumers/routes/consumer-routes.html',
-                controller: 'ConsumerRoutesController'
               }
             },
             resolve: {

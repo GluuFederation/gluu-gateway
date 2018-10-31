@@ -31,30 +31,11 @@
             icon: 'mdi-security'
           },
           {
-            id: 'services',
-            name: 'Accessible Services',
-            icon: 'mdi-cloud-outline'
-          },
-          {
-            id: 'routes',
-            name: 'Accessible Routes',
-            icon: 'mdi-directions-fork'
-          },
+            id: 'plugins',
+            name: 'Plugins',
+            icon: 'mdi-power-plug'
+          }
         ];
-
-        if (!_.get($rootScope, 'Gateway.plugins.available_on_server.acl')) {
-          $scope.sections = _.filter($scope.sections, function (item) {
-            return item.id !== 'groups' && item.id !== 'apis' && item.id !== 'services' & item.id !== 'routes'
-          })
-        }
-
-        $scope.sections.push({
-          id: 'plugins',
-          name: 'Plugins',
-          icon: 'mdi-power-plug'
-        });
-
-        $scope.showPluginsSection = Semver.cmp($rootScope.Gateway.version, "0.11.0") >= 0;
 
         $scope.onTabsSelected = function (index) {
           $scope.activeSection = index;
