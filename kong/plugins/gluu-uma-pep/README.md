@@ -14,8 +14,8 @@ Table of Contents
    * [Protection document](#protection-document)
  * [Protect your API with UMA](#protect-your-api-with-uma)
    * [Add your API server to kong /apis](#add-your-api-server-to-kong-apis) 
-   * [Enable gluu-oauth2-rs protection](#enable-gluu-oauth2-rs-protection)
-   * [Verify that your API is protected by gluu-oauth2-rs](#verify-that-your-api-is-protected-by-gluu-oauth2-rs)
+   * [Enable gluu-uma-pep protection](#enable-gluu-uma-pep-protection)
+   * [Verify that your API is protected by gluu-uma-pep](#verify-that-your-api-is-protected-by-gluu-uma-pep)
    * [Verify that your API can be accessed with valid RPT](#verify-that-your-api-can-be-accessed-with-valid-rpt)
  * [Upstream Headers](#upstream-headers)
  * [References](#references)
@@ -25,19 +25,19 @@ Table of Contents
 
 1. [Install Kong](https://getkong.org/install/)
 2. [Install oxd server v3.1.3](https://oxd.gluu.org/docs/)
-3. Install gluu-oauth2-rs
+3. Install gluu-uma-pep
     1. Stop kong : `kong stop`
     2. 
-        Using luarocks `luarocks install gluu-oauth2-rs`
+        Using luarocks `luarocks install gluu-uma-pep`
         
         or
         
-        Copy `gluu-oauth2-rs/kong/plugins/gluu-oauth2-rs` Lua sources to kong plugins folder `kong/plugins/gluu-oauth2-rs`        
+        Copy `gluu-uma-pep/kong/plugins/gluu-uma-pep` Lua sources to kong plugins folder `kong/plugins/gluu-uma-pep`        
             
     3. Enable plugin in your `kong.conf` (typically located at `/etc/kong/kong.conf`) and start kong `kong start`.
 
         ```
-            custom_plugins = gluu-oauth2-rs
+            custom_plugins = gluu-uma-pep
         ```
 
 ## Configuration
@@ -214,17 +214,17 @@ $ curl -i -X GET \
   --header 'Host: your.api.server.com'
 ```
 
-### Enable gluu-oauth2-rs protection
+### Enable gluu-uma-pep protection
 
 Important : each protection_document double quotes must be escaped by '\\' sign. This limitation comes from Kong configuration parameter type limitation which are limited to : "id", "number", "boolean", "string", "table", "array", "url", "timestamp".
    
-During gluu-oauth2-rs addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then gluu-oauth2-rs must be re-registered (to force registration with newly installed oxd).
+During gluu-uma-pep addition to /plugins keep in mind that oxd must be up and running otherwise registration will fail. It's because during POST to kong's /plugin endpoint, plugin performs self registration on oxd server at oxd_host provided in configuration. For this reason if plugin is added and you remove oxd (install new version of oxd) without configuration persistence then gluu-uma-pep must be re-registered (to force registration with newly installed oxd).
     
 
 ```
 $ curl -i -X POST \
   --url http://localhost:8001/apis/2eec1cb2-7093-411a-c14e-42e67142d2c4/plugins/ \
-  --data "name=gluu-oauth2-rs" \
+  --data "name=gluu-uma-pep" \
   --data "config.oxd_host=localhost" \
   --data "config.uma_server_host=https://uma.server.com" \
   --data "config.protection_document={\"resources\":[
@@ -264,7 +264,7 @@ $ curl -i -X POST \
                                      }\"
 ```
 
-### Verify that your API is protected by gluu-oauth2-rs
+### Verify that your API is protected by gluu-uma-pep
 
 ```
 $ curl -i -X GET \
