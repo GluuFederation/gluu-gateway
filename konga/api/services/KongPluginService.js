@@ -237,24 +237,12 @@ var KongPluginService = _.merge(_.cloneDeep(require('./KongService')), {
                 description: "Protect your services with an authentication layer",
                 icon: "mdi-account-outline",
                 plugins: {
-                    "basic-auth": {
-                        description: "Add Basic Authentication to your APIs"
-                    },
-                    "key-auth": {
-                        description: "Add a key authentication to your APIs"
-                    },
-                    "oauth2": {
-                        description: "Add an OAuth 2.0 authentication to your APIs"
-                    },
-                    "hmac-auth": {
-                        description: "Add HMAC Authentication to your APIs"
-                    },
-                    "jwt": {
-                        description: "Verify and authenticate JSON Web Tokens"
-                    },
-                    "ldap-auth": {
-                        description: "Integrate Kong with a LDAP server"
-                    },
+                  "gluu-oauth-pep": {
+                    description: "Add Client authentication with OAuth scope security. This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
+                  },
+                  "gluu-uma-pep": {
+                    description: "Add Client authentication with UMA scope security. This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
+                  },
                 }
             },
             {

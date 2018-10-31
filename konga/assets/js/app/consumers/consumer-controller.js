@@ -26,11 +26,6 @@
             icon: 'mdi-account-multiple-outline'
           },
           {
-            id: 'credentials',
-            name: 'Credentials',
-            icon: 'mdi-security'
-          },
-          {
             id: 'plugins',
             name: 'Plugins',
             icon: 'mdi-power-plug'
