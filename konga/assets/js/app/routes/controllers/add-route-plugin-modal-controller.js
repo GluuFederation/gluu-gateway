@@ -25,16 +25,6 @@
 
         new KongPluginsService().makePluginGroups().then(function (groups) {
           $scope.pluginGroups = groups;
-
-          // Remove ssl plugin if Kong > 0.9.x
-          $scope.pluginGroups.forEach(function (group) {
-            Object.keys(group.plugins).forEach(function (key) {
-              if (key == "gluu-client-auth" || key == "gluu-pep") {
-                delete group.plugins[key];
-              }
-            })
-          });
-
           $log.debug("Plugin Groups", $scope.pluginGroups)
         });
 
@@ -62,6 +52,16 @@
         }
 
         function onAddPlugin(name) {
+          if (name == "gluu-oauth-pep") {
+            $uibModalInstance.dismiss();
+            return $state.go("routes.oauth-plugin", {route_id: $scope.route.id});
+          }
+
+          if (name == "gluu-uma-pep") {
+            $uibModalInstance.dismiss();
+            return $state.go("routes.uma-plugin", {route_id: $scope.route.id});
+          }
+
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',

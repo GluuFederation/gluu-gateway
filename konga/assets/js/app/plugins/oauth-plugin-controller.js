@@ -32,7 +32,7 @@
         }
 
         $scope.modelPlugin = {
-          name: 'gluu-client-auth',
+          name: 'gluu-oauth-pep',
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
@@ -57,7 +57,7 @@
         $scope.isPluginAdded = false;
 
         $scope.plugins.forEach(function (o) {
-          if (o.name == "gluu-client-auth") {
+          if (o.name == "gluu-oauth-pep") {
             $scope.modelPlugin = o;
             $scope.isPluginAdded = true;
             $scope.ruleScope = {};

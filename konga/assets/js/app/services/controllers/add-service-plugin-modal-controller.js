@@ -51,6 +51,17 @@
         }
 
         function onAddPlugin(name) {
+
+          if (name == "gluu-oauth-pep") {
+            $uibModalInstance.dismiss();
+            return $state.go("services.oauth-plugin", {service_id: $scope.service.id});
+          }
+
+          if (name == "gluu-uma-pep") {
+            $uibModalInstance.dismiss();
+            return $state.go("services.uma-plugin", {service_id: $scope.service.id});
+          }
+
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',

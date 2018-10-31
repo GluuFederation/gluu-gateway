@@ -32,7 +32,7 @@
         }
 
         $scope.modelPlugin = {
-          name: 'gluu-pep',
+          name: 'gluu-uma-pep',
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
@@ -53,7 +53,7 @@
         $scope.isPluginAdded = false;
 
         $scope.plugins.forEach(function (o) {
-          if (o.name == "gluu-pep") {
+          if (o.name == "gluu-uma-pep") {
             PluginsService
               .getOAuthClient(o.config.oxd_id)
               .then(function (response) {

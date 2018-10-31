@@ -70,11 +70,11 @@
         }
 
         function onAddPlugin(name) {
-          if (name == "gluu-client-auth") {
+          if (name == "gluu-oauth-pep") {
             return $state.go("plugins.oauth-plugin");
           }
 
-          if (name == "gluu-pep") {
+          if (name == "gluu-uma-pep") {
             return $state.go("plugins.uma-plugin");
           }
 

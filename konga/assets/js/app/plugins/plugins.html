@@ -83,17 +83,17 @@
           <td>{{item.created_at | date : format : timezone}}</td>
 
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
-            <button data-ng-if="item.name == 'gluu-client-auth'" type="button" ng-click="deleteOAuthClient(item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name == 'gluu-oauth-pep'" type="button" ng-click="deleteOAuthClient(item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>
 
-            <button data-ng-if="item.name == 'gluu-pep'" type="button" ng-click="deletePEPClient(item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name == 'gluu-uma-pep'" type="button" ng-click="deletePEPClient(item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>
 
-            <button data-ng-if="item.name != 'gluu-client-auth' && item.name != 'gluu-pep'" type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name != 'gluu-oauth-pep' && item.name != 'gluu-uma-pep'" type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>
