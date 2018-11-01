@@ -10,8 +10,7 @@ Package: gluu-gateway
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  postgresql (>= 9.4),
- oxd-server (>= 4.0.0),  
- oxd-server (<< 4.0.1),
+ oxd-server-4.0.beta,
  nodejs,
  git,
  unzip,
