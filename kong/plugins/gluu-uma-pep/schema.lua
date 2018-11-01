@@ -7,7 +7,7 @@ return {
         oxd_id = { required = true, type = "string" },
         op_url = { required = true, type = "url" },
         uma_scope_expression = { required = true, type = "table" }, --TODO check structure
-        allow_unprotected_path = { type = "boolean", default = false },
+        deny_by_default = { type = "boolean", default = true },
         anonymous = { type = "string", func = check_user, default = "" },
         hide_credentials = { type = "boolean", default = false },
     },

@@ -197,7 +197,7 @@ test("gluu-uma-pep", function()
     ctx.print_logs = false
 end)
 
-test("gluu-uma-pep allow_unprotected_path = true", function()
+test("gluu-uma-pep deny_by_default = false", function()
     setup("oxd-model2.lua")
 
     local create_service_response = configure_service_route()
@@ -214,7 +214,7 @@ test("gluu-uma-pep allow_unprotected_path = true", function()
                     }
                 }
             },
-            allow_unprotected_path = true,
+            deny_by_default = false,
             hide_credentials = true
         }
     )

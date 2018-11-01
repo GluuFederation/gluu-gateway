@@ -207,7 +207,7 @@ return function (conf)
     end
 
     if not path and not token then
-        if conf.allow_unprotected_path then
+        if not conf.deny_by_default then
             if conf.anonymous ~= "" then
                 set_anonymous(conf)
             end
@@ -247,7 +247,7 @@ return function (conf)
     introspect_rpt_response_data.consumer = consumer
 
     if not path then
-        if conf.allow_unprotected_path then
+        if not conf.deny_by_default then
             worker_cache:set(cache_key, introspect_rpt_response_data,
                 introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
             )

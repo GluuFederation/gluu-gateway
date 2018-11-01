@@ -136,7 +136,7 @@ local function do_authentication(conf)
     local scope_expression, protected_path
     local body, stale_data
     kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
-    if conf.allow_oauth_scope_expression then
+    if not conf.ignore_scope then
         scope_expression, protected_path = helper.get_expression_by_request_path_method(
             conf.oauth_scope_expression, request_path, request_http_method
         )
@@ -145,7 +145,7 @@ local function do_authentication(conf)
                 build_cache_key(token, protected_path, request_http_method)
             )
         else
-            if not conf.allow_unprotected_path then
+            if conf.deny_by_default then
                 kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
                 return 403, "Path/method is not protected with scope expression"
             end
@@ -211,10 +211,10 @@ local function do_authentication(conf)
         return unexpected_error("missed exp or iat fields")
     end
 
-    if conf.allow_oauth_scope_expression then
+    if not conf.ignore_scope then
         if not scope_expression then
-            if conf.allow_unprotected_path then
-                kong.log.info("Path is not proteced, but allow_unprotected_path")
+            if not conf.deny_by_default then
+                kong.log.info("Path is not proteced, but not deny_by_default")
                 worker_cache:set(build_cache_key(token, request_path, request_http_method), body, body.exp - body.iat)
                 set_consumer(body.consumer, body.client_id, body.exp)
                 return 200

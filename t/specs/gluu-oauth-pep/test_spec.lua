@@ -136,14 +136,14 @@ test("with and without token", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = false,
+            ignore_scope = true,
         }
     )
 
     print"test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-    assert(res:find("401"), 1, true)
+    assert(res:find("401", 1, true))
 
     print"create a consumer"
     local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
@@ -201,6 +201,7 @@ test("Anonymous test", function()
     configure_plugin(create_service_response,
         {
             anonymous = anonymous_consumer_response.id,
+            ignore_scope = true,
         }
     )
 
@@ -214,7 +215,7 @@ test("Anonymous test", function()
 end)
 
 
-test("allow_unprotected_path = false", function()
+test("deny_by_default = reuw", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -227,8 +228,8 @@ test("allow_unprotected_path = false", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = false,
+            ignore_scope = false,
+            deny_by_default = true,
         }
     )
 
@@ -245,13 +246,13 @@ test("allow_unprotected_path = false", function()
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
-    assert(res:find("403"), 1, true)
+    assert(res:find("403", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
 
-test("allow_unprotected_path = true, hide_credentials = true", function()
+test("deny_by_default = false, hide_credentials = true", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -264,8 +265,8 @@ test("allow_unprotected_path = true, hide_credentials = true", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = true,
+            ignore_scope = false,
+            deny_by_default = false,
             hide_credentials = true
         }
     )
@@ -418,8 +419,8 @@ test("check oauth_scope_expression", function()
                     }
                 }
             },
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = false,
+            ignore_scope = false,
+            deny_by_default = true,
         });
 
     print "create a consumer"
