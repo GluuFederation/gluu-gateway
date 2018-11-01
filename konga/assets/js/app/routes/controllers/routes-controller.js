@@ -4,9 +4,9 @@
   angular.module('frontend.routes')
     .controller('RoutesController', [
       '$scope', '$rootScope', '$log', '$state', 'RoutesService', 'ListConfig', 'RouteModel',
-      'UserService', '$uibModal', '_services',
+      'UserService', '$uibModal', '_services', 'PluginModel',
       function controller($scope, $rootScope, $log, $state, RoutesService, ListConfig, RouteModel,
-                          UserService, $uibModal, _services) {
+                          UserService, $uibModal, _services, PluginModel) {
         $scope.services = _services.data;
         RouteModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('route', RouteModel)));
@@ -64,19 +64,32 @@
           $scope.loading = true;
           RouteModel.load({
             size: $scope.itemsFetchSize
-          }).then(function (response) {
-            // Assign service names
-            response.data.forEach(function (route) {
-              var service = _.find($scope.services, function (service) {
-                return service.id === route.service.id
-              });
-              if (service) {
-                _.set(route, 'service', service);
-              }
+          }).then(function (routeResponse) {
+            PluginModel.load()
+              .then(function (pluginsSesponse) {
+                routeResponse.data.map(function(route) {
+                  pluginsSesponse.data.forEach(function(plugin){
+                    route.plugins = [];
+                    if (plugin.route_id == route.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
+                      route.plugins.push(plugin);
+                    }
+                  });
+                  return route;
+                });
 
-            })
-            $scope.items = response;
-            $scope.loading = false;
+                // Assign service names
+                routeResponse.data.forEach(function (route) {
+                  var service = _.find($scope.services, function (service) {
+                    return service.id === route.service.id
+                  });
+                  if (service) {
+                    _.set(route, 'service', service);
+                  }
+                });
+
+                $scope.items = routeResponse;
+                $scope.loading = false;
+              })
           })
 
         }

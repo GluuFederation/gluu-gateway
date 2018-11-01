@@ -64,12 +64,15 @@
           <td>{{ route.paths.join(", ") || "-" }}</td>
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
-              OAuth
-            </a>
-            <a ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary" style="margin-top: 3px;">
-              &nbsp;&nbsp;PEP&nbsp;&nbsp;
-            </a>
+            <div data-ng-repeat="plugin in route.plugins">
+              <a data-ng-if="plugin.name == 'gluu-oauth-pep'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OAUTH-PEP
+              </a>
+              <a data-ng-if="plugin.name == 'gluu-uma-pep'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> UMA-PEP
+              </a>
+            </div>
+            <span data-ng-if="route.plugins.length < 1">-</span>
           </td>
           <td>
             <a class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"

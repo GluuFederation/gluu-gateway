@@ -125,7 +125,24 @@
             .then(function (response) {
               $scope.existingPlugins = response.data.data.map(function (item) {
                 return item.name
-              })
+              });
+              setTimeout(function () {
+                var flag = false;
+                $scope.existingPlugins.forEach(function(obj){
+                  if (obj == "gluu-oauth-pep") {
+                    $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = false;
+                    flag = true
+                  }
+                  if (obj == "gluu-uma-pep") {
+                    $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = false;
+                    flag = true
+                  }
+                });
+                if (flag == false) {
+                  $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
+                  $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
+                }
+              }, 100);
             })
             .catch(function (err) {
 

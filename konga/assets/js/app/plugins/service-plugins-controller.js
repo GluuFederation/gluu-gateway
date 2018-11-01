@@ -83,7 +83,7 @@
         function deletePlugin(plugin) {
           DialogService.prompt(
             "Delete Plugin", "Really want to delete the plugin?",
-            ['No don\'t', 'Yes! delete it'],
+            ['CANCEL', 'YES'],
             function accept() {
               PluginsService.delete(plugin.id)
                 .then(function (resp) {

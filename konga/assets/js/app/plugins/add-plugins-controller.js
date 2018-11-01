@@ -109,36 +109,38 @@
         }
 
         function syncPlugins(added) {
-          var addedMap = [];
+          $scope.existingPlugins = [];
 
           added.forEach(function (item) {
             if (!(item.service_id || item.route_id || item.api_id)) {
-              addedMap.push(item.name)
+              $scope.existingPlugins.push(item.name)
             }
           });
 
-          $scope.pluginGroups.forEach(function (group) {
-            for (var key in group.plugins) {
-              if (addedMap.indexOf(key) > -1) {
-                group.plugins[key].isAdded = true
-                var plugin = findPlugin(added, key);
-                if (plugin) {
-                  for (var _key in plugin) {
-                    group.plugins[key][_key] = plugin[_key]
-                  }
-                }
-              } else {
-                group.plugins[key].isAdded = false
+          setTimeout(function () {
+            var flag = false;
+            $scope.existingPlugins.forEach(function(obj){
+              if (obj == "gluu-oauth-pep") {
+                $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = false;
+                flag = true
               }
+              if (obj == "gluu-uma-pep") {
+                $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = false;
+                flag = true
+              }
+            });
+            if (flag == false) {
+              $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
+              $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
             }
-          })
+          }, 100);
         }
 
 
         function fetchPlugins() {
           PluginsService.load()
             .then(function (res) {
-              syncPlugins(res.data.data)
+              syncPlugins(res.data.data);
             })
         }
 

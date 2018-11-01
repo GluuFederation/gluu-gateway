@@ -4,9 +4,9 @@
   angular.module('frontend.services')
     .controller('ServicesController', [
       '$scope', '$rootScope', '$log', '$state', 'ServiceService', 'ListConfig', 'ServiceModel',
-      'UserService', '$uibModal', 'DialogService',
+      'UserService', '$uibModal', 'PluginModel',
       function controller($scope, $rootScope, $log, $state, ServiceService, ListConfig, ServiceModel,
-                          UserService, $uibModal, DialogService) {
+                          UserService, $uibModal, PluginModel) {
 
         ServiceModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('service', ServiceModel)));
@@ -79,12 +79,25 @@
           $scope.loading = true;
           ServiceModel.load({
             size: $scope.itemsFetchSize
-          }).then(function (response) {
-            $scope.items = response;
-            console.log("Services =>", $scope.items);
-            $scope.loading = false;
-          })
+          }).then(function (serviceResponse) {
+            PluginModel.load()
+              .then(function (pluginsSesponse) {
+                serviceResponse.data.map(function(service) {
+                  pluginsSesponse.data.forEach(function(plugin){
+                    service.plugins = [];
+                    if (plugin.service_id == service.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
+                      service.plugins.push(plugin);
+                    }
+                  });
+                  return service;
+                });
 
+                $scope.items = serviceResponse;
+                console.log("Services =>", $scope.items);
+
+                $scope.loading = false;
+              })
+          })
         }
 
 

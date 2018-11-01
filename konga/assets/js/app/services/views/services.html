@@ -55,12 +55,15 @@
           <td>{{ service.host || "-" }}</td>
           <td>{{service.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <a ui-sref="services.oauth-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
-              OAuth
-            </a>
-            <a ui-sref="services.uma-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
-              PEP
-            </a>
+            <div data-ng-repeat="plugin in service.plugins">
+              <a data-ng-if="plugin.name == 'gluu-oauth-pep'" ui-sref="services.oauth-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OAUTH-PEP
+              </a>
+              <a data-ng-if="plugin.name == 'gluu-uma-pep'" ui-sref="services.uma-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> UMA-PEP
+              </a>
+            </div>
+            <span data-ng-if="service.plugins.length < 1">-</span>
           </td>
           <td>
             <a ui-sref="services.edit({ service_id: service.id })" class="btn btn-info btn-link">
