@@ -214,8 +214,7 @@ test("Anonymous test", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-
-test("deny_by_default = reuw", function()
+test("deny_by_default = true", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 

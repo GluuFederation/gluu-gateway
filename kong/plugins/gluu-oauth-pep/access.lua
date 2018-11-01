@@ -116,7 +116,26 @@ local function build_cache_key(token, path, method)
     return table.concat(t)
 end
 
-local function do_authentication(conf)
+local function handle_anonymous(conf, scope_expression, status, err)
+    if conf.anonymous == "" then
+        return kong.response.exit(status, { message = err })
+    end
+    if scope_expression or (not conf.ignore_scope and conf.deny_by_default) then
+        -- path is protected or unprotected path not allowed, cannot grant anonymous access
+        return kong.response.exit(status, { message = err })
+    end
+
+    print(conf.anonymous)
+    local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
+    local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
+
+    if err then
+        return unexpected_error("Anonymous customer: ", err)
+    end
+    set_consumer(consumer)
+end
+
+return function(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
 
@@ -124,10 +143,6 @@ local function do_authentication(conf)
     if conf.hide_credentials then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
-    end
-
-    if not token then
-        return 401, "Failed to get bearer token from Authorization header"
     end
 
     local request_path = ngx.var.uri
@@ -139,6 +154,13 @@ local function do_authentication(conf)
         scope_expression, protected_path = helper.get_expression_by_request_path_method(
             conf.oauth_scope_expression, request_path, request_http_method
         )
+    end
+
+    if not token then
+        return handle_anonymous(conf, scope_expression, 401, "Failed to get bearer token from Authorization header")
+    end
+
+    if not conf.ignore_scope then
         if scope_expression then
             body, stale_data = worker_cache:get(
                 build_cache_key(token, protected_path, request_http_method)
@@ -146,7 +168,7 @@ local function do_authentication(conf)
         else
             if conf.deny_by_default then
                 kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
-                return 403, "Path/method is not protected with scope expression"
+                kong.response.exit(403, { message = "Path/method is not protected with scope expression" })
             end
 
             body, stale_data = worker_cache:get(
@@ -161,7 +183,7 @@ local function do_authentication(conf)
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
         set_consumer(body.consumer, body.client_id, body.exp)
-        return 200
+        return -- access granted
     end
 
     -- Get protection access token for OXD API
@@ -178,7 +200,7 @@ local function do_authentication(conf)
 
     if status == 403 then
         -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
-        return 401, "Invalid access token provided in Authorization header"
+        return handle_anonymous(conf, scope_expression, 401, "Invalid access token provided in Authorization header")
     end
 
     if status ~= 200 then
@@ -187,7 +209,7 @@ local function do_authentication(conf)
 
     body = response.body
     if not body.active then
-        return 401, "Token is not active"
+        return handle_anonymous(conf, scope_expression, 401, "Token is not active")
     end
 
     local consumer = worker_cache:get(body.client_id)
@@ -216,7 +238,7 @@ local function do_authentication(conf)
                 kong.log.info("Path is not proteced, but not deny_by_default")
                 worker_cache:set(build_cache_key(token, request_path, request_http_method), body, body.exp - body.iat)
                 set_consumer(body.consumer, body.client_id, body.exp)
-                return 200
+                return -- access granted
             else
                 error("this should be never reached, because must be handled early")
             end
@@ -225,7 +247,7 @@ local function do_authentication(conf)
         if not helper.check_scope_expression(scope_expression, body.scope) then
             -- TODO should we cache negative result?
             kong.log.debug("Not authorized for this path/method")
-            return 403, "You are not authorized for this path/method"
+            return kong.response.exit(403, { message = "You are not authorized for this path/method" })
         end
         worker_cache:set(build_cache_key(token, protected_path, request_http_method), body, body.exp - body.iat)
     else
@@ -233,28 +255,5 @@ local function do_authentication(conf)
     end
 
     set_consumer(body.consumer, body.client_id, body.exp)
-    return 200
-end
-
-return function(conf)
-
-    local status, err = do_authentication(conf);
-
-    if status ~= 200 then
-        -- Check anonymous user and set header with anonymous consumer details
-        if conf.anonymous ~= "" then
-            -- get anonymous user
-            print(conf.anonymous)
-            local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-            local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
-
-            if err then
-                return unexpected_error("Anonymous customer: ", err)
-            end
-            set_consumer(consumer)
-            return
-        else
-            kong.response.exit(status, { message = err })
-        end
-    end
+    return
 end
