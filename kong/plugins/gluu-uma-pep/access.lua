@@ -141,14 +141,6 @@ local function try_introspect_rpt(conf, token)
     unexpected_error("introspect_rpt() responds with unexpected status: ", status)
 end
 
-local function hide_credentials(conf)
-    if not conf.hide_credentials then
-        return
-    end
-    kong.log.debug("Hide authorization header")
-    kong.service.request.clear_header("authorization")
-end
-
 local function set_consumer(client_id, consumer, exp)
     local const = constants.HEADERS
     local new_headers = {
@@ -189,6 +181,12 @@ return function (conf)
     local method = ngx.req.get_method()
     local path = ngx.var.uri
 
+    kong.log.debug("hide_credentials: ", conf.hide_credentials)
+    if conf.hide_credentials then
+        kong.log.debug("Hide authorization header")
+        kong.service.request.clear_header("authorization")
+    end
+
     path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
     kong.log.debug("registered resource path: ", path)
 
@@ -222,7 +220,6 @@ return function (conf)
         -- we're already authenticated
         kong.log.debug("Token cache found. we're already authenticated")
         set_consumer(data.client_id, data.consumer, data.exp)
-        hide_credentials(conf)
         return -- access granted
     end
 
@@ -252,7 +249,6 @@ return function (conf)
                 introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
             )
             set_consumer(client_id, consumer, exp)
-            hide_credentials(conf)
             return -- access granted
         end
         return kong.response.exit(403, "Unauthorized")
@@ -265,7 +261,6 @@ return function (conf)
              introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
         )
         set_consumer(client_id, consumer, exp)
-        hide_credentials(conf)
         return -- access granted
     end
 

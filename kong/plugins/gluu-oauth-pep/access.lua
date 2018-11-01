@@ -120,7 +120,6 @@ local function do_authentication(conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
 
-    -- Hide credentials
     kong.log.debug("hide_credentials: ", conf.hide_credentials)
     if conf.hide_credentials then
         kong.log.debug("Hide authorization header")
