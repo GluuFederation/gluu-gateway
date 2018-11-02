@@ -11,36 +11,17 @@
       '_', '$scope', '$rootScope', '$log',
       '$state', 'MessageService', 'DialogService',
       'KongPluginsService', 'PluginsService', '$uibModal',
-      '_plugins', '_info',
       function controller(_, $scope, $rootScope, $log,
                           $state, MessageService, DialogService,
-                          KongPluginsService, PluginsService, $uibModal,
-                          _plugins, _info) {
+                          KongPluginsService, PluginsService, $uibModal) {
 
-
-        var info = _info.data;
-        var plugins_available = info.plugins.available_on_server;
         var pluginOptions = new KongPluginsService().pluginOptions();
 
         $scope.pluginOptions = pluginOptions;
-        new KongPluginsService().makePluginGroups().then(function (groups) {
-          $scope.pluginGroups = groups;
-          $log.debug("Plugin Groups", $scope.pluginGroups);
-
-          $scope.pluginGroups.forEach(function (group) {
-            console.log(group.plugins);
-            for (var key in group.plugins) {
-              if (!plugins_available[key]) delete group.plugins[key]
-            }
-          });
-
-          // Init
-          syncPlugins(_plugins.data.data)
-        });
-        $scope.activeGroup = 'Authentication'
-        $scope.setActiveGroup = setActiveGroup
-        $scope.filterGroup = filterGroup
-        $scope.onAddPlugin = onAddPlugin
+        $scope.activeGroup = 'Security';
+        $scope.setActiveGroup = setActiveGroup;
+        $scope.filterGroup = filterGroup;
+        $scope.onAddPlugin = onAddPlugin;
 
         $scope.alert = {
           msg: '<strong>Plugins added in this section will be applied Globally</strong>.' +
@@ -117,7 +98,10 @@
             }
           });
 
-          setTimeout(function () {
+          new KongPluginsService().makePluginGroups().then(function (groups) {
+            $scope.pluginGroups = groups;
+            $log.debug("Plugin Groups", $scope.pluginGroups);
+
             var flag = false;
             $scope.existingPlugins.forEach(function(obj){
               if (obj == "gluu-oauth-pep") {
@@ -133,9 +117,8 @@
               $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
               $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
             }
-          }, 100);
+          });
         }
-
 
         function fetchPlugins() {
           PluginsService.load()
@@ -160,7 +143,9 @@
 
         $scope.$on("plugin.updated", function (ev, plugin) {
           fetchPlugins()
-        })
+        });
+
+        fetchPlugins();
       }
     ]);
 }());

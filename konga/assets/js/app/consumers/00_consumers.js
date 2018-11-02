@@ -43,7 +43,6 @@
               'content@': {
                 templateUrl: 'js/app/consumers/edit-consumer.html',
                 controller: 'ConsumerController',
-
               },
               'details@consumers.edit': {
                 templateUrl: 'js/app/consumers/details/consumer-details.html',
@@ -52,10 +51,6 @@
               'groups@consumers.edit': {
                 templateUrl: 'js/app/consumers/groups/consumer-groups.html',
                 controller: 'ConsumerGroupsController'
-              },
-              'credentials@consumers.edit': {
-                templateUrl: 'js/app/consumers/credentials/consumer-credentials.html',
-                controller: 'ConsumerCredentialsController'
               },
               'plugins@consumers.edit': {
                 templateUrl: 'js/app/consumers/plugins/consumer-plugins.html',

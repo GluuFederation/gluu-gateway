@@ -40,7 +40,9 @@
                vertilize>
             <div class="panel-heading">
               <div class="panel-title">
-                <span class="capitalize">{{key.split('-').join(" ")}}</span>
+                <span class="capitalize" data-ng-if="key == 'gluu-oauth-pep'">Gluu OAuth PEP</span>
+                <span class="capitalize" data-ng-if="key == 'gluu-uma-pep'">Gluu UMA PEP</span>
+                <span class="capitalize" data-ng-if="key != 'gluu-oauth-pep' && key != 'gluu-uma-pep'">{{key.split('-').join(" ")}}</span>
                 <div class="pull-right">
                   <!--Add Button in kong plugins case-->
                   <button

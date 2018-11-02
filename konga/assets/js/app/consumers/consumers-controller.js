@@ -67,7 +67,10 @@
               $scope.close = close;
               $scope.submit = submit;
 
-              function submit() {
+              function submit(valid) {
+                if (!valid) {
+                  return
+                }
 
                 $scope.errors = {};
 
@@ -146,7 +149,9 @@
                 PluginsService
                   .addOAuthConsumerClient($scope.opClient)
                   .then(function (res) {
-                    prompt(res.data);
+                    var clientResposne = res.data;
+                    clientResposne.client_name = $scope.opClient.client_name;
+                    prompt(clientResposne);
                     MessageService.success("Client created successfully!");
                     close();
                   })
@@ -235,6 +240,10 @@
             '<div class="modal-body">' +
             '<table class="table table-bordered">' +
             '<tbody>' +
+            '<tr>' +
+            '<td>Client Name</td>' +
+            '<td>' + data.client_name + ' </td>' +
+            '</tr>' +
             '<tr>' +
             '<td>OXD Id</td>' +
             '<td>' + data.oxd_id + ' </td>' +

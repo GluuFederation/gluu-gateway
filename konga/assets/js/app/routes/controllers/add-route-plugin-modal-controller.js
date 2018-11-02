@@ -23,12 +23,7 @@
         $scope.route = _route;
         $scope.pluginOptions = pluginOptions;
 
-        new KongPluginsService().makePluginGroups().then(function (groups) {
-          $scope.pluginGroups = groups;
-          $log.debug("Plugin Groups", $scope.pluginGroups)
-        });
-
-        $scope.activeGroup = 'Authentication';
+        $scope.activeGroup = 'Security';
         $scope.setActiveGroup = setActiveGroup;
         $scope.filterGroup = filterGroup;
         $scope.onAddPlugin = onAddPlugin;
@@ -98,7 +93,7 @@
 
         // Listeners
         $scope.$on('plugin.added', function () {
-          fetchPlugins()
+          getRoutePlugins()
         });
 
         /**
@@ -107,11 +102,11 @@
          * ------------------------------------------------------------
          */
         $scope.$on("plugin.added", function () {
-          fetchPlugins()
+          getRoutePlugins()
         });
 
         $scope.$on("plugin.updated", function (ev, plugin) {
-          fetchPlugins()
+          getRoutePlugins()
         });
 
 
@@ -127,8 +122,11 @@
             .then(function (response) {
               $scope.existingPlugins = response.data.data.map(function (item) {
                 return item.name
-              })
-              setTimeout(function () {
+              });
+              new KongPluginsService().makePluginGroups().then(function (groups) {
+                $scope.pluginGroups = groups;
+                $log.debug("Plugin Groups", $scope.pluginGroups);
+
                 var flag = false;
                 $scope.existingPlugins.forEach(function(obj){
                   if (obj == "gluu-oauth-pep") {
@@ -144,12 +142,13 @@
                   $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
                   $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
                 }
-              }, 100);
+              });
             })
             .catch(function (err) {
 
             })
         }
+
         getRoutePlugins();
       }
     ]);
