@@ -83,8 +83,8 @@
             PluginModel.load()
               .then(function (pluginsSesponse) {
                 serviceResponse.data.map(function(service) {
+                  service.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    service.plugins = [];
                     if (plugin.service_id == service.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
                       service.plugins.push(plugin);
                     }

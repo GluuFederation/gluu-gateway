@@ -68,8 +68,8 @@
             PluginModel.load()
               .then(function (pluginsSesponse) {
                 routeResponse.data.map(function(route) {
+                  route.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    route.plugins = [];
                     if (plugin.route_id == route.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
                       route.plugins.push(plugin);
                     }
