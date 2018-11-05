@@ -37,7 +37,8 @@
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
             uma_scope_expression: [],
-            allow_unprotected_path: false,
+            ignore_scope: false,
+            deny_by_default: true,
             hide_credentials: false
           }
         };
