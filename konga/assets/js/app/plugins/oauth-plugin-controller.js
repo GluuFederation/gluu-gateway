@@ -40,8 +40,8 @@
             client_id: $scope.globalInfo.clientId,
             client_secret: $scope.globalInfo.clientSecret,
             oauth_scope_expression: [],
-            allow_oauth_scope_expression: false,
-            allow_unprotected_path: false,
+            ignore_scope: false,
+            deny_by_default: true,
             hide_credentials: false
           }
         };
@@ -303,8 +303,8 @@
             delete model.config.oauth_scope_expression
           }
 
-          if (model.config.allow_oauth_scope_expression && !model.config.oauth_scope_expression) {
-            MessageService.error("OAuth scope expression is required when allow expression is Yes");
+          if (!model.config.ignore_scope && !model.config.oauth_scope_expression) {
+            MessageService.error("OAuth scope expression is required");
             return;
           }
 
@@ -354,8 +354,8 @@
             model.config.oauth_scope_expression = null;
           }
 
-          if (model.config.allow_oauth_scope_expression && !model.config.oauth_scope_expression) {
-            MessageService.error("OAuth scope expression is required when allow expression is Yes");
+          if (!model.config.ignore_scope && !model.config.oauth_scope_expression) {
+            MessageService.error("OAuth scope expression is required");
             return;
           }
 
