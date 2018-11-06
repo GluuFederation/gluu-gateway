@@ -122,8 +122,7 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
-
-test("gluu-uma-pep", function()
+test("with and without token and check UMA scope", function()
     setup("oxd-model1.lua")
 
     local create_service_response = configure_service_route()
@@ -176,6 +175,10 @@ test("gluu-uma-pep", function()
     -- plugin shouldn't call oxd, must use cache
     local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- posts: request with wrong token
     local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
@@ -183,21 +186,76 @@ test("gluu-uma-pep", function()
     assert(stdout:find("401", 1, true))
 
     -- posts: request
-    local _, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS1234567890']])
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- posts: plugin shouldn't call oxd, must use cache
-    local _, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS1234567890']])
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- todos: not register then apply rules under path / with same token `1234567890`
-    local _, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     ctx.print_logs = false
 end)
 
-test("gluu-uma-pep deny_by_default = false", function()
+test("deny_by_default = true", function()
+
+    setup("oxd-model2.lua")
+    local create_service_response = configure_service_route()
+
+    print "test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            uma_scope_expression = {
+                {
+                    path = "/posts",
+                    conditions = {
+                        {
+                            httpMethods = { "GET" },
+                        }
+                    }
+                }
+            },
+            deny_by_default = true,
+        })
+
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+
+    local consumer_response = JSON:decode(res)
+
+    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
+    assert(stdout:find("401", 1, true))
+    assert(stdout:find("ticket", 1, true))
+
+    print "test it fail with 403"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert(res:find("403", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("deny_by_default = false and hide_credentials = true", function()
     setup("oxd-model2.lua")
 
     local create_service_response = configure_service_route()
@@ -235,17 +293,75 @@ test("gluu-uma-pep deny_by_default = false", function()
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
     assert.equal(nil, stdout:lower():find("authorization: "))
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- plugin shouldn't call oxd, must use cache
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
     assert.equal(nil, stdout:lower():find("authorization: "))
+    assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
     -- /todos: request to not protected
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/todos --header 'Host: backend.com' ]]
     )
-
     ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Anonymous test", function()
+
+    setup("oxd-model2.lua")
+    local create_service_response = configure_service_route()
+
+    print "test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    print "Create a anonymous consumer"
+    local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
+    local anonymous_consumer_response = JSON:decode(res)
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            anonymous = anonymous_consumer_response.id,
+            uma_scope_expression = {
+                {
+                    path = "/posts",
+                    conditions = {
+                        {
+                            httpMethods = { "GET" },
+                        }
+                    }
+                }
+            },
+            deny_by_default = true,
+        })
+
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+
+    local consumer_response = JSON:decode(res)
+
+    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
+    assert(stdout:find("401", 1, true))
+    assert(stdout:find("ticket", 1, true))
+
+    print "Test with anonymous consumer"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
+
+    ctx.print_logs = true-- comment it out if want to see logs
 end)
