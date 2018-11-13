@@ -75,9 +75,11 @@
                 description: "Protect your services with additional security layers",
                 plugins: {
                   "gluu-oauth-pep": {
+                    hideIfNotInConsumerContext: true,
                     description: "Add Client authentication with OAuth scope security. This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
                   },
                   "gluu-uma-pep": {
+                    hideIfNotInConsumerContext: true,
                     description: "Add Client authentication with UMA scope security. This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
                   },
                   "acl": {
