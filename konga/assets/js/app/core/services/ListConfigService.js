@@ -303,7 +303,7 @@
               width: 1
             },
             {
-              title: 'username',
+              title: 'consumer name',
               column: 'username',
               searchable: true,
               sortable: true,
@@ -311,7 +311,7 @@
               inTitle: true
             },
             {
-              title: 'custom_id',
+              title: 'gluu client id',
               column: 'custom_id',
               searchable: true,
               sortable: true,
