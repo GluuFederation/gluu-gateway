@@ -40,7 +40,7 @@
                 <label>1. UMA Scope expression configuration</label>
                 <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
-              <div class="form-group" data-ng-show="isPluginAdded">
+              <div class="form-group" data-ng-disabled="!isPluginAdded" ng-class="{'disabled': !isPluginAdded}">
                 <label class="col-sm-3 control-label">Ignore Scope
                   <br>
                   <em>
@@ -254,7 +254,7 @@
                   </p>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group" data-ng-disabled="modelPlugin.config.deny_by_default" ng-class="{'disabled': modelPlugin.config.deny_by_default}">
                 <label class="col-sm-3 control-label">Anonymous
                   <br/>
                   <em>
