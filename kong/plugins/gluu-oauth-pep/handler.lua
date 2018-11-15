@@ -9,6 +9,9 @@ handler.priority = 999
 -- with a name. The name is your plugin name as it will be printed in the logs.
 function handler:new()
     handler.super.new(self, "gluu-oauth-pep")
+
+    -- access token should be per plugin instance
+    self.access_token = { expire = 0 }
 end
 
 function handler:access(config)
@@ -16,7 +19,7 @@ function handler:access(config)
     -- (will log that your plugin is entering this context)
     handler.super.access(self)
 
-    return access(config)
+    return access(self, config)
 end
 
 return handler

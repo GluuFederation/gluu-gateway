@@ -40,7 +40,8 @@ local function setup(model)
             ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
         },
         modules = {
-            ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -137,6 +138,7 @@ test("with and without token", function()
         {
             oauth_scope_expression = {},
             ignore_scope = true,
+            deny_by_default = false,
         }
     )
 
@@ -202,6 +204,7 @@ test("Anonymous test", function()
         {
             anonymous = anonymous_consumer_response.id,
             ignore_scope = true,
+            deny_by_default = false,
         }
     )
 
@@ -249,7 +252,6 @@ test("deny_by_default = true", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
-
 
 test("deny_by_default = false, hide_credentials = true", function()
 

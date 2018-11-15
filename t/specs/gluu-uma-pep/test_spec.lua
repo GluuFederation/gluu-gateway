@@ -40,7 +40,8 @@ local function setup(model)
             ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
         },
         modules = {
-            ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
         }
@@ -273,7 +274,7 @@ test("deny_by_default = false and hide_credentials = true", function()
                 }
             },
             deny_by_default = false,
-            hide_credentials = true
+            hide_credentials = true,
         }
     )
 
@@ -298,6 +299,10 @@ test("deny_by_default = false and hide_credentials = true", function()
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
 
+    -- ensure no authorization headers is sent to backend
+    -- backend responds in lowecase, so we may distinguish from request's header in curl output
+    assert(not stdout:lower():find("authorization: : Bearer"))
+
     -- plugin shouldn't call oxd, must use cache
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
@@ -309,9 +314,10 @@ test("deny_by_default = false and hide_credentials = true", function()
 
     -- /todos: request to not protected
     local res, err = sh_ex(
-        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
-        [[/todos --header 'Host: backend.com' ]]
+        [[curl -v --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']]
     )
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
@@ -344,23 +350,12 @@ test("Anonymous test", function()
                     }
                 }
             },
-            deny_by_default = true,
+            deny_by_default = false,
         })
-
-    print "create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
-
-    local consumer_response = JSON:decode(res)
-
-    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/posts --header 'Host: backend.com']])
-    assert(stdout:find("401", 1, true))
-    assert(stdout:find("ticket", 1, true))
 
     print "Test with anonymous consumer"
     local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
-        [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+        [[/todos --header 'Host: backend.com']])
     assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
 
     ctx.print_logs = true-- comment it out if want to see logs

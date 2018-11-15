@@ -1,88 +1,11 @@
-local constants = require "kong.constants"
-local oxd = require "oxdweb"
-local helper = require "kong.plugins.gluu-uma-pep.helper"
+local pl_tablex = require "pl.tablex"
+local oxd = require "gluu.oxdweb"
+local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
 
--- we don't store our token in lrucache - we don't want it be pushed out
-local access_token
-local access_token_expire = 0
-local EXPIRE_DELTA = 10
-
-local PLUGINNAME = "gluu-uma-pep"
-
-local lrucache = require "resty.lrucache"
--- it can be shared by all the requests served by each nginx worker process:
-local worker_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
-if not worker_cache then
-    return error("failed to create the cache: " .. (err or "unknown"))
-end
-
-local function unexpected_error(...)
-    kong.log.err(...)
-    kong.response.exit(500, { message = "An unexpected error ocurred" })
-end
-
-local function get_protection_token(conf)
-    local now = ngx.now()
-    kong.log.debug("Current datetime: ", now, " access_token_expire: ", access_token_expire)
-    if not access_token or access_token_expire < now + EXPIRE_DELTA then
-        -- TODO possible race condition when access_token == nil
-        access_token_expire = access_token_expire + EXPIRE_DELTA -- avoid multiple token requests
-        local response = oxd.get_client_token(conf.oxd_url,
-            {
-                client_id = conf.client_id,
-                client_secret = conf.client_secret,
-                scope = "openid profile email",
-                op_host = conf.op_url,
-            })
-
-        local status = response.status
-        local body = response.body
-
-        kong.log.debug("Protection access token -- status: ", status)
-        if status >= 300 or not body.access_token then
-            access_token = nil
-            access_token_expire = 0
-            return unexpected_error("Failed to get access token.")
-        end
-
-        access_token = body.access_token
-        if body.expires_in then
-            access_token_expire = ngx.now() + body.expires_in
-        else
-            -- use once
-            access_token_expire = 0
-        end
-    end
-end
-
-local function get_token(authorization)
-    if authorization and #authorization > 0 then
-        local from, to, err = ngx.re.find(authorization, "\\s*[Bb]earer\\s+(.+)", "jo", nil, 1)
-        if from then
-            return authorization:sub(from, to) -- Return token
-        end
-        if err then
-            return unexpected_error(err)
-        end
-    end
-
-    return nil
-end
-
-local function build_cache_key(token, path)
-    path = path or ""
-    local t = {
-        token,
-        ":",
-        path,
-        ":",
-        ngx.req.get_method()
-    }
-    return table.concat(t)
-end
+local unexpected_error = kong_auth_pep_common.unexpected_error
 
 -- call /uma-rs-check-access oxd API, handle errors
-local function try_check_access(conf, path, method, token)
+local function try_check_access(conf, path, method, token, access_token)
     token = token or ""
     local response = oxd.uma_rs_check_access(conf.oxd_url,
         {
@@ -97,29 +20,29 @@ local function try_check_access(conf, path, method, token)
         -- TODO check status and ticket
         local body = response.body
         if not body.access then
-            unexpected_error("uma_rs_check_access() missed access")
+            return unexpected_error("uma_rs_check_access() missed access")
         end
         if body.access == "granted" then
             return body
         elseif body.access == "denied" then
             if not body["www-authenticate_header"] then
-                unexpected_error("uma_rs_check_access() access == denied, but missing www-authenticate_header")
+                return unexpected_error("uma_rs_check_access() access == denied, but missing www-authenticate_header")
             end
             return body
         end
-        unexpected_error("uma_rs_check_access() unexpected access value: ", body.access)
+        return unexpected_error("uma_rs_check_access() unexpected access value: ", body.access)
     end
     if status == 400 then
-        unexpected_error("uma_rs_check_access() responds with status 400 - Invalid parameters are provided to endpoint")
+        return unexpected_error("uma_rs_check_access() responds with status 400 - Invalid parameters are provided to endpoint")
     elseif status == 500 then
-        unexpected_error("uma_rs_check_access() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
+        return unexpected_error("uma_rs_check_access() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
     elseif status == 403 then
-        unexpected_error("uma_rs_check_access() responds with status 403 - Invalid access token provided in Authorization header")
+        return unexpected_error("uma_rs_check_access() responds with status 403 - Invalid access token provided in Authorization header")
     end
-    unexpected_error("uma_rs_check_access() responds with unexpected status: ", status)
+    return unexpected_error("uma_rs_check_access() responds with unexpected status: ", status)
 end
 
-local function try_introspect_rpt(conf, token)
+local function try_introspect_rpt(conf, token, access_token)
     local response = oxd.introspect_rpt(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
@@ -132,50 +55,17 @@ local function try_introspect_rpt(conf, token)
         return response.body
     end
     if status == 400 then
-        unexpected_error("introspect_rpt() responds with status 400 - Invalid parameters are provided to endpoint")
+        return unexpected_error("introspect_rpt() responds with status 400 - Invalid parameters are provided to endpoint")
     elseif status == 500 then
-        unexpected_error("introspect_rpt() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
+        return unexpected_error("introspect_rpt() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
     elseif status == 403 then
-        unexpected_error("introspect_rpt() responds with status 403 - Invalid access token provided in Authorization header")
+        return unexpected_error("introspect_rpt() responds with status 403 - Invalid access token provided in Authorization header")
     end
-    unexpected_error("introspect_rpt() responds with unexpected status: ", status)
+    return unexpected_error("introspect_rpt() responds with unexpected status: ", status)
 end
 
-local function set_consumer(client_id, consumer, exp)
-    local const = constants.HEADERS
-    local new_headers = {
-        [const.CONSUMER_ID] = consumer.id,
-        [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
-        [const.CONSUMER_USERNAME] = tostring(consumer.username),
-    }
-    -- https://github.com/Kong/kong/blob/2cdd07e34a362e86d95d5e88615e217fa4f6f0d2/kong/plugins/key-auth/handler.lua#L52
-    kong.ctx.shared.authenticated_consumer = consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = consumer -- backward compatibility
-
-    if client_id then
-        new_headers["X-OAuth-Client-ID"] = tostring(client_id)
-        new_headers["X-OAuth-Expiration"] = tostring(exp)
-        -- TODO what about kong.ctx.shared.authenticated_credential?
-        kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
-    else
-        new_headers[const.ANONYMOUS] = true
-    end
-    kong.service.request.set_headers(new_headers)
-end
-
-local function set_anonymous(conf)
-    print(conf.anonymous)
-    local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-    local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
-
-    if err then
-        return unexpected_error("Anonymous customer: ", err)
-    end
-
-    set_consumer(nil, consumer)
-end
-
-return function (conf)
+--[[
+access_handler function (conf)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
     local method = ngx.req.get_method()
@@ -201,7 +91,7 @@ return function (conf)
                 ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]
             })
         end
-        unexpected_error("check_access without RPT token, responds with access == \"granted\"")
+        return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
     end
 
     if not path and not token then
@@ -239,7 +129,7 @@ return function (conf)
         return kong.response.exit(401, "Unknown consumer")
     end
     if err then
-        return unexpected_error("select_by_custom_id error: ", err)
+        return return unexpected_error("select_by_custom_id error: ", err)
     end
     introspect_rpt_response_data.consumer = consumer
 
@@ -267,3 +157,77 @@ return function (conf)
     -- access == "denied"
     return kong.response.exit(403)
 end
+]]
+
+
+
+local hooks = {}
+
+
+--- lookup registered protected path by path and http methods
+-- @param self: Kong plugin object instance
+-- @param conf:
+-- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
+-- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
+-- @param method: requested http method Example: GET
+-- @return protected_path; may returns no values
+function hooks.get_path_by_request_path_method(self, conf, request_path, method)
+    local exp = conf.uma_scope_expression
+    -- TODO the complexity is O(N), think how to optimize
+    local found_paths = {}
+    print(request_path)
+    for i = 1, #exp do
+        print(exp[i]["path"])
+        if kong_auth_pep_common.is_path_match(request_path, exp[i]["path"]) then
+            print(exp[i]["path"])
+            found_paths[#found_paths + 1] = exp[i]
+        end
+    end
+
+    for i = 1, #found_paths do
+        local path_item = found_paths[i]
+        kong.log.inspect(path_item)
+        for k = 1, #path_item.conditions do
+            local rule = path_item.conditions[k]
+            kong.log.inspect(rule)
+            if pl_tablex.find(rule.httpMethods, method) then
+                return path_item.path
+            end
+        end
+    end
+
+    return nil
+end
+
+function hooks.no_token_protected_path(self, conf, protected_path, method, get_protection_token)
+    get_protection_token(self, conf)
+
+    local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, self.access_token.token)
+
+    if check_access_no_rpt_response.access == "denied" then
+        kong.log.debug("Set WWW-Authenticate header with ticket")
+        return kong.response.exit(401, "Unauthorized", {
+            ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]
+        })
+    end
+    return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
+end
+
+function hooks.introspect_token(self, conf, token)
+    local introspect_rpt_response_data = try_introspect_rpt(conf, token, self.access_token.token)
+    if not introspect_rpt_response_data.active then
+        return nil, 401, "Invalid access token provided in Authorization header"
+    end
+    return introspect_rpt_response_data
+end
+
+function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
+    local check_access_response = try_check_access(conf, protected_path, method, rpt, self.access_token.token)
+
+    return check_access_response.access == "granted"
+end
+
+return function(self, conf)
+    kong_auth_pep_common.access_handler(self, conf, hooks)
+end
+

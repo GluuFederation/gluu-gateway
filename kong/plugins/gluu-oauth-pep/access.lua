@@ -1,259 +1,120 @@
-local constants = require "kong.constants"
-local oxd = require "oxdweb"
-local helper = require "kong.plugins.gluu-oauth-pep.helper"
-local pl_types = require "pl.types"
--- we don't store our token in lrucache - we don't want it be pushed out
-local access_token
-local access_token_expire = 0
-local EXPIRE_DELTA = 10
+local oxd = require "gluu.oxdweb"
+local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
+local pl_tablex = require "pl.tablex"
 
-local PLUGINNAME = "gluu-oauth-pep"
+local logic = require('rucciva.json_logic')
+local array_mt = {}
 
-local lrucache = require "resty.lrucache"
--- it can be shared by all the requests served by each nginx worker process:
-local worker_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
-if not worker_cache then
-    return error("failed to create the cache: " .. (err or "unknown"))
+--- Utility function for json logic. Check value is array or not
+-- @param tab: Any type of data
+local function is_array(tab)
+    return getmetatable(tab) == array_mt
 end
 
-local function unexpected_error(...)
-    kong.log.err(...)
-    kong.response.exit(500, { message = "An unexpected error ocurred" })
+--- Utility function for json logic. Set metadata to array value
+-- @param tab: Array values
+local function mark_as_array(tab)
+    return setmetatable(tab, array_mt)
 end
 
-local function load_consumer_by_id(consumer_id)
-    local result, err = kong.db.consumers:select({ id = consumer_id })
-    if not result then
-        print(err)
-        if not err then
-            err = 'consumer "' .. consumer_id .. '" not found'
-        end
-
-        return nil, err
+--- Apply json logic
+-- @param lgc: Json rules
+-- @param data: Data which you want to validate with lgc
+-- @param option: Extra options example: is_array
+local function logic_apply(lgc, data, options)
+    if type(options) ~= 'table' or options == nil then
+        options = {}
     end
-    kong.log.debug("consumer loaded")
-    return result
+    options.is_array = is_array
+    options.mark_as_array = mark_as_array
+    return logic.apply(lgc, data, options)
 end
 
-local function set_consumer(consumer, client_id, exp)
-    local const = constants.HEADERS
-    local new_headers = {
-        [const.CONSUMER_ID] = consumer.id,
-        [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
-        [const.CONSUMER_USERNAME] = tostring(consumer.username),
-    }
-    -- https://github.com/Kong/kong/blob/2cdd07e34a362e86d95d5e88615e217fa4f6f0d2/kong/plugins/key-auth/handler.lua#L52
-    kong.ctx.shared.authenticated_consumer = consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = consumer -- backward compatibility
+local hooks = {}
 
-    if client_id then
-        new_headers["X-OAuth-Client-ID"] = tostring(client_id)
-        new_headers["X-OAuth-Expiration"] = tostring(exp)
-        -- TODO what about kong.ctx.shared.authenticated_credential?
-        kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
-    else
-        new_headers[const.ANONYMOUS] = true
-    end
-    kong.service.request.set_headers(new_headers)
-end
-
-local function get_token(authorization)
-    if authorization and #authorization > 0 then
-        local from, to, err = ngx.re.find(authorization, "\\s*[Bb]earer\\s+(.+)", "jo", nil, 1)
-        if from then
-            return authorization:sub(from, to) -- Return token
+--- Fetch oauth scope expression based on path and http methods
+-- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
+-- @param self: Kong plugin object
+-- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
+-- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
+-- @param method: requested http method Example: GET
+-- @return json expression Example: {path: "/posts", ...}
+function hooks.get_path_by_request_path_method(self, conf, path, method)
+    local exp = conf.oauth_scope_expression
+    -- TODO the complexity is O(N), think how to optimize
+    local found_paths = {}
+    for i = 1, #exp do
+        if kong_auth_pep_common.is_path_match(path, exp[i]["path"]) then
+            found_paths[#found_paths + 1] = exp[i]
         end
-        if err then
-            return unexpected_error(err)
+    end
+
+    for i = 1, #found_paths do
+        local conditions = found_paths[i].conditions
+        for k = 1, #conditions do
+            local rule = conditions[k]
+            if pl_tablex.find(rule.httpMethods, method) then
+                return found_paths[i].path, rule.scope_expression
+            end
         end
     end
 
     return nil
 end
 
-local function get_protection_token(conf)
-    local now = ngx.now()
-    kong.log.debug("Current datetime: ", now, " access_token_expire: ", access_token_expire)
-    if not access_token or access_token_expire < now + EXPIRE_DELTA then
-        -- TODO possible race condition when access_token == nil
-        access_token_expire = access_token_expire + EXPIRE_DELTA -- avoid multiple token requests
-        local response = oxd.get_client_token(conf.oxd_url,
-            {
-                client_id = conf.client_id,
-                client_secret = conf.client_secret,
-                scope = "openid profile email",
-                op_host = conf.op_url,
-            })
-
-        local status = response.status
-        local body = response.body
-
-        kong.log.debug("Protection access token -- status: ", status)
-        if status >= 300 or not body.access_token then
-            access_token = nil
-            access_token_expire = 0
-            return unexpected_error("Failed to get access token.")
-        end
-
-        access_token = body.access_token
-        if body.expires_in then
-            access_token_expire = ngx.now() + body.expires_in
-        else
-            -- use once
-            access_token_expire = 0
-        end
-    end
+function hooks.no_token_protected_path()
+    kong.response.exit(401)
 end
 
-local function build_cache_key(token, path, method)
-    local t = {
-        token,
-        ":",
-        path,
-        ":",
-        method
-    }
-    return table.concat(t)
-end
-
-local function handle_anonymous(conf, scope_expression, status, err)
-    if conf.anonymous == "" then
-        return kong.response.exit(status, { message = err })
-    end
-    if scope_expression or (not conf.ignore_scope and conf.deny_by_default) then
-        -- path is protected or unprotected path not allowed, cannot grant anonymous access
-        return kong.response.exit(status, { message = err })
-    end
-
-    print(conf.anonymous)
-    local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-    local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
-
-    if err then
-        return unexpected_error("Anonymous customer: ", err)
-    end
-    set_consumer(consumer)
-end
-
-return function(conf)
-    local authorization = ngx.var.http_authorization
-    local token = get_token(authorization)
-
-    kong.log.debug("hide_credentials: ", conf.hide_credentials)
-    if conf.hide_credentials then
-        kong.log.debug("Hide authorization header")
-        kong.service.request.clear_header("authorization")
-    end
-
-    local request_path = ngx.var.uri
-    local request_http_method = ngx.req.get_method()
-    local scope_expression, protected_path
-    local body, stale_data
-    kong.log.debug("Requested path : ", request_path," Requested http method : ", request_http_method)
-    if not conf.ignore_scope then
-        scope_expression, protected_path = helper.get_expression_by_request_path_method(
-            conf.oauth_scope_expression, request_path, request_http_method
-        )
-    end
-
-    if not token then
-        return handle_anonymous(conf, scope_expression, 401, "Failed to get bearer token from Authorization header")
-    end
-
-    if not conf.ignore_scope then
-        if scope_expression then
-            body, stale_data = worker_cache:get(
-                build_cache_key(token, protected_path, request_http_method)
-            )
-        else
-            if conf.deny_by_default then
-                kong.log.err("Path: ", request_path, " and method: ", request_http_method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
-                kong.response.exit(403, { message = "Path/method is not protected with scope expression" })
-            end
-
-            body, stale_data = worker_cache:get(
-                build_cache_key(token, request_path, request_http_method)
-            )
-        end
-    else
-        body, stale_data = worker_cache:get(token)
-    end
-
-    if body and not stale_data then
-        -- we're already authenticated
-        kong.log.debug("Token cache found. we're already authenticated")
-        set_consumer(body.consumer, body.client_id, body.exp)
-        return -- access granted
-    end
-
-    -- Get protection access token for OXD API
-    get_protection_token(conf)
-
-    kong.log.debug("Token cache not found.")
+-- @return introspect_response, status, err
+-- upon success returns only introspect_response,
+-- otherwise return nil, status, err
+function hooks.introspect_token(self, conf, token)
     local response = oxd.introspect_access_token(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
             access_token = token,
         },
-        access_token)
+        self.access_token.token)
     local status = response.status
 
     if status == 403 then
-        -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
-        return handle_anonymous(conf, scope_expression, 401, "Invalid access token provided in Authorization header")
+        kong.log.err("Invalid access token provided in Authorization header");
+        return nil, 502, "An unexpected error ocurred"
     end
 
     if status ~= 200 then
-        return unexpected_error("introspect-access-token error, status: ", status)
+        kong.log.err("introspect-access-token error, status: ", status)
+        return nil, 502, "An unexpected error ocurred"
     end
 
     body = response.body
     if not body.active then
-        return handle_anonymous(conf, scope_expression, 401, "Token is not active")
+        -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
+        return nil, 401, "Invalid access token provided in Authorization header"
     end
 
-    local consumer = worker_cache:get(body.client_id)
+    return body
+end
 
-    if not consumer then
-        local consumer_local, err = kong.db.consumers:select_by_custom_id(body.client_id)
-        if not consumer_local and not err then
-            err = 'consumer with custom_id "' .. body.client_id .. '" not found'
-        end
-        if err then
-            return unexpected_error("select_by_custom_id error: ", err)
-        end
-        consumer = consumer_local
-        worker_cache:set(body.client_id, consumer)
+--- Check JSON expression
+-- @param self: Kong plugin object instance
+-- @param conf
+-- @param scope_expression: example: { rule = { ["or"] = { { var = 0 }, { var = 1 }, { ["!"] = { { var = 2 } } } } }, data = { "admin", "hrr", "employee" } }
+-- @param data: Array of scopes example: { "admin", "hrr" }
+-- @return true or false
+function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, requested_scopes)
+    scope_expression = scope_expression or {}
+    kong.log.inspect(scope_expression)
+    local data = {}
+    local scope_expression_data = scope_expression.data
+    for i = 1, #scope_expression_data do
+        data[#data + 1] = pl_tablex.find(requested_scopes, scope_expression_data[i]) and true or false
     end
+    local result = logic_apply(scope_expression.rule, mark_as_array(data))
+    return result
+end
 
-    body.consumer = consumer
-
-    if not body.exp or not body.iat then
-        return unexpected_error("missed exp or iat fields")
-    end
-
-    if not conf.ignore_scope then
-        if not scope_expression then
-            if not conf.deny_by_default then
-                kong.log.info("Path is not proteced, but not deny_by_default")
-                worker_cache:set(build_cache_key(token, request_path, request_http_method), body, body.exp - body.iat)
-                set_consumer(body.consumer, body.client_id, body.exp)
-                return -- access granted
-            else
-                error("this should be never reached, because must be handled early")
-            end
-        end
-
-        if not helper.check_scope_expression(scope_expression, body.scope) then
-            -- TODO should we cache negative result?
-            kong.log.debug("Not authorized for this path/method")
-            return kong.response.exit(403, { message = "You are not authorized for this path/method" })
-        end
-        worker_cache:set(build_cache_key(token, protected_path, request_http_method), body, body.exp - body.iat)
-    else
-        worker_cache:set(token, body, body.exp - body.iat)
-    end
-
-    set_consumer(body.consumer, body.client_id, body.exp)
-    return
+return function(self, conf)
+    kong_auth_pep_common.access_handler(self, conf, hooks)
 end

@@ -10,6 +10,7 @@ return {
         deny_by_default = { type = "boolean", default = true },
         anonymous = { type = "string", func = check_user, default = "" },
         hide_credentials = { type = "boolean", default = false },
+        ignore_scope = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         table.sort(plugin_t.uma_scope_expression, function(first, second)
