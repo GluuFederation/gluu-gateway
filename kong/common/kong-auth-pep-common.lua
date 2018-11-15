@@ -1,4 +1,5 @@
 local constants = require "kong.constants"
+local utils = require "kong.tools.utils"
 local oxd = require "gluu.oxdweb"
 
 local EXPIRE_DELTA = 10
@@ -20,7 +21,6 @@ end
 local function load_consumer_by_id(consumer_id)
     local result, err = kong.db.consumers:select({ id = consumer_id })
     if not result then
-        print(err)
         if not err then
             err = 'consumer "' .. consumer_id .. '" not found'
         end
@@ -55,7 +55,7 @@ local function get_protection_token(self, conf)
             {
                 client_id = conf.client_id,
                 client_secret = conf.client_secret,
-                scope = "openid oxd",
+                scope = {"openid", "oxd"},
                 op_host = conf.op_url,
             })
 
@@ -80,6 +80,7 @@ local function get_protection_token(self, conf)
 end
 
 local function access_granted(conf, token_data)
+    kong.log.debug("access_granted")
     if conf.hide_credentials then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
@@ -169,15 +170,13 @@ _M.access_handler = function(self, conf, hooks)
         )
     end
 
-    print(token)
-    print(not protected_path)
-    print(conf.deny_by_default )
     if token and not protected_path and conf.deny_by_default then
-        return kong.response.exit(403, "Unprotected path/method are not allowed")
+        return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
     end
 
     if not token then
         if protected_path then
+            kong.log.debug("no token, protected path")
             return hooks.no_token_protected_path(self, conf, protected_path, method, get_protection_token)
         end
         if #conf.anonymous > 0 then
@@ -249,7 +248,7 @@ _M.access_handler = function(self, conf, hooks)
     local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
     if not consumer and not err then
         kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-        return kong.response.exit(401, "Unknown consumer")
+        return kong.response.exit(401, { message = "Unknown consumer"} )
     end
     if err then
         return unexpected_error("select_by_custom_id error: ", err)
@@ -270,7 +269,7 @@ _M.access_handler = function(self, conf, hooks)
         return access_granted(conf, introspect_response)
     end
 
-    return kong.response.exit(403)
+    return kong.response.exit(403, { message = "You are not authorized to access this resource" } )
 end
 
 --- Check requested path match to register path
@@ -305,5 +304,27 @@ function _M.is_path_match(request_path, register_path)
 
     return false
 end
+
+--- Check user valid UUID
+-- @param anonymous: anonymous consumer id
+function _M.check_user(anonymous)
+    if anonymous == "" then
+        return true
+    end
+    if utils.is_valid_uuid(anonymous) then
+        local result, err = kong.db.consumers:select({ id = anonymous })
+        if result then
+            return true
+        end
+        if not err then
+            err = 'consumer "' .. consumer_id .. '" not found'
+        end
+        kong.log.err(err)
+        return false
+    end
+
+    return false, "the anonymous user must be empty or a valid uuid"
+end
+
 
 return _M

@@ -2,7 +2,7 @@ local oxd = require "gluu.oxdweb"
 local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
 local pl_tablex = require "pl.tablex"
 
-local logic = require('rucciva.json_logic')
+local logic = require"rucciva.json_logic"
 local array_mt = {}
 
 --- Utility function for json logic. Check value is array or not
@@ -63,7 +63,7 @@ function hooks.get_path_by_request_path_method(self, conf, path, method)
 end
 
 function hooks.no_token_protected_path()
-    kong.response.exit(401)
+    kong.response.exit(401, { message = "Missed OAuth token" } )
 end
 
 -- @return introspect_response, status, err
@@ -88,7 +88,7 @@ function hooks.introspect_token(self, conf, token)
         return nil, 502, "An unexpected error ocurred"
     end
 
-    body = response.body
+    local body = response.body
     if not body.active then
         -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
         return nil, 401, "Invalid access token provided in Authorization header"

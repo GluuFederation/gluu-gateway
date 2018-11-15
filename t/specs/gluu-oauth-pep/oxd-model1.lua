@@ -58,6 +58,11 @@ model = {
         request_check = function(json)
             assert(json.client_id == model[1].response.client_id)
             assert(json.client_secret == model[1].response.client_secret)
+            local scope = json.scope
+            assert(#scope == 2)
+            for i =1, 2 do
+                assert((scope[i] == "oxd") or (scope[i] == "openid"))
+            end
         end,
         response = {
             scope = { "openid", "profile", "email" },

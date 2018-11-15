@@ -64,105 +64,7 @@ local function try_introspect_rpt(conf, token, access_token)
     return unexpected_error("introspect_rpt() responds with unexpected status: ", status)
 end
 
---[[
-access_handler function (conf)
-    local authorization = ngx.var.http_authorization
-    local token = get_token(authorization)
-    local method = ngx.req.get_method()
-    local path = ngx.var.uri
-
-    kong.log.debug("hide_credentials: ", conf.hide_credentials)
-    if conf.hide_credentials then
-        kong.log.debug("Hide authorization header")
-        kong.service.request.clear_header("authorization")
-    end
-
-    path = helper.get_path_by_request_path_method(conf.uma_scope_expression, path, method)
-    kong.log.debug("registered resource path: ", path)
-
-    if path and not token then
-        get_protection_token(conf) -- this may exit with 500
-
-        local check_access_no_rpt_response = try_check_access(conf, path, method, nil)
-
-        if check_access_no_rpt_response.access == "denied" then
-            kong.log.debug("Set WWW-Authenticate header with ticket")
-            return kong.response.exit(401, "Unauthorized", {
-                ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]
-            })
-        end
-        return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
-    end
-
-    if not path and not token then
-        if not conf.deny_by_default then
-            if conf.anonymous ~= "" then
-                set_anonymous(conf)
-            end
-            return -- access granted
-        end
-        return kong.response.exit(403, "Unprotected path are not allowed") -- TODO ?!
-    end
-
-    local cache_key = build_cache_key(token, path)
-    local data, stale_data = worker_cache:get(cache_key)
-    if data and not stale_data then
-        -- we're already authenticated
-        kong.log.debug("Token cache found. we're already authenticated")
-        set_consumer(data.client_id, data.consumer, data.exp)
-        return -- access granted
-    end
-
-    get_protection_token(conf)
-
-    local introspect_rpt_response_data = try_introspect_rpt(conf, token)
-    if not introspect_rpt_response_data.active then
-        return kong.response.exit(401, "Invalid access token provided in Authorization header")
-    end
-
-    local client_id = assert(introspect_rpt_response_data.client_id)
-    local exp = assert(introspect_rpt_response_data.exp)
-
-    local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
-    if not consumer and not err then
-        kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-        return kong.response.exit(401, "Unknown consumer")
-    end
-    if err then
-        return return unexpected_error("select_by_custom_id error: ", err)
-    end
-    introspect_rpt_response_data.consumer = consumer
-
-    if not path then
-        if not conf.deny_by_default then
-            worker_cache:set(cache_key, introspect_rpt_response_data,
-                introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
-            )
-            set_consumer(client_id, consumer, exp)
-            return -- access granted
-        end
-        return kong.response.exit(403, "Unauthorized")
-    end
-
-    local check_access_response = try_check_access(conf, path, method, token)
-
-    if check_access_response.access == "granted" then
-        worker_cache:set(cache_key, introspect_rpt_response_data,
-             introspect_rpt_response_data.exp - introspect_rpt_response_data.iat --TODO decrement some delta?
-        )
-        set_consumer(client_id, consumer, exp)
-        return -- access granted
-    end
-
-    -- access == "denied"
-    return kong.response.exit(403)
-end
-]]
-
-
-
 local hooks = {}
-
 
 --- lookup registered protected path by path and http methods
 -- @param self: Kong plugin object instance
@@ -206,9 +108,10 @@ function hooks.no_token_protected_path(self, conf, protected_path, method, get_p
 
     if check_access_no_rpt_response.access == "denied" then
         kong.log.debug("Set WWW-Authenticate header with ticket")
-        return kong.response.exit(401, "Unauthorized", {
-            ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]
-        })
+        return kong.response.exit(401,
+            { message = "Unauthorized" },
+            { ["WWW-Authenticate"] = check_access_no_rpt_response["www-authenticate_header"]}
+        )
     end
     return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
 end
