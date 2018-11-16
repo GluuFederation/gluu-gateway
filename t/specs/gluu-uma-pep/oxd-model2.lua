@@ -101,6 +101,7 @@ model = {
         response = {
             active = true,
             client_id = "1234567890",
+            permissions = {},
         },
         response_callback = function(response)
             response.iat = ngx.now()
@@ -143,6 +144,7 @@ model = {
         response = {
             active = true,
             client_id = "1234567890",
+            permissions = {},
         },
         response_callback = function(response)
             response.iat = ngx.now()

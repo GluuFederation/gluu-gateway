@@ -95,7 +95,7 @@ model = {
             return response
         end,
     },
-
+--[[
     -- #5, plugin check the client token and scope with scope_expression for path /comments
     {
         expect = "/introspect-access-token",
@@ -188,6 +188,7 @@ model = {
             return response
         end,
     },
+==]]
 }
 
 return model

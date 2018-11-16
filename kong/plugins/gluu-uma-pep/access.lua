@@ -25,7 +25,7 @@ local function try_check_access(conf, path, method, token, access_token)
         if body.access == "granted" then
             return body
         elseif body.access == "denied" then
-            if not body["www-authenticate_header"] then
+            if token == "" and not body["www-authenticate_header"] then
                 return unexpected_error("uma_rs_check_access() access == denied, but missing www-authenticate_header")
             end
             return body
@@ -51,8 +51,13 @@ local function try_introspect_rpt(conf, token, access_token)
         access_token)
     local status = response.status
     if status == 200 then
-        -- TODO check required fields
-        return response.body
+        local body = response.body
+        if body.active then
+            if not (body.exp and body.iat and body.client_id and body.permissions) then
+                return unexpected_error("introspect_rpt() missed required fields")
+            end
+        end
+        return body
     end
     if status == 400 then
         return unexpected_error("introspect_rpt() responds with status 400 - Invalid parameters are provided to endpoint")
@@ -101,8 +106,8 @@ function hooks.get_path_by_request_path_method(self, conf, request_path, method)
     return nil
 end
 
-function hooks.no_token_protected_path(self, conf, protected_path, method, get_protection_token)
-    get_protection_token(self, conf)
+function hooks.no_token_protected_path(self, conf, protected_path, method)
+    kong_auth_pep_common.get_protection_token(self, conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, self.access_token.token)
 
@@ -117,6 +122,8 @@ function hooks.no_token_protected_path(self, conf, protected_path, method, get_p
 end
 
 function hooks.introspect_token(self, conf, token)
+    kong_auth_pep_common.get_protection_token(self, conf)
+
     local introspect_rpt_response_data = try_introspect_rpt(conf, token, self.access_token.token)
     if not introspect_rpt_response_data.active then
         return nil, 401, "Invalid access token provided in Authorization header"
@@ -124,7 +131,21 @@ function hooks.introspect_token(self, conf, token)
     return introspect_rpt_response_data
 end
 
+function hooks.build_cache_key(method, path, token)
+    path = path or ""
+    local t = {
+        method,
+        ":",
+        path,
+        ":",
+        token
+    }
+    return table.concat(t), true
+end
+
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
+    kong_auth_pep_common.get_protection_token(self, conf)
+
     local check_access_response = try_check_access(conf, protected_path, method, rpt, self.access_token.token)
 
     return check_access_response.access == "granted"

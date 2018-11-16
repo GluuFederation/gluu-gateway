@@ -3,8 +3,9 @@ local utils = require "kong.tools.utils"
 local oxd = require "gluu.oxdweb"
 
 local EXPIRE_DELTA = 10
-local MAX_PENDING_SLEEPS = 20
+local MAX_PENDING_SLEEPS = 40
 local PENDING_EXPIRE = 0.2
+local PENDING_TABLE = {}
 
 local lrucache = require "resty.lrucache.pureffi"
 -- it is shared by all the requests served by each nginx worker process:
@@ -14,6 +15,10 @@ if not worker_cache then
 end
 
 local function unexpected_error(...)
+    local pending_key = kong.ctx.plugin.pending_key
+    if pending_key then
+        worker_cache:delete(pending_key)
+    end
     kong.log.err(...)
     kong.response.exit(502, { message = "An unexpected error ocurred" })
 end
@@ -100,7 +105,13 @@ local function access_granted(conf, token_data)
     local client_id = token_data.client_id
     if client_id then
         new_headers["X-OAuth-Client-ID"] = tostring(client_id)
-        new_headers["X-OAuth-Expiration"] = tostring(token_data.exp)
+
+        -- introspect-rpt API return mandatory `permissions` field
+        if token_data.permissions then
+            new_headers["X-RPT-Expiration"] = tostring(token_data.exp)
+        else
+            new_headers["X-OAuth-Expiration"] = tostring(token_data.exp)
+        end
         kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
     else
         new_headers[const.ANONYMOUS] = true
@@ -108,16 +119,31 @@ local function access_granted(conf, token_data)
     kong.service.request.set_headers(new_headers)
 end
 
-local function build_cache_key(token, path, method)
-    path = path or ""
-    local t = {
-        token,
-        ":",
-        path,
-        ":",
-        method
-    }
-    return table.concat(t)
+-- lru cache get operation with `pending` state support
+local function worker_cache_get_pending(key)
+    for i = 1, MAX_PENDING_SLEEPS do
+        local token_data, stale_data = worker_cache:get(key)
+
+        if not token_data or stale_data then
+            return
+        end
+
+        if token_data == PENDING_TABLE then
+            ngx.sleep(0.005) -- 5ms
+        else
+            return token_data
+        end
+    end
+end
+
+local function set_pending_state(key)
+    kong.ctx.plugin.pending_key = key
+    worker_cache:set(key, PENDING_TABLE, PENDING_EXPIRE)
+end
+
+local function clear_pending_state(key)
+    kong.ctx.plugin.pending_key = nil
+    worker_cache:delete(key)
 end
 
 local function handle_anonymous(conf, scope_expression, status, err)
@@ -132,6 +158,7 @@ local function handle_anonymous(conf, scope_expression, status, err)
 end
 
 local _M = {}
+
 _M.unexpected_error = unexpected_error
 
 --[[
@@ -142,7 +169,7 @@ function hooks.get_path_by_request_path_method(self, conf, path, method)
 end
 
 it shoud never return, it must call kong.exit
-function hooks.no_token_protected_path(self, conf, protected_path, method, get_protection_token)
+function hooks.no_token_protected_path(self, conf, protected_path, method)
 end
 
 @return introspect_response, status, err
@@ -151,13 +178,17 @@ otherwise return nil, status, err
 function hooks.introspect_token(self, conf, token)
 end
 
+@return nil or cache key
+also may return second value `pending` which means the plugin will call async. operations
+function build_cache_key(method, protected_path, token, scopes)
+
 @return boolean
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, scopes, rpt)
 end
  ]]
 
 _M.access_handler = function(self, conf, hooks)
-    local access_token = assert(self.access_token)
+    assert(self.access_token)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
 
@@ -171,13 +202,14 @@ _M.access_handler = function(self, conf, hooks)
     end
 
     if token and not protected_path and conf.deny_by_default then
+        kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
         return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
     end
 
     if not token then
         if protected_path then
             kong.log.debug("no token, protected path")
-            return hooks.no_token_protected_path(self, conf, protected_path, method, get_protection_token)
+            return hooks.no_token_protected_path(self, conf, protected_path, method)
         end
         if #conf.anonymous > 0 then
             return handle_anonymous(conf)
@@ -185,90 +217,83 @@ _M.access_handler = function(self, conf, hooks)
         return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
     end
 
-    kong.log.debug("protected resource path: ", protected_path)
+    kong.log.debug("protected resource path: ", protected_path, " URI: ", path)
 
-    local cache_key
-    if conf.ignore_scope then
-        cache_key = token
-    else
-        if protected_path then
-            cache_key = build_cache_key(token, protected_path, method)
-        else
-            if conf.deny_by_default then
-                kong.log.err("Path: ", path, " and method: ", method, " are not protected with oauth scope expression. Configure your oauth scope expression.")
-                kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
+    local client_id, exp, iat
+    local token_data = worker_cache_get_pending(token)
+    if not token_data then
+        set_pending_state(token)
+
+        local introspect_response, status, err = hooks.introspect_token(self, conf, token)
+        token_data = introspect_response
+
+        if not introspect_response then
+            clear_pending_state(token)
+
+            if status ~= 401 then
+                return unexpected_error(err)
             end
-            cache_key = build_cache_key(token, protected_path, method)
-         end
-    end
 
-    for i = 1, MAX_PENDING_SLEEPS do
-        local token_data, stale_data = worker_cache:get(cache_key)
+            if not protected_path then
+                if #conf.anonymous > 0 then
+                    return handle_anonymous(conf)
+                end
+            end
 
-        if not token_data or stale_data then
-            break
+            return kong.response.exit(401, { message = "Bad token" })
         end
 
-        if token_data == "pending" then
-            ngx.sleep(0.005) -- 5ms
-        else
-            -- we're already authenticated
-            kong.log.debug("Token cache found. we're already authenticated")
+        -- if we here introspection was successful
+        client_id = introspect_response.client_id
+        exp = introspect_response.exp
+        iat = introspect_response.iat
+
+        local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
+        if not consumer and not err then
+            clear_pending_state(token)
+            kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
+            return kong.response.exit(401, { message = "Unknown consumer"} )
+        end
+        if err then
+            return unexpected_error("select_by_custom_id error: ", err)
+        end
+        introspect_response.consumer = consumer
+
+        worker_cache:set(token, introspect_response,
+            exp - iat - EXPIRE_DELTA
+        )
+    else
+        client_id = token_data.client_id
+        exp = token_data.exp
+        iat = token_data.iat
+    end
+
+    if not protected_path then
+        return access_granted(conf, token_data)
+    end
+
+    local cache_key, pending = hooks.build_cache_key(method, protected_path, token, token_data.scope)
+
+    if cache_key then
+        local is_access_granted = worker_cache_get_pending(cache_key)
+        if is_access_granted then
             return access_granted(conf, token_data)
         end
     end
 
-    worker_cache:set(cache_key, "pending", PENDING_EXPIRE)
-
-    -- Get protection access token for OXD API
-    get_protection_token(self, conf)
-
-    local introspect_response, status, err = hooks.introspect_token(self, conf, token)
-    if not introspect_response then
-        worker_cache:delete(cache_key)
-
-        if status ~= 401 then
-            return unexpected_error(err)
+    if pending then
+        set_pending_state(cache_key)
+    end
+    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
+        if cache_key then
+            worker_cache:set(cache_key, true, exp - iat - EXPIRE_DELTA)
         end
 
-        if not protected_path then
-            if #conf.anonymous > 0 then
-                return handle_anonymous(conf)
-            end
-       end
-
-        return kong.response.exit(401, { message = "Bad token" })
+        return access_granted(conf, token_data)
     end
-
-    -- if we here introspection was successful
-    local client_id = introspect_response.client_id
-    local exp = introspect_response.exp
-    local iat = introspect_response.iat
-
-    local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
-    if not consumer and not err then
-        kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-        return kong.response.exit(401, { message = "Unknown consumer"} )
+    if pending then
+        clear_pending_state(token)
     end
-    if err then
-        return unexpected_error("select_by_custom_id error: ", err)
-    end
-    introspect_response.consumer = consumer
-
-    if not protected_path then
-        worker_cache:set(cache_key, introspect_response,
-            exp - iat - EXPIRE_DELTA
-        )
-        return access_granted(conf, introspect_response)
-    end
-
-    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, introspect_response.scope, token) then
-        worker_cache:set(cache_key, introspect_response,
-            exp - iat - EXPIRE_DELTA
-        )
-        return access_granted(conf, introspect_response)
-    end
-
     return kong.response.exit(403, { message = "You are not authorized to access this resource" } )
 end
 
@@ -317,7 +342,7 @@ function _M.check_user(anonymous)
             return true
         end
         if not err then
-            err = 'consumer "' .. consumer_id .. '" not found'
+            err = 'consumer "' .. anonymous .. '" not found'
         end
         kong.log.err(err)
         return false
@@ -326,5 +351,6 @@ function _M.check_user(anonymous)
     return false, "the anonymous user must be empty or a valid uuid"
 end
 
+_M.get_protection_token = get_protection_token
 
 return _M

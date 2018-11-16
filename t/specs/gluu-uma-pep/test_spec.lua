@@ -171,7 +171,7 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- plugin shouldn't call oxd, must use cache
     local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
@@ -179,7 +179,7 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- posts: request with wrong token
     local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
@@ -192,7 +192,7 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- posts: plugin shouldn't call oxd, must use cache
     local stdout, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
@@ -200,7 +200,7 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- todos: not register then apply rules under path / with same token `1234567890`
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
@@ -208,7 +208,12 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
+
+    print"GET to the same path but with another already cached token"
+    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer POSTS1234567890']])
+    assert(stdout:find("403", 1, true))
 
     ctx.print_logs = false
 end)
@@ -297,7 +302,7 @@ test("deny_by_default = false and hide_credentials = true", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- ensure no authorization headers is sent to backend
     -- backend responds in lowecase, so we may distinguish from request's header in curl output
@@ -310,7 +315,7 @@ test("deny_by_default = false and hide_credentials = true", function()
     assert(stdout:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
-    assert(stdout:lower():find("x%-oauth%-expiration: %d+"))
+    assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
     -- /todos: request to not protected
     local res, err = sh_ex(

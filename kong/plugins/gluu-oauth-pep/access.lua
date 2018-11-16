@@ -63,6 +63,7 @@ function hooks.get_path_by_request_path_method(self, conf, path, method)
 end
 
 function hooks.no_token_protected_path()
+    -- no pending cache state at the moment, may use PDK directly
     kong.response.exit(401, { message = "Missed OAuth token" } )
 end
 
@@ -70,6 +71,8 @@ end
 -- upon success returns only introspect_response,
 -- otherwise return nil, status, err
 function hooks.introspect_token(self, conf, token)
+    kong_auth_pep_common.get_protection_token(self, conf)
+
     local response = oxd.introspect_access_token(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
@@ -95,6 +98,24 @@ function hooks.introspect_token(self, conf, token)
     end
 
     return body
+end
+
+function hooks.build_cache_key(method, path, _, scopes)
+    -- we may disable access cache just by returning nothing
+    -- in this case proxy will always check the protection document against scopes
+
+    -- IMO (altexy) cache will be faster then verify protection document every time
+    path = path or ""
+    local t = {
+        method,
+        ":",
+        path,
+    }
+    for i = 1, #scopes do
+        t[#t + 1] = ":"
+        t[#t + 1] = scopes[i]
+    end
+    return table.concat(t)
 end
 
 --- Check JSON expression
