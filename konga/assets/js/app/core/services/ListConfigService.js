@@ -349,22 +349,6 @@
               inTitle: true
             },
             {
-              title: 'first name',
-              column: 'firstName',
-              searchable: true,
-              sortable: true,
-              inSearch: true,
-              inTitle: true
-            },
-            {
-              title: 'last name',
-              column: 'lastName',
-              searchable: true,
-              sortable: true,
-              inSearch: true,
-              inTitle: true
-            },
-            {
               title: 'created',
               column: 'createdAt',
               sortable: true,

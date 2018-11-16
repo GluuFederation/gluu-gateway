@@ -10,7 +10,6 @@
   // Define frontend.auth module
   angular.module('frontend.core.auth', [
     'frontend.core.auth.login',
-    'frontend.core.auth.signup',
     'frontend.core.auth.services'
   ]);
 
