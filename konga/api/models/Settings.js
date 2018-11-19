@@ -65,6 +65,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
           }
         ],
 
+        is_only_admin_allow_login: false,
         user_permissions: {
           apis: {
             create: false,

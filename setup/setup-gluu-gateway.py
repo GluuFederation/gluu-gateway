@@ -396,7 +396,7 @@ class KongSetup(object):
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
-                'scope': ['openid', 'oxd'],
+                'scope': ['openid', 'oxd', 'permission'],
                 'grant_types': ['authorization_code'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }

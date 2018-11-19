@@ -205,7 +205,13 @@ var AuthController = {
       if (!!req.body.code && !!req.body.state) {
         var clientToken = '';
         var userInfo = null;
-        return getClientAccessToken()
+        var setting = null;
+
+        return sails.models.settings.find().limit(1)
+          .then(function (settings) {
+            setting = settings[0].data || {};
+            return getClientAccessToken();
+          })
           .then(function (token) {
             clientToken = token;
             const option = {
@@ -248,6 +254,13 @@ var AuthController = {
 
             if (userInfo.status === 'error') {
               return Promise.reject(userInfo)
+            }
+
+            if (setting.is_only_admin_allow_login) {
+              var roles = (userInfo.claims && userInfo.claims.role) || [];
+              if (roles.indexOf('admin') <= -1) {
+                return Promise.reject({ message: 'Not enough permission to access GG UI. Only the user with admin role is allow.' });
+              }
             }
 
             var sub = (userInfo.claims && userInfo.claims.sub && userInfo.claims.sub[0]) || uuid.v4();
@@ -338,7 +351,7 @@ var AuthController = {
             uri: sails.config.oxdWeb + '/get-authorization-url',
             body: {
               oxd_id: sails.config.oxdId,
-              scope: ['openid']
+              scope: ['openid', 'permission']
             },
             resolveWithFullResponse: true,
             json: true
