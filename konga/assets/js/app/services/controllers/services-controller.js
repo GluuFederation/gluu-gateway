@@ -63,6 +63,13 @@
 
 
         function openAddServiceModal() {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',

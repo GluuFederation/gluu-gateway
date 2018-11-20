@@ -51,6 +51,13 @@
         }
 
         function onAddPlugin(name) {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
           if (name == "gluu-oauth-pep") {
             return $state.go("plugins.oauth-plugin");
           }
