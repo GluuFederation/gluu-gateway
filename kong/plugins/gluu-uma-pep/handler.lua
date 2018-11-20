@@ -1,5 +1,5 @@
 local BasePlugin = require "kong.plugins.base_plugin"
-local access = require "kong.plugins.gluu-pep.access"
+local access = require "kong.plugins.gluu-uma-pep.access"
 
 local handler = BasePlugin:extend()
 handler.priority = 998
@@ -8,7 +8,10 @@ handler.priority = 998
 -- Base Plugin handler, it's only role is to instanciate itself
 -- with a name. The name is your plugin name as it will be printed in the logs.
 function handler:new()
-  handler.super.new(self, "gluu-pep")
+  handler.super.new(self, "gluu-uma-pep")
+
+  -- access token should be per plugin instance
+  self.access_token = { expire = 0 }
 end
 
 function handler:access(config)
@@ -16,7 +19,7 @@ function handler:access(config)
   -- (will log that your plugin is entering this context)
   handler.super.access(self)
 
-  return access(config)
+  return access(self, config)
 end
 
 return handler

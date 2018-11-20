@@ -58,6 +58,11 @@ model = {
         request_check = function(json)
             assert(json.client_id == model[1].response.client_id)
             assert(json.client_secret == model[1].response.client_secret)
+            local scope = json.scope
+            assert(#scope == 2)
+            for i =1, 2 do
+                assert((scope[i] == "oxd") or (scope[i] == "openid"))
+            end
         end,
         response = {
             scope = { "openid", "profile", "email" },
@@ -65,7 +70,7 @@ model = {
             expires_in = 299,
         }
     },
-    -- #4, plugin check the client token and scope with scope_expression for path /posts
+    -- #4, plugin check the client token
     {
         expect = "/introspect-access-token",
         required_fields = {
@@ -81,7 +86,7 @@ model = {
             active = true,
             client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
             username = "John Black",
-            scope = { "admin", "employee" },
+            scope = { "openid" },
             token_type = "bearer",
             sub = "jblack",
             aud = "l238j323ds-23ij4",
@@ -96,7 +101,7 @@ model = {
         end,
     },
 
-    -- #5, plugin check the client token and scope with scope_expression for path /comments
+    -- #5, plugin check the wrong client token
     {
         expect = "/introspect-access-token",
         required_fields = {
@@ -105,88 +110,12 @@ model = {
         },
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
+            assert(json.access_token ~= model[2].response.access_token)
             assert(token == model[3].response.access_token, 403)
         end,
         response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
+            active = false,
         },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
-    },
-
-    -- #6, plugin check the client token and scope with scope_expression for path /todos
-    {
-        expect = "/introspect-access-token",
-        required_fields = {
-            "oxd_id",
-            "access_token",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
-        response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
-        },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
-    },
-
-    -- #7, plugin check the client token and scope with scope_expression for path /
-    {
-        expect = "/introspect-access-token",
-        required_fields = {
-            "oxd_id",
-            "access_token",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
-        response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
-        },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
     },
 }
 

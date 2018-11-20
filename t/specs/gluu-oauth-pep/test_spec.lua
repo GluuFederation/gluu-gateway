@@ -7,7 +7,7 @@ local JSON = require"JSON"
 
 local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
-local test_root = host_git_root .. "/t/specs/gluu-client-auth"
+local test_root = host_git_root .. "/t/specs/gluu-oauth-pep"
 
 local function setup(model)
     _G.ctx = {}
@@ -37,10 +37,11 @@ local function setup(model)
     kong_utils.docker_unique_network()
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
-            ["gluu-client-auth"] = host_git_root .. "/kong/plugins/gluu-client-auth",
+            ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
         },
         modules = {
-            ["oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
+            ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -106,7 +107,7 @@ local function configure_plugin(create_service_response, plugin_config)
     plugin_config.oxd_id = register_site_response.oxd_id
 
     local payload = {
-        name = "gluu-client-auth",
+        name = "gluu-oauth-pep",
         config = plugin_config,
         service_id = create_service_response.id,
     }
@@ -136,14 +137,15 @@ test("with and without token", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = false,
+            ignore_scope = true,
+            deny_by_default = false,
         }
     )
 
     print"test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-    assert(res:find("401"), 1, true)
+    assert(res:find("401", 1, true))
 
     print"create a consumer"
     local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
@@ -201,6 +203,8 @@ test("Anonymous test", function()
     configure_plugin(create_service_response,
         {
             anonymous = anonymous_consumer_response.id,
+            ignore_scope = true,
+            deny_by_default = false,
         }
     )
 
@@ -213,8 +217,7 @@ test("Anonymous test", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-
-test("allow_unprotected_path = false", function()
+test("deny_by_default = true", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -227,8 +230,8 @@ test("allow_unprotected_path = false", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = false,
+            ignore_scope = false,
+            deny_by_default = true,
         }
     )
 
@@ -245,13 +248,12 @@ test("allow_unprotected_path = false", function()
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
-    assert(res:find("403"), 1, true)
+    assert(res:find("403", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-
-test("allow_unprotected_path = true, hide_credentials = true", function()
+test("deny_by_default = false, hide_credentials = true", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -264,8 +266,8 @@ test("allow_unprotected_path = true, hide_credentials = true", function()
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = true,
+            ignore_scope = false,
+            deny_by_default = false,
             hide_credentials = true
         }
     )
@@ -418,8 +420,8 @@ test("check oauth_scope_expression", function()
                     }
                 }
             },
-            allow_oauth_scope_expression = true,
-            allow_unprotected_path = false,
+            ignore_scope = false,
+            deny_by_default = true,
         });
 
     print "create a consumer"

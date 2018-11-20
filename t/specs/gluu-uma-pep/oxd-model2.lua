@@ -65,52 +65,92 @@ model = {
             expires_in = 299,
         }
     },
-    -- #4, plugin check the client token
+    -- #4, plugin check_access with empty RPT, "/posts", GET
     {
-        expect = "/introspect-access-token",
+        expect = "/uma-rs-check-access",
         required_fields = {
             "oxd_id",
-            "access_token",
+            "rpt",
+            "path",
+            "http_method",
         },
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
             assert(token == model[3].response.access_token, 403)
+            assert(json.path == "/posts")
+            assert(json.http_method == "GET")
+            assert(json.rpt == "")
+        end,
+        response = {
+            access = "denied",
+            ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
+        },
+    },
+    -- #5, plugin introspect with RPT, "/posts", GET
+    {
+        expect = "/introspect-rpt",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[3].response.access_token, 403)
+            assert(json.rpt ~= "")
         end,
         response = {
             active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "openid" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
+            client_id = "1234567890",
+            permissions = {},
         },
         response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
             response.iat = ngx.now()
+            response.exp = ngx.now() + 60 * 60
             return response
         end,
     },
-
-    -- #5, plugin check the wrong client token
+    -- #6, plugin check_access with RPT, "/posts", GET
     {
-        expect = "/introspect-access-token",
+        expect = "/uma-rs-check-access",
         required_fields = {
             "oxd_id",
-            "access_token",
+            "rpt",
+            "path",
+            "http_method",
         },
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token ~= model[2].response.access_token)
             assert(token == model[3].response.access_token, 403)
+            assert(json.path == "/posts")
+            assert(json.http_method == "GET")
+            assert(json.rpt == "1234567890")
         end,
         response = {
-            active = false,
+            access = "granted",
         },
+    },
+    -- #7, plugin introspect with RPT, "/posts", GET
+    {
+        expect = "/introspect-rpt",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[3].response.access_token, 403)
+            assert(json.rpt ~= "")
+        end,
+        response = {
+            active = true,
+            client_id = "1234567890",
+            permissions = {},
+        },
+        response_callback = function(response)
+            response.iat = ngx.now()
+            response.exp = ngx.now() + 60 * 60
+            return response
+        end,
     },
 }
 
