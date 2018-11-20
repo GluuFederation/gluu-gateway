@@ -16,7 +16,7 @@
               access: 2,
               pageName: "Snapshots",
               pageDescription: "Take snapshots of currently active nodes." +
-              "<br>All <code>Services</code>, <code>Routes</code>, <code>APIs</code>, " +
+              "<br>All <code>Services</code>, <code>Routes</code>, " +
               "<code>Plugins</code>, <code>Consumers</code>, <code>Upstreams</code> and <code>Targets</code>will be saved and available for later import.",
               prefix: '<i class="mdi mdi-camera"></i>'
             },

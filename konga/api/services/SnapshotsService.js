@@ -12,29 +12,19 @@ module.exports = {
 
   takeSnapShot: function (name, node, cb) {
 
-
     // Get node
     KongService.nodeInfo(node, function (err, status) {
       if (err) {
         return cb(err);
       }
 
-      var result = {}
+      var result = {};
 
-      var endpoints = ['/apis', '/plugins', '/consumers']
+      var endpoints = ['/services', '/routes', '/plugins', '/consumers', '/upstreams'];
 
       status.version = Utils.ensureSemverFormat(status.version);
 
-      if (semver.gte(status.version, '0.10.0')) {
-        endpoints = endpoints.concat(['/upstreams']);
-      }
-
-      if (semver.gte(status.version, '0.13.0')) {
-        endpoints = endpoints.concat(['/services', '/routes']);
-      }
-
-
-      var fns = []
+      var fns = [];
 
       endpoints.forEach(function (endpoint) {
         fns.push(function (cb) {
@@ -42,25 +32,22 @@ module.exports = {
             if (err) {
               return cb(err);
             }
-            result[endpoint.replace("/", "")] = data.data
+            result[endpoint.replace("/", "")] = data.data;
             return cb();
           });
         });
       });
-
 
       async.series(fns, function (err, data) {
         if (err) {
           return cb(err);
         }
 
-
         var servicePluginsMap = {};
         var consumerPluginsMap = {};
         var routePluginsMap = {};
         var pluginsUpdated = [];
         var routesUpdated = [];
-
 
         _.forEach(result.plugins, function (plugin) {
           if (plugin.service_id) {
@@ -156,31 +143,8 @@ module.exports = {
                 return cb();
               });
             });
-          })
-
-
-          var credentials = ["basic-auth", "key-auth", "hmac-auth", "jwt", "oauth2"]
-          credentials.forEach(function (credential) {
-            consumerFns.push(function (cb) {
-              KongService.listAllCb(node, '/consumers/' + consumer.id + '/' + credential, function (err, data) {
-                if (err) {
-                  return cb();
-                }
-                if (!consumer.credentials) {
-                  consumer.credentials = {};
-                }
-                if (!consumer.credentials[credential]) {
-                  consumer.credentials[credential] = [];
-                }
-                data.data.forEach(function (item) {
-                  consumer.credentials[credential].push(item);
-                })
-
-                return cb();
-              });
-            });
           });
-        })
+        });
 
         async.series(consumerFns, function (err, data) {
           if (err) {
@@ -189,22 +153,21 @@ module.exports = {
 
           if (semver.gte(status.version, '0.10.0')) {
             // Foreach upstream get it's targets
-            var fns = []
+            var fns = [];
             result.upstreams.forEach(function (upstream) {
               fns.push(function (cb) {
                 KongService.listAllCb(node, '/upstreams/' + upstream.id + '/targets', function (err, data) {
-                  if (err) return cb()
-                  sails.log(data.data)
+                  if (err) return cb();
+                  sails.log(data.data);
                   if (!result.upstream_targets) result.upstream_targets = []
                   data.data.forEach(function (item) {
                     result.upstream_targets.push(item);
-                  })
+                  });
 
                   return cb();
                 });
               });
-            })
-
+            });
 
             async.series(fns, function (err, data) {
               if (err) {
@@ -245,13 +208,10 @@ module.exports = {
                   }
                 });
               }
-
             });
           }
         });
       });
-
     });
   },
-
-}
+};

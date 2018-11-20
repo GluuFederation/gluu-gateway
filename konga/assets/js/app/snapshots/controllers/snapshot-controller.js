@@ -122,9 +122,6 @@
               delete result.data.routes;
               $scope.originalSnapshot = result;
               $scope.snapshot = _.cloneDeep(result);
-              // $scope.snapshotCopy = angular.copy(_snapshot)
-              // delete $scope.snapshotCopy.data;
-              // $scope.snapshot = $scope.snapshotCopy
 
               // Hide the orderlist attribute of upstreams for faster rendering
               if ($scope.snapshot.data.upstreams) {
@@ -133,13 +130,39 @@
                 })
               }
 
-              if ($scope.snapshot.data.apis) {
-                // $scope.snapshot.data.apis = $scope.snapshot.data.apis.slice(0,25)
+              $scope.snapshot.data.services.map(function (o) {
+                if (o.plugins) {
+                  o.plugins.map(function (p) {
+                    if (p.config.oauth_scope_expression) {
+                      p.config.oauth_scope_expression = "Not shown for faster DOM rendering...";
+                    }
+                    return p;
+                  })
+                }
 
-                // $scope.snapshot.data.upstreams.forEach(function(item){
-                //     item.orderlist = '( Not shown for faster DOM rendering... )'
-                // })
-              }
+                if (o.routes) {
+                  o.routes.map(function (r) {
+                    if (r.plugins) {
+                      r.plugins.map(function (p) {
+                        if (p.config.oauth_scope_expression) {
+                          p.config.oauth_scope_expression = "Not shown for faster DOM rendering...";
+                        }
+                        return p;
+                      })
+                    }
+                    return r;
+                  });
+                }
+
+                return o;
+              });
+
+              $scope.snapshot.data.plugins.map(function (p) {
+                if (p.config.oauth_scope_expression) {
+                  p.config.oauth_scope_expression = "Not shown for faster DOM rendering...";
+                }
+                return p;
+              });
 
               $scope.loading = false;
             }).catch(function (err) {
@@ -147,6 +170,7 @@
 
           })
         }
+
         _fetchData();
       }
     ]);
