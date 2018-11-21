@@ -55,7 +55,7 @@
         }
 
         $scope.isPluginAdded = false;
-
+        setTimeout(function () {
         $scope.plugins.forEach(function (o) {
           if (o.name == "gluu-oauth-pep") {
             $scope.modelPlugin = o;
@@ -135,8 +135,7 @@
               }
             }, 500);
           }
-        });
-
+        })}, 100);
         /**
          * ----------------------------------------------------------------------
          * Functions

@@ -99,12 +99,12 @@ module.exports.routes = {
   // Client controller
   'GET /api/clients/oauth/:oxd_id': 'ClientsController.getClient',
   'POST /api/clients/oauth': 'ClientsController.addGluuClientAuth',
-  'POST /api/clients/uma': 'ClientsController.addGluuPEP',
-  'PUT /api/clients/uma': 'ClientsController.updateGluuPEP',
+  'POST /api/clients/uma': 'ClientsController.addGluuUMAPEP',
+  'PUT /api/clients/uma': 'ClientsController.updateGluuUMAPEP',
   'POST /api/clients/consumer': 'ClientsController.addConsumerClient',
   'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
   'POST /api/clients/oauth/delete': 'ClientsController.deleteGluuClientAuth',
-  'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deleteGluuPEP',
+  'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deleteGluuUMAPEP',
 
   /**
    * Fallback to proxy

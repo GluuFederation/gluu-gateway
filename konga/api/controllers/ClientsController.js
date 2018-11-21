@@ -97,7 +97,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // Register OP client and register UMA resources
-  addGluuPEP: function (req, res) {
+  addGluuUMAPEP: function (req, res) {
     // Existing client id and secret
     if (!req.body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
@@ -183,7 +183,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             oxd_id: umaProtect.oxd_id,
             client_id: opClient.client_id,
             client_secret: opClient.client_secret,
-            context: 'GLUU-PEP',
+            context: 'GLUU-UMA-PEP',
             data: req.body.uma_scope_expression
           })
       })
@@ -252,7 +252,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // Update UMA resources
-  updateGluuPEP: function (req, res) {
+  updateGluuUMAPEP: function (req, res) {
     // Existing client id and secret
     if (!req.body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
@@ -511,7 +511,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   },
 
   // delete client from oxd for PEP plugin
-  deleteGluuPEP: function (req, res) {
+  deleteGluuUMAPEP: function (req, res) {
     var kongaDBClient;
 
     // doWantDeleteClient=true Delete client from GG and OXD
