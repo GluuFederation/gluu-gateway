@@ -78,6 +78,7 @@ class KongSetup(object):
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
         self.distLuaFolder = '/usr/local/share/lua/5.1'
+        self.distGluuLuaFolder = '%s/gluu' % self.distLuaFolder
         self.distKongFolder = '%s/kong' % self.distLuaFolder
         self.distKongPluginsFolder = '%s/plugins' % self.distKongFolder
 
@@ -89,8 +90,9 @@ class KongSetup(object):
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
         self.ggPluginsFolder = '%s/plugins' % self.distGluuGatewayFolder
-        self.gluuOAuthPEPPlugin = '%s/gluu-client-auth' % self.ggPluginsFolder
-        self.gluuUMAPEPPlugin = '%s/gluu-pep' % self.ggPluginsFolder
+        self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
+        self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
+        self.gluuCommonPluginFile = '%s/kong-auth-pep-common.lua' % self.ggPluginsFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
@@ -335,17 +337,24 @@ class KongSetup(object):
 
     def installPlugins(self):
         self.logIt('Installing luarocks packages...')
-        # Move and Copy libs to kong path
-        self.run([self.cmd_cp, self.oxdWebFilePath, self.distLuaFolder])
+        # oxd-web-lua
+        self.run([self.cmd_mkdir, '-p', self.distGluuLuaFolder])
+        self.run([self.cmd_cp, self.oxdWebFilePath, self.distGluuLuaFolder])
 
-        # Make extra folder for Json logic lib
+        # json-logic-lua
         self.run([self.cmd_mkdir, '-p', '%s/rucciva' % self.distLuaFolder])
         self.run([self.cmd_cp, self.jsonLogicFilePath, '%s/rucciva/json_logic.lua' % self.distLuaFolder])
 
-        self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
-        self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
+        # lua-resty-lrucache
         self.run([self.cmd_cp, '-R', '%s/lrucache' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
         self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # gluu plugins
+        self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
+
+        # gluu plugins common file
+        self.run([self.cmd_cp, self.gluuCommonPluginFile, self.distGluuLuaFolder])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
