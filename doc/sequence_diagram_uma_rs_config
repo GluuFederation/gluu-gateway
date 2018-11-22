@@ -1,4 +1,4 @@
-title RS plugin configuration
+title Gluu UMA PEP plugin configuration
 
 konga->kong: Create service with url: "https://demo.com"
 kong->konga: Response with service object
@@ -25,7 +25,7 @@ note over konga
     Pass client credetial to plugin
 end note
 
-konga->kong: Configure Gluu-OAuth2-RS plugin with [Service|Route|API|Global]
+konga->kong: Configure Gluu-UMA-PEP plugin with [Service|Route|API|Global]
 note over kong
 Gluu-OAuth2-RS schema:
 1. oxd_id
@@ -34,8 +34,11 @@ Gluu-OAuth2-RS schema:
 4. op_url
 5. oxd_url
 6. uma_scope_expression
-7. allow_unprotected_path
+7. ignore_scope
+8. deny_by_default
+9. anonymous
+10. hide_credentials
 end note
-kong->kong_DB: Add Gluu-OAuth2-RS
+kong->kong_DB: Add Gluu-UMA-PEP
 kong_DB->kong:
-kong->konga: Return with gluu-oauth2-RS config details
+kong->konga: Return with Gluu-UMA-PEP config details

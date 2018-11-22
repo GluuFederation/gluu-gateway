@@ -1,4 +1,4 @@
-title OAuth plugin configuration
+title Gluu OAuth PEP plugin configuration
 
 konga->kong: Create service with url: "https://demo.com"
 kong->konga: Response with service object
@@ -23,18 +23,20 @@ note over konga
     Pass client credetial to plugin
 end note
 
-konga->kong: Configure Gluu-OAuth2-Client plugin with [Service|Route|API|Global]
+konga->kong: Configure Gluu-OAuth-PEP plugin with [Service|Route|API|Global]
 note over kong
-Gluu-OAuth2-Client schema:
+Gluu-OAuth-PEP schema:
 1. oxd_id
 2. client_id
 3. client_secret
 4. op_url
 5. oxd_url
 6. oauth_scope_expression
-7. allow_oauth_scope_expression
-8. anonymous
+7. ignore_scope
+8. deny_by_default
+9. anonymous
+10. hide_credentials
 end note
-kong->kong_DB: Add Gluu-OAuth2-Client
+kong->kong_DB: Add Gluu-OAuth-PEP
 kong_DB->kong:
-kong->konga: Return with gluu-oauth2-client config details
+kong->konga: Return with Gluu-OAuth-PEP config details

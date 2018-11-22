@@ -1,39 +1,29 @@
-title Gluu PEP access
+title Gluu-UMA-PEP plugin access
 
-client->Kong Proxy: HTTP request
+Kong Proxy->gluu-uma-pep: *****  call "access" event for Kong OAuth-Consumer plugin priority 998 *****
 
-Kong Proxy->gluu-pep: ***** call "access" event for Kong plugin priority 998  *****
-
-gluu-pep->gluu-pep: Get token from Authorization Header
-alt missed token
-    gluu-pep->client: 401/Unauthorized + ticket
+opt no token
+    gluu-uma-pep->Kong Proxy: 401 / Unauthorized + ticket
 end
 
-gluu-pep<->gluu-pep: Lookup protected path
+gluu-uma-pep->kong-cache: Lookup token in cache
 
-gluu-pep<->gluu-pep: Lookup token in cache
-
-alt cache found
-    opt token already authorized for this path/method
-        gluu-pep->Kong Proxy: Access granted
+opt token not in cache
+    gluu-uma-pep<->oxd: Introspect RPT at Introspection RPT endpoint
+    opt active == false || token expired
+        gluu-uma-pep->Kong Proxy: 401 / Unauthorized - token expired
     end
+    gluu-uma-pep<->kong_db: fetch consumer using client_id
+    opt consumer == null
+        gluu-uma-pep->Kong Proxy: 401 / Unauthorized - Invalid client
+    end
+    opt Check UMA Scope access = denied
+        gluu-uma-pep->Kong Proxy: 401 / Unauthorized + ticket
+    end
+    gluu-uma-pep->kong-cache: write "token": {token JSON}
 end
 
-gluu-pep->gluu-pep: Lookup permission token in cache
-opt no permission token in cache
-    gluu-pep<->oxd: GET protection_access_token
-end
+kong-cache->gluu-uma-pep: return token JSON
 
-gluu-pep<->oxd: introspect_rpt(rpt, protected path)
-alt token not active
-    gluu-pep->client: 401/Unauthorized
-end
-
-gluu-pep<->oxd: uma_rs_check_access(rpt, protected path)
-
-alt access granted
-    gluu-pep<->gluu-pep: update cache
-    gluu-pep->Kong Proxy: Access granted
-else
-    gluu-pep->client: 403/Forbidden
-end
+gluu-uma-pep->gluu-uma-pep: Add RPT_EXP, OAUTH_CLIENT_ID headers
+gluu-uma-pep->Kong Proxy: return
