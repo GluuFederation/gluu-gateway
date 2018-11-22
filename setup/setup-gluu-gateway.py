@@ -59,6 +59,7 @@ class KongSetup(object):
         self.cmd_touch = '/bin/touch'
         self.cmd_mv = '/bin/mv'
         self.cmd_cp = '/bin/cp'
+        self.cmd_rm = '/bin/rm'
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
         self.cmd_sh = '/bin/sh'
@@ -92,6 +93,7 @@ class KongSetup(object):
         self.ggPluginsFolder = '%s/plugins' % self.distGluuGatewayFolder
         self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
         self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
+        self.removePluginList = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.gluuCommonPluginFile = '%s/kong-auth-pep-common.lua' % self.ggPluginsFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
@@ -355,6 +357,10 @@ class KongSetup(object):
 
         # gluu plugins common file
         self.run([self.cmd_cp, self.gluuCommonPluginFile, self.distGluuLuaFolder])
+
+        # Remove kong default plugins
+        for plugin in self.removePluginList:
+            self.run([self.cmd_rm, '-rf', '%s/%s' % (self.distKongPluginsFolder, plugin)])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
