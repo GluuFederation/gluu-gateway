@@ -107,7 +107,7 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
         " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
-        " -e KONG_PLUGINS=", build_plugins_list(plugins), " ",
+        " -e KONG_PLUGINS=\"bundled\",", build_plugins_list(plugins), " ",
         build_plugins_volumes(plugins),
         build_modules_volumes(modules),
         opts.kong_image or kong_image,
@@ -129,7 +129,7 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
         " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
-        " -e KONG_PLUGINS=", build_plugins_list(plugins), " ",
+        " -e KONG_PLUGINS=\"bundled\",", build_plugins_list(plugins), " ",
         build_plugins_volumes(plugins),
         build_modules_volumes(modules),
         opts.kong_image or kong_image
