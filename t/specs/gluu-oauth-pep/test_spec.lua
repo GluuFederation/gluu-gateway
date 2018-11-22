@@ -550,6 +550,8 @@ test("rate limiter", function()
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
+    assert(res:lower():find("x-authenticated-scope:", 1, true))
+    -- TODO test comma separated list of scopes
 
     print"configure rate-limiting global plugin"
     local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],

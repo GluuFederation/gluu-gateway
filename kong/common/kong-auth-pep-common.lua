@@ -111,7 +111,15 @@ local function access_granted(conf, token_data)
             new_headers["X-RPT-Expiration"] = tostring(token_data.exp)
         else
             new_headers["X-OAuth-Expiration"] = tostring(token_data.exp)
+
+            local scope = token_data.scope
+            local t = {}
+            for i = 1, #scope do
+                t[#t + 1] = scope[i]
+            end
+            new_headers["X-Authenticated-Scope"] = table.concat(t, ", ")
         end
+
         kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
     else
         new_headers[const.ANONYMOUS] = true
