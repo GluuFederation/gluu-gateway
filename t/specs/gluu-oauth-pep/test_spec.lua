@@ -124,6 +124,7 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
+
 test("with and without token", function()
 
     setup("oxd-model1.lua")
@@ -501,5 +502,133 @@ test("check oauth_scope_expression", function()
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
-    -- ctx.print_logs = false -- comment it out if want to see logs
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("rate limiter", function()
+
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    print "Create a anonymous consumer"
+    local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
+    local anonymous_consumer_response = JSON:decode(res)
+
+    print("anonymous_consumer_response.id: ", anonymous_consumer_response.id)
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            ignore_scope = true,
+            deny_by_default = false,
+            anonymous = anonymous_consumer_response.id,
+        }
+    )
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    -- backend returns all headrs within body
+    print"check that GG set all required upstream headers"
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+    assert(res:lower():find("x-authenticated-scope:", 1, true))
+    -- TODO test comma separated list of scopes
+
+    print"configure rate-limiting global plugin"
+    local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=consumer" ]],
+        -- [[--data "consumer_id=]], consumer_response.id,
+         [[ --data "config.policy=local" ]]
+    )
+    local rate_limiting_global = JSON:decode(res)
+
+    print"test it work with token first time"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    print"it may be blocked by rate limiter"
+    local res1, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"it may be blocked by rate limiter"
+    local res2, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    -- at least one requests of two requests above must be blocker by rate limiter
+    assert(res1:find("API rate limit exceeded", 1, true) or res2:find("API rate limit exceeded", 1, true))
+    -- if we are here global plugin works
+
+    print"remove rate-limiting global plugin"
+    local res, err = sh_ex([[curl -v --fail -sS -X DELETE --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins/]], rate_limiting_global.id
+    )
+
+    print"configure rate limiting plugin for a consumer"
+    local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" ]],
+        [[ --data "config.second=1"  --data "config.policy=local" --data "config.limit_by=consumer" ]],
+        [[ --data "consumer_id=]], consumer_response.id, [["]]
+    )
+    local rate_limiting_consumer = JSON:decode(res)
+
+    sleep(2) -- TODO is it required?!
+
+    print"test it work with token first time"
+    local res, err = sh_ex(
+        [[curl -i --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    print"it may be blocked by rate limiter"
+    local res1, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"anonymous, should work without limitation"
+    for i = 1, 3 do
+        local res, err = sh_ex(
+            [[curl -i --fail -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+            [[/ --header 'Host: backend.com' ]]
+        )
+    end
+
+    print"it may be blocked by rate limiter"
+    local res2, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    -- at least one requests of two requests above must be blocker by rate limiter
+    assert(res1:find("API rate limit exceeded", 1, true) or res2:find("API rate limit exceeded", 1, true))
+    -- if we are here global plugin works
+
+    --ctx.print_logs = false -- comment it out if want to see logs
 end)
