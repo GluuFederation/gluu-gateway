@@ -259,11 +259,15 @@ var AuthController = {
             if (setting.is_only_admin_allow_login) {
               var roles = (userInfo.claims && userInfo.claims.role) || [];
               if (roles.indexOf('admin') <= -1) {
-                return Promise.reject({ message: 'Not enough permission to access GG UI. Only the user with admin role is allow.' });
+                return Promise.reject({message: 'Not enough permission to access GG UI. Only the user with admin role is allow.'});
               }
             }
 
-            var sub = (userInfo.claims && userInfo.claims.sub && userInfo.claims.sub[0]) || uuid.v4();
+            var sub = userInfo.claims && userInfo.claims.sub && userInfo.claims.sub[0];
+
+            if (!sub) {
+              return Promise.reject({message: 'Failed to get sub claim.'});
+            }
 
             return new Promise(function (resolve, reject) {
               sails.models.user
