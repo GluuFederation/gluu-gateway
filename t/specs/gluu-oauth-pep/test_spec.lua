@@ -40,6 +40,7 @@ local function setup(model)
             ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
         },
         modules = {
+            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
@@ -129,7 +130,8 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
-test("with and without token", function()
+
+test("with, without token and metrics", function()
 
     setup("oxd-model1.lua")
 
@@ -172,6 +174,22 @@ test("with and without token", function()
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print"second time call"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"check metrics, it should return gluu_client_authenticated = 2"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/oauth-metrics]]
+    )
+    assert(res:lower():find("client_authenticated", 1, true))
+    assert(res:lower():find(string.lower('gluu_client_authenticated_total{consumer="' .. register_site_response.client_id .. '"} 2'), 1, true))
+    assert(res:lower():find(string.lower('gluu_client_authenticated{consumer="' .. register_site_response.client_id .. '",service="' .. create_service_response.name .. '"} 2'), 1, true))
 
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(

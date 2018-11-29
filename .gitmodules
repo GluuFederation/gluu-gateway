@@ -13,3 +13,6 @@
 [submodule "third-party/lua-resty-hmac"]
 	path = third-party/lua-resty-hmac
 	url = git@github.com:jkeys089/lua-resty-hmac.git
+[submodule "third-party/nginx-lua-prometheus"]
+	path = third-party/nginx-lua-prometheus
+	url = git@github.com:knyar/nginx-lua-prometheus.git

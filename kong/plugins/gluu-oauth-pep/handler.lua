@@ -1,10 +1,15 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-oauth-pep.access"
 local lrucache = require "resty.lrucache.pureffi"
-
+local metrics = require "kong.plugins.gluu-oauth-pep.metrics"
+local basic_serializer = require "kong.plugins.log-serializers.basic"
 
 local handler = BasePlugin:extend()
 handler.PRIORITY = 999
+
+local function collect(conf, message)
+    metrics.log(message)
+end
 
 -- Your plugin handler's constructor. If you are extending the
 -- Base Plugin handler, it's only role is to instanciate itself
@@ -21,6 +26,8 @@ function handler:new()
         return error("failed to create the cache: " .. (err or "unknown"))
     end
     self.jwks = jwks
+
+    metrics.init()
 end
 
 function handler:access(config)
@@ -29,6 +36,13 @@ function handler:access(config)
     handler.super.access(self)
 
     return access(self, config)
+end
+
+function handler:log(conf)
+    handler.super.log(self)
+
+    local message = basic_serializer.serialize(ngx)
+    return collect(conf, message)
 end
 
 return handler
