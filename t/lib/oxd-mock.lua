@@ -112,8 +112,9 @@ return function(model)
     local response = item.response
     local response_callback = item.response_callback
     if response_callback then
-        response = response_callback(response)
+        response_callback(response, params)
     end
     local json = cjson.encode(response)
+    print(json)
     ngx.say(json)
 end

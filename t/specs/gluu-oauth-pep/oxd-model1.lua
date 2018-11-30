@@ -26,7 +26,6 @@ model = {
         response_callback = function(response)
             response.client_id_issued_at = ngx.now()
             response.client_secret_expires_at = ngx.now() + 60 * 60
-            return response
         end,
     },
     -- #2, client request access token
@@ -97,7 +96,6 @@ model = {
         response_callback = function(response)
             response.exp = ngx.now() + 60 * 60
             response.iat = ngx.now()
-            return response
         end,
     },
 

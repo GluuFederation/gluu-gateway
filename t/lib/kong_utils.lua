@@ -171,6 +171,10 @@ _M.oxd_mock = function(model, image)
         " -v ", ctx.host_git_root, "/t/lib/oxd-mock.lua:/usr/local/openresty/lualib/gluu/oxd-mock.lua:ro ",
         " -v ", ctx.host_git_root, "/t/lib/oxd-mock.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
         " -v ", model, ":/usr/local/openresty/lualib/gluu/oxd-model.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/jwt.lua:/usr/local/openresty/lualib/resty/jwt.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/evp.lua:/usr/local/openresty/lualib/resty/evp.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua:/usr/local/openresty/lualib/resty/jwt-validators.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-hmac/lib/resty/hmac.lua:/usr/local/openresty/lualib/resty/hmac.lua:ro ",
         " --name oxd-mock ", -- TODO avoid hardcoded name
         image or openresty_image
     )

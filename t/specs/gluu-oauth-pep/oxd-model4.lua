@@ -1,3 +1,5 @@
+local cjson = require"cjson"
+
 local model
 model = {
     -- array part start, scenario
@@ -41,10 +43,35 @@ model = {
             assert(json.client_secret == model[1].response.client_secret)
         end,
         response = {
-            scope = { "openid", "profile", "email" },
-            access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f2",
+            scope = { "openid", "oxd", "email" },
             expires_in = 299,
-        }
+        },
+        response_callback = function(response, request_json)
+            local jwt_lib = require "resty.jwt"
+            local t = {
+                header = { typ = "JWT", alg = "RS256", kid = "1234567890" },
+                payload = {
+                    client_id = request_json.client_id,
+                    exp = ngx.now() + 60*5,
+                    scope = "openid oxd",
+                }
+            }
+            local private_key = [[
+-----BEGIN RSA PRIVATE KEY-----
+MIIBOAIBAAJAR/0YV0EUBITUOXbLGFXS4zoSnWy25c6KQsHCiFQ6kxBxWk6m+yby
+eH58iLekQ9Dl+tRLl7CPa1zKyvWlfdv4gQIDAQABAkAx9inqhLQL3tQbfaK+pPHT
+2f4JW+Yj4BB8/FSyoSJ15fsBoNQvXs4i9fQgWN9N6tyHT3NPgfM9jr1+F7jeiuBB
+AiEAi8qyglCk5NuxMeC7iQcVVH331XusKLlAkwtnlHLi2OUCIQCD1RwZaIEfI/jQ
+sCbLNXifRrdvP6vc6puU2+o+CNAzbQIgSqdSE4Pru4iTpZZlsHUG8BthmjG0q/7a
+vGxvwXhlKv0CIG7l5J9TE9t4TSRwKhIjRvblbAV/kDlkecA9Rs0saMf5AiBSSSBx
+FNTjDUl9TmbXV5XHsJJGZC2ejaDMvXWKmorYxw==
+-----END RSA PRIVATE KEY-----
+            ]]
+            local jwt = jwt_lib:sign(private_key, t)
+            print(jwt)
+            response.access_token = jwt
+        end
+
     },
     -- #3, plugin request access token
     {
@@ -57,42 +84,38 @@ model = {
         request_check = function(json)
             assert(json.client_id == model[1].response.client_id)
             assert(json.client_secret == model[1].response.client_secret)
+            local scope = json.scope
+            assert(#scope == 2)
+            for i =1, 2 do
+                assert((scope[i] == "oxd") or (scope[i] == "openid"))
+            end
         end,
         response = {
-            scope = { "openid", "profile", "email" },
+            scope = { "openid", "oxd"},
             access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f3",
             expires_in = 299,
         }
     },
-    -- #4, plugin check the client token and scope with scope_expression for path /posts
+    -- #4 plugin request jwks
     {
-        expect = "/introspect-access-token",
+        expect = "/get-jwks",
         required_fields = {
-            "oxd_id",
-            "access_token",
+            "op_host",
         },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
         response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin", "employee" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
+            keys = {
+                {
+                    kid = "1234567890",
+                    alg = "RS256",
+                    x5c = {[[MFswDQYJKoZIhvcNAQEBBQADSgAwRwJAR/0YV0EUBITUOXbLGFXS4zoSnWy25c6KQsHCiFQ6kxBxWk6m+ybyeH58iLekQ9Dl+tRLl7CPa1zKyvWlfdv4gQIDAQAB]]}
+                }
+            }
         },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-        end,
-    },
+        response_callback = function(response, request_json)
+            setmetatable(response.keys, cjson.array_mt)
+            response.keys[1].exp = ngx.now() + 60*5
+        end
+    }
 }
 
 return model
