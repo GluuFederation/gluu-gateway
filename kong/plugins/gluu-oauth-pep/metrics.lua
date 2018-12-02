@@ -6,7 +6,7 @@ local prometheus
 local function init()
     local shm = "gluu_oauth_pep_metrics"
 
-    if not ngx.shared.gluu_oauth_pep_metrics then
+    if not ngx.shared[shm] then
         kong.log.err("gluu_oauth_pep: ngx shared dict 'gluu_oauth_pep_metrics' not found")
         return
     end
@@ -18,7 +18,7 @@ local function init()
     --        return
     --    end
 
-    prometheus = require("prometheus").init(shm, "gluu_")
+    prometheus = require("prometheus").init(shm, "gluu_oauth_pep_")
 
     -- accross all services
     metrics.client_authenticated_total = prometheus:counter("client_authenticated_total",

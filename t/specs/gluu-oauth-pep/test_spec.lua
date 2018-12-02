@@ -188,8 +188,8 @@ test("with, without token and metrics", function()
         [[/oauth-metrics]]
     )
     assert(res:lower():find("client_authenticated", 1, true))
-    assert(res:lower():find(string.lower('gluu_client_authenticated_total{consumer="' .. register_site_response.client_id .. '"} 2'), 1, true))
-    assert(res:lower():find(string.lower('gluu_client_authenticated{consumer="' .. register_site_response.client_id .. '",service="' .. create_service_response.name .. '"} 2'), 1, true))
+    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated_total{consumer="' .. register_site_response.client_id .. '"} 2'), 1, true))
+    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated{consumer="' .. register_site_response.client_id .. '",service="' .. create_service_response.name .. '"} 2'), 1, true))
 
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(

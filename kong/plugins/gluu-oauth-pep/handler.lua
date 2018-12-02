@@ -7,10 +7,6 @@ local basic_serializer = require "kong.plugins.log-serializers.basic"
 local handler = BasePlugin:extend()
 handler.PRIORITY = 999
 
-local function collect(conf, message)
-    metrics.log(message)
-end
-
 -- Your plugin handler's constructor. If you are extending the
 -- Base Plugin handler, it's only role is to instanciate itself
 -- with a name. The name is your plugin name as it will be printed in the logs.
@@ -35,14 +31,14 @@ function handler:access(config)
     -- (will log that your plugin is entering this context)
     handler.super.access(self)
 
-    return access(self, config)
+    access(self, config)
 end
 
 function handler:log(conf)
     handler.super.log(self)
 
     local message = basic_serializer.serialize(ngx)
-    return collect(conf, message)
+    metrics.log(message)
 end
 
 return handler
