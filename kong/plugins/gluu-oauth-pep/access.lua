@@ -98,9 +98,9 @@ local function refresh_jwks(self, conf)
         local alg = key.alg
         if ttl > 0 and (alg == "RS256" or alg == "RS512") and
                 key.x5c and type(key.x5c) == "table" and key.x5c[1] then
-            key.pem = "-----BEGIN PUBLIC KEY-----\n" ..
+            key.pem = "-----BEGIN CERTIFICATE-----\n" ..
                     key.x5c[1] ..
-                    "\n-----END PUBLIC KEY-----\n"
+                    "\n-----END CERTIFICATE-----\n"
             self.jwks:set(key.kid, key, ttl)
         end
     end
@@ -130,6 +130,7 @@ local function process_jwt(self, conf, jwt_obj)
         exp = validators.is_not_expired(),
     }
 
+    kong.log.debug("verify with cert: \n", key.pem)
     local verified = jwt:verify_jwt_obj(key.pem, jwt_obj, claim_spec)
 
     if not verified.verified then
