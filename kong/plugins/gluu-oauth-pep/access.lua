@@ -69,6 +69,12 @@ function hooks.no_token_protected_path()
     kong.response.exit(401, { message = "Missed OAuth token" })
 end
 
+local supported_algs = {
+    RS256 = true,
+    RS512 = true,
+}
+
+
 local function refresh_jwks(self, conf)
     kong_auth_pep_common.get_protection_token(self, conf)
 
@@ -96,7 +102,7 @@ local function refresh_jwks(self, conf)
         local key = keys[i]
         local ttl = key.exp - ngx.now()
         local alg = key.alg
-        if ttl > 0 and (alg == "RS256" or alg == "RS512") and
+        if ttl > 0 and supported_algs[alg] and
                 key.x5c and type(key.x5c) == "table" and key.x5c[1] then
             key.pem = "-----BEGIN CERTIFICATE-----\n" ..
                     key.x5c[1] ..
@@ -108,6 +114,10 @@ local function refresh_jwks(self, conf)
 end
 
 local function process_jwt(self, conf, jwt_obj)
+    if not supported_algs[jwt_obj.header.alg] then
+        kong.log.info("JWT - unsupported alg=", jwt_obj.header.alg)
+        return nil, 401, "Bad JWT"
+    end
     local kid = jwt_obj.header.kid
     if kid == nil then
         kong.log.info("JWT - missed kid")
@@ -129,6 +139,11 @@ local function process_jwt(self, conf, jwt_obj)
     local claim_spec = {
         exp = validators.is_not_expired(),
     }
+
+    if jwt_obj.header.alg ~= key.alg then
+        kong.log.info("JWT - alg mismatch")
+        return nil, 401, "Bad JWT"
+    end
 
     kong.log.debug("verify with cert: \n", key.pem)
     local verified = jwt:verify_jwt_obj(key.pem, jwt_obj, claim_spec)
