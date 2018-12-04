@@ -26,7 +26,6 @@ model = {
         response_callback = function(response)
             response.client_id_issued_at = ngx.now()
             response.client_secret_expires_at = ngx.now() + 60 * 60
-            return response
         end,
     },
     -- #2, client request access token
@@ -92,103 +91,8 @@ model = {
         response_callback = function(response)
             response.exp = ngx.now() + 60 * 60
             response.iat = ngx.now()
-            return response
         end,
     },
---[[
-    -- #5, plugin check the client token and scope with scope_expression for path /comments
-    {
-        expect = "/introspect-access-token",
-        required_fields = {
-            "oxd_id",
-            "access_token",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
-        response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
-        },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
-    },
-
-    -- #6, plugin check the client token and scope with scope_expression for path /todos
-    {
-        expect = "/introspect-access-token",
-        required_fields = {
-            "oxd_id",
-            "access_token",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
-        response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
-        },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
-    },
-
-    -- #7, plugin check the client token and scope with scope_expression for path /
-    {
-        expect = "/introspect-access-token",
-        required_fields = {
-            "oxd_id",
-            "access_token",
-        },
-        request_check = function(json, token)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[2].response.access_token)
-            assert(token == model[3].response.access_token, 403)
-        end,
-        response = {
-            active = true,
-            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387", -- should be the same as return by register-site
-            username = "John Black",
-            scope = { "admin" },
-            token_type = "bearer",
-            sub = "jblack",
-            aud = "l238j323ds-23ij4",
-            iss = "https://as.gluu.org/",
-            --acr_values": ["basic","duo"],
-            --extension_field": "twenty-seven",
-        },
-        response_callback = function(response)
-            response.exp = ngx.now() + 60 * 60
-            response.iat = ngx.now()
-            return response
-        end,
-    },
-==]]
 }
 
 return model

@@ -135,7 +135,8 @@
               $scope.opClient = {
                 client_name: '',
                 client_id: '',
-                client_secret: ''
+                client_secret: '',
+                access_token_as_jwt: true
               };
 
               $scope.close = close;

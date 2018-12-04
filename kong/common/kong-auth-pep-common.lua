@@ -227,7 +227,7 @@ _M.access_handler = function(self, conf, hooks)
 
     kong.log.debug("protected resource path: ", protected_path, " URI: ", path)
 
-    local client_id, exp, iat
+    local client_id, exp
     local token_data = worker_cache_get_pending(token)
     if not token_data then
         set_pending_state(token)
@@ -254,7 +254,6 @@ _M.access_handler = function(self, conf, hooks)
         -- if we here introspection was successful
         client_id = introspect_response.client_id
         exp = introspect_response.exp
-        iat = introspect_response.iat
 
         local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
         if not consumer and not err then
@@ -268,12 +267,11 @@ _M.access_handler = function(self, conf, hooks)
         introspect_response.consumer = consumer
 
         worker_cache:set(token, introspect_response,
-            exp - iat - EXPIRE_DELTA
+            exp - ngx.now() - EXPIRE_DELTA
         )
     else
         client_id = token_data.client_id
         exp = token_data.exp
-        iat = token_data.iat
     end
 
     if not protected_path then
@@ -294,7 +292,7 @@ _M.access_handler = function(self, conf, hooks)
     end
     if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
         if cache_key then
-            worker_cache:set(cache_key, true, exp - iat - EXPIRE_DELTA)
+            worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
         end
 
         return access_granted(conf, token_data)

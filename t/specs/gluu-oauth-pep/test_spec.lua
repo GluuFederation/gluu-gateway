@@ -45,6 +45,10 @@ local function setup(model)
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
+            ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
+            ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
+            ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
+            ["resty/hmac.lua"] = host_git_root .. "/third-party/lua-resty-hmac/lib/resty/hmac.lua",
         }
     }
     kong_utils.backend()
@@ -91,14 +95,16 @@ local function configure_plugin(create_service_response, plugin_config)
         client_id = register_site_response.client_id,
         client_secret = register_site_response.client_secret,
     }
+
     local get_client_token_json = JSON:encode(get_client_token)
+
     local res, err = sh_ex(
         [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
         [[/get-client-token --header 'Content-Type: application/json' --data ']],
         get_client_token_json, [[']]
     )
-
     local response = JSON:decode(res)
+
 
     plugin_config.op_url = "http://stub"
     plugin_config.oxd_url = "http://oxd-mock"
@@ -111,7 +117,6 @@ local function configure_plugin(create_service_response, plugin_config)
         config = plugin_config,
         service_id = create_service_response.id,
     }
-
     local payload_json = JSON:encode(payload)
 
     print"enable plugin for the Service"
@@ -557,7 +562,7 @@ test("rate limiter", function()
     local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=consumer" ]],
         -- [[--data "consumer_id=]], consumer_response.id,
-         [[ --data "config.policy=local" ]]
+        [[ --data "config.policy=local" ]]
     )
     local rate_limiting_global = JSON:decode(res)
 
@@ -631,4 +636,58 @@ test("rate limiter", function()
     -- if we are here global plugin works
 
     --ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("JWT", function()
+
+    setup("oxd-model4.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            ignore_scope = true,
+            deny_by_default = false,
+        }
+    )
+
+    print"test it fail with 401 without token"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    assert(res:find("401", 1, true))
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    -- backend returns all headrs within body
+    print"check that GG set all required upstream headers"
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print"test it works with the same token again, oxd-model id completed, token taken from cache"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
