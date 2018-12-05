@@ -20,7 +20,7 @@ return {
         anonymous = { type = "string", func = kong_auth_pep_common.check_user, default = "" },
         hide_credentials = { type = "boolean", default = false },
         ignore_scope = { type = "boolean", default = false },
-        calculate_metrics = { type = "boolean", default = true }
+        calculate_metrics = { type = "boolean", default = false }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         table.sort(plugin_t.uma_scope_expression, function(first, second)

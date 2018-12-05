@@ -99,7 +99,7 @@ model = {
         end,
         response = {
             active = true,
-            client_id = "1234567890",
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
             permissions = {},
         },
         response_callback = function(response)
@@ -141,7 +141,7 @@ model = {
         end,
         response = {
             active = true,
-            client_id = "1234567890",
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
             permissions = {},
         },
         response_callback = function(response)

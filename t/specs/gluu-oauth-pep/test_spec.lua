@@ -147,6 +147,7 @@ test("with, without token and metrics", function()
             oauth_scope_expression = {},
             ignore_scope = true,
             deny_by_default = false,
+            calculate_metrics = true
         }
     )
 
@@ -186,13 +187,14 @@ test("with, without token and metrics", function()
     print"check metrics, it should return gluu_client_authenticated = 2"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
-        [[/oauth-metrics]]
+        [[/oauth-pep-metrics]]
     )
-    assert(res:lower():find("gluu_oauth_pep_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated_total{consumer="' .. register_site_response.client_id .. '"} 2'), 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated{consumer="' .. register_site_response.client_id .. '",service="' .. create_service_response.name .. '"} 2'), 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_endpoint_method_total{endpoint="/",method="GET"'), 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_endpoint_method{endpoint="/",method="GET"'), 1, true))
+    local name = "gluu_oauth_pep"
+    assert(res:lower():find(name .. "_client_authenticated", 1, true))
+    assert(res:lower():find(string.lower(name .. [[_client_authenticated_total{consumer="]] .. register_site_response.client_id .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower(name .. [[_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower(name .. [[_endpoint_method_total{endpoint="/",method="GET"]]), 1, true))
+    assert(res:lower():find(string.lower(name .. [[_endpoint_method{endpoint="/",method="GET"]]), 1, true))
 
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(
@@ -204,11 +206,11 @@ test("with, without token and metrics", function()
     print"Check metrics for client authentication, it should return count 2 because client auth failed"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
-        [[/oauth-metrics]]
+        [[/oauth-pep-metrics]]
     )
-    assert(res:lower():find("gluu_oauth_pep_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated_total{consumer="' .. register_site_response.client_id .. '"} 2'), 1, true))
-    assert(res:lower():find(string.lower('gluu_oauth_pep_client_authenticated{consumer="' .. register_site_response.client_id .. '",service="' .. create_service_response.name .. '"} 2'), 1, true))
+    assert(res:lower():find(name .. "_client_authenticated", 1, true))
+    assert(res:lower():find(string.lower(name .. [[_client_authenticated_total{consumer="]] .. register_site_response.client_id .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower(name .. [[_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
 
     print"test it works with the same token again, oxd-model id completed, token taken from cache"
     local res, err = sh_ex(

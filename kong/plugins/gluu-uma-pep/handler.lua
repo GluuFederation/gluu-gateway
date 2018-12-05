@@ -18,6 +18,8 @@ function handler:new()
 
   -- access token should be per plugin instance
   self.access_token = { expire = 0 }
+
+  metrics.init(name)
 end
 
 function handler:access(config)

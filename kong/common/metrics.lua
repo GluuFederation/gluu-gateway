@@ -8,7 +8,7 @@ local function init(name)
     local shm = name .. "_metrics"
 
     if not ngx.shared[shm] then
-        kong.log.err("gluu_oauth_pep: ngx shared dict 'gluu_oauth_pep_metrics' not found")
+        kong.log.err(name .. ": ngx shared dict '" .. name .. "_metrics' not found")
         return
     end
 
@@ -55,9 +55,9 @@ end
 
 local function log(name, conf, message)
     if not metrics then
-        kong.log.err("gluu_oauth_pep: can not log metrics because of an initialization "
+        kong.log.err(name .. ": can not log metrics because of an initialization "
                 .. "error, please make sure that you've declared "
-                .. "'gluu_oauth_pep_metrics' shared dict in your nginx template")
+                .. "'" .. name .. "_metrics' shared dict in your nginx template")
         return
     end
 
@@ -80,7 +80,7 @@ local function log(name, conf, message)
     metrics.endpoint_method_total:inc(1, { request.uri, request.method, response.status })
     metrics.endpoint_method:inc(1, { request.uri, request.method, response.status, service_name })
 
-    if name == "gluu_uma_pep" and kong.ctx.plugin.ticket then
+    if name == "gluu-uma-pep" and kong.ctx.plugin.ticket then
         metrics.ticket_total:inc(1)
         metrics.ticket:inc(1, { service_name })
     end

@@ -1,7 +1,7 @@
 local metrics = require "gluu.metrics"
 
 return {
-  ["/oauth-metrics"] = {
+  ["/oauth-pep-metrics"] = {
     GET = function(self, dao_factory)
         metrics.collect()
     end,
