@@ -106,7 +106,7 @@ xuGysIYKbqxv4vdBQFNAgDs1eNzuiq8CIQCHfvkvfa0IOOe+zH4l+ytU+crmrUHA
             keys = {
                 {
                     kid = "1234567890",
-                    alg = "RS256",
+                    alg = "RS512",
                     x5c = {[[MIICXzCCAgmgAwIBAgIJAO0JJN4B5G3gMA0GCSqGSIb3DQEBCwUAMIGKMQswCQYD
 VQQGEwJBVTETMBEGA1UECAwKU29tZS1TdGF0ZTEPMA0GA1UEBwwGS2FsdWdhMQ0w
 CwYDVQQKDAR0ZXN0MQ0wCwYDVQQLDAR0ZXN0MREwDwYDVQQDDAh0ZXN0Lm9yZzEk
