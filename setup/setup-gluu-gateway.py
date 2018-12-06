@@ -90,11 +90,11 @@ class KongSetup(object):
         self.distKongaConfigPath = '%s/config' % self.distKongaFolder
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
-        self.ggPluginsFolder = '%s/plugins' % self.distGluuGatewayFolder
+        self.ggPluginsFolder = '%s/kong/plugins' % self.distGluuGatewayFolder
         self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
         self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
         self.removePluginList = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
-        self.gluuCommonPluginFile = '%s/kong-auth-pep-common.lua' % self.ggPluginsFolder
+        self.ggCommanFolder = '%s/kong/common' % self.distGluuGatewayFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
         self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
@@ -152,6 +152,9 @@ class KongSetup(object):
         self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
         self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
         self.lrucacheFilesPath = '%s/third-party/lua-resty-lrucache/lib/resty' % self.distGluuGatewayFolder
+        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty' % self.distGluuGatewayFolder
+        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty' % self.distGluuGatewayFolder
+        self.prometheusFilePath = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.distGluuGatewayFolder
 
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
@@ -351,12 +354,21 @@ class KongSetup(object):
         self.run([self.cmd_cp, '-R', '%s/lrucache' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
         self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
 
+        # lua-resty-jwt
+        self.run([self.cmd_cp, '-R', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # lua-resty-hmac
+        self.run([self.cmd_cp, '-R', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # Prometheus
+        self.run([self.cmd_cp, self.prometheusFilePath, self.distGluuLuaFolder])
+
         # gluu plugins
         self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
 
         # gluu plugins common file
-        self.run([self.cmd_cp, self.gluuCommonPluginFile, self.distGluuLuaFolder])
+        self.run([self.cmd_cp, '-R', '%s/*' % self.ggCommanFolder, self.distGluuLuaFolder])
 
         # Remove kong default plugins
         for plugin in self.removePluginList:
