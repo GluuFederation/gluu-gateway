@@ -40,6 +40,7 @@ local function setup(model)
             ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
         },
         modules = {
+            ["nginx-gluu.conf"] = host_git_root .. "/setup/templates/nginx-gluu.conf",
             ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
