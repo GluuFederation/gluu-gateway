@@ -40,14 +40,14 @@ local function setup(model)
             ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
         },
         modules = {
-            ["nginx-gluu.conf"] = host_git_root .. "/setup/templates/nginx-gluu.conf",
             ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["gluu/metrics.lua"] = host_git_root .. "/kong/common/metrics.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
-        }
+        },
+        host_git_root = host_git_root,
     }
     kong_utils.backend()
     kong_utils.oxd_mock(test_root .. "/" .. model)
