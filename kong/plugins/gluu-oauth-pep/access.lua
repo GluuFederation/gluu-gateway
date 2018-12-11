@@ -71,6 +71,7 @@ end
 
 local supported_algs = {
     RS256 = true,
+    RS384 = true,
     RS512 = true,
 }
 
