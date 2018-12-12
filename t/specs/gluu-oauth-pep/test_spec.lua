@@ -38,12 +38,12 @@ local function setup(model)
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
             ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
+            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
         },
         modules = {
             ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
-            ["gluu/metrics.lua"] = host_git_root .. "/kong/common/metrics.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -143,12 +143,17 @@ test("with, without token and metrics", function()
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
+
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
             ignore_scope = true,
-            deny_by_default = false,
-            calculate_metrics = true
+            deny_by_default = false
         }
     )
 
@@ -188,14 +193,12 @@ test("with, without token and metrics", function()
     print"check metrics, it should return gluu_client_authenticated = 2"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
-        [[/oauth-pep-metrics]]
+        [[/gluu-metrics]]
     )
-    local name = "gluu_oauth_pep"
-    assert(res:lower():find(name .. "_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower(name .. [[_client_authenticated_total{consumer="]] .. register_site_response.client_id .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower(name .. [[_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower(name .. [[_endpoint_method_total{endpoint="/",method="GET"]]), 1, true))
-    assert(res:lower():find(string.lower(name .. [[_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+    assert(res:lower():find("gluu_client_granted", 1, true))
+    assert(res:lower():find(string.lower([[gluu_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method_total{endpoint="/",method="GET"]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
 
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(
@@ -207,11 +210,10 @@ test("with, without token and metrics", function()
     print"Check metrics for client authentication, it should return count 2 because client auth failed"
     local res, err = sh_ex(
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
-        [[/oauth-pep-metrics]]
+        [[/gluu-metrics]]
     )
-    assert(res:lower():find(name .. "_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower(name .. [[_client_authenticated_total{consumer="]] .. register_site_response.client_id .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower(name .. [[_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find("gluu_client_granted", 1, true))
+    assert(res:lower():find(string.lower([[gluu_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
 
     print"test it works with the same token again, oxd-model id completed, token taken from cache"
     local res, err = sh_ex(

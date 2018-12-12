@@ -1,7 +1,7 @@
-local metrics = require "gluu.metrics"
+local metrics = require "kong.plugins.gluu-metrics.metrics"
 
 return {
-  ["/uma-pep-metrics"] = {
+  ["/gluu-metrics"] = {
     GET = function(self, dao_factory)
         metrics.collect()
     end,

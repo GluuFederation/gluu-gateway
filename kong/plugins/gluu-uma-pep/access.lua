@@ -28,7 +28,7 @@ local function try_check_access(conf, path, method, token, access_token)
             if token == "" and not body["www-authenticate_header"] then
                 return unexpected_error("uma_rs_check_access() access == denied, but missing www-authenticate_header")
             end
-            kong.ctx.plugin.ticket = body.ticket
+            kong.ctx.shared.ticket = body.ticket
             return body
         end
         return unexpected_error("uma_rs_check_access() unexpected access value: ", body.access)
