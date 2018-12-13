@@ -104,6 +104,20 @@
                 }
               },
               {
+                name: "Metrics",
+                icon: "mdi-chart-bar",
+                hasConsumerPlugins: true,
+                description: "Expose metrics, which can be scrapped by a Prometheus Server",
+                plugins: {
+                  "prometheus": {
+                    description: "Expose metrics related to Kong and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
+                  },
+                  "gluu-metrics": {
+                    description: "Expose metrics related to Gluu client grant, ticket, endpoint and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
+                  }
+                }
+              },
+              {
                 name: "Traffic Control",
                 icon: "mdi-traffic-light",
                 hasConsumerPlugins: true,
@@ -215,9 +229,6 @@
                   },
                   "azure-functions": {
                     description: "This plugin invokes Azure Functions. It can be used in combination with other request plugins to secure, manage or extend the function."
-                  },
-                  "prometheus": {
-                    description: "Expose metrics related to Kong and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
                   }
                 }
               }
