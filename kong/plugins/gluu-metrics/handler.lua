@@ -16,7 +16,7 @@ end
 function handler:log(conf)
     handler.super.log(self)
     local message = basic_serializer.serialize(ngx)
-    metrics.log(conf, message)
+    metrics.log(message)
 end
 
 return handler

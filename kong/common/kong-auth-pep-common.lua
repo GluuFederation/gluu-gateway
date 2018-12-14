@@ -265,7 +265,6 @@ _M.access_handler = function(self, conf, hooks)
             return unexpected_error("select_by_custom_id error: ", err)
         end
         introspect_response.consumer = consumer
-
         worker_cache:set(token, introspect_response,
             exp - ngx.now() - EXPIRE_DELTA
         )
@@ -275,6 +274,7 @@ _M.access_handler = function(self, conf, hooks)
     end
 
     if not protected_path then
+        kong.ctx.shared[self.name_prefix .. "_client_authenticated"] = token_data.consumer
         return access_granted(conf, token_data)
     end
 
@@ -283,6 +283,8 @@ _M.access_handler = function(self, conf, hooks)
     if cache_key then
         local is_access_granted = worker_cache_get_pending(cache_key)
         if is_access_granted then
+            kong.ctx.shared[self.name_prefix .. "_client_authenticated"] = token_data.consumer
+            kong.ctx.shared[self.name_prefix .. "_client_granted"] = token_data.consumer
             return access_granted(conf, token_data)
         end
     end
@@ -294,7 +296,8 @@ _M.access_handler = function(self, conf, hooks)
         if cache_key then
             worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
         end
-
+        kong.ctx.shared[self.name_prefix .. "_client_authenticated"] = token_data.consumer
+        kong.ctx.shared[self.name_prefix .. "_client_granted"] = token_data.consumer
         return access_granted(conf, token_data)
     end
     if pending then
