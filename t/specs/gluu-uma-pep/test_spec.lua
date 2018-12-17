@@ -38,13 +38,16 @@ local function setup(model)
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
             ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
+            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
         },
         modules = {
+            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
-        }
+        },
+        host_git_root = host_git_root,
     }
     kong_utils.backend()
     kong_utils.oxd_mock(test_root .. "/" .. model)
@@ -123,7 +126,7 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
-test("with and without token and check UMA scope", function()
+test("with and without token, metrics and check UMA scope", function()
     setup("oxd-model1.lua")
 
     local create_service_response = configure_service_route()
@@ -131,6 +134,12 @@ test("with and without token and check UMA scope", function()
     print"test it works"
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
 
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
@@ -151,13 +160,13 @@ test("with and without token and check UMA scope", function()
                         }
                     }
                 }
-            },
+            }
         }
     )
 
     print "create a consumer"
     local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
 
     local consumer_response = JSON:decode(res)
 
@@ -181,6 +190,17 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
 
+    print"check metrics, it should return gluu_client_authenticated = 2"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_uma_client_granted", 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+
     -- posts: request with wrong token
     local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS_INVALID_1234567890']])
@@ -201,6 +221,15 @@ test("with and without token and check UMA scope", function()
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
     assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
+
+    print"Check metrics for client authentication, it should return count 4 because client auth failed"
+    local res, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_uma_client_granted", 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 4]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 4]]), 1, true))
 
     -- todos: not register then apply rules under path / with same token `1234567890`
     local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
@@ -244,7 +273,7 @@ test("deny_by_default = true", function()
 
     print "create a consumer"
     local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
 
     local consumer_response = JSON:decode(res)
 
@@ -285,7 +314,7 @@ test("deny_by_default = false and hide_credentials = true", function()
 
     print "create a consumer"
     local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567890']])
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
 
     local consumer_response = JSON:decode(res)
 
@@ -363,5 +392,5 @@ test("Anonymous test", function()
         [[/todos --header 'Host: backend.com']])
     assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
 
-    ctx.print_logs = true-- comment it out if want to see logs
+    ctx.print_logs = false-- comment it out if want to see logs
 end)

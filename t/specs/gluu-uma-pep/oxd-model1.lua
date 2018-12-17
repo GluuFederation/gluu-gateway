@@ -83,6 +83,7 @@ model = {
         response = {
             access = "denied",
             ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
+            ticket = "e986fd2b-de83-4947-a889-8f63c7c409c0"
         },
     },
     -- #5, plugin introspect with RPT, "/", GET
@@ -99,7 +100,7 @@ model = {
         end,
         response = {
             active = true,
-            client_id = "1234567890",
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
             permissions = {},
         },
         response_callback = function(response)
@@ -141,7 +142,7 @@ model = {
         end,
         response = {
             active = false,
-            client_id = "1234567890",
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
             permissions = {},
         }
     },
@@ -159,7 +160,7 @@ model = {
         end,
         response = {
             active = true,
-            client_id = "1234567890",
+            client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
             permissions = {},
         },
         response_callback = function(response)

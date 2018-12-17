@@ -98,9 +98,6 @@ local function access_granted(conf, token_data)
         [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
         [const.CONSUMER_USERNAME] = tostring(consumer.username),
     }
-    -- https://github.com/Kong/kong/blob/2cdd07e34a362e86d95d5e88615e217fa4f6f0d2/kong/plugins/key-auth/handler.lua#L52
-    kong.ctx.shared.authenticated_consumer = consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = consumer -- backward compatibility
 
     local client_id = token_data.client_id
     if client_id then
@@ -265,7 +262,6 @@ _M.access_handler = function(self, conf, hooks)
             return unexpected_error("select_by_custom_id error: ", err)
         end
         introspect_response.consumer = consumer
-
         worker_cache:set(token, introspect_response,
             exp - ngx.now() - EXPIRE_DELTA
         )
@@ -273,6 +269,11 @@ _M.access_handler = function(self, conf, hooks)
         client_id = token_data.client_id
         exp = token_data.exp
     end
+
+    -- Client(Consumer) is authenticated
+    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    kong.ctx.shared[self.metric_client_authenticated] = true
 
     if not protected_path then
         return access_granted(conf, token_data)
@@ -283,6 +284,7 @@ _M.access_handler = function(self, conf, hooks)
     if cache_key then
         local is_access_granted = worker_cache_get_pending(cache_key)
         if is_access_granted then
+            kong.ctx.shared[self.metric_client_granted] = true
             return access_granted(conf, token_data)
         end
     end
@@ -294,7 +296,7 @@ _M.access_handler = function(self, conf, hooks)
         if cache_key then
             worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
         end
-
+        kong.ctx.shared[self.metric_client_granted] = true
         return access_granted(conf, token_data)
     end
     if pending then

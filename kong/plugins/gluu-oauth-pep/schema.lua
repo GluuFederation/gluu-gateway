@@ -20,7 +20,7 @@ return {
         anonymous = { type = "string", func = kong_auth_pep_common.check_user, default = "" },
         oauth_scope_expression = { required = false, type = "table", func = check_expression },
         ignore_scope = { type = "boolean", default = false },
-        deny_by_default = { type = "boolean", default = true },
+        deny_by_default = { type = "boolean", default = true }
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         if not plugin_t.ignore_scope then

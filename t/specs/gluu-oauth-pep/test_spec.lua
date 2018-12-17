@@ -38,8 +38,10 @@ local function setup(model)
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
             ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
+            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
         },
         modules = {
+            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
@@ -49,7 +51,8 @@ local function setup(model)
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
             ["resty/hmac.lua"] = host_git_root .. "/third-party/lua-resty-hmac/lib/resty/hmac.lua",
-        }
+        },
+        host_git_root = host_git_root,
     }
     kong_utils.backend()
     kong_utils.oxd_mock(test_root .. "/" .. model)
@@ -129,7 +132,8 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
-test("with and without token", function()
+
+test("with, without token and metrics", function()
 
     setup("oxd-model1.lua")
 
@@ -139,11 +143,17 @@ test("with and without token", function()
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
+
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
             oauth_scope_expression = {},
             ignore_scope = true,
-            deny_by_default = false,
+            deny_by_default = false
         }
     )
 
@@ -173,12 +183,36 @@ test("with and without token", function()
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
 
+    print"second time call"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"check metrics, it should return gluu_client_authenticated = 2"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_oauth_client_authenticated", 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+
     print"test it fail with 403 with wrong Bearer token"
     local res, err = sh_ex(
         [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']]
     )
     assert(res:find("401"))
+
+    print"Check metrics for client authentication, it should return count 2 because client auth failed"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_oauth_client_authenticated", 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
 
     print"test it works with the same token again, oxd-model id completed, token taken from cache"
     local res, err = sh_ex(
@@ -190,11 +224,17 @@ test("with and without token", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("Anonymous test", function()
+test("Anonymous test and metrics", function()
 
     setup("oxd-model2.lua")
 
     local create_service_response = configure_service_route()
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
 
     print "Create a anonymous consumer"
     local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
@@ -219,14 +259,29 @@ test("Anonymous test", function()
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']])
     assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
 
+    print"check metrics, it should not return gluu_oauth_client_authenticated and gluu_oauth_client_granted"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_oauth_client_authenticated", 1, true) == nil)
+    assert(res:lower():find("gluu_oauth_client_granted", 1, true) == nil)
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("deny_by_default = true", function()
+test("deny_by_default = true and metrics", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
     local create_service_response = configure_service_route()
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
 
     print"test it works"
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
@@ -255,14 +310,29 @@ test("deny_by_default = true", function()
     )
     assert(res:find("403", 1, true))
 
+    print"check metrics, it should not return gluu_oauth_client_authenticated and gluu_oauth_client_granted"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_oauth_client_authenticated", 1, true) == nil)
+    assert(res:lower():find("gluu_oauth_client_granted", 1, true) == nil)
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("deny_by_default = false, hide_credentials = true", function()
+test("deny_by_default = false, hide_credentials = true and metrics", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
     local create_service_response = configure_service_route()
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
 
     print"test it works"
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
@@ -308,14 +378,29 @@ test("deny_by_default = false, hide_credentials = true", function()
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
     assert.equal(nil, res:lower():find("authorization: "))
 
+    print"check metrics, it should not return gluu_oauth_client_granted"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find("gluu_oauth_client_granted", 1, true) == nil)
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("check oauth_scope_expression", function()
+test("check oauth_scope_expression and metrics", function()
 
     setup("oxd-model3.lua")
 
     local create_service_response = configure_service_route()
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
 
     print "test it works"
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
@@ -506,6 +591,15 @@ test("check oauth_scope_expression", function()
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print"check metrics"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 8]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 8]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
@@ -774,6 +868,136 @@ test("JWT alg mismatch", function()
     assert(res:find("mismatch", 1, true))
     assert(not res:find("[error]",1, true))
 
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("check metrics client auth and grant", function()
+
+    setup("oxd-model7.lua")
+
+    local create_service_response = configure_service_route()
+
+    print "configure gluu-metrics plugin for the Service"
+    local _, _ = sh_ex([[
+        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    )
+
+    print "test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {
+                {
+                    path = "/posts",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        },
+                                        {
+                                            var = 1
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin",
+                                    "employee"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "DELETE",
+                                "POST"
+                            }
+                        }
+                    }
+                },
+                {
+                    path = "/comments",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        },
+                                        {
+                                            var = 1
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "customer"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "POST",
+                                "DELETE"
+                            }
+                        }
+                    }
+                }
+            },
+            ignore_scope = false,
+            deny_by_default = true,
+        });
+
+    print "create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
+
+    local consumer_response = JSON:decode(res)
+
+    print "test with path /posts"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print "test with path /posts"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+
+    print"check metrics, client auth and grant should be same"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/posts",method="GET"]]), 1, true))
+
+    print "test with path /comments"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/comments --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:find("403", 1, true))
+
+    print"check metrics, client is authenticated but grant fail"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 3]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/posts",method="GET"]]), 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
