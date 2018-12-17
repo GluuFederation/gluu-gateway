@@ -1,6 +1,8 @@
 local constants = require "kong.constants"
 local utils = require "kong.tools.utils"
 local oxd = require "gluu.oxdweb"
+local jwt = require "resty.jwt"
+local validators = require "resty.jwt-validators"
 
 local EXPIRE_DELTA = 10
 local MAX_PENDING_SLEEPS = 40
@@ -84,6 +86,121 @@ local function get_protection_token(self, conf)
     end
 end
 
+-- here we store jwks per op_url
+local jwks_per_op = {}
+
+local supported_algs = {
+    RS256 = true,
+    RS384 = true,
+    RS512 = true,
+}
+
+local function refresh_jwks(self, conf, jwks)
+    get_protection_token(self, conf)
+
+    local response, err = oxd.get_jwks(
+        conf.oxd_url,
+        {op_host = conf.op_url},
+        self.access_token.token
+    )
+    if not response then
+        kong.log.err(err)
+        return
+    end
+    if response.status ~= 200 then
+        kong.log.err("get_jwks responds with status: ", response.status)
+        return
+    end
+
+    kong.log.inspect(response)
+    local keys = response.body.keys
+    if not keys then
+        kong.log.err("get_jwks missed keys")
+        return
+    end
+
+    jwks:flush_all()
+
+    for i = 1, #keys do
+        local key = keys[i]
+        local ttl = key.exp - ngx.now()
+        local alg = key.alg
+        if ttl > 0 and supported_algs[alg] and
+                key.x5c and type(key.x5c) == "table" and key.x5c[1] then
+            key.pem = "-----BEGIN CERTIFICATE-----\n" ..
+                    key.x5c[1] ..
+                    "\n-----END CERTIFICATE-----\n"
+            jwks:set(key.kid, key, ttl)
+        end
+    end
+    return true
+end
+
+local function process_jwt(self, conf, jwt_obj)
+    if not supported_algs[jwt_obj.header.alg] then
+        kong.log.info("JWT - unsupported alg=", jwt_obj.header.alg)
+        return nil, 401, "Bad JWT"
+    end
+    local kid = jwt_obj.header.kid
+    if kid == nil then
+        kong.log.info("JWT - missed kid")
+        return nil, 401, "JWT - missed kid"
+    end
+
+    local jwks = jwks_per_op[conf.op_url]
+    if jwks then
+        local key = self.jwks:get(kid)
+        if not key then
+            if not refresh_jwks(self, conf, jwks) then
+                return nil, 502, "Unexpected error"
+            end
+        end
+    else
+        local cache, err = lrucache.new(20) -- allow up to 20 items in the cache
+        if not cache then
+            return nil, 502, "failed to create the jwks cache: " .. (err or "unknown")
+        end
+        jwks_per_op[conf.op_url] = cache
+        jwks = cache
+        if not refresh_jwks(self, conf, jwks) then
+            return nil, 502, "Unexpected error"
+        end
+    end
+    local key = jwks:get(kid)
+    if not key then
+        kong.log.info("Unknown kid")
+        return nil, 401, "Unknown kid"
+    end
+
+
+    local claim_spec = {
+        exp = validators.is_not_expired(),
+    }
+
+    if jwt_obj.header.alg ~= key.alg then
+        kong.log.info("JWT - alg mismatch")
+        return nil, 401, "Bad JWT"
+    end
+
+    kong.log.debug("verify with cert: \n", key.pem)
+    local verified = jwt:verify_jwt_obj(key.pem, jwt_obj, claim_spec)
+
+    if not verified.verified then
+        kong.log.info("JWT is not verified, reason: ", jwt_obj.reason)
+        return nil, 401, "JWT is not verified, reason: ", jwt_obj.reason
+    end
+
+    local payload = jwt_obj.payload
+    kong.log.inspect(payload)
+    if payload.client_id and payload.exp then
+        return payload, 200
+    end
+
+    kong.log.info("JWT - malformed payload")
+    return nil, 401, "JWT - malformed payload"
+end
+
+
 local function access_granted(conf, token_data)
     kong.log.debug("access_granted")
     if conf.hide_credentials then
@@ -134,6 +251,7 @@ local function worker_cache_get_pending(key)
         end
 
         if token_data == PENDING_TABLE then
+            kong.log.debug("sleep 5ms")
             ngx.sleep(0.005) -- 5ms
         else
             return token_data
@@ -222,14 +340,21 @@ _M.access_handler = function(self, conf, hooks)
         return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
     end
 
-    kong.log.debug("protected resource path: ", protected_path, " URI: ", path)
+    kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
 
     local client_id, exp
     local token_data = worker_cache_get_pending(token)
     if not token_data then
         set_pending_state(token)
 
-        local introspect_response, status, err = hooks.introspect_token(self, conf, token)
+        local introspect_response, status, err
+
+        local jwt_obj = jwt:load_jwt(token)
+        if jwt_obj.valid then
+            introspect_response, status, err = process_jwt(self, conf, jwt_obj)
+        else
+            introspect_response, status, err = hooks.introspect_token(self, conf, token)
+        end
         token_data = introspect_response
 
         if not introspect_response then
@@ -259,9 +384,12 @@ _M.access_handler = function(self, conf, hooks)
             return kong.response.exit(401, { message = "Unknown consumer"} )
         end
         if err then
+            clear_pending_state(token)
             return unexpected_error("select_by_custom_id error: ", err)
         end
         introspect_response.consumer = consumer
+
+        kong.log.debug("save token in cache")
         worker_cache:set(token, introspect_response,
             exp - ngx.now() - EXPIRE_DELTA
         )
@@ -360,5 +488,6 @@ function _M.check_user(anonymous)
 end
 
 _M.get_protection_token = get_protection_token
+
 
 return _M

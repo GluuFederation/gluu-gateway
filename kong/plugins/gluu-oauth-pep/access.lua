@@ -1,10 +1,8 @@
 local oxd = require "gluu.oxdweb"
 local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
 local pl_tablex = require "pl.tablex"
-local jwt = require "resty.jwt"
-local validators = require "resty.jwt-validators"
-
 local logic = require "rucciva.json_logic"
+
 local array_mt = {}
 
 --- Utility function for json logic. Check value is array or not
@@ -69,110 +67,10 @@ function hooks.no_token_protected_path()
     kong.response.exit(401, { message = "Missed OAuth token" })
 end
 
-local supported_algs = {
-    RS256 = true,
-    RS384 = true,
-    RS512 = true,
-}
-
-
-local function refresh_jwks(self, conf)
-    kong_auth_pep_common.get_protection_token(self, conf)
-
-    local response, err = oxd.get_jwks(
-        conf.oxd_url,
-        {op_host = conf.op_url},
-        self.access_token.token
-    )
-    if not response then
-        return nil, err
-    end
-    if response.status ~= 200 then
-        return
-    end
-
-    kong.log.inspect(response)
-    local keys = response.body.keys
-    if not keys then
-        return
-    end
-
-    self.jwks:flush_all()
-
-    for i = 1, #keys do
-        local key = keys[i]
-        local ttl = key.exp - ngx.now()
-        local alg = key.alg
-        if ttl > 0 and supported_algs[alg] and
-                key.x5c and type(key.x5c) == "table" and key.x5c[1] then
-            key.pem = "-----BEGIN CERTIFICATE-----\n" ..
-                    key.x5c[1] ..
-                    "\n-----END CERTIFICATE-----\n"
-            self.jwks:set(key.kid, key, ttl)
-        end
-    end
-    return true
-end
-
-local function process_jwt(self, conf, jwt_obj)
-    if not supported_algs[jwt_obj.header.alg] then
-        kong.log.info("JWT - unsupported alg=", jwt_obj.header.alg)
-        return nil, 401, "Bad JWT"
-    end
-    local kid = jwt_obj.header.kid
-    if kid == nil then
-        kong.log.info("JWT - missed kid")
-        return nil, 401, "JWT - missed kid"
-    end
-
-    local key = self.jwks:get(kid)
-    if not key then
-        if not refresh_jwks(self, conf) then
-            return nil, 502, "Unexpected error"
-        end
-        key = self.jwks:get(kid)
-        if not key then
-            kong.log.info("Unknown kid")
-            return nil, 401, "Unknown kid"
-        end
-    end
-
-    local claim_spec = {
-        exp = validators.is_not_expired(),
-    }
-
-    if jwt_obj.header.alg ~= key.alg then
-        kong.log.info("JWT - alg mismatch")
-        return nil, 401, "Bad JWT"
-    end
-
-    kong.log.debug("verify with cert: \n", key.pem)
-    local verified = jwt:verify_jwt_obj(key.pem, jwt_obj, claim_spec)
-
-    if not verified.verified then
-        kong.log.info("JWT is not verified, reason: ", jwt_obj.reason)
-        return nil, 401, "JWT is not verified, reason: ", jwt_obj.reason
-    end
-
-    local payload = jwt_obj.payload
-    kong.log.inspect(payload)
-    if payload.client_id and payload.exp and payload.scope then
-        return payload, 200
-    end
-
-    kong.log.info("JWT - malformed payload")
-    return nil, 401, "JWT - malformed payload"
-end
-
 -- @return introspect_response, status, err
 -- upon success returns only introspect_response,
 -- otherwise return nil, status, err
 function hooks.introspect_token(self, conf, token)
-    local jwt_obj = jwt:load_jwt(token)
-    if jwt_obj.valid then
-        return process_jwt(self, conf, jwt_obj)
-    end
-
     kong_auth_pep_common.get_protection_token(self, conf)
 
     local response = oxd.introspect_access_token(conf.oxd_url,
