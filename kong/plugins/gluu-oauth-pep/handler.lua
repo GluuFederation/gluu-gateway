@@ -11,7 +11,9 @@ handler.PRIORITY = 999
 function handler:new()
     handler.super.new(self, "gluu-oauth-pep")
 
-    self.name_prefix = "gluu_oauth"
+    local name_prefix = "gluu_oauth_"
+    self.metric_client_authenticated = name_prefix .. "client_authenticated"
+    self.metric_client_granted = name_prefix .. "client_granted"
 
     -- access token should be per plugin instance
     self.access_token = { expire = 0 }

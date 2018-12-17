@@ -55,24 +55,20 @@ local function log(message)
 
     metrics.endpoint_method:inc(1, { request.uri, request.method, service_name })
 
-    local oauth_client_authenticated = kong.ctx.shared.gluu_oauth_client_authenticated;
-    if oauth_client_authenticated then
-        metrics.oauth_client_authenticated:inc(1, { oauth_client_authenticated.custom_id, service_name })
+    if kong.ctx.shared.gluu_oauth_client_authenticated then
+        metrics.oauth_client_authenticated:inc(1, { consumer.custom_id, service_name })
     end
 
-    local oauth_client_granted = kong.ctx.shared.gluu_oauth_client_granted
-    if consumer and oauth_client_granted then
-        metrics.oauth_client_granted:inc(1, { oauth_client_granted.custom_id, service_name })
+    if kong.ctx.shared.gluu_oauth_client_granted then
+        metrics.oauth_client_granted:inc(1, { consumer.custom_id, service_name })
     end
 
-    local uma_client_authenticated = kong.ctx.shared.gluu_uma_client_authenticated
-    if uma_client_authenticated then
-        metrics.uma_client_authenticated:inc(1, { uma_client_authenticated.custom_id, service_name })
+    if kong.ctx.shared.gluu_uma_client_authenticated then
+        metrics.uma_client_authenticated:inc(1, { consumer.custom_id, service_name })
     end
 
-    local uma_client_granted = kong.ctx.shared.gluu_uma_client_granted
-    if consumer and uma_client_granted then
-        metrics.uma_client_granted:inc(1, { uma_client_granted.custom_id, service_name })
+    if kong.ctx.shared.gluu_uma_client_granted then
+        metrics.uma_client_granted:inc(1, { consumer.custom_id, service_name })
     end
 
     if kong.ctx.shared.gluu_uma_ticket then

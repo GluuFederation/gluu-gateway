@@ -10,9 +10,11 @@ handler.PRIORITY = 998
 function handler:new()
   handler.super.new(self, "gluu-uma-pep")
 
-  self.name_prefix = "gluu_uma"
+  local name_prefix = "gluu_uma_"
+  self.metric_client_authenticated = name_prefix .. "client_authenticated"
+  self.metric_client_granted = name_prefix .. "client_granted"
 
-  -- access token should be per plugin instance
+    -- access token should be per plugin instance
   self.access_token = { expire = 0 }
 end
 
