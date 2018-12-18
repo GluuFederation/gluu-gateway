@@ -2,6 +2,7 @@ local constants = require "kong.constants"
 local utils = require "kong.tools.utils"
 local oxd = require "gluu.oxdweb"
 local jwt = require "resty.jwt"
+local evp = require "resty.evp"
 local validators = require "resty.jwt-validators"
 
 local EXPIRE_DELTA = 10
@@ -127,10 +128,16 @@ local function refresh_jwks(self, conf, jwks)
         local alg = key.alg
         if ttl > 0 and supported_algs[alg] and
                 key.x5c and type(key.x5c) == "table" and key.x5c[1] then
-            key.pem = "-----BEGIN CERTIFICATE-----\n" ..
+            local pem = "-----BEGIN CERTIFICATE-----\n" ..
                     key.x5c[1] ..
                     "\n-----END CERTIFICATE-----\n"
-            jwks:set(key.kid, key, ttl)
+            local pkey, err = jwt.pem_cert_to_public_key(pem)
+            if pkey then
+                key.pkey = pkey
+                jwks:set(key.kid, key, ttl)
+            else
+                kong.log.err("Cannot convert x5c into public key: ", err)
+            end
         end
     end
     return true
@@ -183,7 +190,7 @@ local function process_jwt(self, conf, jwt_obj)
     end
 
     kong.log.debug("verify with cert: \n", key.pem)
-    local verified = jwt:verify_jwt_obj(key.pem, jwt_obj, claim_spec)
+    local verified = jwt:verify_jwt_obj_evp_pkey(key.pkey, jwt_obj, claim_spec)
 
     if not verified.verified then
         kong.log.info("JWT is not verified, reason: ", jwt_obj.reason)
