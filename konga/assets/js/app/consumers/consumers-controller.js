@@ -136,7 +136,9 @@
                 client_name: '',
                 client_id: '',
                 client_secret: '',
-                access_token_as_jwt: true
+                access_token_as_jwt: true,
+                rpt_as_jwt: true,
+                access_token_signing_alg: 'RS256'
               };
 
               $scope.close = close;

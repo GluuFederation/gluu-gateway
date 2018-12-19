@@ -70,6 +70,27 @@
       </div>
     </div>
 
+    <div class="form-group disabled">
+      <label class="col-sm-4 control-label">RPT as JWT</label>
+      <div class="col-sm-7 check-toggle-size">
+        <input bs-switch ng-model="opClient.rpt_as_jwt"
+               switch-size="small"
+               type="checkbox"
+               switch-on-text="YES"
+               switch-off-text="NO" />
+        <p class="help-block">Returns RPT as JWT.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Token signing algorithm</label>
+      <div class="col-sm-7 check-toggle-size">
+        <select class="form-control" id="access_token_signing_alg"
+                ng-model="opClient.access_token_signing_alg"
+                ng-options="type as type for type in ['RS256', 'RS384', 'RS512']" />
+      </div>
+    </div>
+
     <div class="form-group">
       <div class="col-sm-offset-4 col-sm-7">
         <button type="submit" class="btn btn-primary btn-block">

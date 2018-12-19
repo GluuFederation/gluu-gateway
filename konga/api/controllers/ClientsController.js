@@ -26,7 +26,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           client_secret: clientRequest.client_secret || '',
           scope: clientRequest.scope || ['openid', 'oxd'],
           grant_types: clientRequest.grant_types || ['client_credentials'],
-          access_token_as_jwt: clientRequest.access_token_as_jwt || false
+          access_token_as_jwt: clientRequest.access_token_as_jwt || false,
+          rpt_as_jwt: clientRequest.rpt_as_jwt || false,
+          access_token_signing_alg: clientRequest.access_token_signing_alg || 'RS256',
         },
         resolveWithFullResponse: true,
         json: true
@@ -216,7 +218,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       client_name: req.body.client_name || 'gg-oauth-consumer-client',
       client_id: req.body.client_id || '',
       client_secret: req.body.client_secret || '',
-      access_token_as_jwt: req.body.access_token_as_jwt || false
+      access_token_as_jwt: req.body.access_token_as_jwt || false,
+      rpt_as_jwt: req.body.rpt_as_jwt || false,
+      access_token_signing_alg: req.body.access_token_signing_alg || 'RS256',
     };
 
     this.registerClient(option)
