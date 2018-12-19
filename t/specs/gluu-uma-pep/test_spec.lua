@@ -46,6 +46,10 @@ local function setup(model)
             ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
+            ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
+            ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
+            ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
+            ["resty/hmac.lua"] = host_git_root .. "/third-party/lua-resty-hmac/lib/resty/hmac.lua",
         },
         host_git_root = host_git_root,
     }
@@ -393,4 +397,58 @@ test("Anonymous test", function()
     assert(res:lower():find("x-consumer-id: " .. string.lower(anonymous_consumer_response.id), 1, true))
 
     ctx.print_logs = false-- comment it out if want to see logs
+end)
+
+test("JWT RS512", function()
+
+    setup("oxd-model3.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            uma_scope_expression = {},
+            ignore_scope = true,
+            deny_by_default = false,
+        }
+    )
+
+    print"test it fail with 401 without token"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    assert(res:find("401", 1, true))
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    -- backend returns all headrs within body
+    print"check that GG set all required upstream headers"
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-rpt%-expiration: %d+"))
+
+    print"test it works with the same token again, oxd-model id completed, token taken from cache"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
