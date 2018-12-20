@@ -17,13 +17,6 @@ function handler:new()
 
     -- access token should be per plugin instance
     self.access_token = { expire = 0 }
-
-    -- create per plugin jwks storage with expiration
-    local jwks, err = lrucache.new(20) -- allow up to 20 items in the cache
-    if not jwks then
-        return error("failed to create the cache: " .. (err or "unknown"))
-    end
-    self.jwks = jwks
 end
 
 function handler:access(config)
