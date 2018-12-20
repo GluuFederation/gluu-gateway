@@ -450,5 +450,27 @@ test("JWT RS512", function()
         access_token, [[']]
     )
 
+    local get_client_token = {
+        op_host = "just_stub",
+        client_id = register_site_response.client_id,
+        client_secret = register_site_response.client_secret,
+    }
+
+    local get_client_token_json = JSON:encode(get_client_token)
+
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/get-client-token --header 'Content-Type: application/json' --data ']],
+        get_client_token_json, [[']]
+    )
+    local response = JSON:decode(res)
+
+    print"test it work with different token, resue jwks cache"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        response.access_token, [[']]
+    )
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
