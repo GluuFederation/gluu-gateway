@@ -156,7 +156,7 @@ local function process_jwt(self, conf, jwt_obj)
 
     local jwks = jwks_per_op[conf.op_url]
     if jwks then
-        local key = self.jwks:get(kid)
+        local key = jwks:get(kid)
         if not key then
             if not refresh_jwks(self, conf, jwks) then
                 return nil, 502, "Unexpected error"
