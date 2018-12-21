@@ -13,9 +13,9 @@ The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
 
 While the software is in use in production, the person using this software must 
-have an active support subscription which is one tier above that for which the 
-person would normally qualify based on revenues, unless the support contract 
-is already at the enterprise level.
+must be associated with an organization that has an active Gluu support subscription 
+which is one tier above that for which the organization would normally qualify 
+based on annual revenues, unless the support contract is already at the enterprise level.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
