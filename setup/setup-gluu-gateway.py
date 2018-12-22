@@ -97,8 +97,8 @@ class KongSetup(object):
         self.ggCommanFolder = '%s/kong/common' % self.distGluuGatewayFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
-        self.distOxdServerConfigPath = '/opt/oxd/oxd-server'
-        self.distOxdServerConfigFile = '%s/etc/oxd-server.yml' % self.distOxdServerConfigPath
+        self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
+        self.distOxdServerConfigFile = '%s/oxd-server.yml' % self.distOxdServerConfigPath
 
         self.kongaService = 'gluu-gateway'
         self.oxdServerService = 'oxd-server'
