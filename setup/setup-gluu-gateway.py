@@ -433,10 +433,10 @@ class KongSetup(object):
                 res = requests.post(self.kongaOxdWeb + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
 
-                if resJson['status'] == 'ok':
-                    self.kongaOxdId = resJson['data']['oxd_id']
-                    self.kongaClientSecret = resJson['data']['client_secret']
-                    self.kongaClientId = resJson['data']['client_id']
+                if res.ok:
+                    self.kongaOxdId = resJson['oxd_id']
+                    self.kongaClientSecret = resJson['client_secret']
+                    self.kongaClientId = resJson['client_id']
                 else:
                     msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
                     Please check oxd-server and oxd-https logs."""
