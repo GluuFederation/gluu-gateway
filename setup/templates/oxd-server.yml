@@ -16,7 +16,7 @@ uma2_auto_register_claims_gathering_endpoint_as_redirect_uri_of_client: true
 migration_source_folder_path: ''
 storage: h2
 storage_configuration:
-  dbFileLocation: "/opt/oxd-server/data/oxd_db"
+  dbFileLocation: /opt/oxd-server/data/oxd_db
 
 # Connectors
 server:
@@ -53,15 +53,15 @@ logging:
     - type: file
       threshold: INFO
       logFormat: "%%-6level [%%d{HH:mm:ss.SSS}] [%%t] %%logger{5} - %%X{code} %%msg %%n"
-      currentLogFilename: /var/log/oxd-server.log
-      archivedLogFilenamePattern: /var/log/oxd-server-%%d{yyyy-MM-dd}-%%i.log.gz
+      currentLogFilename: /var/log/oxd-server/oxd-server.log
+      archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%%d{yyyy-MM-dd}-%%i.log.gz
       archivedFileCount: 7
       timeZone: UTC
       maxFileSize: 10MB
 
 defaultSiteConfig:
   op_host: '%(kongaOPHost)s'
-  op_discovery_path: '%(oxdServerOPDiscoveryPath)s'
+  op_discovery_path: ''
   response_types: ['code']
   grant_type: ['authorization_code']
   acr_values: ['']
@@ -69,3 +69,4 @@ defaultSiteConfig:
   ui_locales: ['en']
   claims_locales: ['en']
   contacts: []
+
