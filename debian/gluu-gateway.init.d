@@ -16,7 +16,6 @@ do_start () {
         service postgresql start
         service kong start
         service oxd-server start
-        service oxd-https-extension start
         service konga start
 }
 
@@ -24,7 +23,6 @@ do_stop () {
         service postgresql stop
         service kong stop
         service oxd-server stop
-        service oxd-https-extension stop
         service konga stop
 }
 
@@ -32,7 +30,6 @@ do_status () {
         service postgresql status
         service kong status
         service oxd-server status
-        service oxd-https-extension status
         service konga status
 }
 
