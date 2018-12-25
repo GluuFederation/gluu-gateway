@@ -25,7 +25,7 @@ Use Service section to add service using GG UI.
 
 ```
 $ curl -X POST \
-  http://localhost:8001/services \
+  http://gg.example.com:8001/services \
   -H 'Content-Type: application/json' \
   -d '{
   "name": "<service_name>",
@@ -72,7 +72,7 @@ After clicking on **+ icon**, you will see the below form.
 
 ```
 $ curl -X POST \
-  http://localhost:8001/plugins \
+  http://gg.example.com:8001/plugins \
   -H 'Content-Type: application/json' \
   -d '{
   "name": "gluu-uma-pep",
@@ -158,7 +158,7 @@ Create consumer using Kong Admin API.
 
 ```
 $ curl -X POST \
-    http://localhost:8001/consumers \
+    http://gg.example.com:8001/consumers \
     -H 'Content-Type: application/json' \
     -d '{
   	"username": "<kong_consumer_name>",
@@ -227,7 +227,23 @@ You may need to add your claims redirect url to your client configuration in CE.
 
 #### Claims gathering returns ticket
 
-Continue to 8.
+* Get RPT token
+
+```
+  curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
+      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
+      --Header "Content-Type: application/json"
+      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
+```
+From this call you get accesstoken (RPT)
+
+* Call UMA protected API
+
+```
+  curl -X GET http://gg.example.com:8000/<YOUR_PATH>
+      --Header "Authorization: Bearer <YOUR_RPT>"
+      --Header "Host: <YOUR_HOST>"
+```
 
 ### 7. Demo
 
@@ -236,7 +252,7 @@ Demo is prepared as python CGI script. You need to put it in some CGI enabled we
 * calls.py - REST calls
 * config.py - custom configuration
 * display.py - printing functions
-y
+
 By default, UMA flow is executed.
 
 If you want to execute UMA with claims gathering flow, add `claim=true` parameter in your url.
