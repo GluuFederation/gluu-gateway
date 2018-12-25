@@ -9,175 +9,225 @@
 
 ### 3. RS Configuration
 
-RS configuration can be done either via REST calls or via Gluu Gateway Konga
-web interface.
+RS configuration can be done either via REST calls or via Gluu Gateway web interface. You can configure plugin on **Service**, **Route** and **Global**. There are several possibilities for plugin configuration with services and routes. [More Details](https://docs.konghq.com/0.14.x/admin-api/#precedence). Take a look on [docs](https://gluu.org/docs/gg/plugin/gluu-uma-pep/) for configuration detail description.
 
-#### REST Configuration
-1. Resource configuration (Kong API configuration)
-````
-curl -X POST http://gg.example.com:8001/apis
-    --data "name=demo_api"
-    --data "hosts=demo_host"
-    --data "upstream_url=https://jsonplaceholder.typicode.com/comments"
-````
+### Enable plugin on Service
 
-2. Configuration of OAuth plugin
+#### 1. Add Service
 
-````
-curl -X POST http://gg.example.com:8001/apis/demo_api/plugins
-    --data "name=gluu-oauth2-client-auth"
-    --data "config.op_server=https://ce-gluu.example.com"
-    --data "config.oxd_http_url=https://localhost:8443"
+##### 1.1 Add Service using GG UI
 
-````
+Use Service section to add service using GG UI.
 
-3. Securing RS with UMA
+![3_service_list](img/3_1_service_list.png)
 
-````
-curl -X POST --url http://gg.example.com:8001/apis/demo_api/plugins/
-    --data "name=gluu-oauth2-rs"
-    --data "config.oxd_host=https://localhost:8443"
-    --data "config.uma_server_host=https://ce-gluu.example.com"
-    --data "config.protection_document=[ { \"path\": \"<YOUR_PATH>\", \"conditions\": [ { \"httpMethods\": [ \"GET\" ], \"scope_expression\": {
-    \"rule\": { \"and\": [ { \"var\": 0 } ] }, \"data\": [ \"http://photoz.example.com/dev/actions/view\" ] } } ] } ]"`
-````
+##### 1.2 Add Service using Kong Admin API
 
-protection_document (pretty printed)
-```json
-[
-  {
-    "path": "<YOUR_PATH>",
-    "conditions": [
-      {
-        "httpMethods": [
-          "GET"
-        ],
-        "scope_expression": {
-          "rule": {
-            "and": [
-              {
-                "var": 0
-              }
-            ]
-          },
-          "data": [
-            "<YOUR_SCOPE>"
-          ]
-        }
-      }
-    ]
-  }
-]
 ```
-From the last call you get oxd_id, client_id and client_secret
+$ curl -X POST \
+  http://localhost:8001/services \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "name": "<service_name>",
+  "url": "http://upstream-api-url.com"
+}'
+```
 
-#### Gluu Gateway GUI configuration
-1. Resource configuration (Kong API configuration)
-* Enter https://gg.example.com:1338/#!/apis
-* Click "Add new API"
-* Fill required fields
+#### 2. Add Route
 
-2. Configuration of oAuth plugin
-* Click edit icon of created API
-* Click plugins button in left menu
-* Add new plugin
-* Select custom
-* Click plus icon in Gluu oauth2 client auth plugin
+##### 2.1 Add Route using GG UI
 
-3. Securing RS with UMA
-* Click security button in API list
-* Fill UMA resource fields
-* Update configuration
+Use Manage Service Section to add route using GG UI.
+
+![3_4_service_route](img/3_4_service_route.png)
+
+##### 2.2 Add Route using Kong Admin API
+
+```
+$ curl -X POST \
+    http://192.168.200.16:8001/routes \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "hosts": [
+      "<your_host.com>"
+    ],
+    "service": {
+      "id": "<kong_service_object_id>"
+    }
+  }'
+```
+
+#### 2. Configure Plugin on Service
+
+##### 2.1 Configure plugin using GG UI
+
+Use the Manage Service section in GG UI to enable the Gluu UMA PEP plugin. In the security category, there is a Gluu UMA PEP box. Click on the **+ icon** to enable the plugin.
+
+![11_path_uma_service](img/11_path_uma_service.png)
+
+After clicking on **+ icon**, you will see the below form.
+![11_path_add_uma_service](img/11_path_add_uma_service.png)
+
+##### 2.2 Configure plugin using Kong Admin API
+
+```
+$ curl -X POST \
+  http://localhost:8001/plugins \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "name": "gluu-uma-pep",
+  "config": {
+    "oxd_url": "<your_oxd_server_url>",
+    "op_url": "<your_op_server_url>",
+    "oxd_id": "<oxd_id>",
+    "client_id": "<client_id>",
+    "client_secret": "<client_secret>",
+    "uma_scope_expression": [
+      {
+        "path": "/posts",
+        "conditions": [
+          {
+            "httpMethods": [
+              "GET"
+            ],
+            "scope_expression": {
+              "rule": {
+                "and": [
+                  {
+                    "var": 0
+                  },
+                  {
+                    "var": 1
+                  }
+                ]
+              },
+              "data": [
+                "admin",
+                "employee"
+              ]
+            }
+          }
+        ]
+      }
+    ],
+    "ignore_scope": <false|true>,
+    "deny_by_default": <false|true>,
+    "hide_credentials": <false|true>
+  },
+  "service_id": "<kong_service_object_id>"
+}'
+```
+
+!!! Note
+    Kong not allow to proxy only using service object. you must have to add route for this. In short, you need one service to register Upstream API and one route for proxy.
+
+### Parameters
+
+Here is a list of all the parameters which can be used in this plugin's configuration.
+
+| field | Default | Description |
+|-------|---------|-------------|
+|**op_url**||The URL of you OP server. Example: https://op.server.com|
+|**oxd_url**||The URL of you OXD server. Example: https://oxd.server.com|
+|**oxd_id**||It is used to introspect the token.|
+|**client_id**|| It is used to get protection access token to access introspect API. If you enter oxd id, you also need to enter client id and client secret of existing oxd client.|
+|**client_secret**||It is used to get protection access token to access introspect API. If you enter oxd id, you also need to enter client id and client secret of existing oxd client.|
+|**uma_scope_expression**||It is used to add scope security on UMA scope token.|
+|**ignore_scope**| false |It will not check any token scope during authentication time.|
+|**deny_by_default**| true |This functionality is for the path which is not protected by UMA scope expression. If it is true then deny unprotected path otherwise allow.|
+|**anonymous**||An optional string (consumer uuid) value to use as an “anonymous” consumer if authentication fails. If empty (default), the request will fail with an authentication failure 4xx. Please note that this value must refer to the Consumer id attribute which is internal to Kong, and not its custom_id.|
+|**hide_credentials**|false|An optional boolean value telling the plugin to show or hide the credential from the upstream service. If true, the plugin will strip the credential from the request (i.e. the Authorization header) before proxying it.|
+
+!!! Note
+    GG UI provide facility to create client and register resources using OXD. If you are configuring plugin only using Kong Admin API then you need to create client and register resource using OXD APIs and pass same UMA Expression and client credential to Gluu-UMA-PEP plugin.
 
 ### 4. UMA client registration
-UMA client registraion can be done either via REST calls or via GluuGateway GUI
+UMA client registraion can be done either via REST calls or via Gluu Gateway UI.
 
-#### REST Configuration
-4. Register consumer
-````
-curl -X POST http://gg.example.com:8001/consumers/
-    --data "username=uma_client"
-````
-5. Register UMA credentials
-````
-curl -X POST http://gg.example.com:8001/consumers/uma_client/gluu-oauth2-client-auth/
-    --data name="uma_consumer_cred"
-    --data op_host="ce-gluu.example.com"
-    --data oxd_http_url="https://localhost:8443"
-    --data uma_mode=true
-````
-From the last call you get oxd_id, client_id and client_secret
-#### Gluu Gateway GUI configuration
-4. Register consumer
-* Enter https://gg.example.com:1338/#!/consumers
-* Click create consumer
-* Fill new consumer form
+### Create Client
 
-5. Register UMA credentials
-* Click on created consumer
-* Click on credentials
-* Select OAUTH2
-* Click Create Credentials
-* Select UMA Mode in Credentials form
-* Save credentials
+Create a client using `Create client consumer section`. You can use OXD register-site API to create client.
 
+![OP_client](img/4_consumer_client.png)
+
+### Create Consumer
+
+You need to associate a client credential to an existing Consumer object. To create a Consumer use [Consumer section](../admin-gui/#consumers).
+
+Create consumer using Kong Admin API.
+
+```
+$ curl -X POST \
+    http://localhost:8001/consumers \
+    -H 'Content-Type: application/json' \
+    -d '{
+  	"username": "<kong_consumer_name>",
+  	"custom_id": "<gluu_client_id>"
+  }'
+```
 
 ### 5. Call UMA protected API
-6. LogIn Consumer
- ````
+* LogIn Consumer
+
+```
  curl -X POST https://gg.example:8443/get-client-token
     --Header "Content-Type: application/json"
-    --data '{"oxd_id":"<YOUR_CONSUMER_OXD_ID>", "client_id":"<YOUR_CONSUMER_ID>",
-    "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
- ````
- From this call you get Consumer accessToken
+    --data '{"client_id":"<YOUR_CONSUMER_ID>", "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
+```
 
-7. Get resource ticket
-  ````
+From this call you get Consumer accessToken
+
+* Get resource ticket
+
+```
   curl -X GET http://gg.example.com:8000/<YOUR_PATH>
       --Header "Host: <YOUR_HOST>"
-````
- From this call you get ticket in WWW-Authenticate header
+```
 
-8. Get RPT token
-  ````
+From this call you get ticket in WWW-Authenticate header
+
+* Get RPT token
+
+```
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
-````
+```
 From this call you get accesstoken (RPT)
 
-9. Call UMA protected API
-  ````
+* Call UMA protected API
+
+```
   curl -X GET http://gg.example.com:8000/<YOUR_PATH>
       --Header "Authorization: Bearer <YOUR_RPT>"
       --Header "Host: <YOUR_HOST>"
-````
+```
 
 ### 6. UMA flow with claims gathering
-7.1. Prerequisites
+#### Prerequisites
 * UMA scope with Authorization Policy
 ![alt text](uma_scope.png "Logo Title Text 1")
 * Enabled UMA RPT Polices & UMA Claims Gathering
 ![alt text](scripts.png "Logo Title Text 1")
 * Register RS with correct scope
 
-7.2. Getting need_info ticket
-  ````
+#### Getting need_info ticket
+
+```
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
       --Header "Authorization: Bearer <CONSUMER_TOKEN>"
       --Header "Content-Type: application/json"
       --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":[<YOUR_SCOPE>]}'
-````
+```
+
 From this call you get need_info ticket and claims gathering url.
 You have to add your claims redirect uri as a url query parameter.
 You may need to add your claims redirect url to your client configuration in CE.
 
-7.3. Claims gathering returns ticket
+#### Claims gathering returns ticket
 
 Continue to 8.
-
 
 ### 7. Demo
 
