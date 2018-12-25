@@ -1,8 +1,8 @@
 debian/konga etc/init.d
 debian/kong etc/init.d
 konga opt/gluu-gateway
+kong opt/gluu-gateway
 setup opt/gluu-gateway
-kong opt/gluu-gateway/kong
 gg_bower_components.tar.gz opt/gluu-gateway/dist
 gg_node_modules.tar.gz opt/gluu-gateway/dist
 third-party opt/gluu-gateway
