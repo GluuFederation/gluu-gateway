@@ -426,7 +426,7 @@ class KongSetup(object):
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
                 'scope': ['openid', 'oxd', 'permission'],
-                'grant_types': ['authorization_code'],
+                'grant_types': ['authorization_code', 'client_credentials'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }
             self.logIt('Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...')
