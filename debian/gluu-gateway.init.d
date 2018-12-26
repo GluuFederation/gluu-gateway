@@ -15,21 +15,21 @@ GLUU_GATEWAY_INIT_LOG=/var/log/gluu-gateway.log
 do_start () {
         service postgresql start
         service kong start
-        service oxd-server start
+        service oxd-server-4.0.beta start
         service konga start
 }
 
 do_stop () {        
         service postgresql stop
         service kong stop
-        service oxd-server stop
+        service oxd-server-4.0.beta stop
         service konga stop
 }
 
 do_status () {        
         service postgresql status
         service kong status
-        service oxd-server status
+        service oxd-server-4.0.beta status
         service konga status
 }
 
