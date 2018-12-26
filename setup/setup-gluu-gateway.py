@@ -363,14 +363,14 @@ class KongSetup(object):
         self.run([self.cmd_cp, '-R', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
 
         # Prometheus
-        self.run([self.cmd_cp, self.prometheusFilePath, self.distGluuLuaFolder])
+        self.run([self.cmd_cp, self.prometheusFilePath, self.distLuaFolder])
 
         # gluu plugins
         self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
 
         # gluu plugins common file
-        self.run([self.cmd_cp, '-R', '%s/*' % self.ggCommanFolder, self.distGluuLuaFolder])
+        self.run([self.cmd_cp, '-R', '%s/kong-auth-pep-common.lua' % self.ggCommanFolder, self.distGluuLuaFolder])
 
         # Remove kong default plugins
         for plugin in self.removePluginList:
@@ -429,8 +429,8 @@ class KongSetup(object):
                 'grant_types': ['authorization_code'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }
-            self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
-            print 'Creating konga oxd client used to call oxd-https endpoints...'
+            self.logIt('Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...')
+            print 'Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...'
             try:
                 res = requests.post(self.kongaOxdWeb + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
