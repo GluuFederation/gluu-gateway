@@ -154,8 +154,8 @@ class KongSetup(object):
         self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
         self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
         self.lrucacheFilesPath = '%s/third-party/lua-resty-lrucache/lib/resty' % self.distGluuGatewayFolder
-        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty' % self.distGluuGatewayFolder
-        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty' % self.distGluuGatewayFolder
+        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty/.' % self.distGluuGatewayFolder
+        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty/.' % self.distGluuGatewayFolder
         self.prometheusFilePath = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.distGluuGatewayFolder
 
     def initParametersFromJsonArgument(self):
@@ -357,10 +357,10 @@ class KongSetup(object):
         self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
 
         # lua-resty-jwt
-        self.run([self.cmd_cp, '-R', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '-a', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
 
         # lua-resty-hmac
-        self.run([self.cmd_cp, '-R', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '-a', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
 
         # Prometheus
         self.run([self.cmd_cp, self.prometheusFilePath, self.distLuaFolder])
