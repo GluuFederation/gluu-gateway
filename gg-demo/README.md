@@ -228,6 +228,11 @@ From this call you will get access token (RPT).
 
 * Register RS with correct scope
 
+* Update consumer client with `claim_redirect_uris` in CE. Add your CGI script URL.
+![config_claim_url](img/config_claim_url.png)
+
+#### Authentication
+
 * Get resource ticket
 
 ```
@@ -281,7 +286,7 @@ From this call you will get access token (RPT).
 
 ### 7. Demo
 
-Demo is prepared as python CGI script. You need to put it in some CGI enabled web server. Script is divided into 4 parts:
+Demo is prepared as python CGI script. You need to put it in some CGI enabled web server. Script is divided into 3 parts:
 
 * index.py - main script
 * helper.py - REST calls and HTML template
