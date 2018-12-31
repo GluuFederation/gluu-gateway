@@ -11,6 +11,15 @@
 
 RS configuration can be done either via REST calls or via Gluu Gateway web interface. You can configure plugin on **Service**, **Route** and **Global**. There are several possibilities for plugin configuration with services and routes. [More Details](https://docs.konghq.com/0.14.x/admin-api/#precedence). Take a look on [docs](https://gluu.org/docs/gg/plugin/gluu-uma-pep/) for configuration detail description.
 
+Applications and their ports.
+
+| Port | Description |
+|------|-------------|
+|8001|Kong Admin API|
+|8000|Kong Proxt Endpoint|
+|8443|OXD Server|
+
+
 ### Enable plugin on Service
 
 #### 1. Add Service
@@ -45,7 +54,7 @@ Use Manage Service Section to add route using GG UI.
 
 ```
 $ curl -X POST \
-    http://192.168.200.16:8001/routes \
+    http://gg.example.com:8001/routes \
     -H 'Content-Type: application/json' \
     -d '{
     "hosts": [
@@ -152,7 +161,9 @@ Create a client using `Create client consumer section`. You can use OXD register
 
 ### Create Consumer
 
-You need to associate a client credential to an existing Consumer object. To create a Consumer use [Consumer section](../admin-gui/#consumers).
+You need to associate a client credential to an existing Consumer object. To create a Consumer use Consumer section.
+
+![consumers_add](img/4_customer_add.png)
 
 Create consumer using Kong Admin API.
 
@@ -166,16 +177,7 @@ $ curl -X POST \
   }'
 ```
 
-### 5. Call UMA protected API
-* LogIn Consumer
-
-```
- curl -X POST https://gg.example:8443/get-client-token
-    --Header "Content-Type: application/json"
-    --data '{"client_id":"<YOUR_CONSUMER_ID>", "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
-```
-
-From this call you get Consumer accessToken
+### 5. Call UMA protected API without claim gatering
 
 * Get resource ticket
 
@@ -184,17 +186,27 @@ From this call you get Consumer accessToken
       --Header "Host: <YOUR_HOST>"
 ```
 
-From this call you get ticket in WWW-Authenticate header
+From this call you get ticket in WWW-Authenticate header with permission ticket
+
+* Get client access token using consumer credentials.
+
+```
+ curl -X POST https://gg.example.com:8443/get-client-token
+    --Header "Content-Type: application/json"
+    --data '{"client_id":"<YOUR_CONSUMER_ID>", "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
+```
+
+From this call you get Consumer access token
 
 * Get RPT token
 
 ```
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
-      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_ACCESS_TOKEN>"
       --Header "Content-Type: application/json"
-      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
+      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<PERMISSION_TICKET>"}'
 ```
-From this call you get accesstoken (RPT)
+From this call you will get access token (RPT).
 
 * Call UMA protected API
 
@@ -205,37 +217,59 @@ From this call you get accesstoken (RPT)
 ```
 
 ### 6. UMA flow with claims gathering
+
 #### Prerequisites
+
 * UMA scope with Authorization Policy
 ![alt text](uma_scope.png "Logo Title Text 1")
+
 * Enabled UMA RPT Polices & UMA Claims Gathering
 ![alt text](scripts.png "Logo Title Text 1")
+
 * Register RS with correct scope
 
-#### Getting need_info ticket
+* Get resource ticket
+
+```
+  curl -X GET http://gg.example.com:8000/<YOUR_PATH>
+      --Header "Host: <YOUR_HOST>"
+```
+
+From this call you get ticket in WWW-Authenticate header with permission ticket.
+
+* Get client access token using consumer credentials.
+
+```
+ curl -X POST https://gg.example.com:8443/get-client-token
+    --Header "Content-Type: application/json"
+    --data '{"client_id":"<YOUR_CONSUMER_ID>", "client_secret":"<YOUR_CONSUMER_SECRET>", "op_host":"<YOUR_OP_HOST>","scope":[<YOUR_SCOPES>]}'
+```
+
+From this call you get Consumer access token.
+
+* Getting need_info ticket
 
 ```
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
-      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_ACCESS_TOKEN>"
       --Header "Content-Type: application/json"
-      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":[<YOUR_SCOPE>]}'
+      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<PERMISSION_TICKET>"}'
 ```
 
-From this call you get need_info ticket and claims gathering url.
-You have to add your claims redirect uri as a url query parameter.
-You may need to add your claims redirect url to your client configuration in CE.
+From this call you get need_info ticket and claims gathering url(redirect_user). You have to add your claims redirect uri as a url query parameter. You may need to add your claims redirect url to your client configuration in CE.
 
-#### Claims gathering returns ticket
+Next step is to request claim gatering url in browser and add country and city data, if all claim is ok then CE will redirect you to claim redirect uri with **new permission ticket**.
 
-* Get RPT token
+* Get RPT token with permission ticket
 
 ```
   curl -X POST https://gg.example.com:8443/uma-rp-get-rpt
-      --Header "Authorization: Bearer <CONSUMER_TOKEN>"
+      --Header "Authorization: Bearer <CONSUMER_ACCESS_TOKEN>"
       --Header "Content-Type: application/json"
-      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<YOUR_TICKET>","scope":"[<YOUR_SCOPE>]"}'
+      --data '{"oxd_id": "<YOUR_CONSUMER_OXD_ID>","ticket":"<NEW_PERMISSION_TICKET>"}'
 ```
-From this call you get accesstoken (RPT)
+
+From this call you will get access token (RPT).
 
 * Call UMA protected API
 
@@ -248,10 +282,10 @@ From this call you get accesstoken (RPT)
 ### 7. Demo
 
 Demo is prepared as python CGI script. You need to put it in some CGI enabled web server. Script is divided into 4 parts:
-* demo-client.py - main script
-* calls.py - REST calls
+
+* index.py - main script
+* helper.py - REST calls and HTML template
 * config.py - custom configuration
-* display.py - printing functions
 
 By default, UMA flow is executed.
 

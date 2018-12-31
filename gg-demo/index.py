@@ -40,6 +40,6 @@ if not need_info:
 if need_info:
     full_claim_redirectUrl = "%s&claims_redirect_uri=%s" % (redirect_url, claims_redirect_url)
     display_action_name("4. Claims gathering url")
-    print '''<div class="card"><div class="card-body"><a href="%s">%s</a></div></div>''' % (full_claim_redirectUrl, full_claim_redirectUrl)
+    print '''<div class="card"><div class="card-body">Click on Below URL <br/><a href="%s">%s</a></div></div>''' % (full_claim_redirectUrl, full_claim_redirectUrl)
 
 display_footer()
