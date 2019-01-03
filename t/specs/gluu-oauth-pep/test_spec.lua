@@ -58,11 +58,15 @@ local function setup(model)
     kong_utils.oxd_mock(test_root .. "/" .. model)
 end
 
-local function configure_service_route()
+local function configure_service_route(service_name, service, route)
+    service_name = service_name or "demo-service"
+    service = service or "backend"
+    route = route or "backend.com"
     print"create a Sevice"
     local res, err = sh_until_ok(10,
         [[curl --fail -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"demo-service","url":"http://backend"}']]
+        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"]],service_name,[[","url":"http://]],
+        service, [["}']]
     )
 
     local create_service_response = JSON:decode(res)
@@ -70,7 +74,7 @@ local function configure_service_route()
     print"create a Route"
     local res, err = sh_until_ok(10,
         [[curl --fail -i -sS -X POST  --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/demo-service/routes --data 'hosts[]=backend.com']]
+        ctx.kong_admin_port, [[/services/]], service_name, [[/routes --data 'hosts[]=]], route, [[']]
     )
 
     return create_service_response
@@ -131,7 +135,6 @@ local function configure_plugin(create_service_response, plugin_config)
 
     return register_site_response, response.access_token
 end
-
 
 test("with, without token and metrics", function()
 
@@ -1046,6 +1049,68 @@ test("JWT RS384", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("2 different service with different clients", function()
+
+    setup("oxd-model9.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            oauth_scope_expression = {},
+            ignore_scope = true,
+            deny_by_default = false
+        }
+    )
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    local create_service_response2 = configure_service_route("demo-service2", "backend", "backend2.com")
+
+    print"test it works"
+    sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend2.com']])
+
+    local register_site_response2, access_token2 = configure_plugin(create_service_response2,
+        {
+            oauth_scope_expression = {},
+            ignore_scope = true,
+            deny_by_default = false
+        }
+    )
+    print"create a consumer 2"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response2.client_id, [[']]
+    )
+
+    local consumer_response2 = JSON:decode(res)
+
+    print"test it work with token"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"test second service works with token"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend2.com' --header 'Authorization: Bearer ]],
+        access_token2, [[']]
+    )
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
