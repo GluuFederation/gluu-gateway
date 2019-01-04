@@ -53,12 +53,22 @@ local function get_token(authorization)
     return nil
 end
 
+-- here we store access tokens per client_id
+local access_tokens_per_client_id = {}
+
 local function get_protection_token(self, conf)
-    local access_token = self.access_token
+    local access_token = access_tokens_per_client_id[conf.client_id]
+    if not access_token then
+        access_token = { expire = 0 }
+        access_tokens_per_client_id[conf.client_id] = access_token
+    end
+
     local now = ngx.now()
-    -- kong.log.debug("Current datetime: ", now, " access_token.expire: ", access_token.expire)
+    kong.log.debug("Current datetime: ", now, " access_token.expire: ", access_token.expire)
     if not access_token.token or access_token.expire < now + EXPIRE_DELTA then
-        access_token.expire = access_token.expire + EXPIRE_DELTA -- avoid multiple token requests
+        if access_token.token then
+            access_token.expire = access_token.expire + EXPIRE_DELTA -- avoid multiple token requests
+        end
         local response = oxd.get_client_token(conf.oxd_url,
             {
                 client_id = conf.client_id,
@@ -85,6 +95,7 @@ local function get_protection_token(self, conf)
             access_token.expire = 0
         end
     end
+    return access_token.token
 end
 
 -- here we store jwks per op_url
@@ -97,12 +108,12 @@ local supported_algs = {
 }
 
 local function refresh_jwks(self, conf, jwks)
-    get_protection_token(self, conf)
+    local ptoken = get_protection_token(self, conf)
 
     local response, err = oxd.get_jwks(
         conf.oxd_url,
         {op_host = conf.op_url},
-        self.access_token.token
+        ptoken
     )
     if not response then
         kong.log.err(err)
@@ -318,7 +329,6 @@ end
  ]]
 
 _M.access_handler = function(self, conf, hooks)
-    assert(self.access_token)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
 
