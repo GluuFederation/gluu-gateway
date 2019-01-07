@@ -440,8 +440,8 @@ class KongSetup(object):
                     self.kongaClientSecret = resJson['client_secret']
                     self.kongaClientId = resJson['client_id']
                 else:
-                    msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
-                    Please check oxd-server and oxd-https logs."""
+                    msg = """Error: Unable to create the konga oxd client used to call the oxd-server endpoints
+                    Please check oxd-server logs."""
                     print msg
                     self.logIt(msg, True)
                     self.logIt('OXD Error %s' % resJson, True)
@@ -515,13 +515,13 @@ class KongSetup(object):
 
         # Konga Configuration
         msg = """The next few questions are used to configure Konga.
-            If you are connecting to an existing oxd-https server on the network,
+            If you are connecting to an existing oxd server on the network,
             make sure it's available from this server.
             """
         print msg
 
-        self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter existing client credentials manually)", 'y'))
+        self.kongaOxdWeb = self.getPrompt('oxd server url', 'https://%s:8443' % self.hostname)
+        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
@@ -663,7 +663,7 @@ if __name__ == "__main__":
                   + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
                   + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
                   + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
-                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
+                  + 'oxd server url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
                   + 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
 
             if not kongSetup.generateClient:
