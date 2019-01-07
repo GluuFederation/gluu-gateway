@@ -1,15 +1,15 @@
 Name:		gluu-gateway
-Version:	%VERSION%
+Version:	4.0
 Release:	1%{?dist}
 Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
-Source0:	gluu-gateway-%VERSION%.tar.gz
+Source0:	gluu-gateway-4.0.tar.gz
 Source1:	gluu-gateway.init.d
 Source2:	konga.init.d
 Source3:	kong.init.d
 BuildArch:      noarch
-Requires:	oxd-server = 3.1.3.1, postgresql >= 10, postgresql-server >= 10, nodejs, git, lua-cjson, kong-community-edition = 0.11.0, unzip, python-requests
+Requires:	oxd-server-4.0.beta, postgresql >= 10, postgresql-server >= 10, nodejs, git, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
 %description
 The Gluu Gateway is a package which can be used to quickly
@@ -25,8 +25,6 @@ cp -a %{SOURCE1} %{buildroot}/etc/init.d/gluu-gateway
 cp -a %{SOURCE2} %{buildroot}/etc/init.d/konga
 cp -a %{SOURCE3} %{buildroot}/etc/init.d/kong
 cp -a opt/gluu-gateway %{buildroot}/opt/
-#cp -a setup %{buildroot}/opt/gluu-gateway
-#cp -a dist %{buildroot}/opt/gluu-gateway
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
