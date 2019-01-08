@@ -650,7 +650,7 @@ if __name__ == "__main__":
                   + "SOFTWARE. \n" \
                   + "------------------------------------------------------------------------------------- \n"
             print msg
-            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
+            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the Stepped-Up Support License? (y|N)', 'N'))
             print ""
         if kongSetup.license:
             kongSetup.makeFolders()
