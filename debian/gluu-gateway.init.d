@@ -1,8 +1,8 @@
 #!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          gluu-gateway
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
+# Required-Start:    $syslog $local_fs $remote_fs postgresql
+# Required-Stop:     $syslog $local_fs $remote_fs postgresql
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Start daemon at boot time
@@ -13,24 +13,24 @@ SERVICE_NAME=gluu-gateway
 GLUU_GATEWAY_INIT_LOG=/var/log/gluu-gateway.log
 
 do_start () {
-        service postgresql start
-        service kong start
-        service oxd-server-4.0.beta start
-        service konga start
+        /ect/init.d/postgresql start
+        /ect/init.d/kong start
+        /ect/init.d/oxd-server-4.0.beta start
+        /ect/init.d/konga start
 }
 
 do_stop () {        
-        service postgresql stop
-        service kong stop
-        service oxd-server-4.0.beta stop
-        service konga stop
+        /ect/init.d/postgresql stop
+        /ect/init.d/kong stop
+        /ect/init.d/oxd-server-4.0.beta stop
+        /ect/init.d/konga stop
 }
 
 do_status () {        
-        service postgresql status
-        service kong status
-        service oxd-server-4.0.beta status
-        service konga status
+        /ect/init.d/postgresql status
+        /ect/init.d/kong status
+        /ect/init.d/oxd-server-4.0.beta status
+        /ect/init.d/konga status
 }
 
 case $1 in
