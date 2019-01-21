@@ -13,24 +13,24 @@ SERVICE_NAME=gluu-gateway
 GLUU_GATEWAY_INIT_LOG=/var/log/gluu-gateway.log
 
 do_start () {
-        /ect/init.d/postgresql start
-        /ect/init.d/kong start
-        /ect/init.d/oxd-server-4.0.beta start
-        /ect/init.d/konga start
+        /etc/init.d/postgresql start
+        /etc/init.d/kong start
+        /etc/init.d/oxd-server-4.0.beta start
+        /etc/init.d/konga start
 }
 
 do_stop () {        
-        /ect/init.d/postgresql stop
-        /ect/init.d/kong stop
-        /ect/init.d/oxd-server-4.0.beta stop
-        /ect/init.d/konga stop
+        /etc/init.d/postgresql stop
+        /etc/init.d/kong stop
+        /etc/init.d/oxd-server-4.0.beta stop
+        /etc/init.d/konga stop
 }
 
 do_status () {        
-        /ect/init.d/postgresql status
-        /ect/init.d/kong status
-        /ect/init.d/oxd-server-4.0.beta status
-        /ect/init.d/konga status
+        /etc/init.d/postgresql status
+        /etc/init.d/kong status
+        /etc/init.d/oxd-server-4.0.beta status
+        /etc/init.d/konga status
 }
 
 case $1 in
