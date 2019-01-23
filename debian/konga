@@ -58,7 +58,13 @@ do_start () {
                 mv $TMP_PID_PATH_NAME $PID_PATH_NAME                        
         	PID_NUM=$(cat $PID_PATH_NAME)
         else                
-                echo "$SERVICE_NAME is already running ..."        
+	        if ps aux | grep -v "grep" | grep -w $PID_NUM\ .*.node > /dev/null 2>&1; then
+                        echo "$SERVICE_NAME is already running ..."        
+	        else
+		        kill -9 $PID_NUM > /dev/null 2>&1
+			rm -f $PID_PATH_NAME > /dev/null 2>&1
+			do_start
+			exit
         fi        
         echo "PID: [$PID_NUM]"
 }
@@ -67,8 +73,8 @@ do_stop () {
 	PID_NUM=`get_pid`
         if [ "x$PID_NUM" != "x" ]; then                
                 echo "$SERVICE_NAME stoping ..."            
-                kill -s 9 $PID_NUM;            
-                rm -f $PID_PATH_NAME        
+                kill -9 $PID_NUM > /dev/null 2>&1            
+                rm -f $PID_PATH_NAME > /dev/null 2>&1        
         else   
                 echo "$SERVICE_NAME is not running ..."        
         fi
