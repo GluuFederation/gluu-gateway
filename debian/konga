@@ -65,6 +65,7 @@ do_start () {
 			rm -f $PID_PATH_NAME > /dev/null 2>&1
 			do_start
 			exit
+                fi
         fi        
         echo "PID: [$PID_NUM]"
 }
