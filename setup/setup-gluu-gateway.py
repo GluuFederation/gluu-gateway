@@ -95,6 +95,7 @@ class KongSetup(object):
         self.ggPluginsFolder = '%s/kong/plugins' % self.distGluuGatewayFolder
         self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
         self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
+        self.gluuMetricsPlugin = '%s/gluu-metrics' % self.ggPluginsFolder
         self.removePluginList = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.ggCommanFolder = '%s/kong/common' % self.distGluuGatewayFolder
 
@@ -368,6 +369,7 @@ class KongSetup(object):
         # gluu plugins
         self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuMetricsPlugin, self.distKongPluginsFolder])
 
         # gluu plugins common file
         self.run([self.cmd_cp, '-R', '%s/kong-auth-pep-common.lua' % self.ggCommanFolder, self.distGluuLuaFolder])
