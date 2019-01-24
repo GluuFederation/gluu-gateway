@@ -90,10 +90,6 @@
                     hideIfNotInConsumerContext: true,
                     description: "Allow developers to make requests from the browser"
                   },
-                  "ssl": {
-                    hideIfNotInConsumerContext: true,
-                    description: "Add an SSL certificate for an underlying service"
-                  },
                   "ip-restriction": {
                     description: "Whitelist or blacklist IPs that can make requests"
                   },
@@ -243,31 +239,6 @@
          */
         KongPluginsService.prototype.pluginOptions = function (plugin) {
           var data = {
-            "ssl": {
-              "meta": {
-                description: 'Dynamically binds a specific SSL certificate to the <code>request_host</code> value of a service. ' +
-                'In case you want to setup a global SSL certificate for every API, take a look at the <a href="https://getkong.org/docs/0.9.x/configuration/#ssl_cert_path" target="_blank">Kong SSL configuration options.</a>' +
-                '<br><span>If no <code>.cert</code> and <code>.key</code> files are provided, Konga will create self-signed certificates and send them to Kong ( <a href="https://www.openssl.org/">openssl library</a> must be available on your machine ).</span>'
-              },
-              "cert": {
-                type: "file",
-                help: "Upload the certificate.crt file."
-              },
-              "key": {
-                type: "file",
-                help: "Upload the certificate.key file."
-              },
-              "only_https": {
-                type: "boolean",
-                value: false,
-                help: "Specify if the service should only be available through an https protocol."
-              },
-              "accept_http_if_already_terminated": {
-                type: "boolean",
-                value: false,
-                help: "If only_https is true, accepts HTTPs requests that have already been terminated by a proxy or load balancer and the x-forwarded-proto: https header has been added to the request. Only enable this option if the Kong server cannot be publicly accessed and the only entry-point is such proxy or load balancer."
-              },
-            },
             "request-size-limiting": {
               meta: {
                 description: 'Block incoming requests whose body is greater than a specific size in megabytes.'
