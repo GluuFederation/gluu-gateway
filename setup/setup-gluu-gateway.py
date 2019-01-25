@@ -44,7 +44,7 @@ class KongSetup(object):
         self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'gluu-uma-pep,gluu-oauth-pep'
+        self.kongCustomPlugins = 'gluu-uma-pep,gluu-oauth-pep,gluu-metrics'
 
         self.oxdLicense = ''
 
