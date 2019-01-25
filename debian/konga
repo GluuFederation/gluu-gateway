@@ -35,7 +35,7 @@ do_start () {
 
 		cd $BASEDIR
                 if [ -f $KONGA_INIT_LOG ]; then
-                        LOG_LINES=`wc -l $KONGA_INIT_LOG`
+                        LOG_LINES=`wc -l $KONGA_INIT_LOG | awk {'print $1'}`
                 else
                         LOG_LINES=0
                 fi
