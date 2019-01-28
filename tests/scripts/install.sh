@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DISTRIBUTION=$6
+DISTRIBUTION=$1
 
 function prepareSourcesXenial {
     sleep 120
