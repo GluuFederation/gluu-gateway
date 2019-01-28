@@ -2,7 +2,7 @@
 
 ## Requirements
 
-For this demo I will use the following VM's.
+For this demo I will use the following VMs:
 
 |Name                    |IP Address      |Hosts            |OS                                |
 |------------------------|----------------|-----------------|----------------------------------|
@@ -12,7 +12,7 @@ For this demo I will use the following VM's.
 |Gluu Gateway            |192.168.56.104  |gg.mygluu.org    |Currently I use Ubuntu 16.04 LTS  |
 
 
-Since I am using virtual IP/hosts I write the following content to file `/etc/hosts` on each machine
+Since I am using virtual IPs/hosts, I need to add the following content to the `/etc/hosts` file on each machine:
 
 ```
 192.168.56.1 rs rs.mygluu.org
@@ -20,12 +20,11 @@ Since I am using virtual IP/hosts I write the following content to file `/etc/ho
 192.168.56.101 us none-claim-gatering.mygluu.org
 192.168.56.102 op op.mygluu.org
 192.168.56.104 gg gg.mygluu.org
-
 ```
 
 ## Resource Server
 
-I am assuming that Python and pip is installed on this server. Install Flask and pyOpenSSL
+I am assuming that Python and pip are installed on this server. Install Flask and pyOpenSSL:
 
 ```
 # pip install flask 
@@ -36,13 +35,13 @@ Download gg_demo_app.py:
 
 `wget https://raw.githubusercontent.com/mbaser/gluu/master/gluu_gateway_demo/gg_demo_app.py`
 
-Create `templates` directory and get template:
+Create a `templates` directory and get the template:
 ```
 # mkdir templates
 # wget https://raw.githubusercontent.com/mbaser/gluu/master/gluu_gateway_demo/templates/index.html -O templates/index.html
 ```
 
-Set the following variables in `gg_demo_app.py` file to fit your settings. 
+Edit the following variables in `gg_demo_app.py` file to match your settings:
 
 ```
 gg_proxy_url = "http://gg.mygluu.org:8000"
@@ -55,15 +54,13 @@ host_without_claims = "none-claim-gatering.mygluu.org"
 host_with_claims = "claim-gatering.mygluu.org"
 ```
 
-
 And run as:
-
 `# python gluu_gateway_demo/gg_demo_app.py`
 
 
 ## Upstream Server
 
-I am assuming that Python and pip is installed on this server. Install Flask and pyOpenSSL
+I am assuming that Python and pip are installed on this server. Install Flask and pyOpenSSL:
 
 ```
 # pip install flask 
@@ -79,7 +76,7 @@ And run as:
 
 `# python gluu_gateway_demo/gg_upstream_app.py`
 
-It will listen port 5000 of all interfaces. Test if it is running:
+It will listen on port 5000 of all interfaces. Test to see if it's running:
 
 ```
 $ curl -k https://claim-gatering.mygluu.org:5000/posts
@@ -90,53 +87,45 @@ $ curl -k https://claim-gatering.mygluu.org:5000/posts
 }
 ```
 
-
 ## OpenID Connect Provider
 
-As OpenID Connect Provider I use Gluu Server. Please install Gluu Server by following
-instruction explained [here https://gluu.org/docs/ce/installation-guide/](https://gluu.org/docs/ce/installation-guide/)
+For the OpenID Connect Provider, I used the Gluu Server. Install the Gluu Server by following [these](https://gluu.org/docs/ce/installation-guide/) instructions.
 
 
 ## Gluu Gateway
 
-For this demo, I used Gluu Gateway (GG) 4.0-beta. Please install Gluu Gateway by following
-instruction explained [here https://gluu.org/docs/gg/installation/](https://gluu.org/docs/gg/installation/)
+For this demo, I used Gluu Gateway (GG) 4.0 Beta. Install Gluu Gateway by following [these](https://gluu.org/docs/gg/installation/) instructions.
 
-GG UI is only available on localhost. Since it is on a remote machine, we need ssh port forwarding
-to reach GG UI. My GG IP is 192.168.56.104, thus:
+The GG UI is only available on localhost. Since it is on a remote machine, we need SSH port forwarding
+to reach the GG UI. For example, my GG IP is 192.168.56.104, so I do the following:
 
 `$ ssh -L 1338:localhost:1338 user@gg.mygluu.org`
 
-Where `user` is any username that can make ssh to GG host. On your desktop open a browser and navigate
-to the following address:
+where `user` is any username that can SSH to the GG host. On your desktop, open a browser and navigate
+to your GG UI at the following address:
 
 https://localhost:1338
 
-Your GG UI will come, login to GG UI with your Gluu Server **admin** credentials.
-
+Log in with your Gluu Server **admin** credentials.
 
 ### Create Consumer
 
-The first thing is to create a consumer that will be used by Resource Server. For this, click **CONSUMERS**
-on the left panel. Firstly we need to create a client for the consumer, click **+ CREATE CLIENT** button,
-you just need to write **Client Name**, for this demo I wrote **ggconsumerclient**
+You'll need to create a consumer that will be used by the Resource Server. To do so, click **CONSUMERS**
+on the left panel. First, you need to create a client for the consumer, click the **+ CREATE CLIENT** button.
+Give it a unique **Client Name**, for this demo, I used **ggconsumerclient**.
 
 ![Create Client for Consumer](gg_consumer_client.png)
 
-Once you hit, you will see credidentals for consumer client, before closing the pop-up screen please copy
-credential info:
+Once you create the client, you will see credentials for the consumer client. Copy
+the credential info for later.
 
-![Creadidentals of Client for Consumer](gg_consumer_client_info.png)
+![Consumer Client Credentials](gg_consumer_client_info.png)
 
-To create a consumer, click on **+ CREATE CONSUMER** button. On the popup screen, write a name for consumer, 
-I wrote **ggconsumer** and write `Client Id` to **Gluu Client Id** field.
+To create a consumer, click on **+ CREATE CONSUMER** button. On the popup screen, name the consumer, **ggconsumer** for example, and use the `Client Id` you just created for the **Gluu Client Id** field.
 
-![Creadidentals of Client for Consumer](gg_consumer.png)
+![Consumer Client Credentials](gg_consumer.png)
 
-
-Edit `gg_demo_app.py` on your **Resource Server** and replace values of `client_oxd_id`, `client_id` and `client_secret`
-those you get while creating client for consumer. Since it is in debug mode it, program will reload automatically
-so you don't need to restart. In my case:
+Edit `gg_demo_app.py` on your **Resource Server** and replace the `client_oxd_id`, `client_id` and `client_secret` values with those generated when you created the client for the consumer. Since it is in debug mode, the program will reload automatically with no need to restart. In my case:
 
 ```
 # Consumer client
@@ -145,52 +134,37 @@ client_id = "@!C7C2.102D.7511.41D4!0001!B1AD.E92E!0008!B021.E33B.3261.AF1E"
 client_secret = "73039435-13f4-4999-904f-31a69e946195"
 ```
 
-Before going further let us set **Claim Redirect URI** for this client, we will need it for claim-gatering service.
-Login to Gluu Server, click on **OpenID Connect** -> **Clients**. Click on **ggconsumerclient**, In the client details
-screen, click **Advenced settings** tab, delete if there is any entry in **Claim Redirect URIs** field. Click on
-**Add Claim Redirect URIs** button, on the pop-up write `https://rs.mygluu.org:5500/cg` to the textbox. After adding
-reiderct uri, click **Update** button.
+Before going further, set the Claim Redirect URI for this client. You'll need it for the claim gathering service. Log in to  the Gluu Server, and navigate to **OpenID Connect** > **Clients** and click on your client. In the details screen, click the **Advanced settings** tab. If there are any entries in the **Claim Redirect URIs** field, delete them. Click the **Add Claim Redirect URIs** button and enter `https://rs.mygluu.org:5500/cg` in the textbox. After adding the redirect URI, click the **Update** button.
 
-
-### Create Service, Route and Plugin for None Claim Gatering
+### Create Service, Route and Plugin for None Claim Gathering
 #### Create Service
-On GG UI, click **SERVICES** on the left panel, and then click **+ ADD NEW SERVICE** button. Please fill the
-following boxes:
+On GG UI, click **SERVICES** on the left panel, then the **+ ADD NEW SERVICE** button. Fill in the following boxes:
   
-**Name:** none-claim-gatering
-
+**Name:** none-claim-gathering
 **Protocol:** https
-
-**Host:** none-claim-gatering.mygluu.org
-
+**Host:** none-claim-gathering.mygluu.org
 **Port:** 5000
-
 **Path:** /posts
 
-![Service for None Claim Gatering](none_claim_service.png)
+![Service for None Claim Gathering](none_claim_service.png)
 
 #### Add Route
-Click **Routes** then click **+ ADD ROUTE** button. Fill the following fields:
+Click **Routes**, then the **+ ADD ROUTE** button. Fill in the following boxes:
 
-**Hosts:** none-claim-gatering.mygluu.org
-
+**Hosts:** none-claim-gathering.mygluu.org
 **Paths:** /posts
 
 Note: Once you write to textboxes press "Enter"
-
-![Route for None Claim Gatering](none_claim_route.png)
+![Route for None Claim Gathering](none_claim_route.png)
 
 #### Add Plugin
-Click **Plugins** then click **+ ADD PLUGIN** button. A pop-up screen will be displayed. Click **+** icon on the the right 
-side of **Gluu UMA PEP**. In the upcoming screen, click **+ ADD PATH** button. Write `/posts` to the path to be protected
-and `none_claim_gatering` to the scope, remember you need to press "Enter" after writing scope. You don't need to write
-anything on **Other configurations** settings. Click **ADD PLUGIN** button.
+Click **Plugins** then click **+ ADD PLUGIN** button. A pop-up screen will be displayed. Click the **+** icon to the right side of **Gluu UMA PEP**. In the upcoming screen, click the **+ ADD PATH** button. Write `/posts` to the path to be protected and `none_claim_gatering` to the scope, remember you need to press "Enter" after writing scope. You don't need to write anything on **Other configurations** settings. Click **ADD PLUGIN** button.
 
 ![UMA PEP Plugin for None Claim Gatering](gg_none_cliam_uma_plugin.png)
 
 #### Gluu Server Tweaks
-We need to give grant access to none policy scopes. Login to Gluu Server, click **Configuration** -> **JSON Configuration**,
-then **oxAuth Configuration** tab. Scroll down untill **umaGrantAccessIfNoPolicies** and set it to `true`
+We need to give grant gccess to none policy scopes. Login to Gluu Server, click **Configuration**, **JSON Configuration**, then **oxAuth Configuration** tab. Scroll down until
+**umaGrantAccessIfNoPolicies** set it to `true`
 
 ![Grant Access to None Policy Scopes](umaGrantAccessIfNoPolicies.png)
 
@@ -203,31 +177,31 @@ If everything goes well, you will see the following on your browser:
 
 ![None Claim Gatering](gg_none_claim_result.png)
 
-### Create Service, Route and Plugin for Claim Gatering
+### Create Service, Route and Plugin for None Claim Gatering
 #### Create Service
-The same as **None Claim Gatering**, except Name and Host:
+The same as None Claim Gatering, except Name and Host:
 
 **Name:** claim-gatering  
 
 **Host:** claim-gatering.mygluu.org
 
 #### Add Route
-The same as **None Claim Gatering**, except Hosts:
+The same as None Claim Gatering, except Hosts:
 
 **Hosts:** claim-gatering.mygluu.org
 
 #### Add Plugin
-The same as **None Claim Gatering**, except scope, please write `claim_gatering` to scope as follows:
+The same as None Claim Gatering, except scope, please write `claim_gatering` to scope as follows:
 
 ![UMA PEP Plugin for Claim Gatering](gg_cliam_uma_plugin.png)
 
 
 #### Gluu Server Tweaks
-Login to Gluu Server. To enable `uma_rpt_policy` custom script, click  **Configuration** -> **Manage Custom scripts**, then 
+Login to Gluu Server. To enable uma_rpt_policy custom script, click  **Configuration**, **Manage Custom scripts**, then 
 click **UMA RPT Policies** tab. Expand **uma_rpt_policy** custom script pane, scroll down and click **Enabled** checkbox.
 Click **Update** button. Secondly, do the same for custom script `sampleClaimsGathering` on **UMA Claims Gathering** tab. 
 Thirdly, we need to add `uma_rpt_policy` policy to `claim_gatering` Uma Scope. For this click **UMA** on the left panel, then
-click on **Scopes**. Click on `claim_gatering` scope. In the scope details screen, click **Add Authorization Policy**. In the popup
+click on scopes. Click on `claim_gatering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
 check `uma_rpt_policy`.
 
 ![UMA Authorization Policy for Scope](uma_authorization_policiy.png)
@@ -242,7 +216,7 @@ If things goes well, you will get a link to gather claims at the end of the wind
 
 ![Claim Gathering URL](claim_gathering_url.png)
 
-Click the link, you will be asked Country, enter `US`, then for City enter `NY`. You will be redirected to resource server,
+Click the link, you will be asked Country, enter `US`, then for City enter `NY`. You will be rederected to resourse server,
 and will see:
 
 ![Claim Gathering](claim_gathering_result.png)
