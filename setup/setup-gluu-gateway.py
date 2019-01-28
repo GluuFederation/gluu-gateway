@@ -44,7 +44,7 @@ class KongSetup(object):
         self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'gluu-uma-pep,gluu-oauth-pep'
+        self.kongCustomPlugins = 'gluu-uma-pep,gluu-oauth-pep,gluu-metrics'
 
         self.oxdLicense = ''
 
@@ -95,6 +95,7 @@ class KongSetup(object):
         self.ggPluginsFolder = '%s/kong/plugins' % self.distGluuGatewayFolder
         self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
         self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
+        self.gluuMetricsPlugin = '%s/gluu-metrics' % self.ggPluginsFolder
         self.removePluginList = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.ggCommanFolder = '%s/kong/common' % self.distGluuGatewayFolder
 
@@ -154,8 +155,8 @@ class KongSetup(object):
         self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
         self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
         self.lrucacheFilesPath = '%s/third-party/lua-resty-lrucache/lib/resty' % self.distGluuGatewayFolder
-        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty' % self.distGluuGatewayFolder
-        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty' % self.distGluuGatewayFolder
+        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty/.' % self.distGluuGatewayFolder
+        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty/.' % self.distGluuGatewayFolder
         self.prometheusFilePath = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.distGluuGatewayFolder
 
     def initParametersFromJsonArgument(self):
@@ -357,20 +358,21 @@ class KongSetup(object):
         self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
 
         # lua-resty-jwt
-        self.run([self.cmd_cp, '-R', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '-a', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
 
         # lua-resty-hmac
-        self.run([self.cmd_cp, '-R', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '-a', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
 
         # Prometheus
-        self.run([self.cmd_cp, self.prometheusFilePath, self.distGluuLuaFolder])
+        self.run([self.cmd_cp, self.prometheusFilePath, self.distLuaFolder])
 
         # gluu plugins
         self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
         self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuMetricsPlugin, self.distKongPluginsFolder])
 
         # gluu plugins common file
-        self.run([self.cmd_cp, '-R', '%s/*' % self.ggCommanFolder, self.distGluuLuaFolder])
+        self.run([self.cmd_cp, '-R', '%s/kong-auth-pep-common.lua' % self.ggCommanFolder, self.distGluuLuaFolder])
 
         # Remove kong default plugins
         for plugin in self.removePluginList:
@@ -426,11 +428,11 @@ class KongSetup(object):
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
                 'scope': ['openid', 'oxd', 'permission'],
-                'grant_types': ['authorization_code'],
+                'grant_types': ['authorization_code', 'client_credentials'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }
-            self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
-            print 'Creating konga oxd client used to call oxd-https endpoints...'
+            self.logIt('Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...')
+            print 'Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...'
             try:
                 res = requests.post(self.kongaOxdWeb + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
@@ -440,8 +442,8 @@ class KongSetup(object):
                     self.kongaClientSecret = resJson['client_secret']
                     self.kongaClientId = resJson['client_id']
                 else:
-                    msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
-                    Please check oxd-server and oxd-https logs."""
+                    msg = """Error: Unable to create the konga oxd client used to call the oxd-server endpoints
+                    Please check oxd-server logs."""
                     print msg
                     self.logIt(msg, True)
                     self.logIt('OXD Error %s' % resJson, True)
@@ -515,13 +517,13 @@ class KongSetup(object):
 
         # Konga Configuration
         msg = """The next few questions are used to configure Konga.
-            If you are connecting to an existing oxd-https server on the network,
+            If you are connecting to an existing oxd server on the network,
             make sure it's available from this server.
             """
         print msg
 
-        self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter existing client credentials manually)", 'y'))
+        self.kongaOxdWeb = self.getPrompt('oxd server url', 'https://%s:8443' % self.hostname)
+        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
@@ -627,16 +629,20 @@ if __name__ == "__main__":
     try:
         if kongSetup.isPrompt:
             msg = "------------------------------------------------------------------------------------- \n" \
-                  + "The MIT License (MIT) \n\n" \
-                  + "Copyright (c) 2018 Gluu \n\n" \
-                  + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
-                  + "of this software and associated documentation files (the 'Software'), to deal \n" \
+                  + "Gluu Stepped-Up Support License (\"GLUU-STEPPED-UP\") \n\n" \
+                  + "Copyright (c) 2018 Gluu, Inc. \n\n" \
+                  + "Permission is hereby granted to any person obtaining a copy \n" \
+                  + "of this software and associated documentation files (the \"Software\"), to deal \n" \
                   + "in the Software without restriction, including without limitation the rights \n" \
                   + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
                   + "copies of the Software, and to permit persons to whom the Software is \n" \
                   + "furnished to do so, subject to the following conditions: \n\n" \
                   + "The above copyright notice and this permission notice shall be included in all \n" \
                   + "copies or substantial portions of the Software. \n\n" \
+                  + "While the software is in use in production, the person using this software must \n" \
+                  + "be associated with an organization that has an active Gluu support subscription \n" \
+                  + "which is one tier above that for which the organization would normally qualify \n" \
+                  + "based on annual revenues, unless the support contract is already at the enterprise level. \n\n" \
                   + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
                   + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
                   + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
@@ -646,7 +652,7 @@ if __name__ == "__main__":
                   + "SOFTWARE. \n" \
                   + "------------------------------------------------------------------------------------- \n"
             print msg
-            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
+            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the Stepped-Up Support License? (y|N)', 'N'))
             print ""
         if kongSetup.license:
             kongSetup.makeFolders()
@@ -659,7 +665,7 @@ if __name__ == "__main__":
                   + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
                   + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
                   + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
-                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
+                  + 'oxd server url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
                   + 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
 
             if not kongSetup.generateClient:

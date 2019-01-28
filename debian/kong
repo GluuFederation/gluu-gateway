@@ -35,7 +35,14 @@ do_start () {
                 $KONG_CMD start
                 PID_NUM=`get_pid`
         else
-                echo "$SERVICE_NAME is already running ..."
+                if netstat -tulpn | grep kong | grep "kong -c nginx." > /dev/null 2>&1; then
+                        echo "$SERVICE_NAME is already running ..."
+                else
+                        kill -9 $PID_NUM > /dev/null 2>&1
+                        rm -f $PID_PATH_NAME > /dev/null 2>&1
+                        do_start
+                        exit
+                fi
         fi
         echo "PID: [$PID_NUM]"
 }

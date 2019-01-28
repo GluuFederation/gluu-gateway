@@ -1,6 +1,5 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-oauth-pep.access"
-local lrucache = require "resty.lrucache.pureffi"
 
 local handler = BasePlugin:extend()
 handler.PRIORITY = 999
@@ -14,9 +13,6 @@ function handler:new()
     local name_prefix = "gluu_oauth_"
     self.metric_client_authenticated = name_prefix .. "client_authenticated"
     self.metric_client_granted = name_prefix .. "client_granted"
-
-    -- access token should be per plugin instance
-    self.access_token = { expire = 0 }
 end
 
 function handler:access(config)

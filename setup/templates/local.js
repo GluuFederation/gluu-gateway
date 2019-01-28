@@ -59,7 +59,7 @@ module.exports = {
     key: fs.readFileSync('%(kongSslKey)s'),
     cert: fs.readFileSync('%(kongSslCert)s')
   },
-
+  hookTimeout: 120000,
   port: process.env.PORT || %(kongaPort)s,
   environment: 'development',
   log: {

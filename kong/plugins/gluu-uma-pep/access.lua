@@ -108,9 +108,9 @@ function hooks.get_path_by_request_path_method(self, conf, request_path, method)
 end
 
 function hooks.no_token_protected_path(self, conf, protected_path, method)
-    kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
-    local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, self.access_token.token)
+    local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
 
     if check_access_no_rpt_response.access == "denied" then
         kong.log.debug("Set WWW-Authenticate header with ticket")
@@ -123,9 +123,9 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
 end
 
 function hooks.introspect_token(self, conf, token)
-    kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
-    local introspect_rpt_response_data = try_introspect_rpt(conf, token, self.access_token.token)
+    local introspect_rpt_response_data = try_introspect_rpt(conf, token, ptoken)
     if not introspect_rpt_response_data.active then
         return nil, 401, "Invalid access token provided in Authorization header"
     end
@@ -145,9 +145,9 @@ function hooks.build_cache_key(method, path, token)
 end
 
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
-    kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
-    local check_access_response = try_check_access(conf, protected_path, method, rpt, self.access_token.token)
+    local check_access_response = try_check_access(conf, protected_path, method, rpt, ptoken)
 
     return check_access_response.access == "granted"
 end

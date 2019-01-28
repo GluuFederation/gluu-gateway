@@ -71,14 +71,14 @@ end
 -- upon success returns only introspect_response,
 -- otherwise return nil, status, err
 function hooks.introspect_token(self, conf, token)
-    kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local response = oxd.introspect_access_token(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
             access_token = token,
         },
-        self.access_token.token)
+        ptoken)
     local status = response.status
 
     if status == 403 then

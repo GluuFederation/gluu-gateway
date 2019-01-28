@@ -1,4 +1,6 @@
-/usr/sbin/update-rc.d kong defaults
-/usr/sbin/update-rc.d konga defaults
-/etc/init.d/konga stop
-/etc/init.d/kong stop
+/etc/init.d/konga stop > /dev/null 2>&1
+/etc/init.d/kong stop > /dev/null 2>&1
+/usr/sbin/update-rc.d kong remove > /dev/null 2>&1
+/usr/sbin/update-rc.d konga remove > /dev/null 2>&1
+/usr/sbin/update-rc.d oxd-server-4.0.beta remove > /dev/null 2>&1
+/usr/sbin/update-rc.d gluu-gateway defaults > /dev/null 2>&1
