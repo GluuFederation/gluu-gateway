@@ -203,11 +203,11 @@ The same as None Claim gathering, except scope, please write `claim_gathering` t
 
 
 #### Gluu Server Tweaks
-Login to Gluu Server. To enable uma_rpt_policy custom script, click  **Configuration**, **Manage Custom scripts**, then 
+Login to Gluu Server. To enable uma_rpt_policy custom script, click  **Configuration** > **Manage Custom scripts**, then 
 click **UMA RPT Policies** tab. Expand **uma_rpt_policy** custom script pane, scroll down and click **Enabled** checkbox.
 Click **Update** button. Secondly, do the same for custom script `sampleClaimsGathering` on **UMA Claims Gathering** tab. 
 Thirdly, we need to add `uma_rpt_policy` policy to `claim_gathering` Uma Scope. For this click **UMA** on the left panel, then
-click on scopes. Click on `claim_gathering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
+click on **Scopes**. Click on `claim_gathering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
 check `uma_rpt_policy`.
 
 ![UMA Authorization Policy for Scope](img/uma_authorization_policiy.png)
