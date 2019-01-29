@@ -33,12 +33,12 @@ I am assuming that Python and pip are installed on this server. Install Flask an
 
 Download gg_demo_app.py:
 
-`wget https://github.com/GluuFederation/gluu-gateway/blob/version_4.0.0/gluu_flask_demo/gg_demo_app.py`
+`wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_demo_app.py`
 
 Create a `templates` directory and get the template:
 ```
 # mkdir templates
-# wget https://github.com/GluuFederation/gluu-gateway/blob/version_4.0.0/gluu_flask_demo/templates/index.html -O templates/index.html
+# wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/templates/index.html -O templates/index.html
 ```
 
 Edit the following variables in `gg_demo_app.py` file to match your settings:
@@ -70,7 +70,7 @@ I am assuming that Python and pip are installed on this server. Install Flask an
 Download gg_demo_app.py:
 
 
-`wget https://github.com/GluuFederation/gluu-gateway/blob/version_4.0.0/gluu_flask_demo/gg_upstream_app.py`
+`wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_upstream_app.py`
 
 And run as:
 
