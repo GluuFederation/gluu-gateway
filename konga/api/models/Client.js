@@ -39,7 +39,6 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
     }
   },
   afterCreate: function (values, cb) {
-    sails.log("Client created!!!!!!!!!!!!!!!!!!!!!!!!!", values);
     sails.sockets.blast('events.clients', {
       verb: 'created',
       data: values
