@@ -7,7 +7,7 @@ For this demo I will use the following VMs:
 |Name                    |IP Address      |Hosts            |OS                                |
 |------------------------|----------------|-----------------|----------------------------------|
 |Resource Server         |192.168.56.1    |rs.mygluu.org    |Any OS on which Python/flask runs |
-|Upstream Server         |192.168.56.101  |claim-gatering.mygluu.org, none-claim-gatering.mygluu.org | Any OS on which Python/flask runs|
+|Upstream Server         |192.168.56.101  |claim-gathering.mygluu.org, none-claim-gathering.mygluu.org | Any OS on which Python/flask runs|
 |OpenID Connect Provider |192.168.56.102  |op.mygluu.org    |Any Linux supported by Gluu Server|
 |Gluu Gateway            |192.168.56.104  |gg.mygluu.org    |Currently I use Ubuntu 16.04 LTS  |
 
@@ -16,8 +16,8 @@ Since I am using virtual IPs/hosts, I need to add the following content to the `
 
 ```
 192.168.56.1   rs rs.mygluu.org
-192.168.56.101 us claim-gatering.mygluu.org
-192.168.56.101 us none-claim-gatering.mygluu.org
+192.168.56.101 us claim-gathering.mygluu.org
+192.168.56.101 us none-claim-gathering.mygluu.org
 192.168.56.102 op op.mygluu.org
 192.168.56.104 gg gg.mygluu.org
 ```
@@ -50,8 +50,8 @@ op_host = "https://op.mygluu.org"
 api_path = "posts"
 
 # Kong route register with below host
-host_without_claims = "none-claim-gatering.mygluu.org"
-host_with_claims = "claim-gatering.mygluu.org"
+host_without_claims = "none-claim-gathering.mygluu.org"
+host_with_claims = "claim-gathering.mygluu.org"
 ```
 
 And run as:
@@ -80,9 +80,9 @@ And run as:
 It will listen on port 5000 of all interfaces. Test to see if it's running:
 
 ```
-$ curl -k https://claim-gatering.mygluu.org:5000/posts
+$ curl -k https://claim-gathering.mygluu.org:5000/posts
 {
-  "location": "https://claim-gatering.mygluu.org:5000/posts", 
+  "location": "https://claim-gathering.mygluu.org:5000/posts", 
   "message": "I am a test flask-api for Gluu Gateway", 
   "time": "Mon Jan 28 16:03:16 2019"
 }
@@ -154,18 +154,19 @@ On GG UI, click **SERVICES** on the left panel, then the **+ ADD NEW SERVICE** b
 ![Service for None Claim Gathering](img/none_claim_service.png)
 
 #### Add Route
-Click **Routes**, then the **+ ADD ROUTE** button. Fill in the following boxes:
+Click `none-claim-gathering` on the services, then Click **Routes**, then the **+ ADD ROUTE** button. Fill in the following boxes:
 
 **Hosts:** none-claim-gathering.mygluu.org
+
 **Paths:** /posts
 
 Note: Once you write to textboxes press "Enter"
 ![Route for None Claim Gathering](img/none_claim_route.png)
 
 #### Add Plugin
-Click **Plugins** then click **+ ADD PLUGIN** button. A pop-up screen will be displayed. Click the **+** icon to the right side of **Gluu UMA PEP**. In the upcoming screen, click the **+ ADD PATH** button. Write `/posts` to the path to be protected and `none_claim_gatering` to the scope, remember you need to press "Enter" after writing scope. You don't need to write anything on **Other configurations** settings. Click **ADD PLUGIN** button.
+Click **Plugins** then click **+ ADD PLUGIN** button. A pop-up screen will be displayed. Click the **+** icon to the right side of **Gluu UMA PEP**. In the upcoming screen, click the **+ ADD PATH** button. Write `/posts` to the path to be protected and `none_claim_gathering` to the scope, remember you need to press "Enter" after writing scope. You don't need to write anything on **Other configurations** settings. Click **ADD PLUGIN** button.
 
-![UMA PEP Plugin for None Claim Gatering](img/gg_none_cliam_uma_plugin.png)
+![UMA PEP Plugin for None Claim gathering](img/gg_none_cliam_uma_plugin.png)
 
 #### Gluu Server Tweaks
 We need to give grant gccess to none policy scopes. Login to Gluu Server, click **Configuration**, **JSON Configuration**, then **oxAuth Configuration** tab. Scroll down until
@@ -180,33 +181,33 @@ https://rs.mygluu.org:5500/nc
 
 If everything goes well, you will see the following on your browser:
 
-![None Claim Gatering](img/gg_none_claim_result.png)
+![None Claim gathering](img/gg_none_claim_result.png)
 
-### Create Service, Route and Plugin for None Claim Gatering
+### Create Service, Route and Plugin for None Claim gathering
 #### Create Service
-The same as None Claim Gatering, except Name and Host:
+The same as None Claim gathering, except Name and Host:
 
-**Name:** claim-gatering  
+**Name:** claim-gathering  
 
-**Host:** claim-gatering.mygluu.org
+**Host:** claim-gathering.mygluu.org
 
 #### Add Route
-The same as None Claim Gatering, except Hosts:
+The same as None Claim gathering, except Hosts:
 
-**Hosts:** claim-gatering.mygluu.org
+**Hosts:** claim-gathering.mygluu.org
 
 #### Add Plugin
-The same as None Claim Gatering, except scope, please write `claim_gatering` to scope as follows:
+The same as None Claim gathering, except scope, please write `claim_gathering` to scope as follows:
 
-![UMA PEP Plugin for Claim Gatering](img/gg_cliam_uma_plugin.png)
+![UMA PEP Plugin for Claim gathering](img/gg_cliam_uma_plugin.png)
 
 
 #### Gluu Server Tweaks
 Login to Gluu Server. To enable uma_rpt_policy custom script, click  **Configuration**, **Manage Custom scripts**, then 
 click **UMA RPT Policies** tab. Expand **uma_rpt_policy** custom script pane, scroll down and click **Enabled** checkbox.
 Click **Update** button. Secondly, do the same for custom script `sampleClaimsGathering` on **UMA Claims Gathering** tab. 
-Thirdly, we need to add `uma_rpt_policy` policy to `claim_gatering` Uma Scope. For this click **UMA** on the left panel, then
-click on scopes. Click on `claim_gatering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
+Thirdly, we need to add `uma_rpt_policy` policy to `claim_gathering` Uma Scope. For this click **UMA** on the left panel, then
+click on scopes. Click on `claim_gathering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
 check `uma_rpt_policy`.
 
 ![UMA Authorization Policy for Scope](img/uma_authorization_policiy.png)
