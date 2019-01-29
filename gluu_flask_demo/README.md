@@ -55,7 +55,8 @@ host_with_claims = "claim-gatering.mygluu.org"
 ```
 
 And run as:
-`# python gluu_gateway_demo/gg_demo_app.py`
+
+`# python gg_demo_app.py`
 
 
 ## Upstream Server
@@ -74,7 +75,7 @@ Download gg_demo_app.py:
 
 And run as:
 
-`# python gluu_gateway_demo/gg_upstream_app.py`
+`# python gg_upstream_app.py`
 
 It will listen on port 5000 of all interfaces. Test to see if it's running:
 
@@ -117,7 +118,7 @@ Give it a unique **Client Name**, for this demo, I used **ggconsumerclient**.
 ![Create Client for Consumer](img/gg_consumer_client.png)
 
 Once you create the client, you will see credentials for the consumer client. Copy
-the credential info for later.
+the credential info for later use.
 
 ![Consumer Client Credentials](img/gg_consumer_client_info.png)
 
@@ -141,9 +142,13 @@ Before going further, set the Claim Redirect URI for this client. You'll need it
 On GG UI, click **SERVICES** on the left panel, then the **+ ADD NEW SERVICE** button. Fill in the following boxes:
   
 **Name:** none-claim-gathering
+
 **Protocol:** https
+
 **Host:** none-claim-gathering.mygluu.org
+
 **Port:** 5000
+
 **Path:** /posts
 
 ![Service for None Claim Gathering](img/none_claim_service.png)
