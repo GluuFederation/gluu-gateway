@@ -25,6 +25,16 @@ get_pid() {
         if [ -f $PID_PATH_NAME ]; then
                 PID_NUM=$(cat $PID_PATH_NAME)
                 echo "$PID_NUM"
+        else
+                if netstat -tulpn | grep kong | grep "kong -c nginx" > /dev/null 2>&1; then
+                        PID_NUM=`netstat -tulpn | grep kong | grep "kong -c nginx" | awk {'print $7'} | awk -F '/' {'print $1'} | head -n 1`
+                        echo "$PID_NUM"
+                else 
+                        if netstat -tulpn | grep ":443.*.nginx: worker" > /dev/null 2>&1; then
+                                PID_NUM=`netstat -tulpn | grep ":443.*.nginx: worker" | awk {'print $7'} | awk -F '/' {'print $1'}`
+                                echo "$PID_NUM" 
+                        fi        
+                fi
         fi
 }
 
@@ -35,7 +45,15 @@ do_start () {
                 $KONG_CMD start
                 PID_NUM=`get_pid`
         else
-                echo "$SERVICE_NAME is already running ..."
+                if netstat -tulpn | grep kong | grep "kong -c nginx" > /dev/null 2>&1; then
+                        echo "$SERVICE_NAME is already running ..."
+                else
+                        fuser -k 443/tcp > /dev/null 2>&1
+                        kill -9 $PID_NUM > /dev/null 2>&1
+                        rm -f $PID_PATH_NAME > /dev/null 2>&1
+                        do_start
+                        exit
+                fi
         fi
         echo "PID: [$PID_NUM]"
 }
@@ -44,7 +62,10 @@ do_stop () {
         PID_NUM=`get_pid`
         if [ "x$PID_NUM" != "x" ]; then
                 echo "Stopping $SERVICE_NAME ..."
-                $KONG_CMD stop
+                $KONG_CMD stop > /dev/null 2>&1
+                fuser -k 443/tcp > /dev/null 2>&1
+                kill -9 $PID_NUM > /dev/null 2>&1
+                rm -f $PID_PATH_NAME > /dev/null 2>&1
         else
                 echo "$SERVICE_NAME is not running ..."
         fi
@@ -82,9 +103,9 @@ case $1 in
             do_start
     ;;
     status)
-        if [ -f $PID_PATH_NAME ]; then
+        PID_NUM=`get_pid`
+        if [ "x$PID_NUM" != "x" ]; then
             echo "$SERVICE_NAME is running ...";
-            PID_NUM=$(cat $PID_PATH_NAME)
             echo "PID: [$PID_NUM]"
         else
            echo "$SERVICE_NAME is not running ..."
