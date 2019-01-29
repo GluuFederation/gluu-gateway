@@ -111,29 +111,40 @@ def index(ct):
     
     steps = []
     
+    # Determine which host to be used
     if ct == 'cg':
         host = host_with_claims
     else:
-       host = host_without_claims
+        host = host_without_claims
     
+    
+    # Client calls API without RPT token
     if not 'ticket' in request.args:
         result1 = get_ticket(host)
         ticket = result1['ticket']
         steps.append(result1)
     else:
+        # Here is my PCT token!
+        # Client attempts to get RPT at UMA /token endpoint, this time presenting the PCT
         ticket = request.args['ticket']
 
+    # Get Permission access token
     result2 = get_permission_access_token()
     access_token = result2['response'].json()['access_token']
     steps.append(result2)
 
+    # Client calls AS UMA /token endpoint with permission ticket and client credentials
     result3 = get_rpt(access_token, ticket)
     steps.append(result3)
 
+    # Client calls API Gateway with RPT token
     if result3['token']:
         result4 = call_gg_rpt(host, result3['token'])
         steps.append(result4)
 
+    # No RPT for you!  Go directly to Claims Gathering!
+    # AS returns needs_info with claims gathering URI, which the user should
+    # put in his browser. Link shorter would be nice if the user has to type it in.
     claim_redirectUrl = ''
     if  result3['redirect_url']:
         claim_redirectUrl = "{0}&claims_redirect_uri={1}".format(result3['redirect_url'], claims_redirect_url)
