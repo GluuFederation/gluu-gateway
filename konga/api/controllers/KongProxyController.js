@@ -16,18 +16,11 @@ module.exports = {
 
     req.url = req.url.replace('/kong', ''); // Remove the /api prefix
 
-    sails.log("req.url", req.url);
-
     // Fix update method by setting it to "PATCH"
     // as Kong requires
-
     if (req.method.toLowerCase() == 'put') {
       req.method = "PATCH"
     }
-
-    sails.log("KongProxyController", req.connection.kong_admin_url);
-    sails.log("req.method", req.method);
-
     var headers = {'Content-Type': 'application/json'};
 
     // If apikey is set in headers, use it
@@ -54,8 +47,13 @@ module.exports = {
       }
     }
 
-    sails.log("req.body", req.body);
     request.send(req.body);
+    sails.log("--------------Kong API Call----------------");
+    if (req.body && Object.keys(req.body).length > 0) {
+      sails.log(` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url} -d '${JSON.stringify(req.body)}'`);
+    } else {
+      sails.log(` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url}`);
+    }
 
     request.end(function (response) {
       if (response.error)  return res.negotiate(response);
