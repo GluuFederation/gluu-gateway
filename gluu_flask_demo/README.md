@@ -15,7 +15,7 @@ For this demo I will use the following VMs:
 Since I am using virtual IPs/hosts, I need to add the following content to the `/etc/hosts` file on each machine:
 
 ```
-192.168.56.1 rs rs.mygluu.org
+192.168.56.1   rs rs.mygluu.org
 192.168.56.101 us claim-gatering.mygluu.org
 192.168.56.101 us none-claim-gatering.mygluu.org
 192.168.56.102 op op.mygluu.org

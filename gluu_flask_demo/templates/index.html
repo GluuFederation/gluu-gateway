@@ -40,6 +40,15 @@
               <div class="col-sm-9 col-md-10">{{step['response'].request.body}}</div>
             </div>     
  
+            {% if step['error'] %}
+              <hr style="border-top: 1px solid #337ab7;">
+              <div class="row bg-danger">
+                <div class="col-sm-3 col-md-2"><b>Error:</b></div>
+                <div class="col-sm-9 col-md-10">{{step['error']}}</div>
+              </div>
+            {% endif %}
+
+
              <hr style="border-top: 1px solid #337ab7;">
 
             <div class="row">
@@ -58,7 +67,14 @@
 
             <div class="row">
               <div class="col-sm-3 col-md-2"><b>Response body:</b></div>
-              <div class="col-sm-9 col-md-10" style="word-wrap: break-word;">{{step['response'].json()}}</div>
+              <div class="col-sm-9 col-md-10" style="word-wrap: break-word;">
+                {% if step['response']['headers']['Content-Type'] == 'application/json' %}
+                  {{step['response'].json()}}
+                {% else %}
+                   <span class="bg-danger">{{step['response'].text}}</span>
+                {% endif %}
+                  
+              </div>
             </div>        
         
         

@@ -31,15 +31,22 @@ claims_redirect_url = "https://rs.mygluu.org:5500/cg"
 def get_ticket(host):
     request_url = os.path.join(gg_proxy_url, api_path)
     response = requests.get(request_url, headers={"Host": host} )
-    
+    error = None
     ticket = ''
     if "WWW-Authenticate" in response.headers:
-        n_eq = response.headers["WWW-Authenticate"].rfind('=')
-        ticket = response.headers["WWW-Authenticate"][n_eq+1:].strip('"')
+        try:
+            n_eq = response.headers["WWW-Authenticate"].rfind('=')
+            ticket = response.headers["WWW-Authenticate"][n_eq+1:].strip('"')
+        except:
+            pass
     
+    if not ticket:
+        error =  "Can't obtain ticket"
+        
     return {'response': response, 
             'title': "Client calls GG Proxy API without RPT token", 
             'ticket': ticket,
+            'error': error,
             }
 
 def get_permission_access_token():
@@ -54,11 +61,21 @@ def get_permission_access_token():
                              headers={"Content-Type": "application/json"},
                              json=body,
                              verify=False)
+    error = None
+    access_token = ''
+
+    try:
+        access_token = response.json()['access_token']
+    except:
+        error = "Cant obtain access token"
+    
 
     return {'response': response, 
             'title': "Authenticating client in oxd-server",
+            'access_token': access_token,
+            'error': error,
             }
-    
+
 
 def get_rpt(access_token, ticket):
     request_url = os.path.join(oxd_host, 'uma-rp-get-rpt')
@@ -77,18 +94,28 @@ def get_rpt(access_token, ticket):
     token = ''
     redirect_url = ''
     
-    js_data = response.json()
+    error = None
+    
+    try:
+        js_data = response.json()
+    except:
+        error = "Server did not return valid json data"
+        js_data = {}
 
     if 'redirect_user' in js_data:
         redirect_url = js_data['redirect_user']
     else:
-        token = js_data['access_token']
+        if 'access_token' in js_data:
+            token = js_data['access_token']
+        else:
+            error = "Can't obtain access token"
         
     
     return {'response': response, 
             'title': "Client calls AS UMA /token endpoint with permission ticket and client credentials",
             'token': token,
-            'redirect_url': redirect_url
+            'redirect_url': redirect_url,
+            'error': error,
             }
 
 
@@ -130,7 +157,7 @@ def index(ct):
 
     # Get Permission access token
     result2 = get_permission_access_token()
-    access_token = result2['response'].json()['access_token']
+    access_token = result2['access_token']
     steps.append(result2)
 
     # Client calls AS UMA /token endpoint with permission ticket and client credentials
