@@ -33,9 +33,12 @@ I am assuming that Python and pip are installed on this server. Install Flask an
 
 Download gg_demo_app.py:
 
-`wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_demo_app.py`
+```
+wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_demo_app.py`
+```
 
 Create a `templates` directory and get the template:
+
 ```
 # mkdir templates
 # wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/templates/index.html -O templates/index.html
@@ -56,7 +59,9 @@ host_with_claims = "claim-gathering.mygluu.org"
 
 And run as:
 
-`# python gg_demo_app.py`
+```
+# python gg_demo_app.py
+```
 
 
 ## Upstream Server
@@ -71,11 +76,15 @@ I am assuming that Python and pip are installed on this server. Install Flask an
 Download gg_demo_app.py:
 
 
-`wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_upstream_app.py`
+```
+wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_upstream_app.py
+```
 
 And run as:
 
-`# python gg_upstream_app.py`
+```
+# python gg_upstream_app.py
+```
 
 It will listen on port 5000 of all interfaces. Test to see if it's running:
 
@@ -100,7 +109,9 @@ For this demo, I used Gluu Gateway (GG) 4.0 Beta. Install Gluu Gateway by follow
 The GG UI is only available on localhost. Since it is on a remote machine, we need SSH port forwarding
 to reach the GG UI. For example, my GG IP is 192.168.56.104, so I do the following:
 
-`$ ssh -L 1338:localhost:1338 user@gg.mygluu.org`
+```
+$ ssh -L 1338:localhost:1338 user@gg.mygluu.org
+```
 
 where `user` is any username that can SSH to the GG host. On your desktop, open a browser and navigate
 to your GG UI at the following address:
