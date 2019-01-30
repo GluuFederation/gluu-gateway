@@ -12,8 +12,8 @@
 
   angular.module('frontend.core.services')
     .factory('ListConfig', [
-      '_', 'DialogService', '$log', 'AuthService',
-      function factory(_, DialogService, $log, AuthService) {
+      '_', 'DialogService', '$log', 'AuthService', 'MessageService',
+      function factory(_, DialogService, $log, AuthService, MessageService) {
         /**
          * List title item configuration.
          *
@@ -648,6 +648,7 @@
 
                         model.scope.items.data.splice(model.scope.items.data.indexOf(item), 1);
                       }, function (err) {
+                        MessageService.error((err.data && err.data.body && err.data.body.message) || "Error");
                         $log.error("ListConfigService : Model delete failed => ", err)
                       })
                   }, function decline() {
