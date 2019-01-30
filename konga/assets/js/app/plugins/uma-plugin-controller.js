@@ -313,7 +313,9 @@
               client_id: model.config.client_id || null,
               client_secret: model.config.client_secret || null,
               uma_scope_expression: model.config.uma_scope_expression,
-              client_name: 'gluu-uma-client'
+              client_name: 'gluu-uma-client',
+              op_host: model.config.op_url,
+              oxd_url: model.config.oxd_url
             })
             .then(function (response) {
               var oauthClient = response.data;
@@ -359,7 +361,9 @@
               oxd_id: model.config.oxd_id || null,
               client_id: model.config.client_id || null,
               client_secret: model.config.client_secret || null,
-              uma_scope_expression: model.config.uma_scope_expression
+              uma_scope_expression: model.config.uma_scope_expression,
+              op_host: model.config.op_url,
+              oxd_url: model.config.oxd_url
             })
             .then(function (response) {
               if (!response.data.oxd_id) {

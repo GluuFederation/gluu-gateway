@@ -131,14 +131,17 @@
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
             templateUrl: 'js/app/consumers/create-op-client-modal.html',
-            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, PluginsService) {
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, PluginsService, $localStorage) {
+              var globalInfo = $localStorage.credentials.user;
               $scope.opClient = {
                 client_name: '',
                 client_id: '',
                 client_secret: '',
                 access_token_as_jwt: true,
                 rpt_as_jwt: true,
-                access_token_signing_alg: 'RS256'
+                access_token_signing_alg: 'RS256',
+                oxd_url: globalInfo.oxdWeb,
+                op_host: globalInfo.opHost
               };
 
               $scope.close = close;

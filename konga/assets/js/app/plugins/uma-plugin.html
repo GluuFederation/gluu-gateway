@@ -179,6 +179,50 @@
 
             <div class="col-md-12">
               <div class="form-group">
+                <label class="col-sm-3 control-label">OP Server</label>
+                <div class="col-sm-9">
+                  <input ng-model="modelPlugin.config.op_url" class="form-control" />
+                  <p class="help-block">
+                    Protect your API using OP server. The URL of you OP server. Example: https://op.server.com
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">OXD Server</label>
+                <div class="col-sm-9">
+                  <input ng-model="modelPlugin.config.oxd_url" class="form-control" />
+                  <p class="help-block">
+                    The URL of you OXD server. Example: https://oxd.server.com
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">OXD Id
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9">
+                  <div class="input-group">
+                    <input ng-attr-type="{{ isShowOXDId ? 'text' : 'password' }}" ng-model="modelPlugin.config.oxd_id"
+                           class="form-control">
+                    <a href class="input-group-addon btn-sm" data-ng-click="isShowOXDId = !isShowOXDId"
+                       title="{{isShowOXDId ? 'Hide': 'Show'}}">
+                      <i class="mdi mdi-eye text-primary"></i>
+                    </a>
+                    <a href class="input-group-addon btn-sm" title="Clear"
+                       data-ng-click="modelPlugin.config.oxd_id = ''">
+                      <i class="mdi mdi-close text-warning"></i>
+                    </a>
+                  </div>
+                  <p class="help-block">
+                    It used to register and authorize UMA resources. it will
+                    register the client in oxd and OP server. You can use existing oxd client also.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
                 <label class="col-sm-3 control-label">OXD Id
                   <br>
                   <em>

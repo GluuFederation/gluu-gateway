@@ -311,7 +311,9 @@
             oxd_id: model.config.oxd_id || null,
             client_id: model.config.client_id || null,
             client_secret: model.config.client_secret || null,
-            client_name: 'gluu-introspect-client'
+            client_name: 'gluu-introspect-client',
+            op_host: model.config.op_url,
+            oxd_url: model.config.oxd_url
           })
             .then(function (response) {
               var oauthClient = response.data;

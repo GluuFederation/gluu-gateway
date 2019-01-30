@@ -17,9 +17,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       // Create new client
       const option = {
         method: 'POST',
-        uri: sails.config.oxdWeb + '/register-site',
+        uri: clientRequest.oxd_url + '/register-site',
         body: {
-          op_host: sails.config.opHost,
+          op_host: clientRequest.op_host || sails.config.opHost,
           authorization_redirect_uri: clientRequest.authorization_redirect_uri || 'https://client.example.com/cb',
           client_name: clientRequest.client_name || 'gg-client',
           client_id: clientRequest.client_id || '',
@@ -35,7 +35,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       };
 
       sails.log("--------------OXD API Call----------------");
-      sails.log(` $ curl -k -X POST ${sails.config.oxdWeb + '/register-site'} -d '${JSON.stringify(option.body)}'`);
+      sails.log(` $ curl -k -X POST ${clientRequest.oxd_url + '/register-site'} -d '${JSON.stringify(option.body)}'`);
 
       return httpRequest(option)
         .then(function (response) {
@@ -76,17 +76,28 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   // User to register client for OAuth plugin
   addGluuClientAuth: function (req, res) {
     // Existing client id and secret
-    if (req.body.oxd_id && req.body.client_id && req.body.client_secret) {
-      return res.send({oxd_id: req.body.oxd_id, client_id: req.body.client_id, client_secret: req.body.client_secret})
+    const body = req.body;
+
+    if (body.oxd_id && body.client_id && body.client_secret) {
+      return res.send({oxd_id: body.oxd_id, client_id: body.client_id, client_secret: body.client_secret})
+    }
+
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
     }
 
     // Create new client
     const option = {
-      op_host: sails.config.opHost,
+      op_host: body.op_host,
+      oxd_url: body.oxd_url,
       authorization_redirect_uri: 'https://client.example.com/cb',
-      client_name: req.body.client_name || 'gg-oauth-client',
-      client_id: req.body.client_id || '',
-      client_secret: req.body.client_secret || ''
+      client_name: body.client_name || 'gg-oauth-client',
+      client_id: body.client_id || '',
+      client_secret: body.client_secret || ''
     };
 
     return this.registerClient(option)
@@ -104,26 +115,37 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // Register OP client and register UMA resources
   addGluuUMAPEP: function (req, res) {
+    const body = req.body;
     // Existing client id and secret
-    if (!req.body.uma_scope_expression) {
+    if (!body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
     }
+
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
+    }
+
     var opClient;
     var that = this;
     new Promise(function (resolve, reject) {
-      if (req.body.oxd_id && req.body.client_id && req.body.client_secret) {
+      if (body.oxd_id && body.client_id && body.client_secret) {
         return resolve({
-          oxd_id: req.body.oxd_id,
-          client_id: req.body.client_id,
-          client_secret: req.body.client_secret
+          oxd_id: body.oxd_id,
+          client_id: body.client_id,
+          client_secret: body.client_secret
         })
       } else {
         const option = {
-          op_host: sails.config.opHost,
+          op_host: body.op_host,
+          oxd_url: body.oxd_url,
           authorization_redirect_uri: 'https://client.example.com/cb',
-          client_name: req.body.client_name || 'gg-uma-client',
-          client_id: req.body.client_id || '',
-          client_secret: req.body.client_secret || '',
+          client_name: body.client_name || 'gg-uma-client',
+          client_id: body.client_id || '',
+          client_secret: body.client_secret || '',
           scope: ['openid', 'oxd', 'uma_protection'],
           grant_types: ['client_credentials'],
         };
@@ -146,9 +168,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
         var option = {
           method: 'POST',
-          uri: sails.config.oxdWeb + '/get-client-token',
+          uri: body.oxd_url + '/get-client-token',
           body: {
-            op_host: sails.config.opHost,
+            op_host: body.op_host,
             client_id: opClient.client_id,
             client_secret: opClient.client_secret,
             scope: ['openid', 'oxd']
@@ -158,7 +180,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         };
 
         sails.log("--------------OXD API Call----------------");
-        sails.log(` $ curl -k -X POST ${sails.config.oxdWeb + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+        sails.log(` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
 
         return httpRequest(option);
       })
@@ -166,10 +188,10 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         var clientToken = response.body;
         var option = {
           method: 'POST',
-          uri: sails.config.oxdWeb + '/uma-rs-protect',
+          uri: body.oxd_url + '/uma-rs-protect',
           body: {
             oxd_id: opClient.oxd_id,
-            resources: req.body.uma_scope_expression
+            resources: body.uma_scope_expression
           },
           headers: {
             Authorization: 'Bearer ' + clientToken.access_token
@@ -179,7 +201,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         };
 
         sails.log("--------------OXD API Call----------------");
-        sails.log(` $ curl -k -X POST ${sails.config.oxdWeb + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+        sails.log(` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
 
         return httpRequest(option);
       })
@@ -196,7 +218,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             client_id: opClient.client_id,
             client_secret: opClient.client_secret,
             context: 'GLUU-UMA-PEP',
-            data: req.body.uma_scope_expression
+            data: body.uma_scope_expression
           })
       })
       .then(function (dbClient) {
@@ -219,17 +241,19 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // add client for consumer
   addConsumerClient: function (req, res) {
+    const body = req.body;
     var opClient;
     // Create new client
     const option = {
-      op_host: sails.config.opHost,
+      op_host: body.op_host,
+      oxd_url: body.oxd_url,
       authorization_redirect_uri: 'https://client.example.com/cb',
-      client_name: req.body.client_name || 'gg-oauth-consumer-client',
-      client_id: req.body.client_id || '',
-      client_secret: req.body.client_secret || '',
-      access_token_as_jwt: req.body.access_token_as_jwt || false,
-      rpt_as_jwt: req.body.rpt_as_jwt || false,
-      access_token_signing_alg: req.body.access_token_signing_alg || 'RS256',
+      client_name: body.client_name || 'gg-oauth-consumer-client',
+      client_id: body.client_id || '',
+      client_secret: body.client_secret || '',
+      access_token_as_jwt: body.access_token_as_jwt || false,
+      rpt_as_jwt: body.rpt_as_jwt || false,
+      access_token_signing_alg: body.access_token_signing_alg || 'RS256',
     };
 
     this.registerClient(option)
@@ -268,33 +292,34 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // Update UMA resources
   updateGluuUMAPEP: function (req, res) {
+    const body = req.body;
     // Existing client id and secret
-    if (!req.body.uma_scope_expression) {
+    if (!body.uma_scope_expression) {
       return res.status(400).send({message: "uma_scope_expression is required"});
     }
 
-    if (!req.body.oxd_id) {
+    if (!body.oxd_id) {
       sails.log("Provide oxd_id to update resources");
       return res.status(500).send({message: "Provide oxd_id to update resources"});
     }
 
-    if (!req.body.client_id) {
+    if (!body.client_id) {
       sails.log("Provide client_id to update resources");
       return res.status(500).send({message: "Provide client_id to update resources"});
     }
 
-    if (!req.body.client_secret) {
+    if (!body.client_secret) {
       sails.log("Provide oxd_id to update resources");
       return res.status(500).send({message: "Provide client_secret to update resources"});
     }
 
     var option = {
       method: 'POST',
-      uri: sails.config.oxdWeb + '/get-client-token',
+      uri: body.oxd_url + '/get-client-token',
       body: {
-        op_host: sails.config.opHost,
-        client_id: req.body.client_id,
-        client_secret: req.body.client_secret,
+        op_host: body.op_host,
+        client_id: body.client_id,
+        client_secret: body.client_secret,
         scope: ['openid', 'oxd']
       },
       resolveWithFullResponse: true,
@@ -302,17 +327,17 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     };
 
     sails.log("--------------OXD API Call----------------");
-    sails.log(` $ curl -k -X POST ${sails.config.oxdWeb + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+    sails.log(` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
 
     return httpRequest(option)
       .then(function (response) {
         var clientToken = response.body;
         var option = {
           method: 'POST',
-          uri: sails.config.oxdWeb + '/uma-rs-protect',
+          uri: body.oxd_url + '/uma-rs-protect',
           body: {
-            oxd_id: req.body.oxd_id,
-            resources: req.body.uma_scope_expression,
+            oxd_id: body.oxd_id,
+            resources: body.uma_scope_expression,
             overwrite: true,
           },
           headers: {
@@ -323,7 +348,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         };
 
         sails.log("--------------OXD API Call----------------");
-        sails.log(` $ curl -k -X POST ${sails.config.oxdWeb + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+        sails.log(` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
 
         return httpRequest(option);
       })
@@ -338,7 +363,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           .update({
             oxd_id: umaProtect.oxd_id
           }, {
-            data: req.body.uma_scope_expression
+            data: body.uma_scope_expression
           });
       })
       .then(function (dbClient) {
@@ -347,7 +372,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to update client in konga db"});
         }
         return res.status(200).send({
-          oxd_id: req.body.oxd_id
+          oxd_id: body.oxd_id
         });
       })
       .catch(function (error) {
@@ -468,17 +493,19 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // delete client from oxd for client-auth plugin
   deleteGluuClientAuth: function (req, res) {
-    if (!req.body.oxd_id) {
+    const body = req.body;
+
+    if (!body.oxd_id) {
       sails.log("Provide oxd_id to update resources");
       return res.status(500).send({message: "Provide oxd_id to update resources"});
     }
 
-    if (!req.body.client_id) {
+    if (!body.client_id) {
       sails.log("Provide client_id to update resources");
       return res.status(500).send({message: "Provide client_id to update resources"});
     }
 
-    if (!req.body.client_secret) {
+    if (!body.client_secret) {
       sails.log("Provide oxd_id to update resources");
       return res.status(500).send({message: "Provide client_secret to update resources"});
     }
@@ -488,8 +515,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       uri: sails.config.oxdWeb + '/get-client-token',
       body: {
         op_host: sails.config.opHost,
-        client_id: req.body.client_id,
-        client_secret: req.body.client_secret,
+        client_id: body.client_id,
+        client_secret: body.client_secret,
         scope: ['openid', 'oxd']
       },
       resolveWithFullResponse: true,
@@ -503,7 +530,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       .then(function (response) {
         var clientToken = response.body;
 
-        if (req.body.oxd_id == sails.config.oxdId) {
+        if (body.oxd_id == sails.config.oxdId) {
           sails.log("Not allow to delete GG Admin login client");
           return Promise.reject({message: "Not allow to delete GG Admin login client"});
         }
@@ -512,7 +539,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           method: 'POST',
           uri: sails.config.oxdWeb + '/remove-site',
           body: {
-            oxd_id: req.body.oxd_id
+            oxd_id: body.oxd_id
           },
           headers: {
             Authorization: 'Bearer ' + clientToken.access_token
