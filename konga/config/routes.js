@@ -66,11 +66,6 @@ module.exports.routes = {
   'POST /remote/consumers': 'RemoteStorageController.loadConsumers',
   'GET /remote/connection/test': 'RemoteStorageController.testConnection',
 
-  // Kong 0.10.x certificates routes
-  // These must be handled by KONGA
-  'POST /kong/certificates': 'KongCertificatesController.upload',
-  'PATCH /kong/certificates/:id': 'KongCertificatesController.update',
-
   // Snapshots
   'POST /api/snapshots/take': 'SnapshotController.takeSnapShot',
   'GET /api/snapshots/subscribe': 'SnapshotController.subscribe',

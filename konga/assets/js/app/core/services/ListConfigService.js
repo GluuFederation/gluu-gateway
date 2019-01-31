@@ -653,7 +653,6 @@
                       })
                   }, function decline() {
                   })
-
               }
             };
           },
