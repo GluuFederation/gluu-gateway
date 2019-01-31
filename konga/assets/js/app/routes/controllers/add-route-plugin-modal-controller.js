@@ -124,7 +124,9 @@
                 return item.name
               });
               new KongPluginsService().makePluginGroups().then(function (groups) {
-                $scope.pluginGroups = groups;
+                $scope.pluginGroups = groups.filter(function(group) {
+                  return group.name !== "Metrics"
+                });
                 $log.debug("Plugin Groups", $scope.pluginGroups);
 
                 var flag = false;
