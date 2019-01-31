@@ -629,8 +629,8 @@ if __name__ == "__main__":
     try:
         if kongSetup.isPrompt:
             msg = "------------------------------------------------------------------------------------- \n" \
-                  + "Gluu Stepped-Up Support License (\"GLUU-STEPPED-UP\") \n\n" \
-                  + "Copyright (c) 2018 Gluu, Inc. \n\n" \
+                  + "The Gluu Support License (GLUU-SUPPORT)\n\n" \
+                  + "Copyright (c) 2018 Gluu\n\n" \
                   + "Permission is hereby granted to any person obtaining a copy \n" \
                   + "of this software and associated documentation files (the \"Software\"), to deal \n" \
                   + "in the Software without restriction, including without limitation the rights \n" \
@@ -639,10 +639,8 @@ if __name__ == "__main__":
                   + "furnished to do so, subject to the following conditions: \n\n" \
                   + "The above copyright notice and this permission notice shall be included in all \n" \
                   + "copies or substantial portions of the Software. \n\n" \
-                  + "While the software is in use in production, the person using this software must \n" \
-                  + "be associated with an organization that has an active Gluu support subscription \n" \
-                  + "which is one tier above that for which the organization would normally qualify \n" \
-                  + "based on annual revenues, unless the support contract is already at the enterprise level. \n\n" \
+                  + "The end-user person or organization using this software has an active support \n" \
+                  + "subscription while the software is in use in production. \n\n" \
                   + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
                   + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
                   + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
