@@ -1,5 +1,6 @@
-#!/bin/sh
-set -e
-if [ -x "/etc/init.d/gluu-gateway" ] || [ -e "/etc/init/gluu-gateway.conf" ]; then
-	invoke-rc.d gluu-gateway stop  2> /dev/null || exit $?
+#!/bin/sh -e
+
+# Stopping gluu-gateway
+if [ -x /etc/init.d/gluu-gateway ]; then
+    /etc/init.d/gluu-gateway stop > /dev/null 2>&1
 fi
