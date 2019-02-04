@@ -2,22 +2,21 @@
 
 ## Requirements
 
-For this demo I will use the following VMs:
+For this demo, I will use the following VMs:
 
 |Name                    |IP Address      |Hosts            |OS                                |
 |------------------------|----------------|-----------------|----------------------------------|
-|Resource Server         |192.168.56.1    |rs.mygluu.org    |Any OS on which Python/flask runs |
-|Upstream Server         |192.168.56.101  |claim-gathering.mygluu.org, none-claim-gathering.mygluu.org | Any OS on which Python/flask runs|
+|Resource Server         |192.168.56.1    |rs.mygluu.org    |Any OS on which Python/Flask runs |
+|Upstream Server         |192.168.56.101  |claim-gathering.mygluu.org, non-claim-gathering.mygluu.org | Any OS on which Python/Flask runs|
 |OpenID Connect Provider |192.168.56.102  |op.mygluu.org    |Any Linux supported by Gluu Server|
 |Gluu Gateway            |192.168.56.104  |gg.mygluu.org    |Currently I use Ubuntu 16.04 LTS  |
-
 
 Since I am using virtual IPs/hosts, I need to add the following content to the `/etc/hosts` file on each machine:
 
 ```
 192.168.56.1   rs rs.mygluu.org
 192.168.56.101 us claim-gathering.mygluu.org
-192.168.56.101 us none-claim-gathering.mygluu.org
+192.168.56.101 us non-claim-gathering.mygluu.org
 192.168.56.102 op op.mygluu.org
 192.168.56.104 gg gg.mygluu.org
 ```
@@ -53,7 +52,7 @@ op_host = "https://op.mygluu.org"
 api_path = "posts"
 
 # Kong route register with below host
-host_without_claims = "none-claim-gathering.mygluu.org"
+host_without_claims = "non-claim-gathering.mygluu.org"
 host_with_claims = "claim-gathering.mygluu.org"
 ```
 
@@ -62,7 +61,6 @@ And run as:
 ```
 # python gg_demo_app.py
 ```
-
 
 ## Upstream Server
 
@@ -74,7 +72,6 @@ I am assuming that Python and pip are installed on this server. Install Flask an
 ``` 
 
 Download gg_demo_app.py:
-
 
 ```
 wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0.0/gluu_flask_demo/gg_upstream_app.py
@@ -100,7 +97,6 @@ $ curl -k https://claim-gathering.mygluu.org:5000/posts
 ## OpenID Connect Provider
 
 For the OpenID Connect Provider, I used the Gluu Server. Install the Gluu Server by following [these](https://gluu.org/docs/ce/installation-guide/) instructions.
-
 
 ## Gluu Gateway
 
@@ -130,12 +126,11 @@ Give it a unique **Client Name**. For this demo, I used **ggconsumerclient**.
 
 ![Create Client for Consumer](img/gg_consumer_client.png)
 
-Once you create the client, you will see credentials for the consumer client. Copy
-the credential info for later use.
+Once you create the client, you will see credentials for the consumer client. Copy the credential info for later use.
 
 ![Consumer Client Credentials](img/gg_consumer_client_info.png)
 
-To create a consumer, click on **+ CREATE CONSUMER** button. On the popup screen, name the consumer, **ggconsumer** for example, and use the `Client Id` you just created for the **Gluu Client Id** field.
+To create a consumer, click on **+ CREATE CONSUMER** button. On the popup screen, name the consumer, **ggconsumer** for example, and use the `Client Id` you just created for the **Gluu Client ID** field.
 
 ![Consumer Client Credentials](img/gg_consumer.png)
 
@@ -149,45 +144,45 @@ client_secret = "73039435-13f4-4999-904f-31a69e946195"
 ```
 
 Before going further, set the Claim Redirect URI for this client. You'll need it for the claim gathering service. Follow these steps:
-- Log in to  the Gluu Server
-- Navigate to **OpenID Connect** > **Clients**
+- Log in to the Gluu Server.
+- Navigate to **OpenID Connect** > **Clients**.
 - Click on your client. 
 - In the details screen, click the **Advanced settings** tab.
 - If there are any entries in the **Claim Redirect URIs** field, delete them. 
 - Click the **Add Claim Redirect URIs** button and enter `https://rs.mygluu.org:5500/cg` in the textbox. 
 - After adding the redirect URI, click the **Update** button.
 
-### Create Service, Route and Plugin for None Claim Gathering
+### Create Service, Route and Plugin for Non-Claim Gathering
 #### Create Service
 On GG UI, click **SERVICES** on the left panel, then the **+ ADD NEW SERVICE** button. Fill in the following boxes:
   
-**Name:** none-claim-gathering
+**Name:** non-claim-gathering
 
 **Protocol:** https
 
-**Host:** none-claim-gathering.mygluu.org
+**Host:** non-claim-gathering.mygluu.org
 
 **Port:** 5000
 
 **Path:** /posts
 
-![Service for None Claim Gathering](img/none_claim_service.png)
+![Service for Non-Claim Gathering](img/none_claim_service.png)
 
 #### Add Route
 
 Follow these steps:
-- Click `none-claim-gathering` on the services
+- Click `non-claim-gathering` on the services
 - Click **Routes**
 - Click the **+ ADD ROUTE** button.
 - Fill in the following boxes:
 
-  **Hosts:** none-claim-gathering.mygluu.org
+  **Hosts:** non-claim-gathering.mygluu.org
   **Paths:** /posts
 
 !!! Note  
     After editing each textbox, press "Enter"
     
-![Route for None Claim Gathering](img/none_claim_route.png)
+![Route for Non-Claim Gathering](img/none_claim_route.png)
 
 #### Add Plugin
 
@@ -196,19 +191,19 @@ Follow these steps:
 - Click **Plugins**
 - Click the **+ ADD PLUGIN** button.
 - A pop-up screen will be displayed. Click the **+** icon to the right side of **Gluu UMA PEP**.
-- In the upcoming screen, click the **+ ADD PATH** button.
-- Add `/posts` to the path to be protected and `none_claim_gathering` to the scope. Remember to press "Enter" after entering the scope. You don't need to edit the **Other configurations** settings.
+- In the next screen, click the **+ ADD PATH** button.
+- Add `/posts` to the path to be protected and `non_claim_gathering` to the scope. Remember to press "Enter" after entering the scope. You don't need to edit the **Other configurations** settings.
 - Click **ADD PLUGIN** button.
 
-![UMA PEP Plugin for None Claim gathering](img/gg_none_cliam_uma_plugin.png)
+![UMA PEP Plugin for Non-Claim gathering](img/gg_none_cliam_uma_plugin.png)
 
 #### Gluu Server Tweaks
-We need to give grant access to none policy scopes. Follow these steps:
+We need to give grant access to non-policy scopes. Follow these steps:
 - Log in to Gluu Server
 - Navigate to **Configuration** > **JSON Configuration** > the **oxAuth Configuration** tab. 
 - Scroll down to **umaGrantAccessIfNoPolicies** and set it to `true`
 
-![Grant Access to None Policy Scopes](img/umaGrantAccessIfNoPolicies.png)
+![Grant Access to Non-Policy Scopes](img/umaGrantAccessIfNoPolicies.png)
 
 - Finally, test it. On your desktop, navigate to the following URL:
 
@@ -216,43 +211,46 @@ https://rs.mygluu.org:5500/nc
 
 If everything goes well, you will see the following on your browser:
 
-![None Claim gathering](img/gg_none_claim_result.png)
+![Non-Claim gathering](img/gg_none_claim_result.png)
 
-### Create Service, Route and Plugin for None Claim gathering
+### Create Service, Route and Plugin for Non-Claim Gathering
 #### Create Service
-The same as None Claim gathering, except Name and Host:
+The same as Non-Claim Gathering, but change Name and Host to:
 
 **Name:** claim-gathering  
 **Host:** claim-gathering.mygluu.org
 
 #### Add Route
-The same as None Claim gathering, except Hosts:
+The same as Non-Claim Gathering, but change Hosts to:
 
 **Hosts:** claim-gathering.mygluu.org
 
 #### Add Plugin
-The same as None Claim gathering, except the scope. Add `claim_gathering` to scope as follows:
+The same as Non-Claim Gathering, but add `claim_gathering` to the scope as follows:
 
 ![UMA PEP Plugin for Claim gathering](img/gg_cliam_uma_plugin.png)
 
 #### Gluu Server Tweaks
 - Log in to the Gluu Server. 
-- Enable uma_rpt_policy custom script:
-    - click  **Configuration** > **Manage Custom scripts**,
-    - then click **UMA RPT Policies** tab. 
+- Enable the `uma_rpt_policy` custom script:
+    - Navigate to **Configuration** > **Manage Custom scripts**,
+    - Click the **UMA RPT Policies** tab. 
     - Expand **uma_rpt_policy** custom script pane,
-    - scroll down and click **Enabled** checkbox.
+    - Scroll down and click the **Enabled** checkbox.
     - Click **Update** button. 
  - Secondly, do the same for custom script `sampleClaimsGathering` on **UMA Claims Gathering** tab. 
- - Thirdly, we need to add `uma_rpt_policy` policy to `claim_gathering` Uma Scope. For this click **UMA** on the left panel, then
-click on **Scopes**. Click on `claim_gathering` scope. In the sope details screen, click **Add Authorization Policy**. In the popup
-check `uma_rpt_policy`.
+ - Thirdly, we need to add the `uma_rpt_policy` policy to the `claim_gathering` UMA Scope. To do so:
+   - Click **UMA** on the left panel
+   - Click on **Scopes**.
+   - Click on the `claim_gathering` scope. 
+   - In the scope details screen, click **Add Authorization Policy**.
+   - In the popup window, check `uma_rpt_policy`.
 
 ![UMA Authorization Policy for Scope](img/uma_authorization_policiy.png)
 
 Finally click **Update** button.
 
-Test it! On your desktop navigate to the following url:
+Test it! On your desktop navigate to the following URL:
 
 https://rs.mygluu.org:5500/cg
 
@@ -260,10 +258,6 @@ If things goes well, you will get a link to gather claims at the end of the wind
 
 ![Claim Gathering URL](img/claim_gathering_url.png)
 
-Click the link, you will be asked Country, enter `US`, then for City enter `NY`. You will be rederected to resourse server,
-and will see:
+Click the link and enter `US` for Country and `NY` for City. You will be redirected to the resource server, and will see:
 
 ![Claim Gathering](img/claim_gathering_result.png)
-
-
-
