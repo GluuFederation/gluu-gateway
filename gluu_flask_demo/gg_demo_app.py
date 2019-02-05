@@ -15,14 +15,14 @@ op_host = "https://op.mygluu.org"
 api_path = "posts"
 
 # Kong route register with below host
-host_without_claims = "none-claim-gatering.mygluu.org"
-host_with_claims = "claim-gatering.mygluu.org"
+host_without_claims = "non-claim-gathering.mygluu.org"
+host_with_claims = "claim-gathering.mygluu.org"
 
 
 # Consumer client
-client_oxd_id = "ff07da07-76a8-4f01-8d25-78cd5f11cd3c"
-client_id = "@!014E.16BD.1411.4CE7!0001!A63E.5899!0008!6FBF.27B7.507C.44AD"
-client_secret = "1dd53b7f-1ce2-4351-8581-918b96cb678d"
+client_oxd_id = "545f701e-e617-4d6d-96fb-3b04785f8deb"
+client_id = "@!014E.16BD.1411.4CE7!0001!A63E.5899!0008!7A2E.9642.7246.715A"
+client_secret = "e19a90a4-1829-4be6-865d-30213df07f5d"
 
 # You need to add this URL in your consumer client in OP
 claims_redirect_url = "https://rs.mygluu.org:5500/cg"
