@@ -16,8 +16,9 @@ if [ "$1" = purge ]; then
     if [ -e /etc/init.d/konga ]; then
         rm -rf /etc/init.d/konga > /dev/null 2>&1
     fi  
-    su postgres /bin/bash -c "psql -U postgres -c \"DROP DATABASE kong;\"" > /dev/null 2>&1
-    su postgres /bin/bash -c "psql -U postgres -c \"DROP DATABASE konga;\"" > /dev/null 2>&1
+    service postgresql start
+    su postgres -c "psql -c \"DROP DATABASE kong;\"" > /dev/null 2>&1
+    su postgres -c "psql -c \"DROP DATABASE konga;\"" > /dev/null 2>&1
 fi
 
 # In case this system is running systemd, we make systemd reload the unit files
