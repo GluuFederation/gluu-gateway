@@ -14,7 +14,7 @@ var _ = require('lodash');
  * @returns {*}
  */
 module.exports = function authenticated(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.Authenticated() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.Authenticated() called]');
 
   /**
    * Helper function to process possible error and actual token after it is decoded.

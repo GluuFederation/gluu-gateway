@@ -91,7 +91,7 @@ module.exports = function hook(sails) {
         //     } else if (users.length !== 0 && JSON.stringify(users[0]) !== '{}') {
         //       next();
         //     } else {
-        //       sails.log.verbose(__filename + ':' + __line + ' [Hook.load-db] Populating database with fixture data...');
+        //       sails.log.verbose(new Date(), __filename + ':' + __line + ' [Hook.load-db] Populating database with fixture data...');
         //
         //       var _ = require('lodash');
         //       var Barrels = require('barrels');

@@ -65,7 +65,7 @@ passport.protocols = require('./protocols');
  * @param {Function}  next
  */
 passport.connect = function connect(request, query, profile, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.connect() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.connect() called]');
 
   var user = {};
 
@@ -160,7 +160,7 @@ passport.connect = function connect(request, query, profile, next) {
  * @param {Response}  response
  */
 passport.endpoint = function endpoint(request, response) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.endpoint() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.endpoint() called]');
 
   var strategies = sails.config.passport;
   var provider = request.param('provider');
@@ -196,7 +196,7 @@ passport.endpoint = function endpoint(request, response) {
  * @param {Function}  next
  */
 passport.callback = function callback(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.callback() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.callback() called]');
 
   var provider = request.param('provider', 'local');
   var action = request.param('action');
@@ -242,7 +242,7 @@ passport.callback = function callback(request, response, next) {
  * @param {Request} request
  */
 passport.loadStrategies = function loadStrategies(request) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.loadStrategies() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.loadStrategies() called]');
 
   var self = this;
   var strategies = sails.config.passport;
@@ -301,7 +301,7 @@ passport.loadStrategies = function loadStrategies(request) {
 };
 
 passport.serializeUser(function serializeUser(user, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.serializeUser() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.serializeUser() called]');
 
   if (!user) {
     next({message: 'Invalid user.'}, null);
@@ -311,7 +311,7 @@ passport.serializeUser(function serializeUser(user, next) {
 });
 
 passport.deserializeUser(function deserializeUser(id, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Passport.deserializeUser() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Passport.deserializeUser() called]');
 
   sails.models['user'].findOne(id, next);
 });

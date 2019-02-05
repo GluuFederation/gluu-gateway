@@ -14,24 +14,24 @@ module.exports = {
 
     if (!tasks[schedule.id]) {
 
-      sails.log.debug("SnapshotScheduler:add", schedule);
+      sails.log.debug(new Date(), "SnapshotScheduler:add", schedule);
 
       tasks[schedule.id] = cron.schedule(schedule.cron, function () {
-        sails.log.debug("SnapshotScheduler:Running scheduled task", schedule);
+        sails.log.debug(new Date(), "SnapshotScheduler:Running scheduled task", schedule);
 
         sails.models.kongnode.findOne(schedule.connection.id || schedule.connection)
           .exec(function (err, node) {
             if (err) {
-              sails.log.error("SnapshotScheduler:Running scheduled task", "Failed to get node", err);
+              sails.log.error(new Date(), "SnapshotScheduler:Running scheduled task", "Failed to get node", err);
               return false;
             }
 
             if (!node) {
-              sails.log.warn("SnapshotScheduler:Running scheduled task", "Node not found", schedule.connection);
+              sails.log.warn(new Date(), "SnapshotScheduler:Running scheduled task", "Node not found", schedule.connection);
               return false;
             }
 
-            sails.log.error("SnapshotScheduler:Running scheduled task", "Fetch node", node);
+            sails.log.error(new Date(), "SnapshotScheduler:Running scheduled task", "Fetch node", node);
 
             SnapshotsService.takeSnapShot(null, node, function (err, ok) {
 
@@ -43,14 +43,14 @@ module.exports = {
 
       tasks[schedule.id].start();
     } else {
-      sails.log.debug("SnapshotScheduler:add", "A schedule with the same id already exists");
+      sails.log.debug(new Date(), "SnapshotScheduler:add", "A schedule with the same id already exists");
     }
   },
 
 
   remove: function (schedule) {
     if (tasks[schedule.id]) {
-      sails.log.debug("SnapshotScheduler:remove", "Removing schedule", schedule);
+      sails.log.debug(new Date(), "SnapshotScheduler:remove", "Removing schedule", schedule);
       tasks[schedule.id].destroy();
       delete tasks[schedule.id];
     }
@@ -104,7 +104,7 @@ module.exports = {
               if (err) {
                 return cb();
               }
-              sails.log(data)
+              sails.log(new Date(), data)
               if (!consumer.acls) {
                 consumer.acls = [];
               }
@@ -152,7 +152,7 @@ module.exports = {
               fns.push(function (cb) {
                 KongService.listAllCb(node, '/upstreams/' + upstream.id + '/targets', function (err, data) {
                   if (err) return cb()
-                  sails.log(data.data)
+                  sails.log(new Date(), data.data)
                   if (!result.upstream_targets) result.upstream_targets = []
                   data.data.forEach(function (item) {
                     result.upstream_targets.push(item);

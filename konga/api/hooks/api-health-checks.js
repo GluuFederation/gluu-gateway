@@ -20,7 +20,7 @@ module.exports = function hook(sails) {
      */
     process: function process(next) {
 
-        sails.log("Hook:api_health_checks:process() called")
+        sails.log(new Date(), "Hook:api_health_checks:process() called")
 
         // Start health checks for all eligible nodes
         sails.models.apihealthcheck.find({
@@ -35,14 +35,14 @@ module.exports = function hook(sails) {
             })
 
         HealthCheckEvents.addListener('api.health_checks.start', function(hc){
-            sails.log("Hook:api_health_checks:on:api.health_checks.start",hc)
+            sails.log(new Date(), "Hook:api_health_checks:on:api.health_checks.start",hc)
             HealthCheckEvents.start(hc)
 
         });
 
 
         HealthCheckEvents.addListener('api.health_checks.stop', function(hc){
-            sails.log("Hook:api_health_checks:on:api.health_checks.stop",hc)
+            sails.log(new Date(), "Hook:api_health_checks:on:api.health_checks.stop",hc)
             HealthCheckEvents.stop(hc)
         });
 

@@ -19,11 +19,11 @@ module.exports = function hook(sails) {
      */
     process: function process(next) {
 
-        sails.log("Hook:user_events_hook:process() called")
+        sails.log(new Date(), "Hook:user_events_hook:process() called")
 
 
         userEvents.addListener('user.signUp', function(data){
-            sails.log("Hook:user_events_hook:on:user.signUp",data)
+            sails.log(new Date(), "Hook:user_events_hook:on:user.signUp",data)
 
             var user = data.user;
             var sendActivationEmail = data.sendActivationEmail;

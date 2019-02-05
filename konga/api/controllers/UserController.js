@@ -15,7 +15,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     subscribe: function(req, res) {
 
         if (!req.isSocket) {
-            sails.log.error("UserController:subscribe failed")
+            sails.log.error(new Date(), "UserController:subscribe failed")
             return res.badRequest('Only a client socket can subscribe.');
         }
 

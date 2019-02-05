@@ -38,7 +38,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
     }
   },
   afterCreate: function (values, cb) {
-    sails.log("Snapshot created!!!!!!!!!!!!!!!!!!!!!!!!!");
+    sails.log(new Date(), "Snapshot created!!!!!!!!!!!!!!!!!!!!!!!!!");
     sails.sockets.blast('events.snapshots', {
       verb: 'created',
       data: values

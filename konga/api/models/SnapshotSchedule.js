@@ -37,12 +37,12 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
   },
 
   beforeUpdate: function (values, cb) {
-    sails.log("SnapshotSchedule:beforeUpdate", values);
+    sails.log(new Date(), "SnapshotSchedule:beforeUpdate", values);
     cb();
   },
 
   afterUpdate: function (values, cb) {
-    sails.log("SnapshotSchedule:afterUpdate", values);
+    sails.log(new Date(), "SnapshotSchedule:afterUpdate", values);
     if (!values.active) {
       // Stop cron job
       Scheduler.remove(values);
@@ -55,7 +55,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
   },
 
   afterCreate: function (values, cb) {
-    sails.log("SnapshotSchedule:afterCreate", values);
+    sails.log(new Date(), "SnapshotSchedule:afterCreate", values);
 
     if (values.active) {
       // Start cron job
@@ -66,7 +66,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
   },
 
   afterDestroy: function (items, cb) {
-    sails.log("SnapshotSchedule:afterDestroy", items);
+    sails.log(new Date(), "SnapshotSchedule:afterDestroy", items);
 
     items.forEach(function (item) {
       Scheduler.remove(item);

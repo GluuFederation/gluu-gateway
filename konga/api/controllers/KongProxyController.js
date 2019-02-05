@@ -48,11 +48,11 @@ module.exports = {
     }
 
     request.send(req.body);
-    sails.log("--------------Kong API Call----------------");
+    sails.log(new Date(), "--------------Kong API Call----------------");
     if (req.body && Object.keys(req.body).length > 0) {
-      sails.log(` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url} -d '${JSON.stringify(req.body)}'`);
+      sails.log(new Date(), ` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url} -d '${JSON.stringify(req.body)}'`);
     } else {
-      sails.log(` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url}`);
+      sails.log(new Date(), ` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url}`);
     }
 
     request.end(function (response) {

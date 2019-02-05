@@ -17,7 +17,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   subscribe: function (req, res) {
 
     if (!req.isSocket) {
-      sails.log.error("SnapshotsController:subscribe failed");
+      sails.log.error(new Date(), "SnapshotsController:subscribe failed");
       return res.badRequest('Only a client socket can subscribe.');
     }
 
@@ -82,7 +82,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       });
 
 
-      sails.log("imports", imports);
+      sails.log(new Date(), "imports", imports);
 
       if (requestedImports.indexOf("services") > -1) {
         self.importServices(responseData, fns, snapshot.data.services, req);
@@ -126,7 +126,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
               delete item.credentials;
               delete item.plugins;
 
-              sails.log("item", item);
+              sails.log(new Date(), "item", item);
 
             }
 
@@ -146,7 +146,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
               if (err) {
 
-                sails.log.error("Restore snapshot", "Failed to create", key, item.name, err.raw_body);
+                sails.log.error(new Date(), "Restore snapshot", "Failed to create", key, item.name, err.raw_body);
 
                 responseData[key].failed.count++;
                 if (responseData[key].failed.items.indexOf(item.name) < 0) {
@@ -165,7 +165,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
                     KongService.createFromEndpointCb("/" + key + "/" + created.id + "/acls", acl, req, function (err, created) {
 
                       if (err) {
-                        sails.log.error("Restore snapshot", "Failed to create", key, item.name, err.raw_body);
+                        sails.log.error(new Date(), "Restore snapshot", "Failed to create", key, item.name, err.raw_body);
                         responseData[key].failed.count++;
                         if (responseData[key].failed.items.indexOf(item.name) < 0) {
                           responseData[key].failed.items.push(item.name)
@@ -186,7 +186,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
                     KongService.createFromEndpointCb("/plugins", plugin, req, function (err, created) {
 
                       if (err) {
-                        sails.log.error("Restore snapshot", "Failed to create", key, item.username, err.raw_body);
+                        sails.log.error(new Date(), "Restore snapshot", "Failed to create", key, item.username, err.raw_body);
                         responseData[key].failed.count++
                         if (responseData[key].failed.items.indexOf(item.name) < 0) {
                           responseData[key].failed.items.push(item.name)
@@ -209,7 +209,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
                       KongService.createFromEndpointCb("/" + key + "/" + created.id + "/" + credentialKey, credentialData, req, function (err, created) {
 
                         if (err) {
-                          sails.log.error("Restore snapshot", "Failed to create", key, item.name, err.raw_body);
+                          sails.log.error(new Date(), "Restore snapshot", "Failed to create", key, item.name, err.raw_body);
                           responseData[key].failed.count++
                           if (responseData[key].failed.items.indexOf(item.name) < 0) {
                             responseData[key].failed.items.push(item.name)
@@ -261,7 +261,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       fns.push(function (cb) {
         KongService.listAllCb(req, '/' + name, function (err, data) {
           if (err) {
-            sails.log('Cloud not fetch ' + name);
+            sails.log(new Date(), 'Cloud not fetch ' + name);
             return cb(err);
           }
           dataMap[name] = data.data;
@@ -286,16 +286,16 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             return;
           }
 
-          //sails.log('Deleting ' + name + ' :' + item.id);
+          //sails.log(new Date(), 'Deleting ' + name + ' :' + item.id);
           delFns.push(function (cb) {
-            sails.log('Deleting ' + name + ' :' + item.id);
+            sails.log(new Date(), 'Deleting ' + name + ' :' + item.id);
             KongService.deleteFromEndpointCb('/' + name + '/' + item.id, req, function (err, res) {
               if (err) {
-                sails.log('Cloud not delete ' + name + ', id - ' + item.id + ' err: ' + JSON.stringify(err));
+                sails.log(new Date(), 'Cloud not delete ' + name + ', id - ' + item.id + ' err: ' + JSON.stringify(err));
                 return cb(err);
               }
 
-              sails.log('Deleted ' + name);
+              sails.log(new Date(), 'Deleted ' + name);
 
               return cb();
             });
@@ -314,7 +314,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       fns.push(function (cb) {
         var obj = _.omit(service, 'plugins', 'routes', 'id');
         KongService.createFromEndpointCb("/services", obj, req, function (err, res) {
-          sails.log('Creating service complete');
+          sails.log(new Date(), 'Creating service complete');
 
           if (!responseData.services) responseData.services = {
             imported: 0,
@@ -325,7 +325,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           };
 
           if (err) {
-            sails.log('Cloud not create service ' + service.name + ' err: ' + JSON.stringify(err));
+            sails.log(new Date(), 'Cloud not create service ' + service.name + ' err: ' + JSON.stringify(err));
             responseData.services.failed.count++;
             return cb();
           }
@@ -360,11 +360,11 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
               }
 
               if (err) {
-                sails.log('Cloud not create route ' + route.paths);
+                sails.log(new Date(), 'Cloud not create route ' + route.paths);
                 responseData.routes.failed.count++;
                 return cb();
               }
-              sails.log('Route creation complete: ' + route.paths);
+              sails.log(new Date(), 'Route creation complete: ' + route.paths);
               routePluginsMap[res.id] = route.plugins;
 
 
@@ -400,12 +400,12 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
                 }
               };
               if (err) {
-                sails.log('Cloud not create plugin  ' + plugin.name + ' for service ' + serviceId);
+                sails.log(new Date(), 'Cloud not create plugin  ' + plugin.name + ' for service ' + serviceId);
                 responseData.servicePlugins.failed.count++;
                 return cb();
               }
 
-              sails.log('Route plugin created');
+              sails.log(new Date(), 'Route plugin created');
 
               responseData.servicePlugins.imported++;
               return cb();
@@ -429,7 +429,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           pluginFns.push(function (cb) {
             var obj = _.omit(plugin, 'id', 'created_at');
             obj.route_id = routeId;
-            sails.log('Creating Route plugin... ' + JSON.stringify(obj));
+            sails.log(new Date(), 'Creating Route plugin... ' + JSON.stringify(obj));
             KongService.createFromEndpointCb("/plugins/", obj, req, function (err, res) {
               if (!responseData.routePlugins) responseData.routePlugins = {
                 imported: 0,
@@ -439,12 +439,12 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
                 }
               }
               if (err) {
-                sails.log('Cloud not create plugin  ' + plugin.name + ' for route ' + routeId + ' err: ' + JSON.stringify(err));
+                sails.log(new Date(), 'Cloud not create plugin  ' + plugin.name + ' for route ' + routeId + ' err: ' + JSON.stringify(err));
                 responseData.routePlugins.failed.count++;
                 return cb();
               }
 
-              sails.log('Route plugin created');
+              sails.log(new Date(), 'Route plugin created');
 
               responseData.routePlugins.imported++;
               return cb();

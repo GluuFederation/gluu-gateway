@@ -52,7 +52,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
 
   afterDestroy: function (values, cb) {
 
-    sails.log("KongNode:afterDestroy:called => ",values);
+    sails.log(new Date(), "KongNode:afterDestroy:called => ",values);
 
     // Stop health checks
     values.forEach(function(node){
@@ -65,17 +65,17 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
 
   afterUpdate: function (values, cb) {
 
-    sails.log("KongNode:afterUpdate:called()")
-    sails.log("KongNode:afterUpdate:health_checks",values.health_checks)
+    sails.log(new Date(), "KongNode:afterUpdate:called()")
+    sails.log(new Date(), "KongNode:afterUpdate:health_checks",values.health_checks)
 
     // Manage toggle health checks
     if(values.health_checks) {
       // Send event to begin health checks for the updated node
-      sails.log("KongNode:afterUpdate:emit health_checks.start")
+      sails.log(new Date(), "KongNode:afterUpdate:emit health_checks.start")
       HealthCheckEvents.emit('health_checks.start',values);
     }else{
       // Send event to stop health checks for the updated node
-      sails.log("KongNode:afterUpdate:emit health_checks.stop")
+      sails.log(new Date(), "KongNode:afterUpdate:emit health_checks.stop")
       HealthCheckEvents.emit('health_checks.stop',values);
     }
 

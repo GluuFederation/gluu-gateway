@@ -37,9 +37,9 @@ module.exports = function badRequest(data, options) {
 
   // Log error to console
   if (data !== undefined) {
-    sails.log.verbose('Sending 400 ("Bad Request") response: \n', data);
+    sails.log.verbose(new Date(), 'Sending 400 ("Bad Request") response: \n', data);
   } else {
-    sails.log.verbose('Sending 400 ("Bad Request") response');
+    sails.log.verbose(new Date(), 'Sending 400 ("Bad Request") response');
   }
 
   // Backend will always response JSON

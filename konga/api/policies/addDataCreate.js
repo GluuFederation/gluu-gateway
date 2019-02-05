@@ -8,7 +8,7 @@
  * @param   {Function}  next        Callback function
  */
 module.exports = function addDataCreate(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.addDataCreate() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.addDataCreate() called]');
 
   if (request.token) {
     request.body.createdUser = request.token;

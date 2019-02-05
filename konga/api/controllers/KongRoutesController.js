@@ -20,13 +20,13 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     let hmacAuthPlugin;
     let oauth2Plugin;
 
-    sails.log("KongRoutesController:consumers called");
+    sails.log(new Date(), "KongRoutesController:consumers called");
 
     let plugins = await KongService.fetch(`/routes/${routeId}/plugins?enabled=true`, req);
 
     if (plugins.total == 0) return res.json([]);
 
-    sails.log("Route plugins =>", plugins);
+    sails.log(new Date(), "Route plugins =>", plugins);
 
     routeAclPlugin = _.filter(plugins.data, item => item.name === 'acl')[0];
     jwtPlugin = _.filter(plugins.data, item => item.name === 'jwt')[0];
@@ -35,39 +35,39 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     hmacAuthPlugin = _.filter(plugins.data, item => item.name === 'hmac-auth')[0];
     oauth2Plugin = _.filter(plugins.data, item => item.name === 'oauth2')[0];
 
-    sails.log("routeAclPlugin", routeAclPlugin);
-    sails.log("jwtPlugin", jwtPlugin);
-    sails.log("basicAuthPlugin", basicAuthPlugin);
-    sails.log("keyAuthPlugin", keyAuthPlugin);
-    sails.log("hmacAuthPlugin", hmacAuthPlugin);
-    sails.log("oauth2Plugin", oauth2Plugin);
+    sails.log(new Date(), "routeAclPlugin", routeAclPlugin);
+    sails.log(new Date(), "jwtPlugin", jwtPlugin);
+    sails.log(new Date(), "basicAuthPlugin", basicAuthPlugin);
+    sails.log(new Date(), "keyAuthPlugin", keyAuthPlugin);
+    sails.log(new Date(), "hmacAuthPlugin", hmacAuthPlugin);
+    sails.log(new Date(), "oauth2Plugin", oauth2Plugin);
 
     let aclConsumerIds;
     let authenticationPlugins = _.filter(plugins.data, item => ['jwt', 'basic-auth', 'key-auth', 'hmac-auth', 'oauth2'].indexOf(item.name) > -1);
     authenticationPlugins = _.map(authenticationPlugins, item => item.name);
-    sails.log("authenticationPlugins", authenticationPlugins);
+    sails.log(new Date(), "authenticationPlugins", authenticationPlugins);
 
     let whiteListedGroups = routeAclPlugin ? routeAclPlugin.config.whitelist || [] : [];
     let blackListedGroups = routeAclPlugin ? routeAclPlugin.config.blacklist || [] : [];
 
     // ACL
-    sails.log("whiteListedGroups", whiteListedGroups);
-    sails.log("blackListedGroups", blackListedGroups);
+    sails.log(new Date(), "whiteListedGroups", whiteListedGroups);
+    sails.log(new Date(), "blackListedGroups", blackListedGroups);
 
     // We need to retrieve all acls and filter the accessible ones based on the whitelisted and blacklisted groups
     let acls = await KongService.fetch(`/acls`, req);
 
-    sails.log("acls", acls);
+    sails.log(new Date(), "acls", acls);
 
     let filteredAcls = _.filter(acls.data, item => {
       return whiteListedGroups.indexOf(item.group) > -1 && blackListedGroups.indexOf(item.group) === -1;
     });
 
-    sails.log("filteredAcls", filteredAcls);
+    sails.log(new Date(), "filteredAcls", filteredAcls);
 
     // Gather the consumer ids of the filtered groups
     aclConsumerIds = _.map(filteredAcls, item => item.consumer_id);
-    sails.log("aclConsumerIds", aclConsumerIds);
+    sails.log(new Date(), "aclConsumerIds", aclConsumerIds);
 
     // If the route is access controlled and no aclConsumerIds are found,
     // it means that noone can access this route
@@ -89,11 +89,11 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     if (oauth2Plugin) oauth2 = await KongService.fetch(`/oauth2`, req);
     if (basicAuthPlugin) basicAuths = await KongService.fetch(`/basic-auths`, req);
 
-    sails.log("jwts", jwts);
-    sails.log("keyAuths", keyAuths);
-    sails.log("hmacAuths", hmacAuths);
-    sails.log("oauth2", oauth2);
-    sails.log("basicAuths", basicAuths);
+    sails.log(new Date(), "jwts", jwts);
+    sails.log(new Date(), "keyAuths", keyAuths);
+    sails.log(new Date(), "hmacAuths", hmacAuths);
+    sails.log(new Date(), "oauth2", oauth2);
+    sails.log(new Date(), "basicAuths", basicAuths);
 
 
     let jwtConsumerIds = jwts ? _.map(jwts.data, item => item.consumer_id) : [];
@@ -102,11 +102,11 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     let oauth2ConsumerIds = oauth2 ? _.map(oauth2.data, item => item.consumer_id) : [];
     let basicAuthConsumerIds = basicAuths ? _.map(basicAuths.data, item => item.consumer_id) : [];
 
-    sails.log("jwtConsumerIds", jwtConsumerIds);
-    sails.log("keyAuthConsumerIds", keyAuthConsumerIds);
-    sails.log("hmacAuthConsumerIds", hmacAuthConsumerIds);
-    sails.log("oauth2ConsumerIds", oauth2ConsumerIds);
-    sails.log("basicAuthConsumerIds", basicAuthConsumerIds);
+    sails.log(new Date(), "jwtConsumerIds", jwtConsumerIds);
+    sails.log(new Date(), "keyAuthConsumerIds", keyAuthConsumerIds);
+    sails.log(new Date(), "hmacAuthConsumerIds", hmacAuthConsumerIds);
+    sails.log(new Date(), "oauth2ConsumerIds", oauth2ConsumerIds);
+    sails.log(new Date(), "basicAuthConsumerIds", basicAuthConsumerIds);
 
     let consumerIds;
     let authenticationPluginsConsumerIds = _.uniq([
@@ -119,14 +119,14 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
 
     if (aclConsumerIds && aclConsumerIds.length) {
-      sails.log("authenticationPluginsConsumerIds", authenticationPluginsConsumerIds);
-      sails.log("aclConsumerIds", _.uniq(aclConsumerIds));
+      sails.log(new Date(), "authenticationPluginsConsumerIds", authenticationPluginsConsumerIds);
+      sails.log(new Date(), "aclConsumerIds", _.uniq(aclConsumerIds));
       consumerIds = authenticationPluginsConsumerIds.length ? _.intersection(_.uniq(aclConsumerIds), authenticationPluginsConsumerIds) : _.uniq(aclConsumerIds);
     } else {
       consumerIds = authenticationPluginsConsumerIds;
     }
 
-    sails.log("consumerIds => ", consumerIds);
+    sails.log(new Date(), "consumerIds => ", consumerIds);
 
     // Fetch all consumers
     KongService.listAllCb(req, `/consumers`, (err, consumers) => {

@@ -10,7 +10,7 @@
  * @returns {*}
  */
 module.exports = function isAdmin(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.isAdmin() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.isAdmin() called]');
 
   // Fetch current user by the token
   sails.models['user']

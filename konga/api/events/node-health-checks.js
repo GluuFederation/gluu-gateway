@@ -38,7 +38,7 @@ module.exports = {
 
         if(tasks[node.id] &&  tasks[node.id].isStarted) return false;
 
-        sails.log('Start scheduled health checks for node ' + node.id);
+        sails.log(new Date(), 'Start scheduled health checks for node ' + node.id);
         var self = this;
 
         sails.models.kongnode.findOne({
@@ -63,7 +63,7 @@ module.exports = {
 
     stop : function(node) {
         if(tasks[node.id]) {
-            sails.log('Stopping health check for node ' + node.id);
+            sails.log(new Date(), 'Stopping health check for node ' + node.id);
             tasks[node.id].cron.stop()
             tasks[node.id].isStarted = false;
             //delete tasks[node.id]
@@ -74,7 +74,7 @@ module.exports = {
 
         var self = this;
         return cron.schedule('* * * * *', function() {
-            sails.log('Performing health check for node ' + node.id);
+            sails.log(new Date(), 'Performing health check for node ' + node.id);
             KongService.nodeStatus(node,function(err,data){
 
                 tasks[node.id].lastChecked = new Date();
@@ -85,17 +85,17 @@ module.exports = {
                     tasks[node.id].lastFailed = new Date();
                     tasks[node.id].isHealthy = false;
                     tasks[node.id].timesFailed++;
-                    sails.log('health_checks:cron:checkStatus => Health check for node ' + node.id + ' failed ' + tasks[node.id].timesFailed + ' times');
+                    sails.log(new Date(), 'health_checks:cron:checkStatus => Health check for node ' + node.id + ' failed ' + tasks[node.id].timesFailed + ' times');
 
                     var timeDiff = Utils.getMinutesDiff(new Date(),tasks[node.id].lastNotified)
-                    sails.log('health_checks:cron:checkStatus:last notified => ' + tasks[node.id].lastNotified);
-                    sails.log('health_checks:cron:checkStatus => Checking if eligible for notification',timeDiff);
+                    sails.log(new Date(), 'health_checks:cron:checkStatus:last notified => ' + tasks[node.id].lastNotified);
+                    sails.log(new Date(), 'health_checks:cron:checkStatus => Checking if eligible for notification',timeDiff);
                     if(!tasks[node.id].lastNotified || timeDiff > notificationsInterval) {
                         self.notify(node)
                     }
 
                 }else{
-                    sails.log('Health check for node ' + node.id + ' succeeded',data);
+                    sails.log(new Date(), 'Health check for node ' + node.id + ' succeeded',data);
                     if(!tasks[node.id].firstSucceeded) tasks[node.id].firstSucceeded = new Date();
                     tasks[node.id].timesFailed = 0;
                     tasks[node.id].isHealthy = true;
@@ -118,7 +118,7 @@ module.exports = {
         }).exec(function(err,updated){
             // Fire and forger for now
             if(err) {
-                sails.log("health_checks:updateNodeHealthCheckDetails:failed",err)
+                sails.log(new Date(), "health_checks:updateNodeHealthCheckDetails:failed",err)
             }else{
                 sails.sockets.blast('node.health_checks', _.merge({node_id:nodeId},data));
             }
@@ -128,7 +128,7 @@ module.exports = {
     createTransporter : function(settings,cb) {
 
         // Get active transport
-        sails.log("health_checks:createTransporter => trying to get transport",{
+        sails.log(new Date(), "health_checks:createTransporter => trying to get transport",{
             "notifications_enabled" : settings.data.email_notifications,
             "transport_name" : settings.data.default_transport
         })
@@ -137,7 +137,7 @@ module.exports = {
         }).exec(function(err,transport){
             if(err) return cb(err)
 
-            sails.log("health_checks:createTransporter:transport =>",transport)
+            sails.log(new Date(), "health_checks:createTransporter:transport =>",transport)
             if(!transport) return cb()
 
             var result = {
@@ -166,7 +166,7 @@ module.exports = {
         sails.models.settings.find().limit(1)
             .exec(function(err,settings) {
                 if (err) return cb(err)
-                sails.log("helath_checks:settings =>", settings)
+                sails.log(new Date(), "helath_checks:settings =>", settings)
                 if (!settings.length
                     || !settings[0].data
                     || !settings[0].data.notify_when.node_down.active) return false;
@@ -176,14 +176,14 @@ module.exports = {
 
                 self.createTransporter(settings[0],function(err,result){
                     if(err || !result) {
-                        sails.log("health_check:failed to create transporter. No notification will be sent.",err)
+                        sails.log(new Date(), "health_check:failed to create transporter. No notification will be sent.",err)
                     }else{
                         var transporter = result.transporter
                         var html = self.makeHTMLNotification(node)
                         var settings = result.settings
 
                         Utils.getAdminEmailList(function(err,receivers){
-                            sails.log("health_checks:notify:receivers => ",  receivers)
+                            sails.log(new Date(), "health_checks:notify:receivers => ",  receivers)
                             if(!err && receivers.length) {
 
                                 var mailOptions = {
@@ -196,19 +196,19 @@ module.exports = {
                                 if(settings.default_transport == 'sendmail') {
                                     sendmail(mailOptions, function(err, reply) {
                                         if(err){
-                                            sails.log.error("Health_checks:notify:error",err)
+                                            sails.log.error(new Date(), "Health_checks:notify:error",err)
                                         }else{
-                                            sails.log.info("Health_checks:notify:success",reply)
+                                            sails.log.info(new Date(), "Health_checks:notify:success",reply)
 
                                         }
                                     });
                                 }else{
                                     transporter.sendMail(mailOptions, function(error, info){
                                         if(error){
-                                            sails.log.error("Health_checks:notify:error",error)
+                                            sails.log.error(new Date(), "Health_checks:notify:error",error)
 
                                         }else{
-                                            sails.log.info("Health_checks:notify:success",info)
+                                            sails.log.info(new Date(), "Health_checks:notify:success",info)
 
                                         }
                                     });

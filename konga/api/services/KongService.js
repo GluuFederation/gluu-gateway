@@ -66,7 +66,7 @@ var KongService = {
   },
 
   deleteFromEndpointCb: function (endpoint, req, cb) {
-    sails.log('Deleting ' + Utils.withoutTrailingSlash(req.connection.kong_admin_url) + endpoint);
+    sails.log(new Date(), 'Deleting ' + Utils.withoutTrailingSlash(req.connection.kong_admin_url) + endpoint);
     unirest.delete(Utils.withoutTrailingSlash(req.connection.kong_admin_url) + endpoint)
       .headers(KongService.headers(req, true))
       .end(function (response) {
