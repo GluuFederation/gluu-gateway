@@ -4,3 +4,4 @@
 /usr/sbin/update-rc.d konga remove > /dev/null 2>&1
 /usr/sbin/update-rc.d oxd-server-4.0.beta remove > /dev/null 2>&1
 /usr/sbin/update-rc.d gluu-gateway defaults > /dev/null 2>&1
+chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
