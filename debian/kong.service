@@ -1,0 +1,16 @@
+[Unit]
+Description=Kong server daemon
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/kong start
+ExecStop=/usr/local/bin/kong stop
+ExecReload=/bin/kill -HUP $MAINPID
+KillMode=process
+Restart=on-failure
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target
