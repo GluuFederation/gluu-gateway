@@ -20,8 +20,9 @@ deploy an OAuth protected API gateway
 %install
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
-cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
-cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
+mkdir -p %{buildroot}/lib/systemd/system/
+cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/
+cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/
 cp -a opt/gluu-gateway %{buildroot}/opt/
 
 %pre
