@@ -5,7 +5,7 @@ Requires=postgresql.service kong.service oxd-server-4.0.beta.service
 
 [Service]
 Type=simple
-ExecStart=/bin/nohup node --harmony /opt/gluu-gateway/konga/app.js --prod
+ExecStart=/bin/bash -c 'cd /opt/gluu-gateway/konga && /bin/node --harmony app.js --prod >> /var/log/konga.log 2>&1'
 ExecReload=/bin/kill -HUP $MAINPID
 KillMode=process
 Restart=on-failure
