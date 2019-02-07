@@ -36,6 +36,7 @@ systemctl enable gluu-gateway > /dev/null 2>&1
 systemctl stop gluu-gateway > /dev/null 2>&1
 systemctl enable postgresql-10 > /dev/null 2>&1
 systemctl start postgresql-10 > /dev/null 2>&1
+chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
 
 %files
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
