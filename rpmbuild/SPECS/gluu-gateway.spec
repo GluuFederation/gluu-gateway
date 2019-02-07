@@ -5,9 +5,8 @@ Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-4.0.tar.gz
-Source1:	gluu-gateway.init.d
-Source2:	konga.init.d
-Source3:	kong.init.d
+Source1:	gluu-gateway.service
+Source2:	kong.service
 BuildArch:      noarch
 Requires:	oxd-server-4.0.beta, postgresql >= 10, postgresql-server >= 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
@@ -21,9 +20,8 @@ deploy an OAuth protected API gateway
 %install
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
-cp -a %{SOURCE1} %{buildroot}/etc/init.d/gluu-gateway
-cp -a %{SOURCE2} %{buildroot}/etc/init.d/konga
-cp -a %{SOURCE3} %{buildroot}/etc/init.d/kong
+cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
+cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
 
 %pre
@@ -31,7 +29,9 @@ mkdir -p /opt/gluu-gateway/konga/config/locales
 mkdir -p /opt/gluu-gateway/konga/config/env
 
 %post
-/etc/init.d/gluu-gateway stop > /dev/null 2>&1
+systemctl enable kong > /dev/null 2>&1
+systemctl enable gluu-gateway > /dev/null 2>&1
+systemctl stop gluu-gateway > /dev/null 2>&1
 
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/blueprints.js
@@ -64,9 +64,8 @@ mkdir -p /opt/gluu-gateway/konga/config/env
 
 %files
 /opt/gluu-gateway/*
-/etc/init.d/kong
-/etc/init.d/konga
-/etc/init.d/gluu-gateway
+/lib/systemd/system/kong.service
+/lib/systemd/system/gluu-gateway.service
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
