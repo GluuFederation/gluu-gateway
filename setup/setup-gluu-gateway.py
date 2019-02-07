@@ -70,6 +70,7 @@ class KongSetup(object):
         self.cmd_alternatives = 'alternatives'
         self.cmd_echo = '/bin/echo'
         self.cmd_service = 'service'
+        self.cmd_systemctl = 'systemctl'
 
         self.countryCode = ''
         self.state = ''
@@ -206,7 +207,7 @@ class KongSetup(object):
             self.run([self.cmd_ln, '/usr/lib/systemd/system/postgresql-10.service', '/usr/lib/systemd/system/postgresql.service'])
             self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
-            self.run([self.cmd_service, 'postgresql', 'start'])
+            self.run([self.cmd_systemctl, 'postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
             os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
