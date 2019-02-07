@@ -33,6 +33,7 @@ systemctl enable kong > /dev/null 2>&1
 systemctl enable gluu-gateway > /dev/null 2>&1
 systemctl stop gluu-gateway > /dev/null 2>&1
 
+%files
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/blueprints.js
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/bootstrap.js
@@ -61,8 +62,6 @@ systemctl stop gluu-gateway > /dev/null 2>&1
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/locales/_README.md
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/development.js
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/production.js
-
-%files
 /opt/gluu-gateway/*
 /lib/systemd/system/kong.service
 /lib/systemd/system/gluu-gateway.service
