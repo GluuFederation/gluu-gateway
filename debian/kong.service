@@ -5,6 +5,7 @@ Requires=postgresql.service
 
 [Service]
 Type=simple
+PIDFile=/usr/local/kong/pids/nginx.pid
 ExecStart=/usr/local/bin/kong start
 ExecStop=/usr/local/bin/kong stop
 ExecReload=/bin/kill -HUP $MAINPID
