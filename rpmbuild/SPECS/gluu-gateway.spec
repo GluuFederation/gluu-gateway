@@ -8,7 +8,7 @@ Source0:	gluu-gateway-4.0.tar.gz
 Source1:	gluu-gateway.service
 Source2:	kong.service
 BuildArch:      noarch
-Requires:	oxd-server-4.0.beta, postgresql >= 10, postgresql-server >= 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	oxd-server-4.0.beta, postgresql = 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
 %description
 The Gluu Gateway is a package which can be used to quickly
@@ -31,8 +31,11 @@ mkdir -p /opt/gluu-gateway/konga/config/env
 
 %post
 systemctl enable kong > /dev/null 2>&1
+systemctl stop kong > /dev/null 2>&1
 systemctl enable gluu-gateway > /dev/null 2>&1
 systemctl stop gluu-gateway > /dev/null 2>&1
+systemctl enable postgresql-10 > /dev/null 2>&1
+systemctl start postgresql-10 > /dev/null 2>&1
 
 %files
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
