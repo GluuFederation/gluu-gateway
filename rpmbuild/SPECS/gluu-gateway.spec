@@ -35,6 +35,23 @@ systemctl stop kong > /dev/null 2>&1
 systemctl enable gluu-gateway > /dev/null 2>&1
 systemctl stop gluu-gateway > /dev/null 2>&1
 chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+if [ `ulimit -n` -le 4095 ]; then
+if ! cat /etc/security/limits.conf | grep "* soft nofile 4096" > /dev/null 2>&1; then
+echo "* soft nofile 4096" >> /etc/security/limits.conf
+echo "* hard nofile 4096" >> /etc/security/limits.conf
+fi
+fi
+
+%preun
+systemctl stop gluu-gateway > /dev/null 2>&1
+
+%postun
+rm -rf /opt/gluu-gateway > /dev/null 2>&1
+rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
+rm -rf /opt/jre > /dev/null 2>&1
+systemctl start postgresql > /dev/null 2>&1
+su postgres -c "psql -c \"DROP DATABASE kong;\"" > /dev/null 2>&1
+su postgres -c "psql -c \"DROP DATABASE konga;\"" > /dev/null 2>&1
 
 %files
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
