@@ -2,6 +2,7 @@
 Description=Kong server daemon
 After=network.target postgresql.service
 Requires=postgresql.service
+PartOf=gluu-gateway.service
 
 [Service]
 Type=simple
