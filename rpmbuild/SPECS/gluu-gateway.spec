@@ -40,6 +40,7 @@ if ! cat /etc/security/limits.conf | grep "* soft nofile 4096" > /dev/null 2>&1;
 echo "* soft nofile 4096" >> /etc/security/limits.conf
 echo "* hard nofile 4096" >> /etc/security/limits.conf
 fi
+ulimit -n 4096 > /dev/null 2>&1
 fi
 
 %preun
