@@ -5,6 +5,7 @@ Requires=kong.service
 
 [Service]
 Type=simple
+PIDFile=/var/run/konga.pid
 ExecStart=/bin/bash -c 'cd /opt/gluu-gateway/konga && /bin/node --harmony app.js --prod >> /var/log/konga.log 2>&1'
 ExecStop=/usr/sbin/fuser -k 1338/tcp
 ExecReload=/bin/kill -HUP $MAINPID
