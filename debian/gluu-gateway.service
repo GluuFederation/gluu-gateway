@@ -1,7 +1,7 @@
 [Unit]
 Description=Gluu-Gateway server daemon
-After=network.target postgresql.service
-Requires=postgresql.service kong.service oxd-server-4.0.beta.service
+After=network.target kong.service
+Requires=kong.service 
 
 [Service]
 Type=simple
