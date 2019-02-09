@@ -47,12 +47,14 @@ fi
 systemctl stop gluu-gateway > /dev/null 2>&1
 
 %postun
+if [ "$1" = 0 ]; then 
 rm -rf /opt/gluu-gateway > /dev/null 2>&1
 rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
 rm -rf /opt/jre > /dev/null 2>&1
 systemctl start postgresql > /dev/null 2>&1
 su postgres -c "psql -c \"DROP DATABASE kong;\"" > /dev/null 2>&1
 su postgres -c "psql -c \"DROP DATABASE konga;\"" > /dev/null 2>&1
+fi
 
 %files
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/application.js
