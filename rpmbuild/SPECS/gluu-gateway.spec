@@ -48,7 +48,12 @@ systemctl stop gluu-gateway > /dev/null 2>&1
 
 %postun
 if [ "$1" = 0 ]; then 
-rm -rf /opt/gluu-gateway > /dev/null 2>&1
+mkdir -p /opt/gluu-gateway.rpmsavefiles  > /dev/null 2>&1
+cp /opt/gluu-gateway/konga/config/*.rpmsave /opt/gluu-gateway.rpmsavefiles/  > /dev/null 2>&1
+rm -rf /opt/gluu-gateway/* > /dev/null 2>&1
+mkdir -p /opt/gluu-gateway/konga/config/  > /dev/null 2>&1
+mv /opt/gluu-gateway.rpmsavefiles/*.rpmsave /opt/gluu-gateway/konga/config/  > /dev/null 2>&1
+rm -rf /opt/gluu-gateway.rpmsavefiles  > /dev/null 2>&1
 rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
 rm -rf /opt/jre > /dev/null 2>&1
 systemctl start postgresql > /dev/null 2>&1
