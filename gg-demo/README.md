@@ -2,4 +2,4 @@
 
 See Gluu Gateway documentation for demo.
 
-https://gluu.org/docs/gg/uma-demo
+https://gluu.org/docs/gg/uma-tutorial/
