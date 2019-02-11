@@ -15,21 +15,21 @@ GLUU_GATEWAY_INIT_LOG=/var/log/gluu-gateway.log
 do_start () {
         /etc/init.d/postgresql start
         /etc/init.d/kong start
-        /etc/init.d/oxd-server-4.0.beta start
+        /etc/init.d/oxd-server start
         /etc/init.d/konga start
 }
 
 do_stop () {        
         /etc/init.d/postgresql stop
         /etc/init.d/kong stop
-        /etc/init.d/oxd-server-4.0.beta stop
+        /etc/init.d/oxd-server stop
         /etc/init.d/konga stop
 }
 
 do_status () {        
         /etc/init.d/postgresql status
         /etc/init.d/kong status
-        /etc/init.d/oxd-server-4.0.beta status
+        /etc/init.d/oxd-server status
         /etc/init.d/konga status
 }
 
