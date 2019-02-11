@@ -1,10 +1,10 @@
 Name:		gluu-gateway
-Version:	4.0
+Version:	1.0
 Release:	1%{?dist}
 Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
-Source0:	gluu-gateway-4.0.tar.gz
+Source0:	gluu-gateway-1.0.tar.gz
 Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
 BuildArch:      noarch
