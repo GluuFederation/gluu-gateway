@@ -5,8 +5,9 @@ Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-4.0.tar.gz
-Source1:	gluu-gateway.service.file
-Source2:	kong.service.file
+Source1:	gluu-gateway.init.d
+Source2:	kong
+Source3:	konga
 BuildArch:      noarch
 Requires:	oxd-server = 4.0, postgresql = 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
@@ -21,8 +22,9 @@ deploy an OAuth protected API gateway
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
 mkdir -p %{buildroot}/lib/systemd/system/
-cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
-cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
+cp -a %{SOURCE1} %{buildroot}/etc/init.d/
+cp -a %{SOURCE2} %{buildroot}/etc/init.d/
+cp -a %{SOURCE3} %{buildroot}/etc/init.d/
 cp -a opt/gluu-gateway %{buildroot}/opt/
 
 %pre
@@ -30,10 +32,10 @@ mkdir -p /opt/gluu-gateway/konga/config/locales
 mkdir -p /opt/gluu-gateway/konga/config/env
 
 %post
-systemctl enable kong > /dev/null 2>&1
-systemctl stop kong > /dev/null 2>&1
-systemctl enable gluu-gateway > /dev/null 2>&1
-systemctl stop gluu-gateway > /dev/null 2>&1
+update-rc.d kong remove > /dev/null 2>&1
+/etc/init.d/kong stop > /dev/null 2>&1
+update-rc.d gluu-gateway defaults > /dev/null 2>&1
+/etc/init.d/gluu-gateway stop > /dev/null 2>&1
 chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
 if [ `ulimit -n` -le 4095 ]; then
 if ! cat /etc/security/limits.conf | grep "* soft nofile 4096" > /dev/null 2>&1; then
@@ -44,7 +46,7 @@ ulimit -n 4096 > /dev/null 2>&1
 fi
 
 %preun
-systemctl stop gluu-gateway > /dev/null 2>&1
+/etc/init.d/gluu-gateway stop > /dev/null 2>&1
 
 %postun
 if [ "$1" = 0 ]; then 
@@ -56,7 +58,7 @@ mv /opt/gluu-gateway.rpmsavefiles/*.rpmsave /opt/gluu-gateway/konga/config/  > /
 rm -rf /opt/gluu-gateway.rpmsavefiles  > /dev/null 2>&1
 rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
 rm -rf /opt/jre > /dev/null 2>&1
-systemctl start postgresql > /dev/null 2>&1
+/etc/init.d/postgresql start > /dev/null 2>&1
 su postgres -c "psql -c \"DROP DATABASE kong;\"" > /dev/null 2>&1
 su postgres -c "psql -c \"DROP DATABASE konga;\"" > /dev/null 2>&1
 fi
@@ -91,8 +93,9 @@ fi
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/development.js
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/production.js
 /opt/gluu-gateway/*
-/lib/systemd/system/kong.service
-/lib/systemd/system/gluu-gateway.service
+/etc/init.d/gluu-gateway
+/etc/init.d/kong
+/etc/init.d/konga
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
