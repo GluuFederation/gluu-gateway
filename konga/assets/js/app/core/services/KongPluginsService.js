@@ -76,11 +76,11 @@
                 plugins: {
                   "gluu-oauth-pep": {
                     hideIfNotInConsumerContext: true,
-                    description: "Add Client authentication with OAuth scope security. This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
+                    description: "The OAuth PEP is used to enforce the presence of OAuth scopes for access to resources protected by the Gateway. OAuth scopes are defined in an external OAuth Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd OAuth middleware service for communication."
                   },
                   "gluu-uma-pep": {
                     hideIfNotInConsumerContext: true,
-                    description: "Add Client authentication with UMA scope security. This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service."
+                    description: "The UMA PEP plugin is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
                   },
                   "acl": {
                     hideIfNotInConsumerContext: true,
