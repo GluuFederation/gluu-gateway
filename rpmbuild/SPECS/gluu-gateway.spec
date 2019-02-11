@@ -5,8 +5,8 @@ Summary:	OAuth protected API
 License:	MIT
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-4.0.tar.gz
-Source1:	gluu-gateway.service
-Source2:	kong.service
+Source1:	gluu-gateway.service.file
+Source2:	kong.service.file
 BuildArch:      noarch
 Requires:	oxd-server = 4.0, postgresql = 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
@@ -21,8 +21,8 @@ deploy an OAuth protected API gateway
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
 mkdir -p %{buildroot}/lib/systemd/system/
-cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/
-cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/
+cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
+cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
 
 %pre
