@@ -20,7 +20,6 @@ do_start () {
 }
 
 do_stop () {        
-        /etc/init.d/postgresql stop
         /etc/init.d/kong stop
         /etc/init.d/oxd-server stop
         /etc/init.d/konga stop
