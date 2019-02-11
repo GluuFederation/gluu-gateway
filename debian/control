@@ -9,9 +9,9 @@ Homepage: https://www.gluu.org
 Package: gluu-gateway
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- postgresql (>= 10),
+ postgresql (= 10),
  oxd-server (>= 4.0),
- oxd-server (< 4.0.1),
+ oxd-server (<< 4.0.1),
  nodejs,
  unzip,
  lua-cjson,
