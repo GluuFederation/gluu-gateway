@@ -229,7 +229,7 @@ class KongSetup(object):
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             self.run([self.cmd_service, self.oxdServerService, 'start'])
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
-            self.run([self.cmd_systemctl, 'start', 'oxd-server'])
+            self.run([self.cmd_systemctl, 'start', self.oxdServerService])
 
     def detectHostname(self):
         detectedHostname = None
@@ -574,13 +574,16 @@ class KongSetup(object):
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
-        self.run([self.cmd_service, self.oxdServerService, 'stop'])
-        self.run([self.cmd_service, self.kongaService, 'stop'])
-        self.run([self.cmd_service, self.kongaService, 'start'])
-        if self.os_type in [Distribution.Ubuntu, Distribution.Debian]:
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            self.run([self.cmd_service, self.oxdServerService, 'stop'])
+            self.run([self.cmd_service, self.kongaService, 'stop'])
+            self.run([self.cmd_service, self.kongaService, 'start'])
             self.run([self.cmd_update_rs_d, self.kongaService, 'defaults'])
-        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
-            self.run([self.cmd_chkconfig, self.kongaService, 'on'])
+        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            self.run([self.cmd_systemctl, 'stop', self.oxdServerService])
+            self.run([self.cmd_systemctl, 'stop', self.kongaService])
+            self.run([self.cmd_systemctl, 'start', self.kongaService])
+            self.run([self.cmd_systemctl, 'enable', self.kongaService])            
 
     def copyFile(self, inFile, destFolder):
         try:
