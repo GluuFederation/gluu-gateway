@@ -15,8 +15,6 @@ import getpass
 import urllib3
 import platform
 
-requests.packages.urllib3.disable_warnings()
-
 class Distribution:
     Ubuntu = "ubuntu"
     Debian = "debian"
