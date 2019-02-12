@@ -226,7 +226,10 @@ class KongSetup(object):
 
     def configureOxd(self):
         self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
-        self.run([self.cmd_service, self.oxdServerService, 'start'])
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            self.run([self.cmd_service, self.oxdServerService, 'start'])
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            self.run([self.cmd_systemctl, 'start', 'oxd-server'])
 
     def detectHostname(self):
         detectedHostname = None
