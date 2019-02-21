@@ -1,5 +1,5 @@
-gluu-gateway %VERSION% unstable; urgency=low
+gluu-gateway %VERSION% %DIST%; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * New Version %VERSION%
 
  -- Adrian Alves <adrian@gluu.org>  Thu, 05 Oct 2017 12:40:08 -0400
