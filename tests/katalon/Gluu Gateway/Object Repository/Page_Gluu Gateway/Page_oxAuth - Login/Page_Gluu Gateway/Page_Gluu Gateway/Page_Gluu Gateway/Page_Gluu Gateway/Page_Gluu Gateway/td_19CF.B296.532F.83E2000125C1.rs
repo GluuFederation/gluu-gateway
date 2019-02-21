@@ -7,7 +7,7 @@
    <selectorCollection>
       <entry>
          <key>BASIC</key>
-         <value>//*[@id=&quot;konga&quot;]/body/div[1]/div/div/div[2]/table/tbody/tr[2]/td[2]</value>
+         <value>/html/body/div[1]/div/div/div[2]/table[2]/tbody/tr[4]/td[2]</value>
       </entry>
    </selectorCollection>
    <selectorMethod>BASIC</selectorMethod>
@@ -31,6 +31,6 @@
       <matchCondition>equals</matchCondition>
       <name>xpath</name>
       <type>Main</type>
-      <value>//*[@id=&quot;konga&quot;]/body/div[1]/div/div/div[2]/table/tbody/tr[2]/td[2]</value>
+      <value>/html/body/div[1]/div/div/div[2]/table[2]/tbody/tr[4]/td[2]</value>
    </webElementProperties>
 </WebElementEntity>
