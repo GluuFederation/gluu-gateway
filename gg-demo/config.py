@@ -1,27 +1,32 @@
 import cgi
 
-gg_base_url = "http://demo.gluu.org"                # GG url, which listens to 8000 port
-oxd_host = "https://demo.gluu.org"                  # Url of your oxd server, which is listening to 8443 port
-ce_url="https://demo.gluu.org"                      # Url of yout Gluu-server instance (oxAuth)
-api_path = "posts"                                  # Api path used in demo
+gg_admin_url = "http://gluu.local.org:8001"
+gg_proxy_url = "http://gluu.local.org:8000"
+oxd_host = "https://gluu.local.org:8553"
+ce_url = "https://gluu.local.org"
+api_path = "posts/1"
 
-host_with_claims="gathering.example.com"            # Host which is secured with demo_scope_gathering in GG. This scope needs to have UMA policy, which needs claims gathering
-host_without_claims="non-gathering.example.com"     # Host which is secured with demo_scope_non_gathering in GG. This scope needs to have UMA policy, which return true
+# Kong route register with below host
+host_with_claims = "gathering.example.com"
+host_without_claims = "non-gathering.example.com"
 
-client_oxd_id=""                                    # Client oxd id of consumer configured in GG with UMA mode
-client_id=""                                        # Client id of consumer configured in GG with UMA mode
-client_secret=""                                    # Client secret of consumer configured in GG with UMA mode
+# Consumer client
+client_oxd_id = "91b14554-17ac-4cf4-917d-f1b27e95902a"
+client_id = "@!FBA4.9EDD.24E7.909F!0001!64E0.493A!0008!BE4C.B4F6.E5CC.DB74"
+client_secret = "1b3e24c2-5472-4c26-a33f-b0b1c0c2b1c3"
 
-claims_redirect_url="http://demo.gluu.org:8080/cgi-bin/demo-client.cgi" # This is a uri which is used after the claims gathering.  This uri also has to be set in client configuration in gluu-server (OpenID Connect -> Clients -> your client -> Add Claim Redirect Uris).
+# You need to add this URL in your consumer client in CE
+claims_redirect_url = "https://gluu.local.org/cgi-bin/index.py"
 
 
-def isTicketInUrl():
+def is_ticket_in_url():
     arguments = cgi.FieldStorage()
     return 'ticket' in arguments
 
-def isClaimInUrl():
+
+def is_claim_in_url():
     arguments = cgi.FieldStorage()
-    if('claim' in arguments):
-        return host_with_claims, "demo_scope_gathering"
+    if 'claim' in arguments or 'ticket' in arguments:
+        return host_with_claims
     else:
-        return host_without_claims, "demo_scope_non_gathering"
+        return host_without_claims

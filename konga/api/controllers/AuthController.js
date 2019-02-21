@@ -111,7 +111,7 @@ var AuthController = {
       body: {
         client_id: sails.config.clientId,
         client_secret: sails.config.clientSecret,
-        scope: ['openid'],
+        scope: ['openid', 'oxd'],
         op_host: sails.config.opHost
       },
       resolveWithFullResponse: true,
@@ -123,13 +123,13 @@ var AuthController = {
         const tokenData = response.body;
 
         if (tokenData.status === 'error') {
-          return Promise.reject(tokenData.data)
+          return Promise.reject(tokenData)
         }
 
         const option = {
           method: 'POST',
           headers: {
-            Authorization: 'Bearer ' + tokenData.data.access_token
+            Authorization: 'Bearer ' + tokenData.access_token
           },
           uri: sails.config.oxdWeb + '/get-logout-uri',
           body: {
@@ -145,10 +145,10 @@ var AuthController = {
         const logoutURI = response.body;
 
         if (logoutURI.status === 'error') {
-          return Promise.reject(logoutURI.data)
+          return Promise.reject(logoutURI)
         }
         request.logout();
-        return res.send({logoutUri: logoutURI.data.uri});
+        return res.send({logoutUri: logoutURI.uri});
       })
       .catch(function (error) {
         return res.status(500).send({error: error});
@@ -205,7 +205,13 @@ var AuthController = {
       if (!!req.body.code && !!req.body.state) {
         var clientToken = '';
         var userInfo = null;
-        return getClientAccessToken()
+        var setting = null;
+
+        return sails.models.settings.find().limit(1)
+          .then(function (settings) {
+            setting = settings[0].data || {};
+            return getClientAccessToken();
+          })
           .then(function (token) {
             clientToken = token;
             const option = {
@@ -235,7 +241,7 @@ var AuthController = {
               uri: sails.config.oxdWeb + '/get-user-info',
               body: {
                 oxd_id: sails.config.oxdId,
-                access_token: codeToken.data.access_token
+                access_token: codeToken.access_token
               },
               resolveWithFullResponse: true,
               json: true
@@ -247,10 +253,21 @@ var AuthController = {
             userInfo = response.body;
 
             if (userInfo.status === 'error') {
-              return Promise.reject(userInfo.data)
+              return Promise.reject(userInfo)
             }
 
-            var sub = (userInfo.data.claims && userInfo.data.claims.sub && userInfo.data.claims.sub[0]) || uuid.v4();
+            if (setting.is_only_admin_allow_login) {
+              var roles = (userInfo.claims && userInfo.claims.role) || [];
+              if (roles.indexOf('admin') <= -1) {
+                return Promise.reject({message: 'Not enough permission to access GG UI. Only the user with admin role is allow.'});
+              }
+            }
+
+            var sub = userInfo.claims && userInfo.claims.sub && userInfo.claims.sub[0];
+
+            if (!sub) {
+              return Promise.reject({message: 'Failed to get sub claim.'});
+            }
 
             return new Promise(function (resolve, reject) {
               sails.models.user
@@ -309,17 +326,14 @@ var AuthController = {
             req.body.identifier = user.username;
             req.body.password = 'adminadmin';
             sails.services.passport.callback(req, res, function callback(error, user) {
-              user.info = userInfo.data;
               user.oxdWeb = sails.config.oxdWeb;
               user.opHost = sails.config.opHost;
               user.oxdId = sails.config.oxdId;
-              user.clientIdOfOXDId = sails.config.clientIdOfOXDId;
-              user.setupClientOXDId = sails.config.setupClientOXDId;
               user.clientId = sails.config.clientId;
               user.clientSecret = sails.config.clientSecret;
               user.oxdVersion = sails.config.oxdVersion;
 
-              return res.send({
+              return res.status(200).send({
                 user: user,
                 token: sails.services.token.issue(_.isObject(user.id) ? JSON.stringify(user.id) : user.id)
               });
@@ -341,7 +355,7 @@ var AuthController = {
             uri: sails.config.oxdWeb + '/get-authorization-url',
             body: {
               oxd_id: sails.config.oxdId,
-              scope: ['openid']
+              scope: ['openid', 'permission']
             },
             resolveWithFullResponse: true,
             json: true
@@ -353,13 +367,16 @@ var AuthController = {
           const urlData = response.body;
 
           if (urlData.status === 'error') {
-            return Promise.reject(urlData.data)
+            return Promise.reject(urlData)
           }
 
-          return res.send({authURL: urlData.data.authorization_url});
+          return res.status(200).send({authURL: urlData.authorization_url});
         })
         .catch(function (error) {
           console.log(error);
+          if (error.name == 'RequestError') {
+            return res.status(500).send({message: "Failed to connect OXD. Please check your OXD service is running or not."});
+          }
           return res.status(500).send({error: error});
         });
 
@@ -370,7 +387,7 @@ var AuthController = {
           body: {
             client_id: sails.config.clientId,
             client_secret: sails.config.clientSecret,
-            scope: ['openid', 'uma_protection'],
+            scope: ['openid', 'oxd'],
             op_host: sails.config.opHost
           },
           resolveWithFullResponse: true,
@@ -382,11 +399,11 @@ var AuthController = {
             const tokenData = response.body;
 
             if (tokenData.status === 'error') {
-              return Promise.reject(tokenData.data)
+              return Promise.reject(tokenData)
             }
 
-            return Promise.resolve(tokenData.data.access_token);
-          })
+            return Promise.resolve(tokenData.access_token);
+          });
       }
     });
   },

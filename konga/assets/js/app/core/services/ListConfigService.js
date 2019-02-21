@@ -12,8 +12,8 @@
 
   angular.module('frontend.core.services')
     .factory('ListConfig', [
-      '_', 'DialogService', '$log', 'AuthService',
-      function factory(_, DialogService, $log, AuthService) {
+      '_', 'DialogService', '$log', 'AuthService', 'MessageService',
+      function factory(_, DialogService, $log, AuthService, MessageService) {
         /**
          * List title item configuration.
          *
@@ -23,6 +23,68 @@
                  *        }}
          */
         var titleItems = {
+          service: [
+            {
+              title: 'name',
+              column: 'name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'host',
+              column: 'host',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            }
+          ],
+          route: [
+            {
+              title: 'id',
+              column: 'id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'hosts',
+              column: 'hosts',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'service',
+              column: 'service',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'paths',
+              column: 'paths',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            }
+          ],
           api: [
             {
               title: 'name',
@@ -64,6 +126,44 @@
             //     inSearch: true,
             //     inTitle: true
             // }
+          ],
+          consumerService: [
+            {
+              title: 'name',
+              width: 200,
+              column: 'name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'host',
+              column: 'host',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            }
+          ],
+          consumerRoute: [
+            {
+              title: 'id',
+              width: 200,
+              column: 'id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'hosts',
+              column: 'hosts',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            }
           ],
           target: [
             {
@@ -111,12 +211,7 @@
               title: 'created',
               column: 'created_at',
               sortable: true,
-            },
-            {
-              title: '',
-              column: '',
-              width: 1
-            },
+            }
           ],
           kongnode: [
             {
@@ -138,16 +233,16 @@
               inTitle: true
             },
             {
-              title: 'kong admin url',
-              column: 'kong_admin_url',
+              title: 'type',
+              column: 'type',
               searchable: true,
               sortable: true,
               inSearch: true,
               inTitle: true
             },
             {
-              title: 'api key',
-              column: 'kong_api_key',
+              title: 'kong admin url',
+              column: 'kong_admin_url',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -163,7 +258,7 @@
               sortable: true,
             },
           ],
-          consumer: [
+          consumerWithCreds: [
             {
               title: '',
               width: 1
@@ -178,6 +273,45 @@
             },
             {
               title: 'custom_id',
+              column: 'custom_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'Matching Credentials',
+              column: 'plugins',
+              searchable: true,
+              sortable: true
+            },
+            {
+              title: 'created',
+              column: 'created_at',
+              sortable: true,
+            },
+            {
+              title: '',
+              hide: !AuthService.hasPermission('consumers', 'delete'),
+              column: false,
+              width: 1
+            },
+          ],
+          consumer: [
+            {
+              title: '',
+              width: 1
+            },
+            {
+              title: 'consumer name',
+              column: 'username',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'gluu client id',
               column: 'custom_id',
               searchable: true,
               sortable: true,
@@ -207,7 +341,7 @@
               width: 1
             },
             {
-              title: 'User Id',
+              title: 'username',
               column: 'username',
               searchable: true,
               sortable: true,
@@ -220,7 +354,7 @@
               sortable: true,
             },
             {
-              title: 'Last Login',
+              title: 'updated',
               column: 'updatedAt',
               sortable: true,
             },
@@ -249,10 +383,29 @@
               inTitle: true
             },
             {
-              title: 'kong version',
-              column: 'kong_version',
+              title: 'node',
+              column: 'kong_node_name',
               searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created at',
+              column: 'createdAt',
+              sortable: true,
+              inTitle: true
+            }
+          ],
+          snapshotschedule: [
+            {
+              title: 'connection',
+              column: 'connection',
+              inTitle: true
+            },
+            {
+              title: 'Schedule',
+              column: 'cron',
               inTitle: true
             },
             {
@@ -272,12 +425,20 @@
               inTitle: true
             },
             {
-              title: 'API',
-              column: 'api_id',
+              title: 'scope',
+              column: 'scope',
               searchable: true,
               sortable: true,
               inSearch: true,
               inTitle: true
+            },
+            {
+              title: 'apply to',
+              column: 'item_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true,
             },
             {
               title: 'Consumer',
@@ -396,7 +557,44 @@
               inSearch: true,
               inTitle: true
             }
-          ]
+          ],
+          hc: [
+            {
+              title: '',
+              column: 'active',
+              sortable: true
+            },
+            {
+              title: 'api',
+              column: 'api.name',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'hc endpoint',
+              column: 'health_check_endpoint',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'notification endpoint',
+              column: 'notification_endpoint',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'Created',
+              column: 'created_at',
+              class: 'col-xs-2',
+              sortable: false
+            }
+          ],
         };
 
         return {
@@ -450,11 +648,11 @@
 
                         model.scope.items.data.splice(model.scope.items.data.indexOf(item), 1);
                       }, function (err) {
+                        MessageService.error((err.data && err.data.body && err.data.body.message) || "Error");
                         $log.error("ListConfigService : Model delete failed => ", err)
                       })
                   }, function decline() {
                   })
-
               }
             };
           },

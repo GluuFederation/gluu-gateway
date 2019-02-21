@@ -8,52 +8,42 @@
 
   angular.module('frontend.certificates')
     .controller('CertificatesController', [
-      '$scope', '$rootScope', '$log', '$state', 'ApiService', '$uibModal', 'DialogService', 'UserService',
+      '$scope', '$rootScope', '$log', '$state', '$uibModal', 'DialogService', 'UserService',
       'MessageService', 'SettingsService', '$http', 'Upload', 'Semver', '$timeout', 'CertificateModel', 'ListConfig',
-      function controller($scope, $rootScope, $log, $state, ApiService, $uibModal, DialogService, UserService,
+      function controller($scope, $rootScope, $log, $state, $uibModal, DialogService, UserService,
                           MessageService, SettingsService, $http, Upload, Semver, $timeout, CertificateModel, ListConfig) {
-
 
         CertificateModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('certificate', CertificateModel)));
         $scope.user = UserService.user();
 
-
         $scope.openUploadCertsModal = function (certificate) {
-          if($scope.openingModal) return;
-
-          $scope.openingModal = true;
-          setTimeout(function () {
-            $scope.openingModal = false;
-          }, 1000);
-
           var modalInstance = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
             templateUrl: 'js/app/certificates/add-certificates-modal.html',
             controller: function ($scope, $uibModal, $uibModalInstance, SnisModel, DialogService, _certificate) {
-              $scope.update = _certificate
-              $scope.data = _certificate || {}
+              $scope.update = _certificate;
+              $scope.data = _certificate || {};
               $scope.close = function () {
                 return $uibModalInstance.dismiss()
-              }
+              };
 
               $scope.deleteSNI = function (sni) {
                 DialogService.prompt(
-                  "Confirm", "Do you want to delete the selected item?",
-                  ['CANCEL', 'YES'],
+                  "Confirm", "Really want to delete the selected item?",
+                  ['No don\'t', 'Yes! delete it'],
                   function accept() {
                     SnisModel.delete(sni)
                       .then(function (res) {
-
                         $scope.data.snis.splice($scope.data.snis.indexOf(sni), 1);
                       }, function (err) {
                         $log.error("ListConfigService : Model delete failed => ", err)
                       });
                   }, function decline() {
                   })
-              }
+              };
 
 
               $scope.openAddSniModal = function () {
@@ -64,16 +54,22 @@
                   templateUrl: 'js/app/certificates/add-sni-modal.html',
                   size: 'sm',
                   controller: function ($scope, $uibModalInstance, SnisModel, DialogService, _certId) {
-
                     $scope.close = function () {
                       return $uibModalInstance.dismiss();
                     };
 
                     $scope.submit = function () {
-                      SnisModel.create({
+                      var data = {
                         name: $scope.sni,
                         ssl_certificate_id: _certId
-                      }).then(function (created) {
+                      };
+
+                      data.certificate = {
+                        id: _certId
+                      };
+                      delete data.ssl_certificate_id;
+
+                      SnisModel.create(data).then(function (created) {
                         $uibModalInstance.close({
                           data: created.data.name
                         });
@@ -82,7 +78,6 @@
                         SnisModel.handleError($scope, err);
                       });
                     };
-
                   },
                   resolve: {
                     _certId: function () {
@@ -96,47 +91,69 @@
                   if (data && data.data) $scope.data.snis.push(data.data);
                 }, function (data) {
                 });
-              }
+              };
 
 
               $scope.submitCerts = function () {
 
-
-                $scope.uploading = true;
-                $scope.errorMessage = ""
-                var files = [$scope.data.cert, $scope.data.key];
+                $scope.errorMessage = "";
 
 
-                Upload.upload({
-                  url: 'kong/certificates' + ( $scope.data.id ? '/' + $scope.data.id : "" ),
-                  arrayKey: '',
-                  method: $scope.data.id ? 'PATCH' : 'POST',
-                  data: {
-                    file: files,
-                    snis: $scope.data.snis
-                  }
-                }).then(function (resp) {
-                  console.log('Success ' + resp.config.data.file.name + 'uploaded. Response: ' + resp.data);
-                  $scope.uploading = false;
-                  $uibModalInstance.dismiss({
-                    data: resp
-                  })
-                }, function (err) {
+                var data = angular.copy($scope.data);
+
+                if (!data.cert || !data.key) {
+                  $scope.errorMessage = "The `Certificate` and/or `Key` fields cannot be empty"
+                  return false;
+                }
+
+                data.cert = data.cert.trim();
+                data.key = data.key.trim();
+
+                if (data.snis) {
+                  data.snis = data.snis.split(",")
+                }
+
+                CertificateModel.create(data)
+                  .then(function (resp) {
+                    console.log('Success', resp.data);
+                    $uibModalInstance.dismiss({
+                      data: resp
+                    })
+                  }).catch(function (err) {
                   console.error('Error', err);
-                  $scope.uploading = false;
                   handleErrors(err)
+                })
+              };
 
+              $scope.updateCerts = function () {
 
-                }, function (evt) {
-                  var progressPercentage = parseInt(100.0 * evt.loaded / evt.total);
-                  console.log('progress: ' + progressPercentage + '% ' + evt.config.data.file.name);
-                });
+                $scope.errorMessage = "";
 
-              }
+                var data = angular.copy($scope.data);
 
+                if (!data.cert || !data.key) {
+                  $scope.errorMessage = "The `Certificate` and/or `Key` fields cannot be empty"
+                  return false;
+                }
+
+                data.cert = data.cert.trim();
+                data.key = data.key.trim();
+
+                CertificateModel.update(data.id, _.omit(data, ['id']))
+                  .then(function (resp) {
+                    console.log('Success', resp.data);
+                    $uibModalInstance.dismiss({
+                      data: resp
+                    })
+                  }).catch(function (err) {
+                  console.error('Error', err);
+                  handleErrors(err)
+                })
+              };
 
               function handleErrors(err) {
-                $scope.errors = {}
+                $scope.errors = {};
+
                 if (err.data) {
                   if (err.data.customMessage) {
 
@@ -148,21 +165,10 @@
                   if (err.data.message) {
                     $scope.errorMessage = err.data.message
                   }
-                  if ($scope.errorMessage && $scope.errorMessage == "An unexpected error occurred") {
-                    $scope.errorMessage = "Invalid type of file. For more detail check kong error.log"
-                  }
-
-                  if ($scope.errors && $scope.errors.message && $scope.errors.message == "An unexpected error occurred") {
-                    $scope.errors.message = "Invalid type of file. For more detail check kong error.log"
-                  }
                 } else {
                   $scope.errorMessage = "An unknown error has occured"
                 }
-
-
-                //console.log("SCOPE ERRORS",$scope.errors)
               }
-
             },
             controllerAs: '$ctrl',
             resolve: {
@@ -170,23 +176,20 @@
                 return certificate
               }
             }
-            //size: 'lg',
           });
 
           modalInstance.result.then(function () {
-
           }, function (data) {
             if (data && data.data) _fetchData()
           });
-        }
-
+        };
 
         function _fetchData() {
           $scope.loading = true;
           CertificateModel.load({
             size: $scope.itemsFetchSize
           }).then(function (response) {
-            console.log(response)
+            console.log(response);
             $scope.items = response;
             $scope.loading = false;
 
@@ -198,17 +201,13 @@
           })
         }
 
-        _fetchData()
-
+        _fetchData();
 
         $scope.$on('user.node.updated', function (node) {
           $timeout(function () {
             _fetchData()
           })
-
         })
-
       }
-    ])
-  ;
+    ]);
 }());

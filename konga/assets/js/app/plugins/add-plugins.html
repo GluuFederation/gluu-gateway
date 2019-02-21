@@ -34,17 +34,33 @@
   <div class="col-md-4" data-ng-repeat="(key,value) in group.plugins">
     <div class="panel"
          vertilize
-         ng-class="{'panel-default': !value.isAdded,'panel-success': value.isAdded,'panel-disabled': value.isAdded && !value.enabled}">
+         ng-class="{'panel-success' : existingPlugins.indexOf(key) > -1, 'panel-default' : existingPlugins.indexOf(key) < 0}">
       <div class="panel-heading">
         <div class="panel-title">
-          <span class="capitalize">{{key.split('-').join(" ")}}</span>
+          <span class="capitalize" data-ng-if="key == 'gluu-oauth-pep'">Gluu OAuth PEP</span>
+          <span class="capitalize" data-ng-if="key == 'gluu-uma-pep'">Gluu UMA PEP</span>
+          <span class="capitalize" data-ng-if="key != 'gluu-oauth-pep' && key != 'gluu-uma-pep'">{{key.split('-').join(" ")}}</span>
           <div class="pull-right">
+            <!--Add Button in kong plugins case-->
             <button
-              class="btn btn-primary btn-link btn-icon"
+              data-ng-if="key != 'gluu-oauth-pep' && key != 'gluu-uma-pep' && existingPlugins.indexOf(key) < 0"
+              class="btn btn-link btn-icon btn-primary"
               angular-ripple data-ng-click="onAddPlugin(key)">
-              <i class="mdi mdi-plus plugin_i" data-ng-class="{'text-white':value.isAdded}"></i>
+              <i class="mdi mdi-plus plugin_i"></i>
             </button>
-            <i class="mdi mdi-check-all" ng-show="value.isAdded"></i>
+
+            <!--Add Button in Gluu plugins case-->
+            <button data-ng-if="(key == 'gluu-oauth-pep' || key == 'gluu-uma-pep') && value.isAllow == true"
+                    class="btn btn-link btn-icon btn-primary"
+                    angular-ripple data-ng-click="onAddPlugin(key)">
+              <i class="mdi mdi-plus plugin_i"></i>
+            </button>
+
+            <i class="mdi mdi-check-all" data-ng-if="existingPlugins.indexOf(key) > -1"></i>
+            <i class="mdi mdi-block-helper text-danger clickable" uib-tooltip="Not allowed, Already config gluu-uma-pep authentication."
+               data-ng-if="key == 'gluu-oauth-pep' && value.isAllow == false"></i>
+            <i class="mdi mdi-block-helper text-danger clickable" uib-tooltip="Not allowed, Already config gluu-oauth-pep authentication."
+               data-ng-if="key == 'gluu-uma-pep' && value.isAllow == false"></i>
           </div>
         </div>
       </div>

@@ -2,7 +2,7 @@
 
 
 module.exports = function signup(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.signup() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.signup() called]');
 
   sails.models.settings.find().limit(1)
       .exec(function(err,data){

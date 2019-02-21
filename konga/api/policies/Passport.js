@@ -10,7 +10,7 @@ var passport = require('passport');
  * @param   {Function}  next        Callback function
  */
 module.exports = function(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.Passport() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.Passport() called]');
 
   // Initialize Passport
   passport.initialize()(request, response, next);

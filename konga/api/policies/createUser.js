@@ -16,7 +16,7 @@ function alphanum(value) {
 }
 
 module.exports = function createUser(request, response, next) {
-    sails.log.verbose(__filename + ':' + __line + ' [Policy.createUser() called]');
+    sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.createUser() called]');
 
     if (!request.body.passports) return next()
 

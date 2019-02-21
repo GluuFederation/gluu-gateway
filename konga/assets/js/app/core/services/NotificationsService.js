@@ -11,76 +11,64 @@
  *
  * @todo do we need some queue dismiss?
  */
-(function() {
-    'use strict';
+(function () {
+  'use strict';
 
-    angular.module('frontend.core.services')
-        .factory('NotificationsService', [
-            '$localStorage','$rootScope','MessageService',
-            function factory($localStorage,$rootScope,MessageService) {
+  angular.module('frontend.core.services')
+    .factory('NotificationsService', [
+      '$localStorage', '$rootScope', 'MessageService',
+      function factory($localStorage, $rootScope, MessageService) {
 
-                function createNavigatorNotification(message) {
-                    Notification.requestPermission(function (permission) {
-                        if (Notification.permission === "granted") {
-                            new Notification("KONGA!",{
-                                body: message,
-                                icon: 'images/k.png'
-                            });
-                        }
-                    });
-                }
-
-                function load() {
-                    return $localStorage.notifications;
-                }
-
-                function add(data) {
-                    if(!$localStorage.notifications) {
-                        $localStorage.notifications = []
-                    }
-                    $localStorage.notifications.unshift({
-                        id : new Date().getTime,
-                        icon : data.icon,
-                        message : data.message
-                    })
-
-                    createNavigatorNotification(data.message)
-
-                    // MessageService.success(data.message)
-                }
-
-                function remove(index) {
-                    $localStorage.notifications.splice(index, 1);
-                }
-
-
-                /**
-                 * Listen for important events
-                 */
-
-                $rootScope.$on('node.health_checks',function(event,data){
-
-                    if(!data.isHealthy) {
-
-                        // var message = 'A Kong node is down, unresponsive or unreachable.'
-                        //
-                        // add({
-                        //     message : message
-                        // })
-
-                        MessageService.warning('A Kong node is down, unresponsive or unreachable.')
-                    }
-
-                })
-
-                return {
-
-                    load   : load,
-                    add    : add,
-                    remove : remove
-
-                }
+        function createNavigatorNotification(message) {
+          Notification.requestPermission(function (permission) {
+            if (Notification.permission === "granted") {
+              new Notification("GLUU GATEWAY!", {
+                body: message,
+                icon: 'images/k.png'
+              });
             }
-        ])
-    ;
+          });
+        }
+
+        function load() {
+          return $localStorage.notifications;
+        }
+
+        function add(data) {
+          if (!$localStorage.notifications) {
+            $localStorage.notifications = []
+          }
+          $localStorage.notifications.unshift({
+            id: new Date().getTime,
+            icon: data.icon,
+            message: data.message
+          });
+
+          createNavigatorNotification(data.message);
+
+          // MessageService.success(data.message)
+        }
+
+        function remove(index) {
+          $localStorage.notifications.splice(index, 1);
+        }
+
+
+        /**
+         * Listen for important events
+         */
+
+        $rootScope.$on('node.health_checks', function (event, data) {
+          if (!data.isHealthy) {
+            MessageService.warning('A Kong node is down, unresponsive or unreachable.')
+          }
+        });
+
+        return {
+          load: load,
+          add: add,
+          remove: remove
+        }
+      }
+    ]);
 }());

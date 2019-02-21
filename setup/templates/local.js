@@ -59,7 +59,7 @@ module.exports = {
     key: fs.readFileSync('%(kongSslKey)s'),
     cert: fs.readFileSync('%(kongSslCert)s')
   },
-
+  hookTimeout: 180000,
   port: process.env.PORT || %(kongaPort)s,
   environment: 'development',
   log: {
@@ -68,8 +68,6 @@ module.exports = {
   oxdWeb: '%(kongaOxdWeb)s',
   opHost: '%(kongaOPHost)s',
   oxdId: '%(kongaOxdId)s',
-  clientIdOfOXDId: '%(kongaClientIdOfOXDId)s',
-  setupClientOXDId: '%(kongaSetupClientOXDId)s',
   clientId: '%(kongaClientId)s',
   clientSecret: '%(kongaClientSecret)s',
   oxdVersion: '%(kongaOxdVersion)s',

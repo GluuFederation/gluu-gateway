@@ -11,7 +11,7 @@ var actionUtil = require('sails/lib/hooks/blueprints/actionUtil');
  * @param   {Function}  next        Callback function
  */
 module.exports = function activeNodeData(request, response, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Policy.activeNodeData() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.activeNodeData() called]');
 
 
   // sails.config.kong_admin_url = request.headers['kong-admin-url'] || sails.config.kong_admin_url

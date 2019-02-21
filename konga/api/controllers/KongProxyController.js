@@ -14,36 +14,22 @@ module.exports = {
    */
   proxy: function (req, res) {
 
-    req.url = req.url.replace('/kong', '') // Remove the /api prefix
-
-    sails.log("req.url", req.url)
+    req.url = req.url.replace('/kong', ''); // Remove the /api prefix
 
     // Fix update method by setting it to "PATCH"
     // as Kong requires
-
     if (req.method.toLowerCase() == 'put') {
       req.method = "PATCH"
     }
-
-
-    sails.log("KongProxyController", req.node_id + req.url)
-    sails.log("req.method", req.method)
-
-    var headers = {'Content-Type': 'application/json'}
-
-    // UMA-RS config
-    if (req.method == 'POST' && req.url == '/plugins' && !!req.body.config && req.body.name == "gluu-oauth2-rs") {
-      req.body.config.oxd_host = sails.config.oxdWeb
-      req.body.config.uma_server_host = sails.config.opHost
-    }
+    var headers = {'Content-Type': 'application/json'};
 
     // If apikey is set in headers, use it
-    if (req.kong_api_key) {
-      headers['apikey'] = req.kong_api_key
-    }
+    // if (req.kong_api_key) {
+    //   headers['apikey'] = req.kong_api_key
+    // }
 
-    var request = unirest[req.method.toLowerCase()](req.node_id + req.url)
-    request.headers(headers)
+    var request = unirest[req.method.toLowerCase()](req.connection.kong_admin_url + req.url);
+    request.headers(headers);
     if (['post', 'put', 'patch'].indexOf(req.method.toLowerCase()) > -1) {
 
       if (req.body && req.body.orderlist) {
@@ -59,16 +45,18 @@ module.exports = {
           }
         }
       }
-
-
     }
 
-    sails.log("req.body", req.body)
     request.send(req.body);
-
+    sails.log(new Date(), "--------------Kong API Call----------------");
+    if (req.body && Object.keys(req.body).length > 0) {
+      sails.log(new Date(), ` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url} -d '${JSON.stringify(req.body)}'`);
+    } else {
+      sails.log(new Date(), ` $ curl -k -X ${req.method.toUpperCase()} ${req.connection.kong_admin_url + req.url}`);
+    }
 
     request.end(function (response) {
-      if (response.error)  return res.negotiate(response)
+      if (response.error)  return res.negotiate(response);
       return res.json(response.body)
     })
   }

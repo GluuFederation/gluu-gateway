@@ -64,7 +64,7 @@
 
         $scope.$on('user.updated', function (ev, user) {
           $scope.user = UserService.user;
-        })
+        });
 
 
         $scope.$watch(function () {
@@ -73,28 +73,26 @@
           if (oldVal !== newVal && newVal !== undefined) {
             $scope.notifications = newVal
           }
-        })
+        });
 
 
         $scope.removeNotification = function (index) {
           NotificationsService.remove(index)
-        }
+        };
 
         $scope.$on('snapshots.created', function (ev, message) {
           NotificationsService.add({
             icon: 'mdi-camera',
             message: "Snapshot '" + message.data.name + "' created!"
           })
-
-        })
+        });
 
 
         $scope.toggleSideNav = function () {
           $rootScope.$broadcast('sidenav-toggle')
         }
       }
-    ])
-  ;
+    ]);
 
   /**
    * Generic footer controller for application layout. This contains all necessary logic which is used on application
@@ -115,9 +113,9 @@
         $scope.user = UserService.user();
         $scope.closeDropdown = function () {
           $scope.isOpen = false;
-        }
+        };
 
-        $log.debug("FooterController:user =>", $scope.user)
+        $log.debug("FooterController:user =>", $scope.user);
 
         function _fetchConnections() {
           NodeModel.load({
@@ -144,7 +142,7 @@
               kong_api_key: node.kong_api_key
             }
           }).then(function (response) {
-            $log.debug("Check connection:success", response)
+            $log.debug("Check connection:success", response);
             node.checkingConnection = false;
 
             UserModel
@@ -153,8 +151,8 @@
               })
               .then(
                 function onSuccess(res) {
-                  var credentials = $localStorage.credentials
-                  credentials.user.node = node
+                  var credentials = $localStorage.credentials;
+                  credentials.user.node = node;
 
 
                   // Update $rootScope.Gateway
@@ -167,7 +165,7 @@
               );
 
           }).catch(function (error) {
-            $log.debug("Check connection:error", error)
+            $log.debug("Check connection:error", error);
             node.checkingConnection = false;
             MessageService.error("Oh snap! Can't connect to " + node.kong_admin_url)
           })
@@ -214,7 +212,6 @@
       function controller(_, $scope, $state, AuthService, InfoService, UserModel, $localStorage,
                           SettingsService, MessageService, UserService, $log,
                           $rootScope, AccessLevels, SocketHelperService, $uibModal, Semver) {
-
 
         $scope.auth = AuthService;
         $scope.user = UserService.user();
@@ -263,12 +260,21 @@
             access: AccessLevels.user
           },
           {
-            state: 'apis',
+            state: 'services',
             show: function () {
-              return AuthService.hasPermission('apis', 'read') && $rootScope.Gateway
+              return AuthService.hasPermission('services', 'read') && $rootScope.Gateway
             },
-            title: 'APIs',
+            title: 'Services',
             icon: 'mdi-cloud-outline',
+            access: AccessLevels.user
+          },
+          {
+            state: 'routes',
+            show: function () {
+              return AuthService.hasPermission('routes', 'read') && $rootScope.Gateway
+            },
+            title: 'Routes',
+            icon: 'mdi-directions-fork',
             access: AccessLevels.user
           },
           {

@@ -51,17 +51,17 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
 
   afterUpdate: function (values, cb) {
 
-    sails.log("ApiHealthCheck:afterUpdate:called()")
-    sails.log("ApiHealthCheck:afterUpdate:health_checks",values)
+    sails.log(new Date(), "ApiHealthCheck:afterUpdate:called()")
+    sails.log(new Date(), "ApiHealthCheck:afterUpdate:health_checks",values)
 
     // Manage toggle health checks
     if(values.active) {
       // Send event to begin health checks for the updated node
-      sails.log("ApiHealthCheck:afterUpdate:emit api.health_checks.start")
+      sails.log(new Date(), "ApiHealthCheck:afterUpdate:emit api.health_checks.start")
       HealthCheckEvents.emit('api.health_checks.start',values);
     }else{
       // Send event to stop health checks for the updated node
-      sails.log("ApiHealthCheck:afterUpdate:emit api.health_checks.stop")
+      sails.log(new Date(), "ApiHealthCheck:afterUpdate:emit api.health_checks.stop")
       HealthCheckEvents.emit('api.health_checks.stop',values);
     }
 

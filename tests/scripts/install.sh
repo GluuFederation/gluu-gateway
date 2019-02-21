@@ -1,20 +1,6 @@
 #!/bin/bash
 
-OXD_LICENSE_ID=$1
-OXD_SERVER_PUBLIC_KEY=$2
-OXD_PUBLIC_PASSWORD=$3
-OXD_SERVER_LICENSE_PASSWORD=$4
-OXD_SERVER_PUBLIC_PASSWORD=$5
-DISTRIBUTION=$6
-
-function prepareSourcesTrusty {
-    apt-get install xvfb -y
-    echo "deb https://repo.gluu.org/ubuntu/ trusty-devel main" > /etc/apt/sources.list.d/gluu-repo.list
-    curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ trusty-pgdg main" > /etc/apt/sources.list.d/psql.list
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-    curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-}
+DISTRIBUTION=$1
 
 function prepareSourcesXenial {
     sleep 120
@@ -79,7 +65,6 @@ function prepareSourcesCentos7 {
 
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
-        "trusty") prepareSourcesTrusty ;;
         "xenial") prepareSourcesXenial ;;
         "debian8") prepareSourcesJessie ;;
         "debian9") prepareSourcesStretch ;;
@@ -100,7 +85,6 @@ function installGGRpm {
 
 function installGG {
     case $DISTRIBUTION in
-        "trusty") installGGDeb ;;
         "xenial") installGGDeb ;;
         "debian8") installGGDeb ;;
         "debian9") installGGDeb ;;
@@ -113,7 +97,7 @@ function configureGG {
  sed -i "18ihost: '0.0.0.0'," /opt/gluu-gateway/konga/config/env/development.js
  sed -i "18ihost: '0.0.0.0'," /opt/gluu-gateway/konga/config/env/production.js
  cd /opt/gluu-gateway/setup
- python setup-gluu-gateway.py '{"oxdAuthorizationRedirectUri":"dev1.gluu.org","license":true,"ip":"104.131.18.41","hostname":"dev1.gluu.org","countryCode":"TS","state":"Test","city":"Test","orgName":"Test","admin_email":"admin@test.com","pgPwd":"test123","installOxd":true,"kongaOPHost":"ce-dev6.gluu.org","oxdServerOPDiscoveryPath":"oxauth","oxdServerLicenseId":"'"$OXD_LICENSE_ID"'","oxdServerPublicKey":"'"$OXD_SERVER_PUBLIC_KEY"'","public_password":"'"$OXD_PUBLIC_PASSWORD"'","oxdServerPublicPassword":"'"$OXD_SERVER_PUBLIC_PASSWORD"'","oxdServerLicensePassword":"'"$OXD_SERVER_LICENSE_PASSWORD"'","kongaOxdWeb":"https://localhost:8443","generateClient":true, "oxdHost":"dev1.gluu.org"}'
+ python setup-gluu-gateway.py '{"oxdAuthorizationRedirectUri":"dev1.gluu.org","license":true,"ip":"104.131.18.41","hostname":"dev1.gluu.org","countryCode":"TS","state":"Test","city":"Test","orgName":"Test","admin_email":"admin@test.com","pgPwd":"test123","installOxd":true,"kongaOPHost":"ce-dev6.gluu.org","oxdServerOPDiscoveryPath":"oxauth","kongaOxdWeb":"https://localhost:8443","generateClient":true, "oxdHost":"dev1.gluu.org"}'
 }
 
 function createSwap {
@@ -150,7 +134,6 @@ function displayLogs {
     service kong status
     service konga status
     service oxd-server status
-    service oxd-https-extension status
 }
 
 function checkKonga {
@@ -180,20 +163,11 @@ function checkKong {
     fi
 }
 
-function checkOxdHttps {
-    if lsof -Pi :8443 -sTCP:LISTEN -t >/dev/null ; then
-        echo "Oxd-https-extension is running"
-    else
-        echo "ERROR: oxd-https-extension is not running"
-        exit 1
-    fi
-}
-
 function checkOxd {
-    if lsof -Pi :8099 -sTCP:LISTEN -t >/dev/null ; then
-        echo "Oxd-server is running"
+    if lsof -Pi :8443 -sTCP:LISTEN -t >/dev/null ; then
+        echo "OXD is running"
     else
-        echo "ERROR: Oxd is not running"
+        echo "ERROR: OXD is not running"
         exit 1
     fi
 }
@@ -202,7 +176,6 @@ function checkServices {
     checkKonga
     checkKong
     checkOxd
-    checkOxdHttps
 }
 
 createSwap

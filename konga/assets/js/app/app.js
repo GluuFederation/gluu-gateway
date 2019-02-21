@@ -19,13 +19,14 @@
     'frontend.certificates',
     'frontend.users',
     'frontend.consumers',
-    'frontend.apis',
     'frontend.connections',
     'frontend.snapshots',
     'frontend.cluster',
     'ngTagsInput',
     'checklist-model',
-    'ngIdle'
+    'ngIdle',
+    'frontend.services',
+    'frontend.routes'
   ]);
 
 
@@ -182,7 +183,7 @@
                    editableOptions, editableThemes, $templateCache, NodesService,
                    AuthService, cfpLoadingBar, UserService, $localStorage, Idle) {
         Idle.watch();
-        $rootScope.$on('IdleTimeout', function() {
+        $rootScope.$on('IdleTimeout', function () {
           $localStorage.$reset();
           return window.location.reload(false)
         });
@@ -196,6 +197,7 @@
         editableThemes.bs3.buttonsClass = 'btn-sm btn-link';
 
         $rootScope.moment = window.moment;
+        $rootScope.prettyCron = window.prettyCron;
         $rootScope.KONGA_CONFIG = window.KONGA_CONFIG;
         $rootScope.$stateParams = $stateParams;
 

@@ -41,7 +41,12 @@
         KongPluginsService.prototype.makePluginGroups = function () {
           return InfoService.getInfo().then(function (resp) {
             var info = resp.data
-            var plugins_available = info.plugins.available_on_server
+            var plugins_available = info.plugins.available_on_server;
+            var auth_plugins = ['basic-auth', 'key-auth', 'oauth2', 'hmac-auth', 'jwt', 'ldap-auth'];
+            auth_plugins.forEach(function (name) {
+              delete plugins_available[name]
+            });
+
             var pluginGroups = self.pluginGroups()
 
             Object.keys(plugins_available).forEach(function (plugin_name) {
@@ -64,37 +69,19 @@
           KongPluginsService.prototype.pluginGroups = function () {
             return [
               {
-                name: "Authentication",
-                description: "Protect your services with an authentication layer",
-                icon: "mdi-account-outline",
-                hasConsumerPlugins: false,
-                plugins: {
-                  "basic-auth": {
-                    description: "Add Basic Authentication to your APIs"
-                  },
-                  "key-auth": {
-                    description: "Add a key authentication to your APIs"
-                  },
-                  "oauth2": {
-                    description: "Add an OAuth 2.0 authentication to your APIs"
-                  },
-                  "hmac-auth": {
-                    description: "Add HMAC Authentication to your APIs"
-                  },
-                  "jwt": {
-                    description: "Verify and authenticate JSON Web Tokens"
-                  },
-                  "ldap-auth": {
-                    description: "Integrate Kong with a LDAP server"
-                  },
-                }
-              },
-              {
                 name: "Security",
                 icon: "mdi-security",
                 hasConsumerPlugins: true,
                 description: "Protect your services with additional security layers",
                 plugins: {
+                  "gluu-oauth-pep": {
+                    hideIfNotInConsumerContext: true,
+                    description: "The OAuth PEP is used to enforce the presence of OAuth scopes for access to resources protected by the Gateway. OAuth scopes are defined in an external OAuth Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd OAuth middleware service for communication."
+                  },
+                  "gluu-uma-pep": {
+                    hideIfNotInConsumerContext: true,
+                    description: "The UMA PEP plugin is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
+                  },
                   "acl": {
                     hideIfNotInConsumerContext: true,
                     description: "Control which consumers can access APIs"
@@ -103,16 +90,26 @@
                     hideIfNotInConsumerContext: true,
                     description: "Allow developers to make requests from the browser"
                   },
-                  "ssl": {
-                    hideIfNotInConsumerContext: true,
-                    description: "Add an SSL certificate for an underlying service"
-                  },
                   "ip-restriction": {
                     description: "Whitelist or blacklist IPs that can make requests"
                   },
                   "bot-detection": {
                     hideIfNotInConsumerContext: true,
                     description: "Detects and blocks bots or custom clients"
+                  }
+                }
+              },
+              {
+                name: "Metrics",
+                icon: "mdi-chart-bar",
+                hasConsumerPlugins: true,
+                description: "Expose metrics, which can be scrapped by a Prometheus Server",
+                plugins: {
+                  "prometheus": {
+                    description: "Expose metrics related to Kong and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
+                  },
+                  "gluu-metrics": {
+                    description: "Expose metrics related to Gluu client grant, ticket, endpoint and proxied upstream services in Prometheus exposition format, which can be scrapped by a Prometheus Server."
                   }
                 }
               },
@@ -217,8 +214,17 @@
                 description: "Custom Plugins",
                 icon: "mdi-account-box-outline",
                 plugins: {
-                  "gluu-oauth2-client-auth": {
-                    description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
+                  "pre-function": {
+                    description: "Dynamically run Lua code from Kong during access phase. Runs before other plugins run during access phase."
+                  },
+                  "post-function": {
+                    description: "Dynamically run Lua code from Kong during access phase. Runs after other plugins in the access phase."
+                  },
+                  "zipkin": {
+                    description: "Propagate zipkin spans and report spans to a zipkin server."
+                  },
+                  "azure-functions": {
+                    description: "This plugin invokes Azure Functions. It can be used in combination with other request plugins to secure, manage or extend the function."
                   }
                 }
               }
@@ -233,31 +239,6 @@
          */
         KongPluginsService.prototype.pluginOptions = function (plugin) {
           var data = {
-            "ssl": {
-              "meta": {
-                description: 'Dynamically binds a specific SSL certificate to the <code>request_host</code> value of a service. ' +
-                'In case you want to setup a global SSL certificate for every API, take a look at the <a href="https://getkong.org/docs/0.9.x/configuration/#ssl_cert_path" target="_blank">Kong SSL configuration options.</a>' +
-                '<br><span>If no <code>.cert</code> and <code>.key</code> files are provided, Konga will create self-signed certificates and send them to Kong ( <a href="https://www.openssl.org/">openssl library</a> must be available on your machine ).</span>'
-              },
-              "cert": {
-                type: "file",
-                help: "Upload the certificate.crt file."
-              },
-              "key": {
-                type: "file",
-                help: "Upload the certificate.key file."
-              },
-              "only_https": {
-                type: "boolean",
-                value: false,
-                help: "Specify if the service should only be available through an https protocol."
-              },
-              "accept_http_if_already_terminated": {
-                type: "boolean",
-                value: false,
-                help: "If only_https is true, accepts HTTPs requests that have already been terminated by a proxy or load balancer and the x-forwarded-proto: https header has been added to the request. Only enable this option if the Kong server cannot be publicly accessed and the only entry-point is such proxy or load balancer."
-              },
-            },
             "request-size-limiting": {
               meta: {
                 description: 'Block incoming requests whose body is greater than a specific size in megabytes.'
@@ -393,177 +374,6 @@
                 type: 'text',
                 value: '',
                 help: 'Comma separated list of arbitrary group names that are allowed to consume the API. At least one between whitelist or blacklist must be specified.'
-              }
-            },
-            "ldap-auth": {
-              meta: {
-                description: 'Add LDAP Bind Authentication to your APIs, with username and password protection. The plugin will check for valid credentials in the <code>Proxy-Authorization</code> and <code>Authorization</code> header (in this order).'
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
-              },
-              'ldap_host': {
-                type: 'text',
-                value: '',
-                help: 'Host on which the LDAP server is running.'
-              },
-              'ldap_port': {
-                type: 'number',
-                value: '',
-                help: 'TCP port where the LDAP server is listening.'
-              },
-              'start_tls': {
-                type: 'boolean',
-                value: false,
-                help: 'Set it to true to issue StartTLS (Transport Layer Security) extended operation over ldap connection.'
-              },
-              'base_dn': {
-                type: 'text',
-                value: '',
-                help: 'Base DN as the starting point for the search.'
-              },
-              'verify_ldap_host': {
-                type: 'boolean',
-                value: false,
-                help: 'Set it to true to authenticate LDAP server. The server certificate will be verified according to the CA certificates specified by the lua_ssl_trusted_certificate directive.'
-              },
-              'attribute': {
-                type: 'text',
-                value: '',
-                help: 'Attribute to be used to search the user.'
-              },
-              'cache_ttl': {
-                type: 'number',
-                value: 60,
-                help: 'Cache expiry time in seconds.'
-              },
-              'timeout': {
-                type: 'number',
-                value: 10000,
-                help: 'An optional timeout in milliseconds when waiting for connection with LDAP server.'
-              },
-              'keepalive': {
-                type: 'number',
-                value: 60000,
-                help: 'An optional value in milliseconds that defines for how long an idle connection to LDAP server will live before being closed.'
-              },
-            },
-            "hmac-auth": {
-              meta: {
-                description: 'Add HMAC Signature Authentication to your APIs to establish the identity of the consumer. The plugin will check for valid signature in the <code>Proxy-Authorization</code> and <code>Authorization</code> header (in this order). This plugin implementation follows the <a href="https://tools.ietf.org/html/draft-cavage-http-signatures-00">draft-cavage-http-signatures-00</a> draft with slightly changed signature scheme.'
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
-              },
-              'clock_skew': {
-                type: 'number',
-                value: 300,
-                help: 'Clock Skew in seconds to prevent replay attacks'
-              }
-            },
-            "basic-auth": {
-              meta: {
-                description: 'Add Basic Authentication to your APIs, with username and password protection. The plugin will check for valid credentials in the <code>Proxy-Authorization</code> and <code>Authorization</code> header (in this order).',
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
-              }
-            },
-            "key-auth": {
-              meta: {
-                description: 'Add Key Authentication (also referred to as an API key) to your APIs. Consumers then add their key either in a querystring parameter or a header to authenticate their requests.'
-              },
-              'key_names': {
-                type: 'text',
-                value: 'apikey',
-                help: 'Describes an array of comma separated parameter names where the plugin will look for a key. The client must send the authentication key in one of those key names, and the plugin will try to read the credential from a header or the querystring parameter with the same name.'
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request.'
-              }
-            },
-            "oauth2": {
-              meta: {
-                description: 'Add an OAuth 2.0 authentication layer with the <a href="https://tools.ietf.org/html/rfc6749#section-4.1" target="_blank">Authorization Code Grant</a>, <a href="https://tools.ietf.org/html/rfc6749#section-4.4" target="_blank">Client Credentials</a>, <a href="https://tools.ietf.org/html/rfc6749#section-4.2" target="_blank">Implicit Grant</a> or <a href="https://tools.ietf.org/html/rfc6749#section-4.3" target="_blank">Resource Owner Password Credentials Grant</a> flow. This plugin requires the <a href="https://getkong.org/plugins/dynamic-ssl/" target="_blank">SSL Plugin</a> with the <code>only_https</code> parameter set to <code>true</code> to be already installed on the API, failing to do so will result in a security weakness.'
-              },
-              'scopes': {
-                type: 'text',
-                value: '',
-                help: 'Describes an array of comma separated scope names that will be available to the end user'
-              },
-              'mandatory_scope': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to require at least one scope to be authorized by the end user'
-              },
-              'token_expiration': {
-                type: 'number',
-                value: 7200,
-                help: 'An optional integer value telling the plugin how long should a token last, after which the client will need to refresh the token. Set to 0 to disable the expiration.'
-
-              },
-              'enable_authorization_code': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value to enable the three-legged Authorization Code flow (RFC 6742 Section 4.1)'
-              },
-              'enable_client_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value to enable the Client Credentials Grant flow (RFC 6742 Section 4.4)'
-              },
-              'enable_implicit_grant': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value to enable the Implicit Grant flow which allows to provision a token as a result of the authorization process (RFC 6742 Section 4.2)'
-              },
-              'enable_password_grant': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value to enable the Resource Owner Password Credentials Grant flow (RFC 6742 Section 4.3)'
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
-              },
-              'accept_http_if_already_terminated': {
-                type: 'boolean',
-                value: false,
-                help: 'Accepts HTTPs requests that have already been terminated by a proxy or load balancer and the x-forwarded-proto: https header has been added to the request. Only enable this option if the Kong server cannot be publicly accessed and the only entry-point is such proxy or load balancer.'
-              },
-            },
-            jwt: {
-              meta: {
-                description: 'Verify requests containing HS256 or RS256 signed JSON Web Tokens (as specified in RFC 7519). Each of your Consumers will have JWT credentials (public and secret keys) which must be used to sign their JWTs. A token can then be passed through the Authorization header or in the request\'s URI and Kong will either proxy the request to your upstream services if the token\'s signature is verified, or discard the request if not. Kong can also perform verifications on some of the registered claims of <a href="https://tools.ietf.org/html/rfc7519">RFC 7519</a> (exp and nbf).'
-              },
-              'uri_param_names': {
-                type: 'text',
-                value: 'jwt',
-                help: 'A list of querystring parameters that Kong will inspect to retrieve JWTs.'
-              },
-              'claims_to_verify': {
-                type: 'text',
-                value: '',
-                help: 'A list of registered claims (according to RFC 7519) that Kong can verify as well. Accepted values: exp, nbf.'
-              },
-              'key_claim_name': {
-                type: 'text',
-                value: 'iss',
-                help: 'The name of the claim in which the key identifying the secret must be passed.'
-              },
-              'secret_is_base64': {
-                type: 'boolean',
-                value: false,
-                help: 'If true, the plugin assumes the credential\'s secret to be base64 encoded. You will need to create a base64 encoded secret for your consumer, and sign your JWT with the original secret.'
               }
             },
             "correlation-id": {
@@ -898,27 +708,6 @@
                   help: "List of property:value pairs. If the property is not present in the JSON body, add it with the given value. If it is already present, the two values (old and new) will be aggregated in an array."
                 },
               },
-
-            },
-            "gluu-oauth2-client-auth": {
-              meta: {
-                description: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd-https-extension` service, which is an OAuth2 client middleware service."
-              },
-              'hide_credentials': {
-                type: 'boolean',
-                value: false,
-                help: 'An optional boolean value telling the plugin to hide the credential to the upstream API server. It will be removed by Kong before proxying the request'
-              },
-              'oxd_id': {
-                type: 'text',
-                value: '',
-                help: 'Used to introspect the token. This above is oxd_id from Konga config. You can also enter any other oxd_id. If you leave it blank, then the plugin creates a new client itself.'
-              },
-              "anonymous": {
-                type: 'text',
-                value: '',
-                help: "An optional string (consumer uuid) value to use as an `anonymous` consumer if authentication fails. If empty (default), the request will fail with an authentication failure 4xx. Please note that this value must refer to the Consumer id attribute which is internal to Kong, and not its custom_id."
-              }
             }
           };
 

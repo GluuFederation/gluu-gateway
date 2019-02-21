@@ -1,0 +1,13 @@
+{
+  "name": "log-server",
+  "version": "1.0.0",
+  "description": "UDP socket listen server",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Meghna Joshi",
+  "license": "MIT",
+  "dependencies": {
+    "pg": "^7.4.3"
+  }
+}

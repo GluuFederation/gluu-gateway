@@ -70,7 +70,7 @@ var defaultModel = _.merge(_.cloneDeep(require('../base/Model')), {
 
     afterDestroy: function (values, cb) {
 
-        sails.log("User:afterDestroy:called => ",values);
+        sails.log(new Date(), "User:afterDestroy:called => ",values);
 
 
         var fns = [];

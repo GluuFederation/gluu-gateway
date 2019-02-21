@@ -9,54 +9,31 @@
   angular.module('frontend.plugins')
     .controller('AddPluginsController', [
       '_', '$scope', '$rootScope', '$log',
-      '$state', 'ApiService', 'MessageService', 'DialogService',
+      '$state', 'MessageService', 'DialogService',
       'KongPluginsService', 'PluginsService', '$uibModal',
-      '_plugins', '_info',
       function controller(_, $scope, $rootScope, $log,
-                          $state, ApiService, MessageService, DialogService,
-                          KongPluginsService, PluginsService, $uibModal,
-                          _plugins, _info) {
+                          $state, MessageService, DialogService,
+                          KongPluginsService, PluginsService, $uibModal) {
 
+        var pluginOptions = new KongPluginsService().pluginOptions();
 
-        var info = _info.data
-        var plugins_available = info.plugins.available_on_server
-        var pluginOptions = new KongPluginsService().pluginOptions()
-
-        $scope.pluginOptions = pluginOptions
-        new KongPluginsService().makePluginGroups().then(function (groups) {
-          $scope.pluginGroups = groups
-          $log.debug("Plugin Groups", $scope.pluginGroups)
-
-          $scope.pluginGroups.forEach(function (group) {
-            console.log(group.plugins);
-            for (var key in group.plugins) {
-              if (key == "gluu-oauth2-rs") {
-                delete group.plugins[key];
-                continue;
-              }
-              if (!plugins_available[key]) delete group.plugins[key]
-            }
-          })
-
-          // Init
-          syncPlugins(_plugins.data.data)
-        })
-        $scope.activeGroup = 'Authentication'
-        $scope.setActiveGroup = setActiveGroup
-        $scope.filterGroup = filterGroup
-        $scope.onAddPlugin = onAddPlugin
+        $scope.pluginOptions = pluginOptions;
+        $scope.activeGroup = 'Security';
+        $scope.setActiveGroup = setActiveGroup;
+        $scope.filterGroup = filterGroup;
+        $scope.onAddPlugin = onAddPlugin;
 
         $scope.alert = {
-          msg: 'Plugins added in this section will be applied to <strong>all APIs</strong>.' +
-          '<br>If you need to add plugins to a specific API, you can do it' +
-          ' in the <a href="#!/apis">APIs section</a>.' +
-          '<br>If you need to add plugins to a specific Consumer, you can do it' +
-          ' in the respective Consumer page.'
-        }
+          msg: '<strong>Plugins added in this section will be applied Globally</strong>.' +
+          '<br>- If you need to add plugins to a specific Service or Route, you can do it' +
+          ' in the respective section.' +
+          '<br>- If you need to add plugins to a specific Consumer, you can do it' +
+          ' in the respective Consumer\'s page.'
+        };
 
         $scope.closeAlert = function () {
           $scope.alert = undefined
-        }
+        };
 
 
         /**
@@ -74,6 +51,21 @@
         }
 
         function onAddPlugin(name) {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
+          if (name == "gluu-oauth-pep") {
+            return $state.go("plugins.oauth-plugin");
+          }
+
+          if (name == "gluu-uma-pep") {
+            return $state.go("plugins.uma-plugin");
+          }
+
           $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
@@ -82,10 +74,7 @@
             size: 'lg',
             controller: 'AddPluginController',
             resolve: {
-              _api: function () {
-                return null;
-              },
-              _consumer: function () {
+              _context: function () {
                 return null;
               },
               _pluginName: function () {
@@ -108,40 +97,47 @@
         }
 
         function syncPlugins(added) {
+          $scope.existingPlugins = [];
 
-          var addedMap = added.map(function (item) {
-            return item.name
-          })
-
-          $scope.pluginGroups.forEach(function (group) {
-            for (var key in group.plugins) {
-              if (addedMap.indexOf(key) > -1) {
-                group.plugins[key].isAdded = true
-                var plugin = findPlugin(added, key);
-                if (plugin) {
-                  for (var _key in plugin) {
-                    group.plugins[key][_key] = plugin[_key]
-                  }
-                }
-              } else {
-                group.plugins[key].isAdded = false
-              }
+          added.forEach(function (item) {
+            if (!(item.service_id || item.route_id || item.api_id)) {
+              $scope.existingPlugins.push(item.name)
             }
-          })
-        }
+          });
 
+          new KongPluginsService().makePluginGroups().then(function (groups) {
+            $scope.pluginGroups = groups;
+            $log.debug("Plugin Groups", $scope.pluginGroups);
+
+            var flag = false;
+            $scope.existingPlugins.forEach(function(obj){
+              if (obj == "gluu-oauth-pep") {
+                $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = false;
+                flag = true
+              }
+              if (obj == "gluu-uma-pep") {
+                $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = false;
+                flag = true
+              }
+            });
+            if (flag == false) {
+              $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
+              $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
+            }
+          });
+        }
 
         function fetchPlugins() {
           PluginsService.load()
             .then(function (res) {
-              syncPlugins(res.data.data)
+              syncPlugins(res.data.data);
             })
         }
 
         // Listeners
         $scope.$on('plugin.added', function () {
           fetchPlugins()
-        })
+        });
 
         /**
          * ------------------------------------------------------------
@@ -150,14 +146,13 @@
          */
         $scope.$on("plugin.added", function () {
           fetchPlugins()
-        })
+        });
 
         $scope.$on("plugin.updated", function (ev, plugin) {
           fetchPlugins()
-        })
+        });
 
-
+        fetchPlugins();
       }
-    ])
-  ;
+    ]);
 }());

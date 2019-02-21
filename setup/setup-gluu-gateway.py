@@ -42,7 +42,7 @@ class KongSetup(object):
         self.log = 'gluu-gateway-setup.log'
 
         self.kongConfigFile = '/etc/kong/kong.conf'
-        self.kongCustomPlugins = 'gluu-oauth2-rs,gluu-oauth2-client-auth'
+        self.kongCustomPlugins = 'gluu-uma-pep,gluu-oauth-pep,gluu-metrics'
 
         self.oxdLicense = ''
 
@@ -58,6 +58,8 @@ class KongSetup(object):
         self.hostname = '/bin/hostname'
         self.cmd_touch = '/bin/touch'
         self.cmd_mv = '/bin/mv'
+        self.cmd_cp = '/bin/cp'
+        self.cmd_rm = '/bin/rm'
         self.cmd_node = '/usr/bin/node'
         self.cmd_update_rs_d = '/usr/sbin/update-rc.d'
         self.cmd_sh = '/bin/sh'
@@ -66,6 +68,7 @@ class KongSetup(object):
         self.cmd_alternatives = 'alternatives'
         self.cmd_echo = '/bin/echo'
         self.cmd_service = 'service'
+        self.cmd_systemctl = 'systemctl'
 
         self.countryCode = ''
         self.state = ''
@@ -76,42 +79,45 @@ class KongSetup(object):
         self.kongAdminListenSsl = '8445'
         self.distKongConfigFolder = '/etc/kong'
         self.distKongConfigFile = '%s/kong.conf' % self.distKongConfigFolder
+        self.distLuaFolder = '/usr/local/share/lua/5.1'
+        self.distGluuLuaFolder = '%s/gluu' % self.distLuaFolder
+        self.distKongFolder = '%s/kong' % self.distLuaFolder
+        self.distKongPluginsFolder = '%s/plugins' % self.distKongFolder
 
         self.optFolder = '/opt'
         self.distGluuGatewayFolder = '%s/gluu-gateway' % self.optFolder
         self.distKongaFolder = '%s/konga' % self.distGluuGatewayFolder
+        self.distKongaAssestFolder = '%s/assets' % self.distKongaFolder
         self.distKongaConfigPath = '%s/config' % self.distKongaFolder
         self.distKongaConfigFile = '%s/config/local.js' % self.distKongaFolder
         self.distKongaDBFile = '%s/setup/templates/konga_db.sql' % self.distGluuGatewayFolder
+        self.ggPluginsFolder = '%s/kong/plugins' % self.distGluuGatewayFolder
+        self.gluuOAuthPEPPlugin = '%s/gluu-oauth-pep' % self.ggPluginsFolder
+        self.gluuUMAPEPPlugin = '%s/gluu-uma-pep' % self.ggPluginsFolder
+        self.gluuMetricsPlugin = '%s/gluu-metrics' % self.ggPluginsFolder
+        self.removePluginList = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
+        self.ggCommanFolder = '%s/kong/common' % self.distGluuGatewayFolder
 
         self.distOxdServerFolder = '%s/oxd-server' % self.optFolder
-        self.distOxdServerConfigPath = '/etc/oxd/oxd-server'
-        self.distOxdServerConfigFile = '%s/oxd-conf.json' % self.distOxdServerConfigPath
-        self.distOxdServerDefaultConfigFile = '%s/oxd-default-site-config.json' % self.distOxdServerConfigPath
+        self.distOxdServerConfigPath = '%s/conf' % self.distOxdServerFolder
+        self.distOxdServerConfigFile = '%s/oxd-server.yml' % self.distOxdServerConfigPath
 
         self.kongaService = 'gluu-gateway'
-        self.oxdServerService = 'oxd-server'
-        self.oxdHTTPExtensionService = 'oxd-https-extension'
+        self.oxdServerService = 'oxd-server' # change this when oxd-server-4.0 is released
 
         # oxd kong Property values
         self.kongaPort = '1338'
         self.kongaPolicyType = 'uma_rpt_policy'
         self.kongaOxdId = ''
-        self.kongaClientIdOfOXDId = ''
-        self.kongaSetupClientOXDId = ''
         self.kongaOPHost = ''
         self.kongaClientId = ''
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
         self.kongaKongAdminWebURL = 'http://localhost:8001'
-        self.kongaOxdVersion = '3.1.3'
-        self.ggVersion = '3.1.3'
+        self.kongaOxdVersion = '4.0'
+        self.ggVersion = '1.0'
 
         # oxd licence configuration
-        self.oxdServerLicenseId = ''
-        self.oxdServerPublicKey = ''
-        self.oxdServerPublicPassword = ''
-        self.oxdServerLicensePassword = ''
         self.oxdServerAuthorizationRedirectUri = ''
         self.oxdServerOPDiscoveryPath = ''
         self.oxdServerRedirectUris = ''
@@ -120,7 +126,8 @@ class KongSetup(object):
         # JRE setup properties
         self.jre_version = '162'
         self.jreDestinationPath = '/opt/jdk1.8.0_%s' % self.jre_version
-        self.distAppFolder = '%s/dist/app' % self.distGluuGatewayFolder
+        self.distFolder = '%s/dist' % self.distGluuGatewayFolder
+        self.distAppFolder = '%s/app' % self.distFolder
         self.jre_home = '/opt/jre'
         self.jreSHFileName = 'jre-gluu.sh'
         self.isPrompt = True
@@ -137,6 +144,20 @@ class KongSetup(object):
         self.distPGhbaConfigPath = '/var/lib/pgsql/10/data'
         self.distPGhbaConfigFile = '%s/pg_hba.conf' % self.distPGhbaConfigPath
 
+        # dependency zips
+        self.ggNodeModulesDir = "%s/node_modules" % self.distKongaFolder
+        self.ggBowerModulesDir = "%s/bower_components" % self.distKongaAssestFolder
+        self.ggNodeModulesArchive = 'gg_node_modules.tar.gz'
+        self.ggBowerModulesArchive = 'gg_bower_components.tar.gz'
+
+        # third party lua library
+        self.oxdWebFilePath = '%s/third-party/oxd-web-lua/oxdweb.lua' % self.distGluuGatewayFolder
+        self.jsonLogicFilePath = '%s/third-party/json-logic-lua/logic.lua' % self.distGluuGatewayFolder
+        self.lrucacheFilesPath = '%s/third-party/lua-resty-lrucache/lib/resty' % self.distGluuGatewayFolder
+        self.JWTFilesPath = '%s/third-party/lua-resty-jwt/lib/resty/.' % self.distGluuGatewayFolder
+        self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty/.' % self.distGluuGatewayFolder
+        self.prometheusFilePath = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.distGluuGatewayFolder
+
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
             self.isPrompt = False
@@ -152,21 +173,12 @@ class KongSetup(object):
             self.pgPwd = data['pgPwd']
             self.oxdAuthorizationRedirectUri = data['oxdAuthorizationRedirectUri']
             self.installOxd = data['installOxd']
-            if self.installOxd:
-                self.kongaOPHost = 'https://' + data['kongaOPHost']
-                self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
-                self.oxdServerLicenseId = data['oxdServerLicenseId']
-                self.oxdServerPublicKey = data['oxdServerPublicKey']
-                self.oxdServerPublicPassword = data['oxdServerPublicPassword']
-                self.oxdServerLicensePassword = data['oxdServerLicensePassword']
-            if not self.installOxd:
-                self.kongaOPHost = 'https://' + data['kongaOPHost']
+            self.kongaOPHost = 'https://' + data['kongaOPHost']
+            self.oxdServerOPDiscoveryPath = data['oxdServerOPDiscoveryPath'] + '/.well-known/openid-configuration'
             self.kongaOxdWeb = data['kongaOxdWeb']
             self.generateClient = data['generateClient']
             if not self.generateClient:
                 self.kongaOxdId = data['kongaOxdId']
-                self.kongaClientIdOfOXDId = data['kongaClientIdOfOXDId']
-                self.kongaSetupClientOXDId = data['kongaSetupClientOXDId']
                 self.kongaClientId = data['kongaClientId']
                 self.kongaClientSecret = data['kongaClientSecret']
 
@@ -179,24 +191,25 @@ class KongSetup(object):
         if self.os_type == Distribution.Ubuntu:
             self.run(['/etc/init.d/postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
         if self.os_type == Distribution.Debian:
             self.run(['/etc/init.d/postgresql', 'start'])
             os.system('/bin/su -s /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\"" postgres' % self.pgPwd)
-            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\"" postgres')
-            os.system('/bin/su -s /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\"" postgres')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
             os.system('/bin/su -s /bin/bash -c "psql konga < %s" postgres' % self.distKongaDBFile)
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             # Initialize PostgreSQL first time
             self.run([self.cmd_ln, '/usr/lib/systemd/system/postgresql-10.service', '/usr/lib/systemd/system/postgresql.service'])
             self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
-            self.run([self.cmd_service, 'postgresql', 'start'])
+            self.run([self.cmd_systemctl, 'enable', 'postgresql'])
+            self.run([self.cmd_systemctl, 'start', 'postgresql'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '6':
             # Initialize PostgreSQL first time
@@ -205,18 +218,16 @@ class KongSetup(object):
             self.renderTemplateInOut(self.distPGhbaConfigFile, self.template_folder, self.distPGhbaConfigPath)
             self.run([self.cmd_service, 'postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pgPwd)
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE kong OWNER postgres;\\\""')
-            os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"CREATE DATABASE konga OWNER postgres;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
+            os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
 
     def configureOxd(self):
-        if self.installOxd:
-            self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
-            self.renderTemplateInOut(self.distOxdServerDefaultConfigFile, self.template_folder,
-                                     self.distOxdServerConfigPath)
-
-        self.run([self.cmd_service, self.oxdServerService, 'start'])
-        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'start'])
+        self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            self.run([self.cmd_service, self.oxdServerService, 'start'])
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            self.run([self.cmd_systemctl, 'start', self.oxdServerService])
 
     def detectHostname(self):
         detectedHostname = None
@@ -229,18 +240,6 @@ class KongSetup(object):
                 self.logIt("No detected hostname", True)
                 self.logIt(traceback.format_exc(), True)
         return detectedHostname
-
-    def getExternalCassandraInfo(self):
-        return True
-
-    def getExternalOxdInfo(self):
-        return True
-
-    def getExternalPostgressInfo(self):
-        return True
-
-    def getExternalRedisInfo(self):
-        return True
 
     def gen_cert(self, serviceName, password, user='root', cn=None):
         self.logIt('Generating Certificate for %s' % serviceName)
@@ -347,13 +346,40 @@ class KongSetup(object):
         except:
             return None
 
-    def installSample(self):
+    def installPlugins(self):
         self.logIt('Installing luarocks packages...')
-        self.run(['luarocks', 'install', 'json-lua'])
-        self.run(['luarocks', 'install', 'oxd-web-lua'])
-        self.run(['luarocks', 'install', 'json-logic-lua'])
-        self.run(['luarocks', 'install', 'gluu-oauth2-rs'])
-        self.run(['luarocks', 'install', 'gluu-oauth2-client-auth'])
+        # oxd-web-lua
+        self.run([self.cmd_mkdir, '-p', self.distGluuLuaFolder])
+        self.run([self.cmd_cp, self.oxdWebFilePath, self.distGluuLuaFolder])
+
+        # json-logic-lua
+        self.run([self.cmd_mkdir, '-p', '%s/rucciva' % self.distLuaFolder])
+        self.run([self.cmd_cp, self.jsonLogicFilePath, '%s/rucciva/json_logic.lua' % self.distLuaFolder])
+
+        # lua-resty-lrucache
+        self.run([self.cmd_cp, '-R', '%s/lrucache' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
+        self.run([self.cmd_cp, '%s/lrucache.lua' % self.lrucacheFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # lua-resty-jwt
+        self.run([self.cmd_cp, '-a', self.JWTFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # lua-resty-hmac
+        self.run([self.cmd_cp, '-a', self.HMACFilesPath, '%s/resty' % self.distLuaFolder])
+
+        # Prometheus
+        self.run([self.cmd_cp, self.prometheusFilePath, self.distLuaFolder])
+
+        # gluu plugins
+        self.run([self.cmd_cp, '-R', self.gluuOAuthPEPPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuUMAPEPPlugin, self.distKongPluginsFolder])
+        self.run([self.cmd_cp, '-R', self.gluuMetricsPlugin, self.distKongPluginsFolder])
+
+        # gluu plugins common file
+        self.run([self.cmd_cp, '-R', '%s/kong-auth-pep-common.lua' % self.ggCommanFolder, self.distGluuLuaFolder])
+
+        # Remove kong default plugins
+        for plugin in self.removePluginList:
+            self.run([self.cmd_rm, '-rf', '%s/%s' % (self.distKongPluginsFolder, plugin)])
 
     def installJRE(self):
         self.logIt("Installing server JRE 1.8 %s..." % self.jre_version)
@@ -382,9 +408,21 @@ class KongSetup(object):
         if not os.path.exists(self.cmd_node):
             self.run([self.cmd_ln, '-s', '`which nodejs`', self.cmd_node])
 
-        self.run(['npm', 'install', '-g', 'bower', 'gulp', 'sails'])
-        self.run(['npm', 'install', '--unsafe-perm'], self.distKongaFolder, os.environ.copy(), True)
-        self.run(['bower', '--allow-root', 'install'], self.distKongaFolder, os.environ.copy(), True)
+        try:
+            self.run([self.cmd_mkdir, '-p', self.ggNodeModulesDir])
+            self.logIt("Extracting %s into %s" % (self.ggNodeModulesArchive, self.ggNodeModulesDir))
+            self.run(['tar', '--strip', '1', '-xzf', '%s/%s' % (self.distFolder, self.ggNodeModulesArchive), '-C', self.ggNodeModulesDir, '--no-xattrs', '--no-same-owner', '--no-same-permissions'])
+        except:
+            self.logIt("Error encountered while extracting archive %s" % self.ggNodeModulesArchive)
+            self.logIt(traceback.format_exc(), True)
+
+        try:
+            self.run([self.cmd_mkdir, '-p', self.ggBowerModulesDir])
+            self.logIt("Extracting %s into %s" % (self.ggBowerModulesArchive, self.ggBowerModulesDir))
+            self.run(['tar', '--strip', '1', '-xzf', '%s/%s' % (self.distFolder, self.ggBowerModulesArchive), '-C', self.ggBowerModulesDir, '--no-xattrs', '--no-same-owner', '--no-same-permissions'])
+        except:
+            self.logIt("Error encountered while extracting archive %s" % self.ggBowerModulesArchive)
+            self.logIt(traceback.format_exc(), True)
 
         if self.generateClient:
             AuthorizationRedirectUri = 'https://' + self.oxdAuthorizationRedirectUri + ':' + self.kongaPort
@@ -392,29 +430,31 @@ class KongSetup(object):
                 'op_host': self.kongaOPHost,
                 'authorization_redirect_uri': AuthorizationRedirectUri,
                 'post_logout_redirect_uri': AuthorizationRedirectUri,
-                'scope': ['openid', 'uma_protection'],
-                'grant_types': ['authorization_code'],
-                'client_name': 'konga_client'
+                'scope': ['openid', 'oxd', 'permission'],
+                'grant_types': ['authorization_code', 'client_credentials'],
+                'client_name': 'KONGA_GG_UI_CLIENT'
             }
-            self.logIt('Creating konga oxd client used to call oxd-https endpoints...')
-            print 'Creating konga oxd client used to call oxd-https endpoints...'
+            self.logIt('Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...')
+            print 'Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...'
             try:
-                res = requests.post(self.kongaOxdWeb + '/setup-client', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
+                res = requests.post(self.kongaOxdWeb + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
                 resJson = json.loads(res.text)
 
-                if resJson['status'] == 'ok':
-                    self.kongaOxdId = resJson['data']['oxd_id']
-                    self.kongaClientIdOfOXDId = resJson['data']['client_id_of_oxd_id']
-                    self.kongaSetupClientOXDId = resJson['data']['setup_client_oxd_id']
-                    self.kongaClientSecret = resJson['data']['client_secret']
-                    self.kongaClientId = resJson['data']['client_id']
+                if res.ok:
+                    self.kongaOxdId = resJson['oxd_id']
+                    self.kongaClientSecret = resJson['client_secret']
+                    self.kongaClientId = resJson['client_id']
                 else:
-                    msg = """Error: Unable to create the konga oxd client used to call the oxd-https endpoints
-                    Please check oxd-server and oxd-https logs."""
+                    msg = """Error: Unable to create the konga oxd client used to call the oxd-server endpoints
+                    Please check oxd-server logs."""
                     print msg
                     self.logIt(msg, True)
                     self.logIt('OXD Error %s' % resJson, True)
                     sys.exit()
+            except KeyError, e:
+                self.logIt(resJson, True)
+                self.logIt('Error: Failed to register client', True)
+                sys.exit()
             except requests.exceptions.HTTPError as e:
                 self.logIt('Error: Failed to connect %s' % self.kongaOxdWeb, True)
                 self.logIt('%s' % e, True)
@@ -474,34 +514,22 @@ class KongSetup(object):
         pg = self.getPW()
         self.pgPwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
 
-        # OXD Configuration
-        self.installOxd = self.makeBoolean(self.getPrompt(
-            'Would you like to configure oxd-server? (y - configure, n - skip)', 'y'))
-        if self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-            self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
-            self.oxdServerLicenseId = self.getPrompt('License Id')
-            self.oxdServerPublicKey = self.getPrompt('Public key')
-            self.oxdServerPublicPassword = self.getPrompt('Public password')
-            self.oxdServerLicensePassword = self.getPrompt('License password')
+        # We are going to ask for 'OP hostname' regardless of whether we're installing oxd or not
+        self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
+        self.oxdServerOPDiscoveryPath = self.kongaOPHost + '/.well-known/openid-configuration'
 
         # Konga Configuration
         msg = """The next few questions are used to configure Konga.
-            If you are connecting to an existing oxd-https server on the network,
+            If you are connecting to an existing oxd server on the network,
             make sure it's available from this server.
             """
         print msg
 
-        if not self.installOxd:
-            self.kongaOPHost = 'https://' + self.getPrompt('OP hostname')
-
-        self.kongaOxdWeb = self.getPrompt('oxd https url', 'https://%s:8443' % self.hostname)
-        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-https API's? (y - generate, n - enter client_id and client_secret manually)", 'y'))
+        self.kongaOxdWeb = self.getPrompt('oxd server url', 'https://%s:8443' % self.hostname)
+        self.generateClient = self.makeBoolean(self.getPrompt("Generate client creds to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generateClient:
             self.kongaOxdId = self.getPrompt('oxd_id')
-            self.kongaClientIdOfOXDId = self.getPrompt('client_id_of_oxd_id')
-            self.kongaSetupClientOXDId = self.getPrompt('setup_client_oxd_id')
             self.kongaClientId = self.getPrompt('client_id')
             self.kongaClientSecret = self.getPrompt('client_secret')
 
@@ -544,14 +572,16 @@ class KongSetup(object):
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
-        self.run([self.cmd_service, self.oxdServerService, 'stop'])
-        self.run([self.cmd_service, self.oxdHTTPExtensionService, 'stop'])
-        self.run([self.cmd_service, self.kongaService, 'stop'])
-        self.run([self.cmd_service, self.kongaService, 'start'])
-        if self.os_type in [Distribution.Ubuntu, Distribution.Debian]:
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            self.run([self.cmd_service, self.oxdServerService, 'stop'])
+            self.run([self.cmd_service, self.kongaService, 'stop'])
+            self.run([self.cmd_service, self.kongaService, 'start'])
             self.run([self.cmd_update_rs_d, self.kongaService, 'defaults'])
-        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL]:
-            self.run([self.cmd_chkconfig, self.kongaService, 'on'])
+        elif self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            self.run([self.cmd_systemctl, 'stop', self.oxdServerService])
+            self.run([self.cmd_systemctl, 'stop', self.kongaService])
+            self.run([self.cmd_systemctl, 'start', self.kongaService])
+            self.run([self.cmd_systemctl, 'enable', self.kongaService])            
 
     def copyFile(self, inFile, destFolder):
         try:
@@ -605,26 +635,28 @@ if __name__ == "__main__":
     try:
         if kongSetup.isPrompt:
             msg = "------------------------------------------------------------------------------------- \n" \
-              + "The MIT License (MIT) \n\n" \
-              + "Copyright (c) 2017 Gluu \n\n" \
-              + "Permission is hereby granted, free of charge, to any person obtaining a copy \n" \
-              + "of this software and associated documentation files (the 'Software'), to deal \n" \
-              + "in the Software without restriction, including without limitation the rights \n" \
-              + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
-              + "copies of the Software, and to permit persons to whom the Software is \n" \
-              + "furnished to do so, subject to the following conditions: \n\n" \
-              + "The above copyright notice and this permission notice shall be included in all \n" \
-              + "copies or substantial portions of the Software. \n\n" \
-              + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
-              + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
-              + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
-              + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
-              + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
-              + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
-              + "SOFTWARE. \n" \
-              + "------------------------------------------------------------------------------------- \n"
+                  + "The Gluu Support License (GLUU-SUPPORT)\n\n" \
+                  + "Copyright (c) 2018 Gluu\n\n" \
+                  + "Permission is hereby granted to any person obtaining a copy \n" \
+                  + "of this software and associated documentation files (the \"Software\"), to deal \n" \
+                  + "in the Software without restriction, including without limitation the rights \n" \
+                  + "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell \n" \
+                  + "copies of the Software, and to permit persons to whom the Software is \n" \
+                  + "furnished to do so, subject to the following conditions: \n\n" \
+                  + "The above copyright notice and this permission notice shall be included in all \n" \
+                  + "copies or substantial portions of the Software. \n\n" \
+                  + "The end-user person or organization using this software has an active support \n" \
+                  + "subscription while the software is in use in production. \n\n" \
+                  + "THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR \n" \
+                  + "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, \n" \
+                  + "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE \n" \
+                  + "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER \n" \
+                  + "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, \n" \
+                  + "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE \n" \
+                  + "SOFTWARE. \n" \
+                  + "------------------------------------------------------------------------------------- \n"
             print msg
-            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the MIT license? (y|N)', 'N'))
+            kongSetup.license = kongSetup.makeBoolean(kongSetup.getPrompt('Do you acknowledge that use of the Gluu Gateway is under the Stepped-Up Support License? (y|N)', 'N'))
             print ""
         if kongSetup.license:
             kongSetup.makeFolders()
@@ -637,24 +669,13 @@ if __name__ == "__main__":
                   + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
                   + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
                   + 'country'.ljust(30) + kongSetup.countryCode.rjust(35) + "\n" \
-                  + 'Configure oxd-server'.ljust(30) + repr(kongSetup.installOxd).rjust(35) + "\n" \
-                  + 'oxd https url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n"
-
-            if kongSetup.installOxd:
-                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n" \
-                      + 'License Id'.ljust(30) + kongSetup.oxdServerLicenseId.rjust(35) + "\n" \
-                      + 'Public key'.ljust(30) + kongSetup.oxdServerPublicKey.rjust(35) + "\n" \
-                      + '\nPublic password'.ljust(30) + kongSetup.oxdServerPublicPassword.rjust(35) + "\n" \
-                      + 'License password'.ljust(30) + kongSetup.oxdServerLicensePassword.rjust(35) + "\n"
-            else:
-                cnf += 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
+                  + 'oxd server url'.ljust(30) + kongSetup.kongaOxdWeb.rjust(35) + "\n" \
+                  + 'OP hostname'.ljust(30) + kongSetup.kongaOPHost.rjust(35) + "\n"
 
             if not kongSetup.generateClient:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.kongaOxdId.rjust(35) + "\n" \
-                      + 'client_id_of_oxd_id'.ljust(30) + kongSetup.kongaClientIdOfOXDId.rjust(35) + "\n" \
-                      + 'setup_client_oxd_id'.ljust(30) + kongSetup.kongaSetupClientOXDId.rjust(35) + "\n" \
-                      + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
-                      + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
+                       + 'client_id'.ljust(30) + kongSetup.kongaClientId.rjust(35) + "\n" \
+                       + 'client_secret'.ljust(30) + kongSetup.kongaClientSecret.rjust(35) + "\n"
             else:
                 cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generateClient).rjust(35) + "\n"
 
@@ -674,7 +695,7 @@ if __name__ == "__main__":
                 kongSetup.configureOxd()
                 kongSetup.configKonga()
                 kongSetup.renderKongConfigure()
-                kongSetup.installSample()
+                kongSetup.installPlugins()
                 kongSetup.migrateKong()
                 kongSetup.startKong()
                 kongSetup.startKongaService()

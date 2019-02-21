@@ -1,0 +1,132 @@
+<style>
+  .disabled {
+    opacity: 0.5;
+    pointer-events: none;
+
+  >
+  * {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  }
+</style>
+
+<div class="modal-header primary">
+  <h4 class="modal-title" id="modal-title">
+    Create Client
+    <a class="modal-close pull-right" ng-click="close()">
+      <i class="mdi mdi-close"></i>
+    </a>
+  </h4>
+</div>
+<div class="col-md-12 bg-light-grey padding">
+  <p class="text-muted no-margin">
+    It will create client with given name in your OP server using OXD server.
+  </p>
+</div>
+<div class="modal-body" id="modal-body">
+  <form novalidate class="form-horizontal" name="createClientForm" ng-submit="submit(createClientForm.$valid)">
+    <div class="form-group"
+         ng-class="{'has-error' : createClientForm.op_host.$invalid && (createClientForm.op_host.$dirty || createClientForm.$submitted)}">
+      <label class="col-sm-4 control-label">OP Server<br><em>
+        <small class="help-block">required</small>
+      </em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.op_host" class="form-control" name="op_host" required>
+        <div class="text-danger"
+             ng-if="createClientForm.op_host.$invalid && (createClientForm.op_host.$dirty || createClientForm.$submitted)">
+          This field is required
+        </div>
+        <p class="help-block">Enter the OP server URL, where you want to create client.</p>
+      </div>
+    </div>
+    <div class="form-group"
+         ng-class="{'has-error' : createClientForm.oxd_url.$invalid && (createClientForm.oxd_url.$dirty || createClientForm.$submitted)}">
+      <label class="col-sm-4 control-label">OXD Server<br><em>
+        <small class="help-block">required</small>
+      </em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.oxd_url" class="form-control" name="oxd_url" required>
+        <div class="text-danger"
+             ng-if="createClientForm.oxd_url.$invalid && (createClientForm.oxd_url.$dirty || createClientForm.$submitted)">
+          This field is required
+        </div>
+        <p class="help-block">Enter the OXD server URL.</p>
+      </div>
+    </div>
+    <div class="form-group"
+         ng-class="{'has-error' : createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)}">
+      <label class="col-sm-4 control-label">Client Name <br><em>
+        <small class="help-block">required</small>
+      </em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_name" class="form-control" name="client_name" required>
+        <div class="text-danger"
+             ng-if="createClientForm.client_name.$invalid && (createClientForm.client_name.$dirty || createClientForm.$submitted)">
+          This field is required
+        </div>
+        <p class="help-block">Use to create client with name.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Client Id <br><em><small class="help-block">optional</small></em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_id" class="form-control" name="client_id">
+        <p class="help-block">Use any existing OP Client's client_id. If you leave it blank, OXD server will create new client in your OP server.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Client Secret<br><em><small class="help-block">optional</small></em></label>
+      <div class="col-sm-7">
+        <input ng-model="opClient.client_secret" class="form-control" name="client_secret">
+        <p class="help-block">Use any existing OP Client's client_secret. If you leave it blank, OXD server will create new client in your OP server.</p>
+      </div>
+    </div>
+
+    <div class="form-group disabled">
+      <label class="col-sm-4 control-label">Access Token as JWT</label>
+      <div class="col-sm-7 check-toggle-size">
+        <input bs-switch ng-model="opClient.access_token_as_jwt"
+               switch-size="small"
+               type="checkbox"
+               switch-on-text="YES"
+               switch-off-text="NO" />
+        <p class="help-block">Returns access token as JWT.</p>
+      </div>
+    </div>
+
+    <div class="form-group disabled">
+      <label class="col-sm-4 control-label">RPT as JWT</label>
+      <div class="col-sm-7 check-toggle-size">
+        <input bs-switch ng-model="opClient.rpt_as_jwt"
+               switch-size="small"
+               type="checkbox"
+               switch-on-text="YES"
+               switch-off-text="NO" />
+        <p class="help-block">Returns RPT as JWT.</p>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="col-sm-4 control-label">Token signing algorithm</label>
+      <div class="col-sm-7 check-toggle-size">
+        <select class="form-control" id="access_token_signing_alg"
+                ng-model="opClient.access_token_signing_alg"
+                ng-options="type as type for type in ['RS256', 'RS384', 'RS512']" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <div class="col-sm-offset-4 col-sm-7">
+        <button type="submit" class="btn btn-primary btn-block">
+          <i class="mdi mdi-check"></i>
+          Create Client
+        </button>
+      </div>
+    </div>
+
+  </form>
+</div>

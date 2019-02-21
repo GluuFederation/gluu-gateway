@@ -30,7 +30,7 @@ module.exports = {
         sails.models.settings.find().limit(1)
             .exec(function(err,settings){
                 if(err) return cb(err)
-                sails.log("helath_checks:createTransporter:settings =>",settings)
+                sails.log(new Date(), "helath_checks:createTransporter:settings =>",settings)
                 if(!settings.length || !settings[0].data ) return cb()
 
                 sails.models.emailtransport.findOne({
@@ -38,7 +38,7 @@ module.exports = {
                 }).exec(function(err,transport){
                     if(err) return cb(err)
 
-                    sails.log("user-events:createTransporter:transport =>",transport)
+                    sails.log(new Date(), "user-events:createTransporter:transport =>",transport)
                     if(!transport) return cb()
 
                     var result = {
@@ -67,7 +67,7 @@ module.exports = {
 
         self.createTransporter(function(err,result){
             if(err || !result) {
-                sails.log("user-events:failed to create transporter. No notification will be sent.",err)
+                sails.log(new Date(), "user-events:failed to create transporter. No notification will be sent.",err)
             }else{
                 var transporter = result.transporter
                 var settings = result.settings
@@ -88,13 +88,13 @@ module.exports = {
                     if(settings.default_transport == 'sendmail') {
                         sendmail(mailOptions, function(err, reply) {
                             if(err){
-                                sails.log.error("user-events:notify:error",err)
+                                sails.log.error(new Date(), "user-events:notify:error",err)
                             }
                         });
                     }else{
                         transporter.sendMail(mailOptions, function(error, info){
                             if(error){
-                                sails.log.error("user-events:notify:error",error)
+                                sails.log.error(new Date(), "user-events:notify:error",error)
                             }
                         });
                     }

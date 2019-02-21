@@ -3,29 +3,26 @@
  *
  * Note that this file should only contain controllers and nothing else.
  */
-(function() {
-    'use strict';
+(function () {
+  'use strict';
 
-    angular.module('frontend.snapshots')
-        .service('SnapshotsService', [
-            '$http',
-            function($http ) {
-                return {
-                    takeSnapshot : function(name,node_id) {
-                        return $http.post('api/snapshots/take',{
-                            name : name,
-                            node_id : node_id
-                        })
-                    },
-                    restoreSnapshot : function(id,imports) {
-                        return $http.post('api/snapshots/' + id + '/restore',{
-                            imports : imports
-                        })
-                    }
-                }
-
-
-            }
-        ])
-    ;
+  angular.module('frontend.snapshots')
+    .service('SnapshotsService', [
+      '$http',
+      function ($http) {
+        return {
+          takeSnapshot: function (name, node_id) {
+            return $http.post('api/snapshots/take', {
+              name: name,
+              node_id: node_id
+            });
+          },
+          restoreSnapshot: function (id, imports) {
+            return $http.post('api/snapshots/' + id + '/restore', {
+              imports: imports
+            });
+          }
+        };
+      }
+    ]);
 }());

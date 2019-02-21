@@ -20,7 +20,7 @@ module.exports = function hook(sails) {
      */
     process: function process(next) {
 
-        sails.log("Hook:health_checks:process() called")
+        sails.log(new Date(), "Hook:health_checks:process() called")
 
         // Start health checks for all eligible nodes
         sails.models.kongnode.find({})
@@ -33,14 +33,14 @@ module.exports = function hook(sails) {
             })
 
         HealthCheckEvents.addListener('health_checks.start', function(node){
-            //sails.log("Hook:health_checks:on:health_checks.start",node)
+            //sails.log(new Date(), "Hook:health_checks:on:health_checks.start",node)
             HealthCheckEvents.start(node)
 
         });
 
 
         HealthCheckEvents.addListener('health_checks.stop', function(node){
-            //sails.log("Hook:health_checks:on:health_checks.stop",node)
+            //sails.log(new Date(), "Hook:health_checks:on:health_checks.stop",node)
             HealthCheckEvents.stop(node)
         });
 

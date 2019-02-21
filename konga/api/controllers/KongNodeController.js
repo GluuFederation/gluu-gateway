@@ -7,7 +7,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     subscribeHealthChecks: function(req, res) {
 
         if (!req.isSocket) {
-            sails.log.error("KongNodeController:subscribe failed")
+            sails.log.error(new Date(), "KongNodeController:subscribe failed")
             return res.badRequest('Only a client socket can subscribe.');
         }
 

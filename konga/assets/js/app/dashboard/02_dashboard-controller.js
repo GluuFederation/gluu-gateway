@@ -9,11 +9,12 @@
   angular.module('frontend.dashboard')
     .controller('DashboardController', [
       '$scope', '$rootScope', '$log', '$state', '$q', 'InfoService', '$localStorage', 'HttpTimeout',
-      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', '$window',
+      'SettingsService', 'NodeModel', '$timeout', 'MessageService', 'UserModel', 'UserService', 'Semver', 'ConsumerService', 'PluginsService', '$window',
       function controller($scope, $rootScope, $log, $state, $q, InfoService, $localStorage, HttpTimeout,
-                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, $window) {
+                          SettingsService, NodeModel, $timeout, MessageService, UserModel, UserService, Semver, ConsumerService, PluginsService, $window) {
 
         $scope.globalInfo = $localStorage.credentials.user;
+        $scope.itemsPerPage = 10;
         var loadTime = $rootScope.KONGA_CONFIG.info_polling_interval,
           errorCount = 0,
           hasInitiallyLoaded = false,
@@ -195,7 +196,6 @@
               })
         }
 
-
         $scope.kong_versions = SettingsService.getKongVersions()
 
         $scope.node = {
@@ -261,7 +261,6 @@
 
 
         }
-
 
         /**
          * Init UI

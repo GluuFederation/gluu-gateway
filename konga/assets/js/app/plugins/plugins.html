@@ -66,14 +66,14 @@
             <raw-view data-item="item"></raw-view>
           </td>
           <th>
-            <a ui-sref="apis.uma-plugin({api_id: item.api_id})" data-ng-if="item.name == 'gluu-oauth2-rs'">
-              {{item.name}}
-            </a>
-            <a href ng-click="onEditPlugin(item)" data-ng-if="item.name != 'gluu-oauth2-rs'">{{item.name}}</a>
+            <a href ng-click="onEditPlugin(item)">{{item.name}}</a>
           </th>
+          <td>{{::getContext(item)}}</td>
           <td>
             <a data-ng-if="item.api_id" data-ui-sref="apis.edit({api_id:item.api_id})">{{item.api_id}}</a>
-            <span data-ng-if="!item.api_id">All APIs</span>
+            <a data-ng-if="item.service_id" data-ui-sref="services.edit({service_id:item.service_id})">{{item.service_id}}</a>
+            <a data-ng-if="item.route_id" data-ui-sref="routes.edit({route_id:item.route_id})">{{item.route_id}}</a>
+            <span data-ng-if="!item.api_id && !item.service_id && !item.route_id" > All Entrypoints </span>
           </td>
           <td>
             <a data-ng-if="item.consumer_id"
@@ -83,7 +83,17 @@
           <td>{{item.created_at | date : format : timezone}}</td>
 
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
-            <button type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name == 'gluu-oauth-pep'" type="button" ng-click="deleteOAuthClient(item)" class="btn btn-danger btn-link">
+              <i class="mdi mdi-delete"></i>
+              Delete
+            </button>
+
+            <button data-ng-if="item.name == 'gluu-uma-pep'" type="button" ng-click="deletePEPClient(item)" class="btn btn-danger btn-link">
+              <i class="mdi mdi-delete"></i>
+              Delete
+            </button>
+
+            <button data-ng-if="item.name != 'gluu-oauth-pep' && item.name != 'gluu-uma-pep'" type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>

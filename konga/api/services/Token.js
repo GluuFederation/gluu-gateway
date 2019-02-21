@@ -15,7 +15,7 @@ var jwt = require('jsonwebtoken');
  * @returns {*}
  */
 module.exports.issue = function issue(payload) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Token.issue() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Token.issue() called]');
 
   return jwt.sign(
     payload, // This is the payload we want to put inside the token
@@ -32,12 +32,12 @@ module.exports.issue = function issue(payload) {
  * @returns {*}
  */
 module.exports.verify = function verify(token, next) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Token.verify() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Token.verify() called]');
 
   return jwt.verify(
     token, // The token to be verified
     process.env.TOKEN_SECRET || sails.config.clientSecret || "oursecret", // The secret we used to sign it.
-    {}, // Options, none in this case
+    { algorithm: 'HS256' }, // Options, none in this case
     next // The callback to be call when the verification is done.
   );
 };
@@ -52,7 +52,7 @@ module.exports.verify = function verify(token, next) {
  * @return  {*}
  */
 module.exports.getToken = function getToken(request, next, throwError) {
-  sails.log.verbose(__filename + ':' + __line + ' [Service.Token.getToken() called]');
+  sails.log.verbose(new Date(), __filename + ':' + __line + ' [Service.Token.getToken() called]');
 
   var token = '';
 

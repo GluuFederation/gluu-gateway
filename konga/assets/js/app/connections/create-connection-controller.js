@@ -17,7 +17,7 @@
 
         $scope.node = {
           kong_admin_url: '',
-          kong_version: '0-11-x',
+          kong_version: '0-14-x',
         }
 
         $scope.close = function () {

@@ -8,7 +8,7 @@
  * @param   {Function}  next        Callback function
  */
 module.exports = function updateUser(request, response, next) {
-    sails.log.verbose(__filename + ':' + __line + ' [Policy.updateUser() called]');
+    sails.log.verbose(new Date(), __filename + ':' + __line + ' [Policy.updateUser() called]');
 
     var password = request.body.passports ? request.body.passports.password : null
     var confirmation = request.body.password_confirmation

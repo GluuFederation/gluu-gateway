@@ -42,6 +42,7 @@
       'AuthService', 'FocusOnService', 'MessageService', '$localStorage',
       function controller($scope, $state, $stateParams,
                           AuthService, FocusOnService, MessageService, $localStorage) {
+        $scope.login = login;
 
         function getParameterByName(name, url) {
           if (!url) url = window.location.href;
@@ -52,6 +53,7 @@
           if (!results[2]) return '';
           return decodeURIComponent(results[2].replace(/\+/g, " "));
         }
+
         if (!!getParameterByName("code") && !!getParameterByName("state")) {
           $scope.busy = true;
           AuthService
@@ -72,7 +74,7 @@
         }
 
         // Scope function to perform actual login request to server
-        $scope.login = function login() {
+        function login() {
           $scope.busy = true;
           AuthService
             .login({})

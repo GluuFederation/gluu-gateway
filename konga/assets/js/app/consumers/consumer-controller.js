@@ -3,63 +3,42 @@
  *
  * Note that this file should only contain controllers and nothing else.
  */
-(function() {
+(function () {
   'use strict';
 
   angular.module('frontend.consumers')
     .controller('ConsumerController', [
-      '_','$scope', '$log', '$state','_consumer','$rootScope','Semver',
-      function controller(_,$scope, $log, $state,_consumer, $rootScope, Semver) {
+      '_', '$scope', '$log', '$state', '_consumer', '$rootScope', 'Semver',
+      function controller(_, $scope, $log, $state, _consumer, $rootScope, Semver) {
 
-
-          $scope.consumer = _consumer.data
-          $state.current.data.pageName = "CONSUMER: " + ( $scope.consumer.username || $scope.consumer.id )
-          $scope.activeSection = 0;
-          $scope.sections = [
-              {
-                  id   : 'details',
-                  name : 'DETAILS',
-                  icon : 'mdi-information-outline'
-              },
-              {
-                  id   : 'groups',
-                  name : 'ACL GROUPS',
-                  icon : 'mdi-account-multiple-outline'
-              },
-              {
-                  id   : 'credentials',
-                  name : 'CREDENTIALS',
-                  icon : 'mdi-security'
-              },
-              {
-                  id   : 'apis',
-                  name : 'APIs',
-                  icon : 'mdi-cloud-outline'
-              },
-          ]
-
-          if(Semver.cmp($rootScope.Gateway.version,"0.11.0") >=0) {
-              $scope.sections.push({
-                  id   : 'plugins',
-                  name : 'PLUGINS',
-                  icon : 'mdi-power-plug'
-              });
+        $scope.consumer = _consumer.data;
+        $state.current.data.pageName = "CONSUMER: " + ($scope.consumer.username || $scope.consumer.id)
+        $scope.activeSection = 0;
+        $scope.sections = [
+          {
+            id: 'details',
+            name: 'Details',
+            icon: 'mdi-information-outline'
+          },
+          {
+            id: 'groups',
+            name: 'Groups',
+            icon: 'mdi-account-multiple-outline'
+          },
+          {
+            id: 'plugins',
+            name: 'Plugins',
+            icon: 'mdi-power-plug'
           }
+        ];
 
-          $scope.showPluginsSection = Semver.cmp($rootScope.Gateway.version,"0.11.0") >=0;
+        $scope.onTabsSelected = function (index) {
+          $scope.activeSection = index;
+        };
 
-          $scope.showSection = function(index) {
-              $scope.activeSection = index;
-          }
-
-
-          $scope.$on('user.node.updated',function(node){
-              $state.go('consumers');
-          });
-
-
-
-
+        $scope.$on('user.node.updated', function (node) {
+          $state.go('consumers');
+        });
       }
     ])
 }());

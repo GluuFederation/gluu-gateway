@@ -1,38 +1,10 @@
-<form name="loginForm" method="post" novalidate="novalidate">
-  <!--<div class="form-group"-->
-       <!--data-show-errors>-->
-    <!--<label class="control-label no-margin">Login</label>-->
-    <!--<input type="text" name="username" class="form-control username"-->
-           <!--placeholder="Enter username or email..." autofocus autocomplete="off" required="required"-->
-           <!--data-focus-on="username"-->
-           <!--data-ng-model="credentials.identifier"-->
-    <!--/>-->
-    <!--<p class="help-block no-margin" ng-show="loginForm.username.$touched && loginForm.username.$error.required">Username-->
-      <!--or Email is required.</p>-->
-
-  <!--</div>-->
-
-  <!--<div class="form-group"-->
-       <!--data-show-errors>-->
-    <!--<label class="control-label no-margin">Password</label>-->
-    <!--<input autocomplete="new-password" type="password" name="password"-->
-           <!--class="form-control password"-->
-           <!--placeholder="Enter password..." required="required"-->
-           <!--data-ng-model="credentials.password"-->
-    <!--/>-->
-    <!--<p class="help-block no-margin" ng-show="loginForm.password.$touched && loginForm.password.$error.required">Password-->
-      <!--is required.</p>-->
-
-
-  <!--</div>-->
-  <br>
+<konga-loader ng-if="busy"></konga-loader>
+<form name="loginForm" method="post" novalidate="novalidate" ng-if="!busy">
+  <br />
   <div class="form-group">
     <button class="btn btn-primary btn-block"
-            data-ng-click="login()"
-            data-ng-disabled="!loginForm.$valid || busy">
+            data-ng-click="login()">
       Login
     </button>
   </div>
-
-
 </form>
