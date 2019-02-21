@@ -2,7 +2,7 @@ Name:		gluu-gateway
 Version:	1.0
 Release:	1%{?dist}
 Summary:	OAuth protected API
-License:	MIT
+License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-1.0.tar.gz
 Source1:	gluu-gateway.init.d
