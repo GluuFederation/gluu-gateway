@@ -232,6 +232,9 @@ local function access_granted(conf, token_data)
         [const.CONSUMER_USERNAME] = tostring(consumer.username),
     }
 
+    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+
     local client_id = token_data.client_id
     if client_id then
         new_headers["X-OAuth-Client-ID"] = tostring(client_id)
@@ -311,12 +314,6 @@ it shoud never return, it must call kong.exit
 function hooks.no_token_protected_path(self, conf, protected_path, method)
 end
 
-@return introspect_response, status, err
-upon success returns only introspect_response,
-otherwise return nil, status, err
-function hooks.introspect_token(self, conf, token)
-end
-
 @return nil or cache key
 also may return second value `pending` which means the plugin will call async. operations
 function build_cache_key(method, protected_path, token, scopes)
@@ -393,7 +390,16 @@ _M.access_uma_handler = function(self, conf, hooks)
 end
 
 --[[
-  Authentication
+hooks must be a table with methods below:
+
+Authentication
+
+@return introspect_response, status, err
+upon success returns only introspect_response,
+otherwise return nil, status, err
+function hooks.introspect_token(self, conf, token)
+end
+
  ]]
 _M.access_auth_handler = function(self, conf, hooks)
     local authorization = ngx.var.http_authorization
@@ -460,8 +466,6 @@ _M.access_auth_handler = function(self, conf, hooks)
     end
 
     -- Client(Consumer) is authenticated
-    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
     if conf.hide_credentials then
