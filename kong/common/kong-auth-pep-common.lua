@@ -73,7 +73,7 @@ local function get_protection_token(self, conf)
             {
                 client_id = conf.client_id,
                 client_secret = conf.client_secret,
-                scope = {"openid", "oxd"},
+                scope = { "openid", "oxd" },
                 op_host = conf.op_url,
             })
 
@@ -110,11 +110,9 @@ local supported_algs = {
 local function refresh_jwks(self, conf, jwks)
     local ptoken = get_protection_token(self, conf)
 
-    local response, err = oxd.get_jwks(
-        conf.oxd_url,
-        {op_host = conf.op_url},
-        ptoken
-    )
+    local response, err = oxd.get_jwks(conf.oxd_url,
+        { op_host = conf.op_url },
+        ptoken)
     if not response then
         kong.log.err(err)
         return
@@ -328,18 +326,14 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
  ]]
 
-_M.access_handler = function(self, conf, hooks)
+_M.access_uma_handler = function(self, conf, hooks)
     local authorization = ngx.var.http_authorization
-    local token = get_token(authorization)
+    local token = get_token(authorization) or kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
     local path = ngx.var.uri
     local protected_path, scope_expression
-    if not conf.ignore_scope then
-        protected_path, scope_expression = hooks.get_path_by_request_path_method(
-            self, conf, path, method
-        )
-    end
+    protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -360,65 +354,13 @@ _M.access_handler = function(self, conf, hooks)
     kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
 
     local client_id, exp
-    local token_data = worker_cache_get_pending(token)
+    local token_data = kong.ctx.shared.authenticated_token
     if not token_data then
-        set_pending_state(token)
-
-        local introspect_response, status, err
-
-        local jwt_obj = jwt:load_jwt(token)
-        if jwt_obj.valid then
-            introspect_response, status, err = process_jwt(self, conf, jwt_obj)
-        else
-            introspect_response, status, err = hooks.introspect_token(self, conf, token)
-        end
-        token_data = introspect_response
-
-        if not introspect_response then
-            clear_pending_state(token)
-
-            if status ~= 401 then
-                return unexpected_error(err)
-            end
-
-            if not protected_path then
-                if #conf.anonymous > 0 then
-                    return handle_anonymous(conf)
-                end
-            end
-
-            return kong.response.exit(401, { message = "Bad token" })
-        end
-
-        -- if we here introspection was successful
-        client_id = introspect_response.client_id
-        exp = introspect_response.exp
-
-        local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
-        if not consumer and not err then
-            clear_pending_state(token)
-            kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-            return kong.response.exit(401, { message = "Unknown consumer"} )
-        end
-        if err then
-            clear_pending_state(token)
-            return unexpected_error("select_by_custom_id error: ", err)
-        end
-        introspect_response.consumer = consumer
-
-        kong.log.debug("save token in cache")
-        worker_cache:set(token, introspect_response,
-            exp - ngx.now() - EXPIRE_DELTA
-        )
+        return kong.response.exit(401, { message = "Token not authenticated" })
     else
         client_id = token_data.client_id
         exp = token_data.exp
     end
-
-    -- Client(Consumer) is authenticated
-    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
-    kong.ctx.shared[self.metric_client_authenticated] = true
 
     if not protected_path then
         return access_granted(conf, token_data)
@@ -447,7 +389,85 @@ _M.access_handler = function(self, conf, hooks)
     if pending then
         clear_pending_state(token)
     end
-    return kong.response.exit(403, { message = "You are not authorized to access this resource" } )
+    return kong.response.exit(403, { message = "You are not authorized to access this resource" })
+end
+
+--[[
+  Authentication
+ ]]
+_M.access_auth_handler = function(self, conf, hooks)
+    local authorization = ngx.var.http_authorization
+    local token = get_token(authorization)
+
+    if not token then
+        if #conf.anonymous > 0 then
+            return handle_anonymous(conf)
+        end
+        return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
+    end
+
+    local client_id, exp
+    local token_data = worker_cache_get_pending(token)
+    if not token_data then
+        set_pending_state(token)
+
+        local introspect_response, status, err
+
+        local jwt_obj = jwt:load_jwt(token)
+        if jwt_obj.valid then
+            introspect_response, status, err = process_jwt(self, conf, jwt_obj)
+        else
+            introspect_response, status, err = hooks.introspect_token(self, conf, token)
+        end
+        token_data = introspect_response
+
+        if not introspect_response then
+            clear_pending_state(token)
+
+            if status ~= 401 then
+                return unexpected_error(err)
+            end
+
+            if #conf.anonymous > 0 then
+                return handle_anonymous(conf)
+            end
+
+            return kong.response.exit(401, { message = "Bad token" })
+        end
+
+        -- if we here introspection was successful
+        client_id = introspect_response.client_id
+        exp = introspect_response.exp
+
+        local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
+        if not consumer and not err then
+            clear_pending_state(token)
+            kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
+            return kong.response.exit(401, { message = "Unknown consumer" })
+        end
+        if err then
+            clear_pending_state(token)
+            return unexpected_error("select_by_custom_id error: ", err)
+        end
+        introspect_response.consumer = consumer
+
+        kong.log.debug("save token in cache")
+        worker_cache:set(token, introspect_response,
+            exp - ngx.now() - EXPIRE_DELTA)
+    else
+        client_id = token_data.client_id
+        exp = token_data.exp
+    end
+
+    -- Client(Consumer) is authenticated
+    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    kong.ctx.shared[self.metric_client_authenticated] = true
+    kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
+    if conf.hide_credentials then
+        kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
+    end
+    return access_granted(conf, token_data)
 end
 
 --- Check requested path match to register path

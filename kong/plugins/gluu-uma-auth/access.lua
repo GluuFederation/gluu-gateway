@@ -144,15 +144,7 @@ function hooks.build_cache_key(method, path, token)
     return table.concat(t), true
 end
 
-function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
-
-    local check_access_response = try_check_access(conf, protected_path, method, rpt, ptoken)
-
-    return check_access_response.access == "granted"
-end
-
 return function(self, conf)
-    kong_auth_pep_common.access_uma_handler(self, conf, hooks)
+    kong_auth_pep_common.access_auth_handler(self, conf, hooks)
 end
 
