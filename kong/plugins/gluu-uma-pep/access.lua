@@ -116,6 +116,6 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_uma_handler(self, conf, hooks)
+    kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end
 

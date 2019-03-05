@@ -232,9 +232,6 @@ local function access_granted(conf, token_data)
         [const.CONSUMER_USERNAME] = tostring(consumer.username),
     }
 
-    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
-
     local client_id = token_data.client_id
     if client_id then
         new_headers["X-OAuth-Client-ID"] = tostring(client_id)
@@ -322,8 +319,7 @@ function build_cache_key(method, protected_path, token, scopes)
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, scopes, rpt)
 end
  ]]
-
-_M.access_uma_handler = function(self, conf, hooks)
+_M.access_pep_handler = function(self, conf, hooks)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization) or kong.ctx.shared.request_token
 
@@ -342,10 +338,7 @@ _M.access_uma_handler = function(self, conf, hooks)
             kong.log.debug("no token, protected path")
             return hooks.no_token_protected_path(self, conf, protected_path, method)
         end
-        if #conf.anonymous > 0 then
-            return handle_anonymous(conf)
-        end
-        return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
+        return kong.response.exit(403, { message = "Invalid request, no token and no protected path" })
     end
 
     kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
@@ -353,14 +346,14 @@ _M.access_uma_handler = function(self, conf, hooks)
     local client_id, exp
     local token_data = kong.ctx.shared.authenticated_token
     if not token_data then
-        return kong.response.exit(401, { message = "Token not authenticated" })
+        return kong.response.exit(403, { message = "Token not authenticated" })
     else
         client_id = token_data.client_id
         exp = token_data.exp
     end
 
     if not protected_path then
-        return access_granted(conf, token_data)
+        return -- access_granted
     end
 
     local cache_key, pending = hooks.build_cache_key(method, protected_path, token, token_data.scope)
@@ -369,7 +362,7 @@ _M.access_uma_handler = function(self, conf, hooks)
         local is_access_granted = worker_cache_get_pending(cache_key)
         if is_access_granted then
             kong.ctx.shared[self.metric_client_granted] = true
-            return access_granted(conf, token_data)
+            return -- access_granted
         end
     end
 
@@ -381,7 +374,7 @@ _M.access_uma_handler = function(self, conf, hooks)
             worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
         end
         kong.ctx.shared[self.metric_client_granted] = true
-        return access_granted(conf, token_data)
+        return -- access_granted
     end
     if pending then
         clear_pending_state(token)
@@ -390,18 +383,17 @@ _M.access_uma_handler = function(self, conf, hooks)
 end
 
 --[[
-hooks must be a table with methods below:
-
 Authentication
+
+introspect_token hooks must be a table with methods below:
 
 @return introspect_response, status, err
 upon success returns only introspect_response,
 otherwise return nil, status, err
-function hooks.introspect_token(self, conf, token)
+function introspect_token(self, conf, token)
 end
-
  ]]
-_M.access_auth_handler = function(self, conf, hooks)
+_M.access_auth_handler = function(self, conf, introspect_token)
     local authorization = ngx.var.http_authorization
     local token = get_token(authorization)
 
@@ -423,7 +415,7 @@ _M.access_auth_handler = function(self, conf, hooks)
         if jwt_obj.valid then
             introspect_response, status, err = process_jwt(self, conf, jwt_obj)
         else
-            introspect_response, status, err = hooks.introspect_token(self, conf, token)
+            introspect_response, status, err = introspect_token(self, conf, token)
         end
         token_data = introspect_response
 
@@ -466,6 +458,8 @@ _M.access_auth_handler = function(self, conf, hooks)
     end
 
     -- Client(Consumer) is authenticated
+    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
     if conf.hide_credentials then

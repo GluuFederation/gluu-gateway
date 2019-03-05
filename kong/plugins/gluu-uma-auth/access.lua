@@ -30,9 +30,7 @@ local function try_introspect_rpt(conf, token, access_token)
     return unexpected_error("introspect_rpt() responds with unexpected status: ", status)
 end
 
-local hooks = {}
-
-function hooks.introspect_token(self, conf, token)
+local function introspect_token(self, conf, token)
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local introspect_rpt_response_data = try_introspect_rpt(conf, token, ptoken)
@@ -43,6 +41,6 @@ function hooks.introspect_token(self, conf, token)
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_auth_handler(self, conf, hooks)
+    kong_auth_pep_common.access_auth_handler(self, conf, introspect_token)
 end
 
