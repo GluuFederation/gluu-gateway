@@ -217,8 +217,8 @@ local function process_jwt(self, conf, jwt_obj)
 end
 
 
-local function access_granted(conf, token_data)
-    kong.log.debug("access_granted")
+local function request_authenticated(conf, token_data)
+    kong.log.debug("request_authenticated")
     if conf.hide_credentials then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
@@ -293,7 +293,7 @@ local function handle_anonymous(conf, scope_expression, status, err)
     if err then
         return unexpected_error("Anonymous customer: ", err)
     end
-    access_granted(conf, { consumer = consumer })
+    request_authenticated(conf, { consumer = consumer })
 end
 
 local _M = {}
@@ -465,7 +465,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     if conf.hide_credentials then
         kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
     end
-    return access_granted(conf, token_data)
+    return request_authenticated(conf, token_data)
 end
 
 --- Check requested path match to register path
