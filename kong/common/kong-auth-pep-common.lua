@@ -320,7 +320,6 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
  ]]
 _M.access_pep_handler = function(self, conf, hooks)
-    local authorization = ngx.var.http_authorization
     local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
