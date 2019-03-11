@@ -246,7 +246,7 @@ test("with and without token, metrics, uma-auth and check UMA scope", function()
     -- posts: request with wrong token
     local stdout, _ = sh_ex([[curl -i -sS -X POST --url http://localhost:]],
         ctx.kong_proxy_port, [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer POSTS_INVALID_1234567890']])
-    assert(stdout:find("403", 1, true))
+    assert(stdout:find("401", 1, true))
 
     -- posts: request
     local stdout, _ = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],

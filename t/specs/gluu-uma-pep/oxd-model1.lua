@@ -146,7 +146,28 @@ model = {
             permissions = {},
         }
     },
-    -- #8, plugin check_access with valid RPT, "/posts", POST
+    -- #8, plugin check_access with wrong RPT, "/posts", POST
+    {
+        expect = "/uma-rs-check-access",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+            "path",
+            "http_method",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[3].response.access_token, 403)
+            assert(json.path == "/posts")
+            assert(json.http_method == "POST")
+        end,
+        response = {
+            access = "denied",
+            ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
+            ticket = "e986fd2b-de83-4947-a889-8f63c7c409c0"
+        },
+    },
+    -- #9, plugin check_access with valid RPT, "/posts", POST
     {
         expect = "/introspect-rpt",
         required_fields = {
@@ -168,7 +189,7 @@ model = {
             response.exp = ngx.now() + 60 * 60
         end,
     },
-    -- #9, plugin check_access with RPT, "/posts", POST
+    -- #10, plugin check_access with RPT, "/posts", POST
     {
         expect = "/uma-rs-check-access",
         required_fields = {
@@ -188,7 +209,7 @@ model = {
             access = "granted",
         },
     },
-    -- #9, plugin check_access with RPT, "/posts", POST
+    -- #11, plugin check_access with RPT, "/posts", POST
     {
         expect = "/uma-rs-check-access",
         required_fields = {

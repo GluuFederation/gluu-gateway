@@ -321,12 +321,11 @@ end
  ]]
 _M.access_pep_handler = function(self, conf, hooks)
     local authorization = ngx.var.http_authorization
-    local token = get_token(authorization) or kong.ctx.shared.request_token
+    local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
     local path = ngx.var.uri
-    local protected_path, scope_expression
-    protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
+    local protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -430,7 +429,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
                 return handle_anonymous(conf)
             end
 
-            return kong.response.exit(401, { message = "Bad token" })
+            return kong.response.exit(401, { message = err })
         end
 
         -- if we here introspection was successful
@@ -462,9 +461,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
-    if conf.hide_credentials then
-        kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
-    end
+    kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
     return request_authenticated(conf, token_data)
 end
 
