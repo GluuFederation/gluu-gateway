@@ -73,7 +73,7 @@ local function get_protection_token(self, conf)
             {
                 client_id = conf.client_id,
                 client_secret = conf.client_secret,
-                scope = {"openid", "oxd"},
+                scope = { "openid", "oxd" },
                 op_host = conf.op_url,
             })
 
@@ -110,11 +110,9 @@ local supported_algs = {
 local function refresh_jwks(self, conf, jwks)
     local ptoken = get_protection_token(self, conf)
 
-    local response, err = oxd.get_jwks(
-        conf.oxd_url,
-        {op_host = conf.op_url},
-        ptoken
-    )
+    local response, err = oxd.get_jwks(conf.oxd_url,
+        { op_host = conf.op_url },
+        ptoken)
     if not response then
         kong.log.err(err)
         return
@@ -219,8 +217,8 @@ local function process_jwt(self, conf, jwt_obj)
 end
 
 
-local function access_granted(conf, token_data)
-    kong.log.debug("access_granted")
+local function request_authenticated(conf, token_data)
+    kong.log.debug("request_authenticated")
     if conf.hide_credentials then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
@@ -295,7 +293,7 @@ local function handle_anonymous(conf, scope_expression, status, err)
     if err then
         return unexpected_error("Anonymous customer: ", err)
     end
-    access_granted(conf, { consumer = consumer })
+    request_authenticated(conf, { consumer = consumer })
 end
 
 local _M = {}
@@ -313,12 +311,6 @@ it shoud never return, it must call kong.exit
 function hooks.no_token_protected_path(self, conf, protected_path, method)
 end
 
-@return introspect_response, status, err
-upon success returns only introspect_response,
-otherwise return nil, status, err
-function hooks.introspect_token(self, conf, token)
-end
-
 @return nil or cache key
 also may return second value `pending` which means the plugin will call async. operations
 function build_cache_key(method, protected_path, token, scopes)
@@ -327,19 +319,12 @@ function build_cache_key(method, protected_path, token, scopes)
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, scopes, rpt)
 end
  ]]
-
-_M.access_handler = function(self, conf, hooks)
-    local authorization = ngx.var.http_authorization
-    local token = get_token(authorization)
+_M.access_pep_handler = function(self, conf, hooks)
+    local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
     local path = ngx.var.uri
-    local protected_path, scope_expression
-    if not conf.ignore_scope then
-        protected_path, scope_expression = hooks.get_path_by_request_path_method(
-            self, conf, path, method
-        )
-    end
+    local protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -351,13 +336,71 @@ _M.access_handler = function(self, conf, hooks)
             kong.log.debug("no token, protected path")
             return hooks.no_token_protected_path(self, conf, protected_path, method)
         end
+        return kong.response.exit(403, { message = "Invalid request, no token and no protected path" })
+    end
+
+    kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
+
+    local client_id, exp
+    local token_data = kong.ctx.shared.authenticated_token
+    if not token_data then
+        return kong.response.exit(403, { message = "Token not authenticated" })
+    else
+        client_id = token_data.client_id
+        exp = token_data.exp
+    end
+
+    if not protected_path then
+        return -- access_granted
+    end
+
+    local cache_key, pending = hooks.build_cache_key(method, protected_path, token, token_data.scope)
+
+    if cache_key then
+        local is_access_granted = worker_cache_get_pending(cache_key)
+        if is_access_granted then
+            kong.ctx.shared[self.metric_client_granted] = true
+            return -- access_granted
+        end
+    end
+
+    if pending then
+        set_pending_state(cache_key)
+    end
+    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
+        if cache_key then
+            worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
+        end
+        kong.ctx.shared[self.metric_client_granted] = true
+        return -- access_granted
+    end
+    if pending then
+        clear_pending_state(token)
+    end
+    return kong.response.exit(403, { message = "You are not authorized to access this resource" })
+end
+
+--[[
+Authentication
+
+introspect_token hooks must be a table with methods below:
+
+@return introspect_response, status, err
+upon success returns only introspect_response,
+otherwise return nil, status, err
+function introspect_token(self, conf, token)
+end
+ ]]
+_M.access_auth_handler = function(self, conf, introspect_token)
+    local authorization = ngx.var.http_authorization
+    local token = get_token(authorization)
+
+    if not token then
         if #conf.anonymous > 0 then
             return handle_anonymous(conf)
         end
         return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
     end
-
-    kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
 
     local client_id, exp
     local token_data = worker_cache_get_pending(token)
@@ -370,7 +413,7 @@ _M.access_handler = function(self, conf, hooks)
         if jwt_obj.valid then
             introspect_response, status, err = process_jwt(self, conf, jwt_obj)
         else
-            introspect_response, status, err = hooks.introspect_token(self, conf, token)
+            introspect_response, status, err = introspect_token(self, conf, token)
         end
         token_data = introspect_response
 
@@ -381,13 +424,11 @@ _M.access_handler = function(self, conf, hooks)
                 return unexpected_error(err)
             end
 
-            if not protected_path then
-                if #conf.anonymous > 0 then
-                    return handle_anonymous(conf)
-                end
+            if #conf.anonymous > 0 then
+                return handle_anonymous(conf)
             end
 
-            return kong.response.exit(401, { message = "Bad token" })
+            return kong.response.exit(401, { message = err })
         end
 
         -- if we here introspection was successful
@@ -398,7 +439,7 @@ _M.access_handler = function(self, conf, hooks)
         if not consumer and not err then
             clear_pending_state(token)
             kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-            return kong.response.exit(401, { message = "Unknown consumer"} )
+            return kong.response.exit(401, { message = "Unknown consumer" })
         end
         if err then
             clear_pending_state(token)
@@ -408,8 +449,7 @@ _M.access_handler = function(self, conf, hooks)
 
         kong.log.debug("save token in cache")
         worker_cache:set(token, introspect_response,
-            exp - ngx.now() - EXPIRE_DELTA
-        )
+            exp - ngx.now() - EXPIRE_DELTA)
     else
         client_id = token_data.client_id
         exp = token_data.exp
@@ -419,35 +459,9 @@ _M.access_handler = function(self, conf, hooks)
     kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
     ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
     kong.ctx.shared[self.metric_client_authenticated] = true
-
-    if not protected_path then
-        return access_granted(conf, token_data)
-    end
-
-    local cache_key, pending = hooks.build_cache_key(method, protected_path, token, token_data.scope)
-
-    if cache_key then
-        local is_access_granted = worker_cache_get_pending(cache_key)
-        if is_access_granted then
-            kong.ctx.shared[self.metric_client_granted] = true
-            return access_granted(conf, token_data)
-        end
-    end
-
-    if pending then
-        set_pending_state(cache_key)
-    end
-    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
-        if cache_key then
-            worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
-        end
-        kong.ctx.shared[self.metric_client_granted] = true
-        return access_granted(conf, token_data)
-    end
-    if pending then
-        clear_pending_state(token)
-    end
-    return kong.response.exit(403, { message = "You are not authorized to access this resource" } )
+    kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
+    kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
+    return request_authenticated(conf, token_data)
 end
 
 --- Check requested path match to register path

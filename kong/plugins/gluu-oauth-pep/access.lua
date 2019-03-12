@@ -1,4 +1,3 @@
-local oxd = require "gluu.oxdweb"
 local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
 local pl_tablex = require "pl.tablex"
 local logic = require "rucciva.json_logic"
@@ -67,39 +66,6 @@ function hooks.no_token_protected_path()
     kong.response.exit(401, { message = "Missed OAuth token" })
 end
 
--- @return introspect_response, status, err
--- upon success returns only introspect_response,
--- otherwise return nil, status, err
-function hooks.introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
-
-    local response = oxd.introspect_access_token(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            access_token = token,
-        },
-        ptoken)
-    local status = response.status
-
-    if status == 403 then
-        kong.log.err("Invalid access token provided in Authorization header");
-        return nil, 502, "An unexpected error ocurred"
-    end
-
-    if status ~= 200 then
-        kong.log.err("introspect-access-token error, status: ", status)
-        return nil, 502, "An unexpected error ocurred"
-    end
-
-    local body = response.body
-    if not body.active then
-        -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
-        return nil, 401, "Invalid access token provided in Authorization header"
-    end
-
-    return body
-end
-
 function hooks.build_cache_key(method, path, _, scopes)
     -- we may disable access cache just by returning nothing
     -- in this case proxy will always check the protection document against scopes
@@ -137,5 +103,5 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_handler(self, conf, hooks)
+    kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end

@@ -43,33 +43,6 @@ local function try_check_access(conf, path, method, token, access_token)
     return unexpected_error("uma_rs_check_access() responds with unexpected status: ", status)
 end
 
-local function try_introspect_rpt(conf, token, access_token)
-    local response = oxd.introspect_rpt(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            rpt = token,
-        },
-        access_token)
-    local status = response.status
-    if status == 200 then
-        local body = response.body
-        if body.active then
-            if not (body.exp and body.iat and body.client_id and body.permissions) then
-                return unexpected_error("introspect_rpt() missed required fields")
-            end
-        end
-        return body
-    end
-    if status == 400 then
-        return unexpected_error("introspect_rpt() responds with status 400 - Invalid parameters are provided to endpoint")
-    elseif status == 500 then
-        return unexpected_error("introspect_rpt() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
-    elseif status == 403 then
-        return unexpected_error("introspect_rpt() responds with status 403 - Invalid access token provided in Authorization header")
-    end
-    return unexpected_error("introspect_rpt() responds with unexpected status: ", status)
-end
-
 local hooks = {}
 
 --- lookup registered protected path by path and http methods
@@ -122,16 +95,6 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
     return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
 end
 
-function hooks.introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
-
-    local introspect_rpt_response_data = try_introspect_rpt(conf, token, ptoken)
-    if not introspect_rpt_response_data.active then
-        return nil, 401, "Invalid access token provided in Authorization header"
-    end
-    return introspect_rpt_response_data
-end
-
 function hooks.build_cache_key(method, path, token)
     path = path or ""
     local t = {
@@ -153,6 +116,6 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_handler(self, conf, hooks)
+    kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end
 
