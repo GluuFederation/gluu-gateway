@@ -194,15 +194,20 @@ local function authorize(conf, session, prompt)
         return unexpected_error()
     end
 
+    if not json.authorization_url then
+        kong.log.err("get_authorization_url() missed authorization_url")
+        return unexpected_error()
+    end
+
     local session_data = session.data
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
-    session_data.original_url = ngx.var.http_host .. ngx.var.request_uri
+    session_data.original_url = ngx.var.request_uri
     session:save()
 
     -- redirect to the /authorization endpoint
     ngx.header["Cache-Control"] = "no-cache, no-store, max-age=0"
-    ngx.redirect(json.uri)
+    ngx.redirect(json.authorization_url)
 end
 
 
