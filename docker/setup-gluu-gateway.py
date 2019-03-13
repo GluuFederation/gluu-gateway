@@ -664,7 +664,7 @@ if __name__ == "__main__":
                   + "SOFTWARE. \n" \
                   + "------------------------------------------------------------------------------------- \n"
             print msg
-            kongSetup.license = kongSetup.makeBoolean("$License")
+            kongSetup.license = kongSetup.makeBoolean("$LICENSE")
             print ""
         if kongSetup.license:
             kongSetup.makeFolders()
