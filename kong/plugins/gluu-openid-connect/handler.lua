@@ -2,7 +2,7 @@ local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-openid-connect.access"
 
 local handler = BasePlugin:extend()
-handler.PRIORITY = 999
+handler.PRIORITY = 997
 
 -- Your plugin handler's constructor. If you are extending the
 -- Base Plugin handler, it's only role is to instanciate itself

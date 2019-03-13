@@ -94,7 +94,7 @@ local function authorization_response(self, conf, session)
     local response, err = oxd.get_user_info(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
-            access_token = access_token,
+            access_token = json.access_token,
         },
         ptoken)
 
