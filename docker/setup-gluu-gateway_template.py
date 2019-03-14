@@ -317,8 +317,8 @@ class KongSetup(object):
         except:
             self.logIt("No detected IP address", True)
             self.logIt(traceback.format_exc(), True)
-            # Env variable is used
-            testIP = "$IP_ADDRESS"
+        # Env variable is used
+        testIP = "$IP_ADDRESS"
         if not self.isIP(testIP):
             testIP = None
             print 'ERROR: The IP Address is invalid. Try again\n'
