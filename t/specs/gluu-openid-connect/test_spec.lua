@@ -145,6 +145,8 @@ test("basic", function()
         requested_scopes = {"openid", "email", "profile"},
         max_id_token_age = 10,
         max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_uri = "logout_redirect_uri"
     })
 
     print"test it responds with 302"
@@ -184,6 +186,13 @@ test("basic", function()
     assert(res:find("302", 1, true))
     assert(res:find("response_type=code", 1, true))
     assert(res:find("session=", 1, true))
+
+    print"logout and check the cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/logout_path --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("session=;", 1)) -- no cookie is available
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
