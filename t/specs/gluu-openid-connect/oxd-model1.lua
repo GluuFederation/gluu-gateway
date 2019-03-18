@@ -106,7 +106,53 @@ model = {
         response = {
            sub = "john doe",
         }
-    }
+    },
+    -- #6 get_access_token_by_refresh_token
+    {
+        expect = "/get-access-token-by-refresh-token",
+        required_fields = {
+            "oxd_id",
+            "refresh_token",
+        },
+        request_check = function(json)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.refresh_token == model[4].response.refresh_token)
+        end,
+        response = {
+            access_token = "88bba7f5-961c-4b71-8053-9ab35f1ad333",
+            expires_in = 60,
+            refresh_token = "33d7988e-6ffb-4fe5-8c2a-0e158691d333"
+        }
+    },
+    -- #7 Failed to get new access token, invalid refresh token, may expired and OP server failed to return new access token.
+    {
+        expect = "/get-access-token-by-refresh-token",
+        required_fields = {
+            "oxd_id",
+            "refresh_token",
+        },
+        request_check = function(json)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.refresh_token == "invalid_expired_token", 400)
+        end,
+        response = {
+            message = "invalid_request"
+        }
+    },
+    -- #8 Get new access token failed so go for authentication
+    {
+        expect = "/get-authorization-url",
+        required_fields = {
+            "oxd_id",
+            "scope",
+        },
+        request_check = function(json)
+            assert(json.oxd_id == model[1].response.oxd_id)
+        end,
+        response = {
+            authorization_url = "https://stub.com/oxauth/restv1/authorize?response_type=code&client_id=@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4&redirect_uri=https://192.168.200.95/callback&scope=openid+profile+email+uma_protection+uma_authorization&state=473ot4nuqb4ubeokc139raur13&nonce=lbrdgorr974q66q6q9g454iccm",
+        }
+    },
 }
 
 return model

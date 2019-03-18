@@ -150,7 +150,7 @@ local function refresh_access_token(conf, session)
 
     if status ~= 200 then
         kong.log.err("get_access_token_by_refresh_token() responds with status ", status)
-        return unexpected_error()
+        return false
     end
 
     kong.log.debug("access_token refreshed: ", json.access_token, " updated refresh_token: ", json.refresh_token)

@@ -9,7 +9,7 @@ return {
         authorization_redirect_path = { required = true, type = "string" },
         logout_path = { required = false, type = "string" },
         post_logout_redirect_uri = { required = false, type = "string" }, --TODO must be registered as well as authorization_redirect_uri
-        requested_scopes = {required = true, type = "string"},
+        requested_scopes = {required = true, type = "array"},
         required_acrs = {required = false, type = "string"}, -- UI should show associated levels
         max_id_token_age = { required = true, type = "timestamp"},
         max_id_token_auth_age = { required = true, type = "timestamp"},
