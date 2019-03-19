@@ -1,6 +1,8 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
+local json = require "cjson"
+local encode_base64 = ngx.encode_base64
 
 local function access_token_expires_in(conf, exp)
     local max_id_token_age = conf.max_id_token_age
@@ -272,8 +274,13 @@ return function(self, conf)
 
     kong.ctx.shared.id_token = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
+    local new_headers = {
+        ["X-OpenId-Connect-idtoken"] = encode_base64(json.encode(id_token)),
+        ["X-OpenId-Connect-userinfo"] = encode_base64(json.encode(session_data.userinfo))
+    }
 
-    -- TODO set headers
+    kong.service.request.set_headers(new_headers)
+    -- TODO set other remain headers
 end
 
 

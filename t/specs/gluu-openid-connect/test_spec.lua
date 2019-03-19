@@ -162,13 +162,18 @@ test("basic", function()
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     -- test that we redirected to original url
+    assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     sh_ex("sleep 15");
 
@@ -177,6 +182,8 @@ test("basic", function()
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     sh_ex("sleep 15");
     print"Failed to get new access token, go for authentication"
@@ -192,7 +199,7 @@ test("basic", function()
         ctx.kong_proxy_port, [[/logout_path --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("302", 1, true))
-    assert(res:find("session=;", 1)) -- no cookie is available
+    assert(res:find("session=;", 1, true)) -- no cookie is available
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

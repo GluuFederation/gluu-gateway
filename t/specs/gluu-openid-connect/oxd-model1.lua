@@ -104,7 +104,9 @@ model = {
             assert(json.access_token == model[4].response.access_token)
         end,
         response = {
-           sub = "john doe",
+            claims = {
+                sub = "john doe",
+            }
         }
     },
     -- #6 get_access_token_by_refresh_token
