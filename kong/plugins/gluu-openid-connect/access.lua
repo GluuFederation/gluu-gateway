@@ -244,6 +244,13 @@ return function(self, conf)
         return process_logout(conf, session)
     end
 
+    -- if post logout uri is comming then allow
+    -- Request is comming in kong proxy so checking only path
+    if path == conf.post_logout_redirect_uri then
+        kong.log.debug("Post logout Redirect path (", path, ") found, allow request")
+        return
+    end
+
     local token_expired = false
     if session.present and session_data.id_token then
         -- refresh access_token if necessary
