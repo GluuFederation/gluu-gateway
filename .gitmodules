@@ -16,3 +16,6 @@
 [submodule "third-party/nginx-lua-prometheus"]
 	path = third-party/nginx-lua-prometheus
 	url = git@github.com:knyar/nginx-lua-prometheus.git
+[submodule "third-party/lua-resty-session"]
+	path = third-party/lua-resty-session
+	url = git@github.com:bungle/lua-resty-session.git
