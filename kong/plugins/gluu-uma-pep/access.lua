@@ -45,6 +45,25 @@ end
 
 local hooks = {}
 
+-- call /uma_rp_get_rpt oxd API, handle errors
+function hooks.get_rpt_by_ticket(self, conf, ticket)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+
+    local response = oxd.uma_rp_get_rpt(conf.oxd_url,
+        {
+            oxd_id = conf.oxd_id,
+            ticket = ticket
+        },
+        ptoken)
+    local status = response.status
+    if status ~= 200 then
+        return unexpected_error("Failed to get RPT token")
+    end
+
+    local body = response.body
+    return body.access_token
+end
+
 --- lookup registered protected path by path and http methods
 -- @param self: Kong plugin object instance
 -- @param conf:
@@ -95,6 +114,17 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
     return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
 end
 
+function hooks.get_ticket(self, conf, protected_path, method)
+    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+
+    local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
+
+    if check_access_no_rpt_response.access == "denied" and check_access_no_rpt_response.ticket then
+        return check_access_no_rpt_response.ticket
+    end
+    return unexpected_error("check_access without RPT token, responds without ticket")
+end
+
 function hooks.build_cache_key(method, path, token)
     path = path or ""
     local t = {
@@ -116,6 +146,13 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
+    -- Check id token and obtain RPT in OpenID Connect case
+    local authenticated_token = kong.ctx.shared.authenticated_token
+    if authenticated_token and authenticated_token.enc_id_token and authenticated_token.exp > ngx.time() then
+        kong_auth_pep_common.obtain_rpt(self, conf, hooks)
+    end
+
+    -- check is_access_granted
     kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end
 

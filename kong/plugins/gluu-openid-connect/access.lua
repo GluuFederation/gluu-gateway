@@ -279,7 +279,11 @@ return function(self, conf)
         return authorize(conf, session, "none")
     end
 
-    kong.ctx.shared.id_token = id_token
+    -- authenticated_token need in uma-pep in both case i:e uma-auth and openid-connect
+    kong.ctx.shared.authenticated_token = {
+        enc_id_token = session_data.enc_id_token,
+        exp = id_token.exp
+    }
     kong.ctx.shared.userinfo = session_data.userinfo
     local new_headers = {
         ["X-OpenId-Connect-idtoken"] = encode_base64(json.encode(id_token)),

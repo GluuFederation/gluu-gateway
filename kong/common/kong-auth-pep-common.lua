@@ -346,7 +346,6 @@ _M.access_pep_handler = function(self, conf, hooks)
     if not token_data then
         return kong.response.exit(403, { message = "Token not authenticated" })
     else
-        client_id = token_data.client_id
         exp = token_data.exp
     end
 
@@ -462,6 +461,57 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
     kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
     return request_authenticated(conf, token_data)
+end
+
+--[[
+hooks must be a table with methods below:
+
+@return protected_path, scope_expression; may returns no values
+function hooks.get_path_by_request_path_method(self, conf, path, method)
+end
+
+@return uma ticket; may kong.exit if failed to get ticket
+function hooks.get_ticket(self, conf, protected_path, method)
+end
+
+@return uma rpt token; may kong.exit if failed to get rpt token
+function hooks.get_rpt_by_ticket(self, conf, protected_path, method)
+end
+
+obtain_rpt method
+@return nothing, set RPT token in kong.share.context
+_M.obtain_rpt = function(self, conf, hooks)
+end
+ ]]
+_M.obtain_rpt = function(self, conf, hooks)
+    local authenticated_token = kong.ctx.shared.authenticated_token
+    local enc_id_token, exp = authenticated_token.enc_id_token, authenticated_token.exp
+
+    local cached_rpt = worker_cache_get_pending(enc_id_token)
+
+    if cached_rpt then
+        kong.log.debug("Found rpt token in cache")
+        kong.ctx.shared.request_token = cached_rpt
+        return -- next steps handle by access_pep_handler
+    end
+
+    set_pending_state(enc_id_token)
+    local method = ngx.req.get_method()
+    local path = ngx.var.uri
+    local protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
+
+    if not protected_path and conf.deny_by_default then
+        clear_pending_state(enc_id_token)
+        kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
+        return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
+    end
+
+    local ticket = hooks.get_ticket(self, conf, protected_path, method)
+    local rpt = hooks.get_rpt_by_ticket(self, conf, ticket)
+    kong.ctx.shared.request_token = rpt
+
+    worker_cache:set(enc_id_token, rpt, exp - ngx.now() - EXPIRE_DELTA)
+    -- next steps handle by access_pep_handler
 end
 
 --- Check requested path match to register path
