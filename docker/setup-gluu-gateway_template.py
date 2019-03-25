@@ -309,6 +309,9 @@ class KongSetup(object):
     def get_ip(self):
         testIP = None
         detectedIP = None
+        # Env variable is used
+        testIP = "$IP_ADDRESS"
+        print testIP
         try:
             testSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             detectedIP = [(testSocket.connect(('8.8.8.8', 80)),
@@ -317,8 +320,6 @@ class KongSetup(object):
         except:
             self.logIt("No detected IP address", True)
             self.logIt(traceback.format_exc(), True)
-        # Env variable is used
-        testIP = "$IP_ADDRESS"
         if not self.isIP(testIP):
             testIP = None
             print 'ERROR: The IP Address is invalid. Try again\n'
@@ -499,7 +500,7 @@ class KongSetup(object):
         self.ip = self.get_ip()
         # Env Variable is used
         self.hostname = "$HOSTNAME"
-        print 'The next few questions are used to generate the Kong self-signed HTTPS certificate'
+        # print 'The next few questions are used to generate the Kong self-signed HTTPS certificate'
         # Env Variable is used
         self.countryCode = "$TWO_LETTER_COUNTRY_CODE"
         # Env Variable is used
@@ -514,7 +515,7 @@ class KongSetup(object):
         # Postgres configuration
         msg = """If you already have a postgres user and database in the
             Postgres DB, then enter existing password, otherwise enter new password: """
-        print msg
+        # print msg
         pg = self.getPW()
         # Env Variable is used
         self.pgPwd = "$PGSQL_PASSWORD"
@@ -529,7 +530,7 @@ class KongSetup(object):
             If you are connecting to an existing oxd server on the network,
             make sure it's available from this server.
             """
-        print msg
+        # print msg
 
         # Env Variable is used
         self.kongaOxdWeb = "$OXD_SERVER_URL"
@@ -707,7 +708,8 @@ if __name__ == "__main__":
                 kongSetup.migrateKong()
                 kongSetup.startKong()
                 kongSetup.startKongaService()
-                print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+                #print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.kongaPort
+                print "\n\nGluu Gateway configuration successful!!! Restarting gluu-gateway" 
             else:
                 print "Exit"
         else:
