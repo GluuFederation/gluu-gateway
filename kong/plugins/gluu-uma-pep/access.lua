@@ -46,14 +46,21 @@ end
 local hooks = {}
 
 -- call /uma_rp_get_rpt oxd API, handle errors
-function hooks.get_rpt_by_ticket(self, conf, ticket)
+local function get_rpt_by_ticket(self, conf, ticket, id_token)
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
+    local requestBody = {
+        oxd_id = conf.oxd_id,
+        ticket = ticket
+    }
+
+    if conf.pct_id_token_jwt then
+        requestBody.claim_token = id_token
+        requestBody.claim_token_format = "https://openid.net/specs/openid-connect-core-1_0.html#IDToken"
+    end
+
     local response = oxd.uma_rp_get_rpt(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            ticket = ticket
-        },
+        requestBody,
         ptoken)
     local status = response.status
     if status ~= 200 then
@@ -114,7 +121,7 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
     return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
 end
 
-function hooks.get_ticket(self, conf, protected_path, method)
+local function get_ticket(self, conf, protected_path, method)
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
@@ -145,14 +152,45 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
     return check_access_response.access == "granted"
 end
 
-return function(self, conf)
-    -- Check id token and obtain RPT in OpenID Connect case
+--- obtain_rpt
+-- @return nothing, set RPT token in kong.share.context
+local function obtain_rpt(self, conf)
     local authenticated_token = kong.ctx.shared.authenticated_token
-    if authenticated_token and authenticated_token.enc_id_token and authenticated_token.exp > ngx.time() then
-        kong_auth_pep_common.obtain_rpt(self, conf, hooks)
+    if not authenticated_token then
+        return kong.response.exit(403, { message = "ID Token not authenticated" })
+    end
+
+    local enc_id_token, exp = authenticated_token.enc_id_token, authenticated_token.exp
+    local cached_rpt = kong_auth_pep_common.worker_cache_get_pending(enc_id_token)
+    if cached_rpt then
+        kong.log.debug("Found rpt token in cache")
+        kong.ctx.shared.request_token = cached_rpt
+        return -- next steps handle by access_pep_handler
+    end
+
+    kong_auth_pep_common.set_pending_state(enc_id_token)
+    local method, path  = ngx.req.get_method(), ngx.var.uri
+    local protected_path, _ = hooks.get_path_by_request_path_method(self, conf, path, method)
+
+    if not protected_path and conf.deny_by_default then
+        kong_auth_pep_common.clear_pending_state(enc_id_token)
+        kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
+        return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
+    end
+
+    local ticket = get_ticket(self, conf, protected_path, method)
+    local rpt = get_rpt_by_ticket(self, conf, ticket, enc_id_token)
+    kong.ctx.shared.request_token = rpt
+
+    kong_auth_pep_common.worker_cache:set(enc_id_token, rpt, exp - ngx.now() - kong_auth_pep_common.EXPIRE_DELTA)
+    -- next steps handle by access_pep_handler
+end
+
+return function(self, conf)
+    if conf.obtain_rpt then
+        obtain_rpt(self, conf)
     end
 
     -- check is_access_granted
     kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end
-

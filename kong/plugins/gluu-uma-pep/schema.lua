@@ -14,7 +14,10 @@ return {
         oxd_id = { required = true, type = "string" },
         op_url = { required = true, type = "url" },
         uma_scope_expression = { required = true, func = check_expression, type = "table" },
-        deny_by_default = { type = "boolean", default = true }
+        deny_by_default = { type = "boolean", default = true },
+        pct_id_token_jwt = { type = "boolean", default = false },
+        obtain_rpt = { type = "boolean", default = false },
+        redirect_claim_gatering_url = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)
         table.sort(plugin_t.uma_scope_expression, function(first, second)
