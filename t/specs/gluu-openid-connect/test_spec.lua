@@ -265,7 +265,89 @@ test("OpenID Connect with UMA", function()
                     }
                 }
             },
-            deny_by_default = false,
+            deny_by_default = true,
+            obtain_rpt = true
+        }
+    )
+
+    print"test it responds with 302"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"call callback with state from oxd-model1, follow redirect"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"request second time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"request third time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print "deny for tha path which is not registered in UMA resources"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("403", 1, true))
+
+    ctx.print_logs = false
+end)
+
+test("OpenID Connect with UMA, PCT", function()
+    setup("oxd-model3.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response = configure_plugin(create_service_response,{
+        authorization_redirect_path = "/callback",
+        requested_scopes = {"openid", "email", "profile"},
+        max_id_token_age = 10,
+        max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_uri = "/post_logout_redirect_uri"
+    })
+
+    print"Adding uma-pep"
+    configure_pep_plugin(register_site_response, create_service_response,
+        {
+            uma_scope_expression = {
+                {
+                    path = "/page1",
+                    conditions = {
+                        {
+                            httpMethods = {"GET"},
+                        }
+                    }
+                }
+            },
+            deny_by_default = true,
+            obtain_rpt = true,
+            pct_id_token_jwt = true
         }
     )
 
