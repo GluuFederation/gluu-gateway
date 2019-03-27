@@ -47,7 +47,7 @@ end
 
 local hooks = {}
 
-local function redirect_to_claim_url(conf, session, ticket)
+local function redirect_to_claim_url(conf, ticket)
     local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
 
     local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
@@ -74,10 +74,11 @@ local function redirect_to_claim_url(conf, session, ticket)
         return unexpected_error()
     end
 
+    local session = resty_session.start()
     local session_data = session.data
-    -- by original_url session's field we distinguish enduser session previously redirected
+    -- by uma_original_url session's field we distinguish enduser session previously redirected
     -- to OP for authorization
-    session_data.original_url = ngx.var.request_uri
+    session_data.uma_original_url = ngx.var.request_uri
     session:save()
 
     -- redirect to the /uma/gather_claims url endpoint
@@ -86,7 +87,7 @@ local function redirect_to_claim_url(conf, session, ticket)
 end
 
 -- call /uma_rp_get_rpt oxd API, handle errors
-local function get_rpt_by_ticket(self, conf, ticket, state, pct_token, session)
+local function get_rpt_by_ticket(self, conf, ticket, state, pct_token)
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local requestBody = {
@@ -112,7 +113,7 @@ local function get_rpt_by_ticket(self, conf, ticket, state, pct_token, session)
     if status ~= 200 then
         if conf.redirect_claim_gathering_url and status == 403 and body.error and body.error == "need_info" then
             kong.log.debug("Starting claim gathering flow")
-            redirect_to_claim_url(conf, session, ticket)
+            redirect_to_claim_url(conf, ticket)
         end
 
         return unexpected_error("Failed to get RPT token")
@@ -206,10 +207,6 @@ end
 -- @return nothing, set RPT token in kong.share.context
 local function obtain_rpt(self, conf)
     local authenticated_token = kong.ctx.shared.authenticated_token
-    if not authenticated_token then
-        return kong.response.exit(403, { message = "ID Token not authenticated" })
-    end
-
     local enc_id_token, exp = authenticated_token.enc_id_token, authenticated_token.exp
     local cached_rpt = kong_auth_pep_common.worker_cache_get_pending(enc_id_token)
     if cached_rpt then
@@ -222,20 +219,21 @@ local function obtain_rpt(self, conf)
     local method, path  = ngx.req.get_method(), ngx.var.uri
     local protected_path, _ = hooks.get_path_by_request_path_method(self, conf, path, method)
 
-    if not protected_path and conf.deny_by_default and path ~= conf.claim_gathering_path then
+    if not protected_path and conf.deny_by_default and path ~= conf.claims_redirect_path then
         kong_auth_pep_common.clear_pending_state(enc_id_token)
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
         return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
     end
 
-    local session = resty_session.start()
+    local session
     local is_ticket_from_claim_gathering = false
     local ticket, state
-    if conf.redirect_claim_gathering_url and path == conf.claim_gathering_path then
+    if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then
         kong.log.debug("Claim Redirect URI path (", path, ") is currently navigated -> Processing ticket response coming from OP")
 
+        session = resty_session.start()
         if not session.present then
-            kong.log.err("request to the claim gathering response path but there's no session state found")
+            kong.log.err("request to the claim redirect response path but there's no session state found")
             return kong.response.exit(400)
         end
 
@@ -251,16 +249,16 @@ local function obtain_rpt(self, conf)
         ticket = get_ticket(self, conf, protected_path, method)
     end
 
-    local rpt = get_rpt_by_ticket(self, conf, ticket, state, enc_id_token, session)
+    local rpt = get_rpt_by_ticket(self, conf, ticket, state, enc_id_token)
     kong.ctx.shared.request_token = rpt
     kong_auth_pep_common.worker_cache:set(enc_id_token, rpt, exp - ngx.now() - kong_auth_pep_common.EXPIRE_DELTA)
 
     if is_ticket_from_claim_gathering then
         local session_data = session.data
-        local original_url = session_data.original_url
+        local uma_original_url = session_data.uma_original_url
         -- redirect to the URL that was accessed originally
-        kong.log.debug("Got RPT and Claim flow completed -> Redirecting to original URL (", original_url, ")")
-        ngx.redirect(original_url)
+        kong.log.debug("Got RPT and Claim flow completed -> Redirecting to original URL (", uma_original_url, ")")
+        ngx.redirect(uma_original_url)
     end
     -- next steps handle by access_pep_handler
 end

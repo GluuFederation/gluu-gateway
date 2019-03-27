@@ -423,7 +423,7 @@ test("OpenID Connect with UMA Claim gathering flow", function()
             deny_by_default = true,
             obtain_rpt = true,
             redirect_claim_gathering_url = true,
-            claim_gathering_path = "/claim_gathering_path"
+            claims_redirect_path = "/claim_gathering_path"
         }
     )
 

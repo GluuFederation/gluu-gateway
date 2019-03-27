@@ -17,7 +17,7 @@ return {
         deny_by_default = { type = "boolean", default = true },
         pct_id_token_jwt = { type = "boolean", default = false },
         obtain_rpt = { type = "boolean", default = false },
-        claim_gathering_path = { type = "string" },
+        claims_redirect_path = { type = "string" },
         redirect_claim_gathering_url = { type = "boolean", default = false },
     },
     self_check = function(schema, plugin_t, dao, is_updating)

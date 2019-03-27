@@ -279,7 +279,7 @@ return function(self, conf)
         return authorize(conf, session, "none")
     end
 
-    -- authenticated_token need in uma-pep in both case i:e uma-auth and openid-connect
+    -- authenticated_token need in uma-pep in both case i.e. uma-auth and openid-connect
     kong.ctx.shared.authenticated_token = {
         enc_id_token = session_data.enc_id_token,
         exp = id_token.exp
