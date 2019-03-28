@@ -50,10 +50,24 @@ local hooks = {}
 local function redirect_to_claim_url(conf, ticket)
     local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
 
+    local server_port = ngx.var.server_port
+    local scheme = ngx.var.scheme
+    local port = ((server_port == 80 and scheme == "http") or (server_port == 443 and scheme == "https"))
+            and "" or ":" .. server_port
+
+    local claims_url_param = {
+        scheme,
+        "://",
+        ngx.var.host,
+        port,
+        conf.claims_redirect_path
+    }
+
     local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
-            ticket = ticket
+            ticket = ticket,
+            claims_redirect_uri = table.concat(claims_url_param)
         },
         ptoken)
 

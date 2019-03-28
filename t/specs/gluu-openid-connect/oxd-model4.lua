@@ -170,12 +170,14 @@ model = {
         expect = "/uma-rp-get-claims-gathering-url",
         required_fields = {
             "oxd_id",
-            "ticket"
+            "ticket",
+            "claims_redirect_uri"
         },
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[2].response.access_token)
             assert(json.ticket == model[6].response.ticket)
+            assert(json.claims_redirect_uri == "http://backend.com:8000/claim_gathering_path")
         end,
         response = {
             url = "https://stub.com/oxauth/restv1/uma/gather_claims?client_id=@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!4508.BF20.9B81.E904&ticket=fba00191-59ab-4ed6-ac99-a786a88a9f40&claims_redirect_uri=https://client.example.com/cb&state=d871gpie16np0f5kfv936sc33k",
