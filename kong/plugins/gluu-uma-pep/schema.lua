@@ -15,7 +15,7 @@ return {
         op_url = { required = true, type = "url" },
         uma_scope_expression = { required = true, func = check_expression, type = "table" },
         deny_by_default = { type = "boolean", default = true },
-        pct_id_token_jwt = { type = "boolean", default = false },
+        puc_id_token_jwt = { type = "boolean", default = false },
         obtain_rpt = { type = "boolean", default = false },
         claims_redirect_path = { type = "string" },
         redirect_claim_gathering_url = { type = "boolean", default = false },

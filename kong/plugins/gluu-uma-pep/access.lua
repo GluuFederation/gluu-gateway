@@ -101,7 +101,7 @@ local function redirect_to_claim_url(conf, ticket)
 end
 
 -- call /uma_rp_get_rpt oxd API, handle errors
-local function get_rpt_by_ticket(self, conf, ticket, state, pct_token)
+local function get_rpt_by_ticket(self, conf, ticket, state, puc_token)
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local requestBody = {
@@ -113,8 +113,8 @@ local function get_rpt_by_ticket(self, conf, ticket, state, pct_token)
         requestBody.state = state
     end
 
-    if conf.pct_id_token_jwt then
-        requestBody.claim_token = pct_token
+    if conf.puc_id_token_jwt then
+        requestBody.claim_token = puc_token
         requestBody.claim_token_format = "https://openid.net/specs/openid-connect-core-1_0.html#IDToken"
     end
 

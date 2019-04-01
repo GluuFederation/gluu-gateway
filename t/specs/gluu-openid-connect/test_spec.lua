@@ -313,7 +313,7 @@ test("OpenID Connect with UMA", function()
     ctx.print_logs = false
 end)
 
-test("OpenID Connect with UMA, PCT", function()
+test("OpenID Connect with UMA, PUC", function()
     setup("oxd-model3.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
 
@@ -347,7 +347,7 @@ test("OpenID Connect with UMA, PCT", function()
             },
             deny_by_default = true,
             obtain_rpt = true,
-            pct_id_token_jwt = true
+            puc_id_token_jwt = true
         }
     )
 
