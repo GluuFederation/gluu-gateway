@@ -1,5 +1,5 @@
 Name:		gluu-gateway
-Version:	1.0
+Version:	1.0.1
 Release:	1%{?dist}
 Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
@@ -8,7 +8,7 @@ Source0:	gluu-gateway-1.0.tar.gz
 Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
 BuildArch:      noarch
-Requires:	oxd-server = 4.0, postgresql >= 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	oxd-server = 4.0.1, postgresql >= 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
 %description
 The Gluu Gateway is a package which can be used to quickly
