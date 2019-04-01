@@ -116,5 +116,6 @@ return function(model)
     end
     local json = cjson.encode(response)
     print(json)
+    ngx.status = (item and item.httpStatus) or 200
     ngx.say(json)
 end

@@ -346,7 +346,6 @@ _M.access_pep_handler = function(self, conf, hooks)
     if not token_data then
         return kong.response.exit(403, { message = "Token not authenticated" })
     else
-        client_id = token_data.client_id
         exp = token_data.exp
     end
 
@@ -519,6 +518,10 @@ function _M.check_user(anonymous)
 end
 
 _M.get_protection_token = get_protection_token
-
+_M.worker_cache_get_pending = worker_cache_get_pending
+_M.set_pending_state = set_pending_state
+_M.clear_pending_state = clear_pending_state
+_M.worker_cache = worker_cache
+_M.EXPIRE_DELTA = EXPIRE_DELTA
 
 return _M
