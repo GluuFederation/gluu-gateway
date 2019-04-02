@@ -104,9 +104,7 @@ model = {
             assert(json.access_token == model[4].response.access_token)
         end,
         response = {
-            claims = {
-                sub = "john doe",
-            }
+            sub = "john doe",
         }
     },
     -- #6, Get ticket for path "/page1"
