@@ -257,13 +257,13 @@ var AuthController = {
             }
 
             if (setting.is_only_admin_allow_login) {
-              var roles = (userInfo.claims && userInfo.claims.role) || [];
+              var roles = (userInfo && userInfo.role) || [];
               if (roles.indexOf('admin') <= -1) {
                 return Promise.reject({message: 'Not enough permission to access GG UI. Only the user with admin role is allow.'});
               }
             }
 
-            var sub = userInfo.claims && userInfo.claims.sub && userInfo.claims.sub[0];
+            var sub = userInfo && userInfo.sub;
 
             if (!sub) {
               return Promise.reject({message: 'Failed to get sub claim.'});
