@@ -336,13 +336,14 @@ _M.access_pep_handler = function(self, conf, hooks)
             kong.log.debug("no token, protected path")
             return hooks.no_token_protected_path(self, conf, protected_path, method)
         end
+        -- TODO shall we allow access if not conf.deny_by_default ?!
         return kong.response.exit(403, { message = "Invalid request, no token and no protected path" })
     end
 
     kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
 
     local client_id, exp
-    local token_data = kong.ctx.shared.authenticated_token
+    local token_data = kong.ctx.shared.request_token_data
     if not token_data then
         return kong.response.exit(403, { message = "Token not authenticated" })
     else
@@ -458,7 +459,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
     ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
     kong.ctx.shared[self.metric_client_authenticated] = true
-    kong.ctx.shared.authenticated_token = token_data -- Used to check wether token is authenticated or not for PEP plugin
+    kong.ctx.shared.request_token_data = token_data -- Used to check wether token is authenticated or not for PEP plugin
     kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
     return request_authenticated(conf, token_data)
 end
@@ -518,10 +519,5 @@ function _M.check_user(anonymous)
 end
 
 _M.get_protection_token = get_protection_token
-_M.worker_cache_get_pending = worker_cache_get_pending
-_M.set_pending_state = set_pending_state
-_M.clear_pending_state = clear_pending_state
-_M.worker_cache = worker_cache
-_M.EXPIRE_DELTA = EXPIRE_DELTA
 
 return _M

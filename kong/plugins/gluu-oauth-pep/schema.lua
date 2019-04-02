@@ -1,4 +1,4 @@
-local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require"gluu.kong-common"
 
 --- Check OAuth scope expression
 -- @param v: JSON expression
