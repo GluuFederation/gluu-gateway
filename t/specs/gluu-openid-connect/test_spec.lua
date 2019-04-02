@@ -347,7 +347,7 @@ test("OpenID Connect with UMA, PUC", function()
             },
             deny_by_default = true,
             obtain_rpt = true,
-            puc_id_token_jwt = true
+            puc_id_token_jwt = true,
         }
     )
 
