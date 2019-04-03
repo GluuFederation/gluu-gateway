@@ -1,5 +1,5 @@
 local oxd = require "gluu.oxdweb"
-local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require "gluu.kong-common"
 
 -- @return introspect_response, status, err
 -- upon success returns only introspect_response,

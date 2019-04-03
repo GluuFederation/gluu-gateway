@@ -2,7 +2,7 @@ local pl_tablex = require "pl.tablex"
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 
-local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require"gluu.kong-common"
 
 local unexpected_error = kong_auth_pep_common.unexpected_error
 
@@ -113,7 +113,7 @@ local function get_rpt_by_ticket(self, conf, ticket, state, pct_token)
         requestBody.state = state
     end
 
-    if conf.pct_id_token_jwt then
+    if conf.require_id_token then
         requestBody.claim_token = pct_token
         requestBody.claim_token_format = "https://openid.net/specs/openid-connect-core-1_0.html#IDToken"
     end
@@ -172,6 +172,10 @@ function hooks.get_path_by_request_path_method(self, conf, request_path, method)
 end
 
 function hooks.no_token_protected_path(self, conf, protected_path, method)
+    if conf.require_id_token then
+        return unexpected_error("Expect id_token")
+    end
+
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
@@ -209,7 +213,28 @@ function hooks.build_cache_key(method, path, token)
     return table.concat(t), true
 end
 
-function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
+function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
+    if conf.obtain_rpt then
+        local session = resty_session.start()
+
+        local ticket, state
+        if session.present then
+            local session_data = session.data
+            ticket, state = session_data.uma_ticket, session_data.uma_state
+            if ticket and state then
+                session_data.uma_state = nil
+                session_data.uma_ticket = nil
+                session:save()
+            end
+        end
+
+        if not ticket then
+            ticket = get_ticket(self, conf, protected_path, method)
+        end
+
+        local id_token = kong.ctx.shared.request_token
+        rpt =  get_rpt_by_ticket(self, conf, ticket, state, id_token)
+    end
     local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
 
     local check_access_response = try_check_access(conf, protected_path, method, rpt, ptoken)
@@ -217,71 +242,42 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
     return check_access_response.access == "granted"
 end
 
---- obtain_rpt
--- @return nothing, set RPT token in kong.share.context
-local function obtain_rpt(self, conf)
-    local authenticated_token = kong.ctx.shared.authenticated_token
-    local enc_id_token, exp = authenticated_token.enc_id_token, authenticated_token.exp
-    local cached_rpt = kong_auth_pep_common.worker_cache_get_pending(enc_id_token)
-    if cached_rpt then
-        kong.log.debug("Found rpt token in cache")
-        kong.ctx.shared.request_token = cached_rpt
-        return -- next steps handle by access_pep_handler
-    end
-
-    kong_auth_pep_common.set_pending_state(enc_id_token)
-    local method, path  = ngx.req.get_method(), ngx.var.uri
-    local protected_path, _ = hooks.get_path_by_request_path_method(self, conf, path, method)
-
-    if not protected_path and conf.deny_by_default and path ~= conf.claims_redirect_path then
-        kong_auth_pep_common.clear_pending_state(enc_id_token)
-        kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
-        return kong.response.exit(403, { message = "Unprotected path/method are not allowed" })
-    end
-
-    local session
-    local is_ticket_from_claim_gathering = false
-    local ticket, state
+return function(self, conf)
+    local path = ngx.var.uri
     if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then
         kong.log.debug("Claim Redirect URI path (", path, ") is currently navigated -> Processing ticket response coming from OP")
 
-        session = resty_session.start()
+        local session = resty_session.start()
+
         if not session.present then
-            kong.log.err("request to the claim redirect response path but there's no session state found")
+            kong.log.warn("request to the claim redirect response path but there's no session state found")
+            return kong.response.exit(400)
+        end
+
+        local session_data = session.data
+        local uma_original_url = session_data.uma_original_url
+        if not uma_original_url then
+            kong.log.warn("request to the claim redirect response path but there's no uma_original_url found")
             return kong.response.exit(400)
         end
 
         local args = ngx.req.get_uri_args()
-        ticket, state = args.ticket, args.state
+        local ticket, state = args.ticket, args.state
         if not ticket or not state then
             kong.log.warn("missed ticket or state argument(s)")
             return kong.response.exit(400, {message = "missed ticket or state argument(s)"})
         end
-        is_ticket_from_claim_gathering = true
-        ticket = args.ticket
-    else
-        ticket = get_ticket(self, conf, protected_path, method)
-    end
+        session_data.uma_original_url = nil
+        session_data.uma_ticket = ticket
+        session_data.uma_state = state
 
-    local rpt = get_rpt_by_ticket(self, conf, ticket, state, enc_id_token)
-    kong.ctx.shared.request_token = rpt
-    kong_auth_pep_common.worker_cache:set(enc_id_token, rpt, exp - ngx.now() - kong_auth_pep_common.EXPIRE_DELTA)
+        -- TODO should be there PCT?
+        -- session_data.uma-pct = pct
+        session:save()
 
-    if is_ticket_from_claim_gathering then
-        local session_data = session.data
-        local uma_original_url = session_data.uma_original_url
-        -- redirect to the URL that was accessed originally
         kong.log.debug("Got RPT and Claim flow completed -> Redirecting to original URL (", uma_original_url, ")")
         ngx.redirect(uma_original_url)
     end
-    -- next steps handle by access_pep_handler
-end
 
-return function(self, conf)
-    if conf.obtain_rpt then
-        obtain_rpt(self, conf)
-    end
-
-    -- check is_access_granted
     kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end

@@ -1,5 +1,5 @@
 local oxd = require "gluu.oxdweb"
-local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require"gluu.kong-common"
 
 local unexpected_error = kong_auth_pep_common.unexpected_error
 

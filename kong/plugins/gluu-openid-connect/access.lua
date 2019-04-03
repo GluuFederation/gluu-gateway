@@ -1,6 +1,6 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
-local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require "gluu.kong-common"
 local json = require "cjson"
 local encode_base64 = ngx.encode_base64
 
@@ -214,8 +214,6 @@ end
 
 
 return function(self, conf)
-    local err
-
     local session = resty_session.start()
     local session_data = session.data
 
@@ -279,11 +277,9 @@ return function(self, conf)
         return authorize(conf, session, "none")
     end
 
-    -- authenticated_token need in uma-pep in both case i.e. uma-auth and openid-connect
-    kong.ctx.shared.authenticated_token = {
-        enc_id_token = session_data.enc_id_token,
-        exp = id_token.exp
-    }
+    -- request_token_data need in uma-pep in both case i.e. uma-auth and openid-connect
+    kong.ctx.shared.request_token = session_data.enc_id_token
+    kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
     local new_headers = {
         ["X-OpenId-Connect-idtoken"] = encode_base64(json.encode(id_token)),

@@ -49,7 +49,7 @@ local function setup(model)
         },
         modules = {
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
-            ["gluu/kong-auth-pep-common.lua"] = host_git_root .. "/kong/common/kong-auth-pep-common.lua",
+            ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",

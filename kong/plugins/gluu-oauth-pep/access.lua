@@ -1,4 +1,4 @@
-local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require "gluu.kong-common"
 local pl_tablex = require "pl.tablex"
 local logic = require "rucciva.json_logic"
 
