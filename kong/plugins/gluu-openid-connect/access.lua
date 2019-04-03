@@ -112,7 +112,7 @@ local function authorization_response(self, conf, session)
         return unexpected_error()
     end
 
-    session.data.userinfo = json.claims
+    session.data.userinfo = json
     session:save()
 
     -- redirect to the URL that was accessed originally

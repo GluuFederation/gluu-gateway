@@ -347,7 +347,7 @@ test("OpenID Connect with UMA, PCT", function()
             },
             deny_by_default = true,
             obtain_rpt = true,
-            pct_id_token_jwt = true
+            require_id_token = true,
         }
     )
 
