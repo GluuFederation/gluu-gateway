@@ -170,7 +170,7 @@ test("basic", function()
         max_id_token_age = 10,
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
-        post_logout_redirect_uri = "/post_logout_redirect_uri"
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
     })
 
     print"test it responds with 302"
@@ -225,9 +225,9 @@ test("basic", function()
     assert(res:find("302", 1, true))
     assert(res:find("session=;", 1, true)) -- no cookie is available
 
-    print"just check getting 200 when request comes to post_logout_redirect_uri"
+    print"just check getting 200 when request comes to post_logout_redirect_path_or_url"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/post_logout_redirect_uri --header 'Host: backend.com']])
+        ctx.kong_proxy_port, [[/post_logout_redirect_path_or_url --header 'Host: backend.com']])
     assert(res:find("200", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
@@ -249,7 +249,7 @@ test("OpenID Connect with UMA", function()
         max_id_token_age = 10,
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
-        post_logout_redirect_uri = "/post_logout_redirect_uri"
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
     })
 
     print"Adding uma-pep"
@@ -329,7 +329,7 @@ test("OpenID Connect with UMA, PCT", function()
         max_id_token_age = 10,
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
-        post_logout_redirect_uri = "/post_logout_redirect_uri"
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
     })
 
     print"Adding uma-pep"
@@ -345,9 +345,9 @@ test("OpenID Connect with UMA, PCT", function()
                     }
                 }
             },
-            deny_by_default = true,
+            deny_by_default = false,
             obtain_rpt = true,
-            pct_id_token_jwt = true
+            require_id_token = true,
         }
     )
 
@@ -385,6 +385,11 @@ test("OpenID Connect with UMA, PCT", function()
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
 
+    print"just check getting 200 when request comes to post_logout_redirect_path_or_url"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/post_logout_redirect_path_or_url --header 'Host: backend.com']])
+    assert(res:find("200", 1, true))
+
     ctx.print_logs = false
 end)
 
@@ -404,7 +409,7 @@ test("OpenID Connect with UMA Claim gathering flow", function()
         max_id_token_age = 10,
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
-        post_logout_redirect_uri = "/post_logout_redirect_uri"
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
     })
 
     print"Adding uma-pep"
