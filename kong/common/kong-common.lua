@@ -300,6 +300,23 @@ local _M = {}
 
 _M.unexpected_error = unexpected_error
 
+_M.get_path_with_base_url = function(path)
+    local server_port = ngx.var.server_port
+    local scheme = ngx.var.scheme
+    local port = ((server_port == 80 and scheme == "http") or (server_port == 443 and scheme == "https"))
+            and "" or ":" .. server_port
+
+    local url_params = {
+        scheme,
+        "://",
+        ngx.var.host,
+        port,
+        path,
+    }
+
+    return table.concat(url_params)
+end
+
 --[[
 hooks must be a table with methods below:
 

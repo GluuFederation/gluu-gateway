@@ -20,11 +20,18 @@ local function process_logout(conf, session)
     -- TODO get rid of self parameter of get_protection_token(), make it as separate commit
     local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
 
+    local post_logout_redirect_uri
+    if conf.post_logout_redirect_path_or_url:sub(0, 1) == "/" then
+        post_logout_redirect_uri = kong_auth_pep_common.get_path_with_base_url(conf.post_logout_redirect_path_or_url)
+    else
+        post_logout_redirect_uri = conf.post_logout_redirect_path_or_url
+    end
+
     local response, err = oxd.get_logout_uri(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
             id_token_hint = session_token,
-            post_logout_redirect_uri = conf.post_logout_redirect_uri,
+            post_logout_redirect_uri = post_logout_redirect_uri,
         },
         ptoken)
 
@@ -244,7 +251,7 @@ return function(self, conf)
 
     -- if post logout uri is comming then allow
     -- Request is comming in kong proxy so checking only path
-    if path == conf.post_logout_redirect_uri then
+    if path == conf.post_logout_redirect_path_or_url then
         kong.log.debug("Post logout Redirect path (", path, ") found, allow request")
         return
     end
