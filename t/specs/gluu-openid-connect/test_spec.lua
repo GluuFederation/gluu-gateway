@@ -345,7 +345,7 @@ test("OpenID Connect with UMA, PCT", function()
                     }
                 }
             },
-            deny_by_default = true,
+            deny_by_default = false,
             obtain_rpt = true,
             require_id_token = true,
         }
@@ -384,6 +384,11 @@ test("OpenID Connect with UMA, PCT", function()
     assert(res:find("200", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"just check getting 200 when request comes to post_logout_redirect_path_or_url"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/post_logout_redirect_path_or_url --header 'Host: backend.com']])
+    assert(res:find("200", 1, true))
 
     ctx.print_logs = false
 end)

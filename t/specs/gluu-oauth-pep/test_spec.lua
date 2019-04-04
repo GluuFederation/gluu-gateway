@@ -277,9 +277,10 @@ test("Anonymous test", function()
 
     sleep(1)
 
+    print"Allow access, deny_by_default = false"
     local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer bla-bla']])
-    assert(res:find("403"))
+    assert(res:find("200"))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
