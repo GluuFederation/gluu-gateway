@@ -21,7 +21,7 @@ local function process_logout(conf, session)
     local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
 
     local post_logout_redirect_uri
-    if conf.post_logout_redirect_path_or_url:sub(0, 1) == "/" then
+    if conf.post_logout_redirect_path_or_url:sub(1, 1) == "/" then
         post_logout_redirect_uri = kong_auth_pep_common.get_path_with_base_url(conf.post_logout_redirect_path_or_url)
     else
         post_logout_redirect_uri = conf.post_logout_redirect_path_or_url
