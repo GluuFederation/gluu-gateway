@@ -353,7 +353,12 @@ _M.access_pep_handler = function(self, conf, hooks)
             kong.log.debug("no token, protected path")
             return hooks.no_token_protected_path(self, conf, protected_path, method)
         end
-        return -- access allow, conf.deny_by_default = false
+
+        if conf.deny_by_default == false then
+            kong.log.debug("no token, no protected path but conf.deny_by_default = false so access allow")
+            return
+        end
+        return kong.response.exit(403, { message = "Invalid request, no token and no protected path" })
     end
 
     kong.log.debug("protected resource path: ", protected_path, " URI: ", path, " token: ", token)
