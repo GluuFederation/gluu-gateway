@@ -37,26 +37,15 @@
           <div class="row">
             <div class="col-md-12">
               <div class="form-group has-feedback">
-                <label>1. UMA Scope expression configuration</label>
-                <span class="help-block error-block basic-block">Protect API paths by requiring specific UMA Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                <label>1. UMA PEP Scope expression configuration</label>
+                <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
+                       ng-model="modelPlugin.isPEPEnabled" class="form-control"
+                       switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
+
+                <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
-              <div class="form-group" data-ng-disabled="!isPluginAdded" ng-class="{'disabled': !isPluginAdded}">
-                <label class="col-sm-3 control-label">Ignore Scope
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-9 check-toggle">
-                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                         ng-model="modelPlugin.config.ignore_scope" class="form-control"
-                         switch-change="modelPlugin.config.deny_by_default = !modelPlugin.config.ignore_scope"/>
-                  <p class="help-block">
-                    If yes then it will not check the UMA scope during authentication time.
-                  </p>
-                </div>
-              </div>
-              <div class="form-group">
+              <div class="form-group" data-ng-disabled="!modelPlugin.isPEPEnabled"
+                   ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                 <label class="col-sm-3 control-label">Deny by default
                   <br>
                   <em>
@@ -73,7 +62,8 @@
                 </div>
               </div>
               <div class="row"></div>
-              <div data-ng-disabled="modelPlugin.config.ignore_scope" ng-class="{'disabled': modelPlugin.config.ignore_scope}">
+              <div data-ng-disabled="!modelPlugin.isPEPEnabled"
+                   ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                 <div class="row" ng-repeat="element in modelPlugin.config.uma_scope_expression"
                      ng-init="pIndex = $index"
                      style="border: 1px dotted;">
@@ -193,32 +183,6 @@
                   <input ng-model="modelPlugin.config.oxd_url" class="form-control" />
                   <p class="help-block">
                     The URL of you OXD server. Example: https://oxd.server.com
-                  </p>
-                </div>
-              </div>
-              <div class="form-group">
-                <label class="col-sm-3 control-label">OXD Id
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-9">
-                  <div class="input-group">
-                    <input ng-attr-type="{{ isShowOXDId ? 'text' : 'password' }}" ng-model="modelPlugin.config.oxd_id"
-                           class="form-control">
-                    <a href class="input-group-addon btn-sm" data-ng-click="isShowOXDId = !isShowOXDId"
-                       title="{{isShowOXDId ? 'Hide': 'Show'}}">
-                      <i class="mdi mdi-eye text-primary"></i>
-                    </a>
-                    <a href class="input-group-addon btn-sm" title="Clear"
-                       data-ng-click="modelPlugin.config.oxd_id = ''">
-                      <i class="mdi mdi-close text-warning"></i>
-                    </a>
-                  </div>
-                  <p class="help-block">
-                    It used to register and authorize UMA resources. it will
-                    register the client in oxd and OP server. You can use existing oxd client also.
                   </p>
                 </div>
               </div>

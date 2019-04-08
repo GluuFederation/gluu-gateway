@@ -65,10 +65,10 @@
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
             <div data-ng-repeat="plugin in route.plugins">
-              <a data-ng-if="plugin.name == 'gluu-oauth-pep'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+              <a data-ng-if="plugin.name == 'gluu-oauth-auth'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
                 <i class="mdi mdi-pencil"></i> OAUTH
               </a>
-              <a data-ng-if="plugin.name == 'gluu-uma-pep'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+              <a data-ng-if="plugin.name == 'gluu-uma-auth'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
                 <i class="mdi mdi-pencil"></i> UMA
               </a>
             </div>

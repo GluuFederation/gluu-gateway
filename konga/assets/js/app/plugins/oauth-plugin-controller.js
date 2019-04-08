@@ -363,6 +363,11 @@
               });
             })
             .then(function (oauthClient) {
+              if (!model.isPEPEnabled) {
+                $state.go(($scope.context_name || "plugin") + "s");
+                return
+              }
+
               var pepModel = {
                 name: 'gluu-oauth-pep',
                 config: {
