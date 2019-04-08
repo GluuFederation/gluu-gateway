@@ -36,26 +36,15 @@
             <div class="col-md-12">
               <div class="col-md-12">
                 <div class="form-group has-feedback">
-                  <label>1. OAUTH Scope expression configuration</label>
-                  <span class="help-block error-block basic-block">Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                  <label>1. OAUTH PEP Scope expression configuration</label> &nbsp;&nbsp;&nbsp;
+                  <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
+                         ng-model="modelPlugin.isPEPEnabled" class="form-control"
+                         switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
+
+                  <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
                 </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label">Ignore Scope
-                    <br>
-                    <em>
-                      <small class="help-block">optional</small>
-                    </em>
-                  </label>
-                  <div class="col-sm-9 check-toggle">
-                    <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                           ng-model="modelPlugin.config.ignore_scope" class="form-control"
-                           switch-change="modelPlugin.config.deny_by_default = !modelPlugin.config.ignore_scope"/>
-                    <p class="help-block">
-                      If yes then it will not check the token scope during authentication time.
-                    </p>
-                  </div>
-                </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-disabled="!modelPlugin.isPEPEnabled"
+                     ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                   <label class="col-sm-3 control-label">Deny by default
                     <br>
                     <em>
@@ -72,8 +61,8 @@
                   </div>
                 </div>
                 <div class="row"></div>
-                <div data-ng-disabled="modelPlugin.config.ignore_scope"
-                          ng-class="{'disabled': modelPlugin.config.ignore_scope}">
+                <div data-ng-disabled="!modelPlugin.isPEPEnabled"
+                          ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                   <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
                        ng-init="pIndex = $index"
                        style="border: 1px dotted;">
@@ -173,7 +162,7 @@
               <div class="col-md-12">
                 <div class="form-group has-feedback">
                   <hr style="border: 3px solid #636355;"/>
-                  <label>2. Other configurations</label>
+                  <label>2. OAUTH Auth configurations</label>
                   <hr/>
                 </div>
               </div>

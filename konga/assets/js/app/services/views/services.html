@@ -57,10 +57,10 @@
           <td>
             <div data-ng-repeat="plugin in service.plugins">
               <a data-ng-if="plugin.name == 'gluu-oauth-pep'" ui-sref="services.oauth-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
-                <i class="mdi mdi-pencil"></i> OAUTH-PEP
+                <i class="mdi mdi-pencil"></i> OAUTH
               </a>
               <a data-ng-if="plugin.name == 'gluu-uma-pep'" ui-sref="services.uma-plugin({service_id: service.id })" class="btn btn-sm btn-primary">
-                <i class="mdi mdi-pencil"></i> UMA-PEP
+                <i class="mdi mdi-pencil"></i> UMA
               </a>
             </div>
             <span data-ng-if="service.plugins.length < 1">-</span>

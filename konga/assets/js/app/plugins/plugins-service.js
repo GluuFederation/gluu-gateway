@@ -51,6 +51,10 @@
             return $http.post('api/clients/oauth', data)
           },
 
+          addOPClient: function (data) {
+            return $http.post('api/clients/op', data)
+          },
+
           registerClientAndResources: function (data) {
             return $http.post('api/clients/uma', data)
           },
@@ -73,6 +77,10 @@
 
           deletePEPClient: function (oxd_id, doWantDeleteClient) {
             return $http.delete('api/clients/uma/' + oxd_id + '/' + doWantDeleteClient)
+          },
+
+          getOPDiscoveryResponse: function (data) {
+            return $http.post('api/op_discovery', data)
           },
         }
       }

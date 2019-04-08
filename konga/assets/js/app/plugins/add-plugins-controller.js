@@ -58,11 +58,11 @@
             $scope.openingModal = false;
           }, 1000);
 
-          if (name == "gluu-oauth-pep") {
+          if (name == "gluu-oauth-auth") {
             return $state.go("plugins.oauth-plugin");
           }
 
-          if (name == "gluu-uma-pep") {
+          if (name == "gluu-uma-auth") {
             return $state.go("plugins.uma-plugin");
           }
 
@@ -107,22 +107,25 @@
 
           new KongPluginsService().makePluginGroups().then(function (groups) {
             $scope.pluginGroups = groups;
+            delete $scope.pluginGroups[0].plugins['gluu-openid-connect'];
+            delete $scope.pluginGroups[7].plugins['gluu-oauth-pep'];
+            delete $scope.pluginGroups[7].plugins['gluu-uma-pep'];
             $log.debug("Plugin Groups", $scope.pluginGroups);
 
             var flag = false;
             $scope.existingPlugins.forEach(function(obj){
-              if (obj == "gluu-oauth-pep") {
-                $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = false;
+              if (obj == "gluu-oauth-auth") {
+                $scope.pluginGroups[0].plugins['gluu-uma-auth'].isAllow = false;
                 flag = true
               }
-              if (obj == "gluu-uma-pep") {
-                $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = false;
+              if (obj == "gluu-uma-auth") {
+                $scope.pluginGroups[0].plugins['gluu-oauth-auth'].isAllow = false;
                 flag = true
               }
             });
             if (flag == false) {
-              $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
-              $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
+              $scope.pluginGroups[0].plugins['gluu-uma-auth'].isAllow = true;
+              $scope.pluginGroups[0].plugins['gluu-oauth-auth'].isAllow = true;
             }
           });
         }

@@ -46,13 +46,13 @@
       <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a ui-sref="services.uma-plugin({service_id: service.id})" data-ng-if="item.name == 'gluu-uma-pep'">
+      <a ui-sref="services.uma-plugin({service_id: service.id})" data-ng-if="['gluu-uma-pep','gluu-uma-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a ui-sref="services.oauth-plugin({service_id: service.id})" data-ng-if="item.name == 'gluu-oauth-pep'">
+      <a ui-sref="services.oauth-plugin({service_id: service.id})" data-ng-if="['gluu-oauth-pep','gluu-oauth-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a href data-ng-if="item.name != 'gluu-uma-pep' && item.name != 'gluu-oauth-pep'" ng-click="onEditPlugin(item)">
+      <a href data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(item.name) == -1" ng-click="onEditPlugin(item)">
         {{item.name}}
       </a>
     </th>

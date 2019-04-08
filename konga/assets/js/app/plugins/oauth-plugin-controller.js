@@ -32,7 +32,7 @@
         }
 
         $scope.modelPlugin = {
-          name: 'gluu-oauth-pep',
+          isPEPEnabled: true,
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
@@ -40,7 +40,6 @@
             client_id: $scope.globalInfo.clientId,
             client_secret: $scope.globalInfo.clientSecret,
             oauth_scope_expression: [],
-            ignore_scope: false,
             deny_by_default: true,
             hide_credentials: false
           }
@@ -55,87 +54,105 @@
         }
 
         $scope.isPluginAdded = false;
-        setTimeout(function () {
+        var authPlugin, pepPlugin;
+
         $scope.plugins.forEach(function (o) {
+          if (o.name == "gluu-oauth-auth") {
+            authPlugin = o;
+          }
           if (o.name == "gluu-oauth-pep") {
-            $scope.modelPlugin = o;
-            $scope.isPluginAdded = true;
-            $scope.ruleScope = {};
-            $scope.ruleOauthScope = {};
-            $scope.modelPlugin.config.oauth_scope_expression = o.config.oauth_scope_expression || [];
-            setTimeout(function () {
-              if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
-                $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
-                  path.conditions.forEach(function (cond, cIndex) {
-                    var pRule = cond.scope_expression.rule;
-                    var op = '';
-                    if (pRule['and']) {
-                      op = 'and'
-                    } else if (pRule['or']) {
-                      op = 'or'
-                    } else if (pRule['!']) {
-                      op = '!'
+            pepPlugin = o;
+          }
+        });
+
+        if (authPlugin) {
+          $scope.modelPlugin = authPlugin;
+          $scope.modelPlugin.authId = authPlugin.id;
+          $scope.modelPlugin.isPEPEnabled = false;
+          $scope.isPluginAdded = true;
+        }
+
+        if (pepPlugin) {
+          $scope.modelPlugin.pepId = pepPlugin.id;
+          $scope.modelPlugin.config.deny_by_default = pepPlugin.config.deny_by_default;
+          $scope.modelPlugin.isPEPEnabled = true;
+
+          $scope.ruleScope = {};
+          $scope.ruleOauthScope = {};
+          $scope.modelPlugin.config.oauth_scope_expression = pepPlugin.config.oauth_scope_expression || [];
+          setTimeout(function () {
+            if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
+              $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
+                path.conditions.forEach(function (cond, cIndex) {
+                  var pRule = cond.scope_expression.rule;
+                  var op = '';
+                  if (pRule['and']) {
+                    op = 'and'
+                  } else if (pRule['or']) {
+                    op = 'or'
+                  } else if (pRule['!']) {
+                    op = '!'
+                  }
+
+                  _repeat(pRule[op], op, 0);
+
+                  function _repeat(rule, op, id) {
+                    if (op == "!") {
+                      rule = rule['or'];
                     }
 
-                    _repeat(pRule[op], op, 0);
+                    $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                    rule.forEach(function (oRule, oRuleIndex) {
+                      if (oRule['var'] == 0 || oRule['var']) {
+                        if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                          $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
+                        }
 
-                    function _repeat(rule, op, id) {
-                      if (op == "!") {
-                        rule = rule['or'];
+                        $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
                       }
 
-                      $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
-                      rule.forEach(function (oRule, oRuleIndex) {
-                        if (oRule['var'] == 0 || oRule['var']) {
-                          if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
-                            $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
-                          }
-
-                          $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+                      if (rule.length - 1 == oRuleIndex) {
+                        // show remove button
+                        var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
+                        if (id == 0) {
+                          removeBtn = "";
                         }
+                        // render template
+                        var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                          "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                          "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
+                          "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                          removeBtn +
+                          "<div class=\"form-group has-feedback\"> " +
+                          "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                          "</div>" +
+                          "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
-                        if (rule.length - 1 == oRuleIndex) {
-                          // show remove button
-                          var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
-                          if (id == 0) {
-                            removeBtn = "";
-                          }
-                          // render template
-                          var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
-                            "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                            "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
-                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
-                            removeBtn +
-                            "<div class=\"form-group has-feedback\"> " +
-                            "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
-                            "</div>" +
-                            "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+                        $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                        $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                        $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
+                        // end
+                      }
 
-                          $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
-                          $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
-                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
-                          // end
-                        }
-
-                        if (oRule['and']) {
-                          _repeat(oRule['and'], 'and', ++id);
-                        } else if (oRule['or']) {
-                          _repeat(oRule['or'], 'or', ++id);
-                        } else if (oRule['!']) {
-                          _repeat(oRule['!'], '!', ++id);
-                        } else {
-                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
-                        }
-                      });
-                    }
-                  });
-                  path.pathIndex = pIndex;
+                      if (oRule['and']) {
+                        _repeat(oRule['and'], 'and', ++id);
+                      } else if (oRule['or']) {
+                        _repeat(oRule['or'], 'or', ++id);
+                      } else if (oRule['!']) {
+                        _repeat(oRule['!'], '!', ++id);
+                      } else {
+                        $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
+                      }
+                    });
+                  }
                 });
-              }
-            }, 500);
-          }
-        })}, 100);
+                path.pathIndex = pIndex;
+              });
+            }
+          }, 500);
+        }
+
         /**
          * ----------------------------------------------------------------------
          * Functions
@@ -302,46 +319,85 @@
             delete model.config.oauth_scope_expression
           }
 
-          if (!model.config.ignore_scope && !model.config.oauth_scope_expression) {
+          if (model.isPEPEnabled && !model.config.oauth_scope_expression) {
             MessageService.error("OAuth scope expression is required");
             return;
           }
 
-          PluginsService.addOAuthClient({
-            oxd_id: model.config.oxd_id || null,
-            client_id: model.config.client_id || null,
-            client_secret: model.config.client_secret || null,
-            client_name: 'gluu-introspect-client',
-            op_host: model.config.op_url,
-            oxd_url: model.config.oxd_url
-          })
+          PluginsService
+            .addOAuthClient({
+              oxd_id: model.config.oxd_id || null,
+              client_id: model.config.client_id || null,
+              client_secret: model.config.client_secret || null,
+              client_name: 'gluu-introspect-client',
+              op_host: model.config.op_url,
+              oxd_url: model.config.oxd_url
+            })
             .then(function (response) {
               var oauthClient = response.data;
-              model.config.oxd_id = oauthClient.oxd_id;
-              model.config.client_id = oauthClient.client_id;
-              model.config.client_secret = oauthClient.client_secret;
-
-              PluginHelperService.addPlugin(
-                model,
+              var authModel = {
+                name: 'gluu-oauth-auth',
+                config: {
+                  oxd_id: oauthClient.oxd_id,
+                  client_id: oauthClient.client_id,
+                  client_secret: oauthClient.client_secret,
+                  op_url: model.config.op_url,
+                  oxd_url: model.config.oxd_url,
+                  anonymous: model.config.anonymous,
+                  hide_credentials: model.config.hide_credentials || false
+                }
+              };
+              if ($scope.context_name) {
+                authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+              }
+              return new Promise(function (resolve, reject) {
+                return PluginHelperService.addPlugin(
+                  authModel,
+                  function success(res) {
+                    // $state.go(($scope.context_name || "plugin") + "s");
+                    MessageService.success('Gluu-OAuth-Auth Plugin added successfully!');
+                    return resolve(oauthClient);
+                  }, function (err) {
+                    return reject(err);
+                  });
+              });
+            })
+            .then(function (oauthClient) {
+              var pepModel = {
+                name: 'gluu-oauth-pep',
+                config: {
+                  oxd_id: oauthClient.oxd_id,
+                  client_id: oauthClient.client_id,
+                  client_secret: oauthClient.client_secret,
+                  op_url: model.config.op_url,
+                  oxd_url: model.config.oxd_url,
+                  oauth_scope_expression: model.config.oauth_scope_expression,
+                  deny_by_default: model.config.deny_by_default || false
+                }
+              };
+              if ($scope.context_name) {
+                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
+              }
+              return PluginHelperService.addPlugin(
+                pepModel,
                 function success(res) {
                   $state.go(($scope.context_name || "plugin") + "s");
-                  MessageService.success('Plugin added successfully!');
+                  MessageService.success('Gluu-OAuth-PEP Plugin added successfully!');
                 }, function (err) {
-                  $scope.busy = false;
-                  $log.error("create plugin", err);
-                  if (err.data.body) {
-                    Object.keys(err.data.body).forEach(function (key) {
-                      MessageService.error(key + " : " + err.data.body[key]);
-                    })
-                  } else {
-                    MessageService.error("Invalid OAuth scope expression");
-                  }
+                  return Promise.reject(err);
                 });
-
             })
             .catch(function (error) {
+              $scope.busy = false;
+              $log.error("create plugin", error);
               console.log(error);
-              MessageService.error("Failed to register client");
+              if (error.data.body) {
+                Object.keys(error.data.body).forEach(function (key) {
+                  MessageService.error(key + " : " + error.data.body[key]);
+                });
+                return
+              }
+              MessageService.error("Failed!");
             });
         }
 
@@ -355,26 +411,72 @@
             model.config.oauth_scope_expression = null;
           }
 
-          if (!model.config.ignore_scope && !model.config.oauth_scope_expression) {
+          if (model.isPEPEnabled && !model.config.oauth_scope_expression) {
             MessageService.error("OAuth scope expression is required");
             return;
           }
 
-          PluginHelperService.updatePlugin(model.id,
-            model,
-            function success(res) {
-              $scope.busy = false;
-              MessageService.success('Plugin updated successfully!');
-              $state.go(($scope.context_name || "plugin") + "s"); // return to plugins page if specified
-            }, function (err) {
-              $log.error("create plugin", err);
-              if (err.data.body) {
-                Object.keys(err.data.body).forEach(function (key) {
-                  MessageService.error(key + " : " + err.data.body[key]);
-                })
-              } else {
-                MessageService.error("Invalid OAuth scope expression");
+          var authModel = {
+            name: 'gluu-oauth-auth',
+            config: {
+              oxd_id: model.oxd_id,
+              client_id: model.client_id,
+              client_secret: model.client_secret,
+              op_url: model.config.op_url,
+              oxd_url: model.config.oxd_url,
+              anonymous: model.config.anonymous,
+              hide_credentials: model.config.hide_credentials || false
+            }
+          };
+          if ($scope.context_name) {
+            authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+          }
+          return new Promise(function (resolve, reject) {
+            return PluginHelperService.updatePlugin(model.authId,
+              authModel,
+              function success(res) {
+                MessageService.success('Gluu-OAuth-Auth Plugin added successfully!');
+                return resolve();
+              }, function (err) {
+                return reject(err);
+              });
+          })
+            .then(function () {
+              var pepModel = {
+                name: 'gluu-oauth-pep',
+                config: {
+                  oxd_id: model.oxd_id,
+                  client_id: model.client_id,
+                  client_secret: model.client_secret,
+                  op_url: model.config.op_url,
+                  oxd_url: model.config.oxd_url,
+                  oauth_scope_expression: model.config.oauth_scope_expression,
+                  deny_by_default: model.config.deny_by_default || false
+                }
+              };
+              if ($scope.context_name) {
+                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
               }
+              return PluginHelperService.updatePlugin(model.pepId,
+                pepModel,
+                function success(res) {
+                  $state.go(($scope.context_name || "plugin") + "s");
+                  MessageService.success('Gluu-OAuth-PEP Plugin added successfully!');
+                }, function (err) {
+                  return Promise.reject(err);
+                });
+            })
+            .catch(function (error) {
+              $scope.busy = false;
+              $log.error("create plugin", error);
+              console.log(error);
+              if (error.data.body) {
+                Object.keys(error.data.body).forEach(function (key) {
+                  MessageService.error(key + " : " + error.data.body[key]);
+                });
+                return
+              }
+              MessageService.error("Failed!");
             });
         }
 
