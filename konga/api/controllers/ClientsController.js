@@ -12,6 +12,30 @@ var httpRequest = require('request-promise');
 module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // Register client
+  opDiscovery: function (req, res) {
+    if (!req.body.op_url) {
+      return res.status(400).send({message: "OP Server URL is required"});
+    }
+
+    const op_discovery_url = req.body.op_url + '/.well-known/openid-configuration'
+    const option = {
+      method: 'POST',
+      uri: op_discovery_url,
+      resolveWithFullResponse: true,
+      json: true
+    };
+
+    return httpRequest(option)
+        .then(function (response) {
+          res.send(response.body);
+        })
+        .catch(function (error) {
+          sails.log(new Date(), '----- Error OP Discovery -----', op_discovery_url, error);
+          return res.status(500).send(error);
+        });
+  },
+
+  // Register client
   registerClient: function (clientRequest) {
     return new Promise(function (resolve, reject) {
       // Create new client
@@ -286,6 +310,53 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       })
       .catch(function (error) {
         sails.log(new Date(), '--- addOAuthConsumerClient ---', error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // User to register client for OpenID Connect plugin
+  addOPClient: function (req, res) {
+    // Existing client id and secret
+    const body = req.body;
+
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
+    }
+
+    // Create new client
+    const reqBody = {
+      op_host: body.op_host,
+      oxd_url: body.oxd_url,
+      authorization_redirect_uri: body.authorization_redirect_uri || 'https://client.example.com/cb',
+      client_name: body.client_name || 'gg-openid-connect-client',
+      post_logout_redirect_uri: body.post_logout_redirect_uri,
+      scope: body.scope,
+      acr_values: body.acr_values,
+      grant_types: ['client_credentials', 'authorization_code', 'refresh_token']
+    };
+
+    const option = {
+      method: 'POST',
+      uri: reqBody.oxd_url + '/register-site',
+      body: reqBody,
+      resolveWithFullResponse: true,
+      json: true
+    };
+
+    return httpRequest(option)
+      .then(function (response) {
+        var clientInfo = response.body;
+        return res.send({
+          oxd_id: clientInfo.oxd_id,
+          client_id: clientInfo.client_id,
+          client_secret: clientInfo.client_secret
+        })
+      })
+      .catch(function (error) {
         return res.status(500).send(error);
       });
   },

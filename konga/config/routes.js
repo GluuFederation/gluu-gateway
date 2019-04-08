@@ -92,9 +92,11 @@ module.exports.routes = {
   'GET /api/settings': 'SettingsController.find',
 
   // Client controller
+  'POST /api/op_discovery': 'ClientsController.opDiscovery',
   'GET /api/clients/oauth/:oxd_id': 'ClientsController.getClient',
   'POST /api/clients/oauth': 'ClientsController.addGluuClientAuth',
   'POST /api/clients/uma': 'ClientsController.addGluuUMAPEP',
+  'POST /api/clients/op': 'ClientsController.addOPClient',
   'PUT /api/clients/uma': 'ClientsController.updateGluuUMAPEP',
   'POST /api/clients/consumer': 'ClientsController.addConsumerClient',
   'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
