@@ -71,6 +71,7 @@
         }
 
         if (pepPlugin) {
+          $scope.modelPlugin.isPEPEnabled = true;
           PluginsService
             .getOAuthClient(pepPlugin.config.oxd_id)
             .then(function (response) {
@@ -354,7 +355,6 @@
                 PluginHelperService.addPlugin(
                   authModel,
                   function success(res) {
-                    MessageService.success('Gluu-UMA-Auth Plugin added successfully!');
                     return resolve(oauthClient);
                   }, function (err) {
                     return reject(err);
@@ -382,7 +382,7 @@
                 pepModel,
                 function success(res) {
                   $state.go(($scope.context_name || "plugin") + "s");
-                  MessageService.success('Gluu-UMA-PEP Plugin added successfully!');
+                  MessageService.success('Gluu UMA Auth and PEP Plugin added successfully!');
                 }, function (err) {
                   return Promise.reject(err);
                 });
@@ -450,7 +450,6 @@
                 return PluginHelperService.updatePlugin(model.authId,
                   authModel,
                   function success(res) {
-                    MessageService.success('Gluu-UMA-Auth Plugin added successfully!');
                     return resolve();
                   }, function (err) {
                     return reject(err);
@@ -478,7 +477,7 @@
                 pepModel,
                 function success(res) {
                   $state.go(($scope.context_name || "plugin") + "s");
-                  MessageService.success('Gluu-UMA-PEP Plugin added successfully!');
+                  MessageService.success('Gluu UMA Auth and PEP Plugin added successfully!');
                 }, function (err) {
                   return Promise.reject(err);
                 });

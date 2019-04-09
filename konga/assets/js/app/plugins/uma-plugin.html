@@ -38,7 +38,7 @@
             <div class="col-md-12">
               <div class="form-group has-feedback">
                 <label>1. UMA PEP Scope expression configuration</label>
-                <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
+                <input switch-readonly="true" switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
                        ng-model="modelPlugin.isPEPEnabled" class="form-control"
                        switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
 

@@ -70,6 +70,7 @@
           $scope.modelPlugin.authId = authPlugin.id;
           $scope.modelPlugin.isPEPEnabled = false;
           $scope.isPluginAdded = true;
+          $scope.modelPlugin.config.oauth_scope_expression = [];
         }
 
         if (pepPlugin) {
@@ -354,8 +355,6 @@
                 return PluginHelperService.addPlugin(
                   authModel,
                   function success(res) {
-                    // $state.go(($scope.context_name || "plugin") + "s");
-                    MessageService.success('Gluu-OAuth-Auth Plugin added successfully!');
                     return resolve(oauthClient);
                   }, function (err) {
                     return reject(err);
@@ -364,6 +363,7 @@
             })
             .then(function (oauthClient) {
               if (!model.isPEPEnabled) {
+                MessageService.success('Gluu OAuth Auth Plugin added successfully!');
                 $state.go(($scope.context_name || "plugin") + "s");
                 return
               }
@@ -387,7 +387,7 @@
                 pepModel,
                 function success(res) {
                   $state.go(($scope.context_name || "plugin") + "s");
-                  MessageService.success('Gluu-OAuth-PEP Plugin added successfully!');
+                  MessageService.success('Gluu OAuth Auth and PEP Plugin added successfully!');
                 }, function (err) {
                   return Promise.reject(err);
                 });
@@ -424,9 +424,9 @@
           var authModel = {
             name: 'gluu-oauth-auth',
             config: {
-              oxd_id: model.oxd_id,
-              client_id: model.client_id,
-              client_secret: model.client_secret,
+              oxd_id: model.config.oxd_id,
+              client_id: model.config.client_id,
+              client_secret: model.config.client_secret,
               op_url: model.config.op_url,
               oxd_url: model.config.oxd_url,
               anonymous: model.config.anonymous,
@@ -440,19 +440,24 @@
             return PluginHelperService.updatePlugin(model.authId,
               authModel,
               function success(res) {
-                MessageService.success('Gluu-OAuth-Auth Plugin added successfully!');
                 return resolve();
               }, function (err) {
                 return reject(err);
               });
           })
             .then(function () {
+              if (!model.isPEPEnabled) {
+                MessageService.success('Gluu OAuth Auth Plugin updated successfully!');
+                $state.go(($scope.context_name || "plugin") + "s");
+                return
+              }
+
               var pepModel = {
                 name: 'gluu-oauth-pep',
                 config: {
-                  oxd_id: model.oxd_id,
-                  client_id: model.client_id,
-                  client_secret: model.client_secret,
+                  oxd_id: model.config.oxd_id,
+                  client_id: model.config.client_id,
+                  client_secret: model.config.client_secret,
                   op_url: model.config.op_url,
                   oxd_url: model.config.oxd_url,
                   oauth_scope_expression: model.config.oauth_scope_expression,
@@ -462,14 +467,29 @@
               if ($scope.context_name) {
                 pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
               }
-              return PluginHelperService.updatePlugin(model.pepId,
-                pepModel,
-                function success(res) {
-                  $state.go(($scope.context_name || "plugin") + "s");
-                  MessageService.success('Gluu-OAuth-PEP Plugin added successfully!');
-                }, function (err) {
-                  return Promise.reject(err);
-                });
+
+              if (model.pepId) {
+                return PluginHelperService.updatePlugin(model.pepId, pepModel,
+                  success,
+                  error);
+              } else {
+                return PluginHelperService.addPlugin(
+                  pepModel,
+                  success,
+                  error);
+              }
+
+              function success(res, msg) {
+                $state.go(($scope.context_name || "plugin") + "s");
+                if (model.pepId) {
+                  MessageService.success('Gluu OAuth Auth and PEP Plugin updated successfully!');
+                } else {
+                  MessageService.success('Gluu OAuth Auth updated and PEP Plugin added successfully!');
+                }
+              }
+              function error(err) {
+                return Promise.reject(err);
+              }
             })
             .catch(function (error) {
               $scope.busy = false;

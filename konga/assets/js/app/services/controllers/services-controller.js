@@ -92,7 +92,7 @@
                 serviceResponse.data.map(function(service) {
                   service.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    if (plugin.service_id == service.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
+                    if (plugin.service_id == service.id && (plugin.name == 'gluu-oauth-auth' || plugin.name == 'gluu-uma-auth')) {
                       service.plugins.push(plugin);
                     }
                   });
