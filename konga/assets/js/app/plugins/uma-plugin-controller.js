@@ -22,7 +22,8 @@
         $scope.addGroup = addGroup;
         $scope.removeGroup = removeGroup;
         $scope.fetchData = fetchData;
-
+        $scope.openCreateConsumerModal = openCreateConsumerModal;
+        $scope.openConsumerListModal = openConsumerListModal;
         if (_context_name == 'service') {
           $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
         } else if (_context_name == 'route') {
@@ -292,6 +293,11 @@
                 isFormValid = false;
               }
             });
+          }
+
+          if (!$scope.modelPlugin.config.anonymous) {
+            MessageService.error("Anonymous consumer is required");
+            return false;
           }
 
           if (!isFormValid) {
@@ -608,6 +614,108 @@
               return condition;
             });
             return path;
+          })
+        }
+
+        function openCreateConsumerModal() {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
+          var createConsumer = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/create-anonymous-consumer-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, ConsumerModel) {
+
+              $scope.consumer = {
+                username: 'anonymous',
+                custom_id: 'anonymous'
+              };
+
+              $scope.close = close;
+              $scope.submit = submit;
+
+              function submit(valid) {
+                if (!valid) {
+                  return
+                }
+
+                $scope.errors = {};
+
+                var data = _.cloneDeep($scope.consumer);
+                if (!data.custom_id) {
+                  delete data.custom_id;
+                }
+
+                if (!data.username) {
+                  delete data.username;
+                }
+
+                ConsumerModel.create(data)
+                  .then(function (res) {
+                    MessageService.success("Consumer created successfully!");
+                    $rootScope.$broadcast('consumer.created', res.data);
+                    $uibModalInstance.close(res.data);
+                  })
+                  .catch(function (err) {
+                    $log.error("Failed to create consumer", err);
+                    console.log(err);
+                    var errorMessage = (err.data && err.data.body && err.data.body.message) || "Error";
+                    MessageService.error(errorMessage);
+                  });
+              }
+
+              function close() {
+                $uibModalInstance.dismiss()
+              }
+            },
+            controllerAs: '$ctrl',
+          });
+
+          createConsumer.result.then(function (consumer) {
+            $scope.modelPlugin.config.anonymous = consumer.id;
+          })
+        }
+
+        function openConsumerListModal() {
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
+          var createConsumer = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/consumer-list-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService, ConsumerModel, _consumers) {
+              $scope.consumers = (_consumers && _consumers.data && _consumers.data.data) || [];
+              $scope.close = close;
+
+              function close() {
+                $uibModalInstance.dismiss()
+              }
+            },
+            resolve: {
+              _consumers: [
+                'ConsumerService',
+                function resolve(ConsumerService) {
+                  return ConsumerService.query()
+                }
+              ]
+            },
+            controllerAs: '$ctrl',
+          });
+
+          createConsumer.result.then(function (consumer) {
+            $scope.modelPlugin.config.anonymous = consumer.id;
           })
         }
 
