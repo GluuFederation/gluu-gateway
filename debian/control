@@ -10,8 +10,7 @@ Package: gluu-gateway
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  postgresql (>= 10),
- oxd-server (>= 3.1.2),
- oxd-server (< 4.0-59),
+ oxd-server (= 3.1.3-17~xenial+Ub16.04),
  nodejs,
  unzip,
  lua-cjson,
