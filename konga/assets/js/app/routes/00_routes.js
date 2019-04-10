@@ -213,6 +213,12 @@
                       return PluginsService.load({route_id: $stateParams.route_id})
                     }
                   ],
+                  _info: [
+                    'InfoService',
+                    function resolve(InfoService) {
+                      return InfoService.getInfo()
+                    }
+                  ],
                   _activeNode: [
                     'NodesService',
                     function resolve(NodesService) {

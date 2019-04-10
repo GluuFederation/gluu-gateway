@@ -71,6 +71,9 @@
               <a data-ng-if="plugin.name == 'gluu-uma-auth'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
                 <i class="mdi mdi-pencil"></i> UMA
               </a>
+              <a data-ng-if="plugin.name == 'gluu-openid-connect'" ui-sref="routes.openid-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OIDC
+              </a>
             </div>
             <span data-ng-if="route.plugins.length < 1">-</span>
           </td>

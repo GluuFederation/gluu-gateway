@@ -63,6 +63,10 @@
             return $http.put('api/clients/uma', data)
           },
 
+          updateOPClient: function (data) {
+            return $http.put('api/clients/op', data)
+          },
+
           addOAuthConsumerClient: function (data) {
             return $http.post('api/clients/consumer', data)
           },

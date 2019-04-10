@@ -26,13 +26,13 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     };
 
     return httpRequest(option)
-        .then(function (response) {
-          res.send(response.body);
-        })
-        .catch(function (error) {
-          sails.log(new Date(), '----- Error OP Discovery -----', op_discovery_url, error);
-          return res.status(500).send(error);
-        });
+      .then(function (response) {
+        res.send(response.body);
+      })
+      .catch(function (error) {
+        sails.log(new Date(), '----- Error OP Discovery -----', op_discovery_url, error);
+        return res.status(500).send(error);
+      });
   },
 
   // Register client
@@ -448,6 +448,91 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       })
       .catch(function (error) {
         sails.log(new Date(), error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // User to update client for OpenID Connect plugin
+  updateOPClient: function (req, res) {
+    // Existing client id and secret
+    const body = req.body;
+
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
+    }
+
+    if (!body.oxd_id) {
+      sails.log(new Date(), "Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide oxd_id to update resources"});
+    }
+
+    if (!body.client_id) {
+      sails.log(new Date(), "Provide client_id to update resources");
+      return res.status(500).send({message: "Provide client_id to update resources"});
+    }
+
+    if (!body.client_secret) {
+      sails.log(new Date(), "Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide client_secret to update resources"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
+    }
+
+    var option = {
+      method: 'POST',
+      uri: body.oxd_url + '/get-client-token',
+      body: {
+        op_host: body.op_host,
+        client_id: body.client_id,
+        client_secret: body.client_secret,
+        scope: ['openid', 'oxd']
+      },
+      resolveWithFullResponse: true,
+      json: true
+    };
+    sails.log(new Date(), "--------------OXD API Call----------------");
+    sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+
+    return httpRequest(option)
+      .then(function (response) {
+        var clientToken = response.body;
+
+        // Create new client
+        const reqBody = {
+          oxd_id: body.oxd_id,
+          op_host: body.op_host,
+          oxd_url: body.oxd_url,
+          authorization_redirect_uri: body.authorization_redirect_uri || 'https://client.example.com/cb',
+          post_logout_redirect_uri: body.post_logout_redirect_uri,
+          scope: body.scope,
+          acr_values: body.acr_values
+        };
+
+        const option = {
+          method: 'POST',
+          uri: reqBody.oxd_url + '/update-site',
+          body: reqBody,
+          headers: {
+            Authorization: 'Bearer ' + clientToken.access_token
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/update-site'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option)
+      })
+      .then(function (response) {
+        var clientInfo = response.body;
+        return res.send({
+          oxd_id: clientInfo.oxd_id
+        })
+      })
+      .catch(function (error) {
         return res.status(500).send(error);
       });
   },

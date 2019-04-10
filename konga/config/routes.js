@@ -98,6 +98,7 @@ module.exports.routes = {
   'POST /api/clients/uma': 'ClientsController.addGluuUMAPEP',
   'POST /api/clients/op': 'ClientsController.addOPClient',
   'PUT /api/clients/uma': 'ClientsController.updateGluuUMAPEP',
+  'PUT /api/clients/op': 'ClientsController.updateOPClient',
   'POST /api/clients/consumer': 'ClientsController.addConsumerClient',
   'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
   'POST /api/clients/oauth/delete': 'ClientsController.deleteGluuClientAuth',
