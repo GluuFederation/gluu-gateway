@@ -6,3 +6,4 @@
 /usr/sbin/update-rc.d oxd-server remove > /dev/null 2>&1
 /usr/sbin/update-rc.d gluu-gateway defaults > /dev/null 2>&1
 chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+dpkg -i /tmp/oxd-server_4.0-60~xenial+Ub16.04_all.deb
