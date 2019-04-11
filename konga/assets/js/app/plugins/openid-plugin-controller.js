@@ -18,6 +18,7 @@
         $scope.getDiscoveryResponse = getDiscoveryResponse;
         $scope.customHeaders = [['CUSTOM_NUMBER', '123321123']];
         $scope.claimSupported = [['role', '==', '[Mm][Aa]']];
+        $scope.timeType = ['seconds', 'minutes', 'hours', 'days'];
         $scope.getKongProxyURL = getKongProxyURL;
 
         $scope.pluginConfig = {};
@@ -33,6 +34,19 @@
 
         if ($scope.isPluginAdded) {
           $scope.pluginConfig = $scope.oidcPlugin.config;
+          PluginsService
+            .getOAuthClient($scope.pluginConfig.oxd_id)
+            .then(function (response) {
+              var resData = response.data.data;
+              $scope.pluginConfig.max_id_token_age_value = resData.max_id_token_age.value;
+              $scope.pluginConfig.max_id_token_age_type = resData.max_id_token_age.type;
+              $scope.pluginConfig.max_id_token_auth_age_value = resData.max_id_token_auth_age.value;
+              $scope.pluginConfig.max_id_token_auth_age_type = resData.max_id_token_auth_age.type;
+            })
+            .catch(function (error) {
+              console.log(error);
+              MessageService.error((error.data && error.data.message) || "Failed to get Client details");
+            });
         } else {
           $scope.pluginConfig = {
             kong_proxy_url: '',
@@ -47,8 +61,10 @@
             post_logout_redirect_uri: '',
             requested_scopes: ['openid', 'oxd', 'email', 'profile'],
             required_acrs: ['auth_ldap_server', 'u2f', 'otp'],
-            max_id_token_age: 60,
-            max_id_token_auth_age: 60
+            max_id_token_age_value: 60,
+            max_id_token_auth_age_value: 60,
+            max_id_token_age_type: 'seconds',
+            max_id_token_auth_age_type: 'seconds',
           };
           setURLs();
         }
@@ -110,12 +126,48 @@
         }
         
         function managePlugin() {
-          debugger
-          if ($scope.isPluginAdded) {
-            updatePlugin()
-          } else {
-            addPlugin()
-          }
+
+          if ($scope.openingModal) return;
+
+          $scope.openingModal = true;
+          setTimeout(function () {
+            $scope.openingModal = false;
+          }, 1000);
+
+          var createConsumer = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/comment-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService) {
+              $scope.close = close;
+              $scope.submit = submit;
+              $scope.comment = "";
+
+              function submit() {
+                if (!$scope.comment) {
+                  MessageService.error('Comment required!');
+                  return
+                }
+                $uibModalInstance.close($scope.comment);
+              }
+
+              function close() {
+                $uibModalInstance.dismiss();
+              }
+            },
+            controllerAs: '$ctrl',
+          });
+
+          createConsumer.result.then(function (comment) {
+            $scope.pluginConfig.comment = comment;
+
+            if ($scope.isPluginAdded) {
+              updatePlugin()
+            } else {
+              addPlugin()
+            }
+          })
         }
 
         function addPlugin() {
@@ -128,10 +180,18 @@
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
               post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
               scope: model.requested_scopes,
-              acr_values: model.required_acrs
+              acr_values: model.required_acrs,
+              route_id: $scope.route.id,
+              comment: model.comment,
+              max_id_token_age_value: model.max_id_token_age_value,
+              max_id_token_age_type: model.max_id_token_age_type,
+              max_id_token_auth_age_value: model.max_id_token_auth_age_value,
+              max_id_token_auth_age_type: model.max_id_token_auth_age_type,
             })
             .then(function (response) {
               var opClient = response.data;
+              var max_id_token_age =  getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
+              var max_id_token_auth_age =  getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
               var pluginModel = {
                 name: 'gluu-openid-connect',
                 route_id: $scope.route.id,
@@ -146,8 +206,8 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   required_acrs: model.required_acrs,
-                  max_id_token_age: model.max_id_token_age,
-                  max_id_token_auth_age: model.max_id_token_auth_age,
+                  max_id_token_age: max_id_token_age,
+                  max_id_token_auth_age: max_id_token_auth_age,
                 }
               };
               return new Promise(function (resolve, reject) {
@@ -238,6 +298,18 @@
               }
               MessageService.error("Failed!");
             });
+        }
+
+        function getSeconds(value, type) {
+          if (type === 'seconds') {
+            return value
+          } else if(type === 'minutes') {
+            return value * 60
+          } else if (type === 'hours') {
+            return value * 60 * 60
+          } else if (type === 'days') {
+            return value * 60 * 60 * 24
+          }
         }
         // init
         $scope.getDiscoveryResponse();

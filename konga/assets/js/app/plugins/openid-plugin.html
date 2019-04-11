@@ -278,12 +278,12 @@
                     <div class="col-sm-8">
                       <div class="form-group">
                         <div class="col-sm-2">
-                          <input class="form-control" ng-model="pluginConfig.max_id_token_age" />
+                          <input class="form-control" ng-model="pluginConfig.max_id_token_age_value" />
                         </div>
                         <div class="col-sm-3" class="form-control">
-                          <select class="form-control">
-                            <option value="d">second</option>
-                          </select>
+                          <select class="form-control" id="max_id_token_age_type"
+                                  ng-model="pluginConfig.max_id_token_age_type"
+                                  ng-options="type as type for type in timeType" />
                         </div>
                       </div>
                     </div>
@@ -295,12 +295,12 @@
                     <div class="col-sm-8">
                       <div class="form-group">
                         <div class="col-sm-2">
-                          <input class="form-control" ng-model="pluginConfig.max_id_token_auth_age" />
+                          <input class="form-control" ng-model="pluginConfig.max_id_token_auth_age_value" />
                         </div>
                         <div class="col-sm-3">
-                          <select class="form-control">
-                            <option value="d">second</option>
-                          </select>
+                          <select class="form-control" id="max_id_token_auth_age_type"
+                                  ng-model="pluginConfig.max_id_token_auth_age_type"
+                                  ng-options="type as type for type in timeType" />
                         </div>
                       </div>
                     </div>

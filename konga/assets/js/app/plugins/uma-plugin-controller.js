@@ -713,10 +713,6 @@
             },
             controllerAs: '$ctrl',
           });
-
-          createConsumer.result.then(function (consumer) {
-            $scope.modelPlugin.config.anonymous = consumer.id;
-          })
         }
 
         //init

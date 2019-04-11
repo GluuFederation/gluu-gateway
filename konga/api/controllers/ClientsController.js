@@ -316,7 +316,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // User to register client for OpenID Connect plugin
   addOPClient: function (req, res) {
-    // Existing client id and secret
     const body = req.body;
 
     if (!body.op_host) {
@@ -325,6 +324,26 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
     if (!body.oxd_url) {
       return res.status(400).send({message: "OXD Server is required"});
+    }
+
+    if (!body.comment) {
+      return res.status(400).send({message: "Comment is required"});
+    }
+
+    if (!body.max_id_token_age_value) {
+      return res.status(400).send({message: "max_id_token_age_value is required"});
+    }
+
+    if (!body.max_id_token_age_type) {
+      return res.status(400).send({message: "max_id_token_age_type is required"});
+    }
+
+    if (!body.max_id_token_auth_age_value) {
+      return res.status(400).send({message: "max_id_token_auth_age_value is required"});
+    }
+
+    if (!body.max_id_token_auth_age_type) {
+      return res.status(400).send({message: "max_id_token_auth_age_type is required"});
     }
 
     // Create new client
@@ -350,10 +369,39 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     return httpRequest(option)
       .then(function (response) {
         var clientInfo = response.body;
+        return sails.models.client
+          .create({
+            oxd_id: clientInfo.oxd_id,
+            client_id: clientInfo.client_id,
+            client_secret: clientInfo.client_secret,
+            context: 'GLUU-OPENID-CONNECT',
+            data: {
+              route_id: body.route_id,
+              comments: [{
+                commentDescription: body.comment,
+                commentDate: Date.now()
+              }],
+              max_id_token_age: {
+                value: body.max_id_token_age_value,
+                type: body.max_id_token_age_type,
+              },
+              max_id_token_auth_age: {
+                value: body.max_id_token_auth_age_value,
+                type: body.max_id_token_auth_age_type,
+              }
+            }
+          })
+      })
+      .then(function (dbClient) {
+        if (!dbClient.oxd_id) {
+          sails.log(new Date(), "Failed to add client and resources in konga db", dbClient);
+          return Promise.reject({message: "Failed to add client and resources in konga db"});
+        }
+
         return res.send({
-          oxd_id: clientInfo.oxd_id,
-          client_id: clientInfo.client_id,
-          client_secret: clientInfo.client_secret
+          oxd_id: dbClient.oxd_id,
+          client_id: dbClient.client_id,
+          client_secret: dbClient.client_secret
         })
       })
       .catch(function (error) {
@@ -507,7 +555,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           authorization_redirect_uri: body.authorization_redirect_uri || 'https://client.example.com/cb',
           post_logout_redirect_uri: body.post_logout_redirect_uri,
           scope: body.scope,
-          acr_values: body.acr_values
+          acr_values: body.acr_values,
+          grant_types: ['client_credentials', 'authorization_code', 'refresh_token']
         };
 
         const option = {
