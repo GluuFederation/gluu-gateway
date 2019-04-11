@@ -37,11 +37,11 @@
           PluginsService
             .getOAuthClient($scope.pluginConfig.oxd_id)
             .then(function (response) {
-              var resData = response.data.data;
-              $scope.pluginConfig.max_id_token_age_value = resData.max_id_token_age.value;
-              $scope.pluginConfig.max_id_token_age_type = resData.max_id_token_age.type;
-              $scope.pluginConfig.max_id_token_auth_age_value = resData.max_id_token_auth_age.value;
-              $scope.pluginConfig.max_id_token_auth_age_type = resData.max_id_token_auth_age.type;
+              $scope.dbData = response.data.data;
+              $scope.pluginConfig.max_id_token_age_value = $scope.dbData.max_id_token_age.value;
+              $scope.pluginConfig.max_id_token_age_type = $scope.dbData.max_id_token_age.type;
+              $scope.pluginConfig.max_id_token_auth_age_value = $scope.dbData.max_id_token_auth_age.value;
+              $scope.pluginConfig.max_id_token_auth_age_type = $scope.dbData.max_id_token_auth_age.type;
             })
             .catch(function (error) {
               console.log(error);
@@ -240,6 +240,16 @@
 
         function updatePlugin() {
           var model = angular.copy($scope.pluginConfig);
+          var extraData = $scope.dbData;
+          var max_id_token_age =  getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
+          var max_id_token_auth_age =  getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
+
+          extraData.comments.push({commentDescription: model.comment, commentDate: Date.now()});
+          extraData.max_id_token_age.value = model.max_id_token_age_value;
+          extraData.max_id_token_age.type = model.max_id_token_age_type;
+          extraData.max_id_token_auth_age.value = model.max_id_token_auth_age_value;
+          extraData.max_id_token_auth_age.type = model.max_id_token_auth_age_type;
+
           PluginsService
             .updateOPClient({
               oxd_id: model.oxd_id,
@@ -250,7 +260,8 @@
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
               post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
               scope: model.requested_scopes,
-              acr_values: model.required_acrs
+              acr_values: model.required_acrs,
+              extraData: extraData
             })
             .then(function (response) {
               var opClient = response.data;
@@ -268,8 +279,8 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   required_acrs: model.required_acrs,
-                  max_id_token_age: model.max_id_token_age,
-                  max_id_token_auth_age: model.max_id_token_auth_age,
+                  max_id_token_age: max_id_token_age,
+                  max_id_token_auth_age: max_id_token_auth_age,
                 }
               };
               return new Promise(function (resolve, reject) {

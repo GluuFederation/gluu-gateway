@@ -524,6 +524,11 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       return res.status(500).send({message: "Provide client_secret to update resources"});
     }
 
+    if (!body.extraData) {
+      sails.log(new Date(), "extraData required!");
+      return res.status(500).send({message: "extraData required!"});
+    }
+
     if (!body.oxd_url) {
       return res.status(400).send({message: "OXD Server is required"});
     }
@@ -576,9 +581,27 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option)
       })
       .then(function (response) {
-        var clientInfo = response.body;
+        var updateSite = response.body;
+        if (!updateSite.oxd_id) {
+          sails.log(new Date(), "Failed to update resources", response);
+          return Promise.reject({message: "Failed to update resources"});
+        }
+
+        return sails.models.client
+          .update({
+            oxd_id: body.oxd_id
+          }, {
+            data: body.extraData
+          });
+      })
+      .then(function (dbClient) {
+        if (dbClient.length < 1) {
+          sails.log(new Date(), "Failed to update client in konga db", dbClient);
+          return Promise.reject({message: "Failed to update client in konga db"});
+        }
+
         return res.send({
-          oxd_id: clientInfo.oxd_id
+          oxd_id: body.oxd_id
         })
       })
       .catch(function (error) {
