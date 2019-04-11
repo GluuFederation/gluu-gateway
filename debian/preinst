@@ -1,4 +1,5 @@
 #!/bin/bash
+dpkg -i /tmp/oxd-server_4.0-60~xenial+Ub16.04_all.deb
 mkdir -p /opt/gluu-gateway/konga/config/locales
 mkdir -p /opt/gluu-gateway/konga/config/env
 mkdir -p /opt/gluu-gateway/kong
