@@ -343,6 +343,130 @@
                 </div>
               </div>
             </div>
+            <div class="col-md-12">
+              <div class="form-group has-feedback">
+                <label>1. UMA PEP Scope expression configuration</label>
+                <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
+                       type="checkbox" switch-size="small"
+                       ng-model="pluginConfig.isPEPEnabled" class="form-control"
+                       switch-change="pluginConfig.config.deny_by_default = pluginConfig.isPEPEnabled"/>
+
+                <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+              </div>
+              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-3 control-label">Deny by default
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-9 check-toggle">
+                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                         ng-model="pluginConfig.deny_by_default" class="form-control"/>
+                  <p class="help-block">
+                    It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
+                    expression. Set it to <code>No</code>, to allow access to unprotected path.
+                  </p>
+                </div>
+              </div>
+              <div class="row"></div>
+              <div data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <div class="row" ng-repeat="element in pluginConfig.uma_scope_expression"
+                     ng-init="pIndex = $index"
+                     style="border: 1px dotted;">
+                  <hr/>
+                  <div class="col-md-1">
+                    <button type="button" title="Delete path" class="btn btn-danger"
+                            ng-click="pluginConfig.uma_scope_expression.splice($index,1)">
+                      <i class="mdi mdi-close"></i>
+                    </button>
+                  </div>
+                  <div class="col-md-11">
+                    <div class="form-group has-feedback col-md-4">
+                      <input type="text" class="form-control" value="{{pluginConfig.kong_proxy_url}}"
+                             title="Upstream URL" disabled/>
+                      <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
+                    </div>
+                    <div class="form-group has-feedback col-md-8"
+                         ng-class="{'pathValidationClass': PluginForm['path'+$index].$invalid}">
+                      <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
+                             title="Enter path"
+                             placeholder="/path"
+                             ng-model="element.path"
+                             ng-required="true" required/>
+                      <span class="help-block error-block basic-block">The path which you want to have protected.</span>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="row" ng-repeat="cond in element.conditions">
+                        <div class="row">
+                          <div class="col-md-10">
+                            <div class="form-group has-feedback">
+                              <tags-input ng-model="cond.httpMethods"
+                                          id="httpMethods{{pIndex}}{{$index}}"
+                                          add-from-autocomplete-only="true"
+                                          placeholder="Enter HTTP methods" required>
+                                <auto-complete source="loadMethods($query)"
+                                               min-length="0"
+                                               debounce-delay="0"></auto-complete>
+                              </tags-input>
+                              <span class="help-block error-block basic-block"></span>
+                            </div>
+                          </div>
+                          <div class="col-md-2">
+                            <button type="button" title="Delete condition" class="btn btn-danger"
+                                    ng-click="element.conditions.splice($index,1)">
+                              <i class="mdi mdi-close"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
+                          <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isPluginAdded">
+                          </div>
+                          <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isPluginAdded">
+                            <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0" checked>or |
+                            <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
+                            <input type="radio" value="!" name="condition{{pIndex}}{{$index}}0">not
+                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                    name="btnAdd{{pIndex}}{{$index}}0"
+                                    data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                              Add Group
+                            </button>
+                            <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
+                                   name="hdScope{{pIndex}}{{$index}}0"/>
+                            <div class="form-group has-feedback">
+                              <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                                          name="scope{{pIndex}}{{$index}}0"
+                                          id="scopes{{pIndex}}{{$index}}"
+                                          placeholder="Enter scopes" required>
+                              </tags-input>
+                            </div>
+                            <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
+                            </div>
+                          </div>
+                        </div>
+                        <hr/>
+                      </div>
+                      <div class="row">
+                        <button type="button" class="btn btn-info" ng-click="addNewCondition($index)">
+                          <i class="mdi mdi-plus"></i> Add Condition
+                        </button>
+                      </div>
+                      <br/>
+                    </div>
+                  </div>
+                </div>
+                <hr/>
+                <button type="button" class="btn btn-info" ng-click="addNewPath()">
+                  <i class="mdi mdi-plus"></i> Add path
+                </button>
+                <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
+                  <i class="mdi mdi-information"></i> View Resource Json
+                </button>
+              </div>
+            </div>
           </div>
           <div class="row">
             <hr/>
