@@ -37,6 +37,7 @@ class KongSetup(object):
         self.system_folder = './system'
         self.osDefault = '/etc/default'
         self.profileFolder = '/etc/profile.d'
+        self.tmp_folder = '/tmp'
 
         self.logError = 'gluu-gateway-setup_error.log'
         self.log = 'gluu-gateway-setup.log'
@@ -69,6 +70,8 @@ class KongSetup(object):
         self.cmd_echo = '/bin/echo'
         self.cmd_service = 'service'
         self.cmd_systemctl = 'systemctl'
+        self.cmd_rpm = '/bin/rpm'
+        self.cmd_dpkg = '/usr/bin/dpkg'
 
         self.countryCode = ''
         self.state = ''
@@ -158,6 +161,11 @@ class KongSetup(object):
         self.HMACFilesPath = '%s/third-party/lua-resty-hmac/lib/resty/.' % self.distGluuGatewayFolder
         self.prometheusFilePath = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.distGluuGatewayFolder
 
+        # oxd file names
+        self.ubuntu16_oxd_file = "oxd-server_4.0-60~xenial+Ub16.04_all.deb"
+        self.centos7_oxd_file = "oxd-server-4.0-60.centos7.noarch.rpm"
+        self.rhel7_oxd_file = "oxd-server-4.0-60.rhel7.noarch.rpm"
+
     def initParametersFromJsonArgument(self):
         if len(sys.argv) > 1:
             self.isPrompt = False
@@ -223,6 +231,28 @@ class KongSetup(object):
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.distKongaDBFile)
 
     def configureOxd(self):
+        # Install OXD
+        oxd_package_file = ''
+        install_oxd_cmd = []
+
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            oxd_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu16_oxd_file)
+            install_oxd_cmd = [self.cmd_dpkg, '--install', oxd_package_file]
+
+        if self.os_type == Distribution.CENTOS and self.os_version == '7':
+            oxd_package_file = "%s/%s" % (self.tmp_folder, self.centos7_oxd_file)
+            install_oxd_cmd = [self.cmd_rpm, '--install', '--verbose', '--hash', oxd_package_file]
+
+        if self.os_type == Distribution.RHEL and self.os_version == '7':
+            oxd_package_file = "%s/%s" % (self.tmp_folder, self.rhel7_oxd_file)
+            install_oxd_cmd = [self.cmd_rpm, '--install', '--verbose', '--hash', oxd_package_file]
+
+        if not os.path.exists(oxd_package_file):
+            self.setup.logIt("%s is not found" % oxd_package_file)
+            sys.exit(0)
+
+        self.run(install_oxd_cmd)
+
         self.renderTemplateInOut(self.distOxdServerConfigFile, self.template_folder, self.distOxdServerConfigPath)
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             self.run([self.cmd_service, self.oxdServerService, 'start'])
