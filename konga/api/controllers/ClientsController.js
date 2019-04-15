@@ -376,6 +376,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             client_secret: clientInfo.client_secret,
             context: 'GLUU-OPENID-CONNECT',
             data: {
+              uma_scope_expression: body.uma_scope_expression,
               route_id: body.route_id,
               comments: [{
                 commentDescription: body.comment,

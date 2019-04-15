@@ -77,6 +77,7 @@
             .getOAuthClient(pepPlugin.config.oxd_id)
             .then(function (response) {
               $scope.modelPlugin.pepId = pepPlugin.id;
+              $scope.modelPlugin.config.deny_by_default = pepPlugin.config.deny_by_default;
               $scope.modelPlugin.isPEPEnabled = true;
               $scope.isPluginAdded = true;
               $scope.ruleScope = {};

@@ -33,18 +33,24 @@
         $scope.openConsumerListModal = openConsumerListModal;
 
         $scope.pluginConfig = {};
-
         $scope.isPluginAdded = false;
-        $scope.oidcPlugin = {};
+        var pepPlugin, oidcPlugin;
         $scope.plugins.forEach(function (o) {
           if (o.name === "gluu-openid-connect") {
-            $scope.oidcPlugin = o;
+            oidcPlugin = o;
             $scope.isPluginAdded = true;
+          }
+
+          if (o.name == "gluu-uma-pep") {
+            pepPlugin = o;
           }
         });
 
-        if ($scope.isPluginAdded) {
-          $scope.pluginConfig = $scope.oidcPlugin.config;
+        if ($scope.isPluginAdded && oidcPlugin) {
+          $scope.isPluginAdded = true;
+          $scope.pluginConfig = oidcPlugin.config;
+          $scope.pluginConfig.openid_connect_id = oidcPlugin.id;
+          $scope.pluginConfig.isPEPEnabled = false;
           PluginsService
             .getOAuthClient($scope.pluginConfig.oxd_id)
             .then(function (response) {
@@ -53,6 +59,91 @@
               $scope.pluginConfig.max_id_token_age_type = $scope.dbData.max_id_token_age.type;
               $scope.pluginConfig.max_id_token_auth_age_value = $scope.dbData.max_id_token_auth_age.value;
               $scope.pluginConfig.max_id_token_auth_age_type = $scope.dbData.max_id_token_auth_age.type;
+              if (pepPlugin) {
+                $scope.pluginConfig.pepId = pepPlugin.id;
+                $scope.pluginConfig.isPEPEnabled = true;
+                $scope.pluginConfig.deny_by_default = pepPlugin.config.deny_by_default;
+                $scope.pluginConfig.require_id_token = pepPlugin.config.require_id_token;
+                $scope.pluginConfig.uma_scope_expression = (($scope.dbData && $scope.dbData.uma_scope_expression) || []);
+                $scope.ruleScope = {};
+                $scope.ruleOauthScope = {};
+                setTimeout(function () {
+                  if ($scope.pluginConfig.uma_scope_expression && $scope.pluginConfig.uma_scope_expression.length > 0) {
+                    $scope.pluginConfig.uma_scope_expression.forEach(function (path, pIndex) {
+                      path.conditions.forEach(function (cond, cIndex) {
+                        var pRule = cond.scope_expression.rule;
+                        var op = '';
+                        if (pRule['and']) {
+                          op = 'and'
+                        } else if (pRule['or']) {
+                          op = 'or'
+                        } else if (pRule['!']) {
+                          op = '!'
+                        }
+
+                        _repeat(pRule[op], op, 0);
+
+                        function _repeat(rule, op, id) {
+                          if (op == "!") {
+                            rule = rule['or'];
+                          }
+
+                          $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                          rule.forEach(function (oRule, oRuleIndex) {
+                            if (oRule['var'] == 0 || oRule['var']) {
+                              if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                                $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
+                              }
+
+                              $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+                            }
+
+                            if (rule.length - 1 == oRuleIndex) {
+                              // show remove button
+                              var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
+                              if (id == 0) {
+                                removeBtn = "";
+                              }
+                              // render template
+                              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                                "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                                "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
+                                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                                removeBtn +
+                                "<div class=\"form-group has-feedback\"> " +
+                                "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                                "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                                "</div>" +
+                                "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+
+                              $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                              $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
+                              // end
+                            }
+
+                            if (oRule['and']) {
+                              _repeat(oRule['and'], 'and', ++id);
+                            } else if (oRule['or']) {
+                              _repeat(oRule['or'], 'or', ++id);
+                            } else if (oRule['!']) {
+                              _repeat(oRule['!'], '!', ++id);
+                            } else {
+                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
+                            }
+                          });
+                        }
+                      });
+                      path.pathIndex = pIndex;
+                    });
+                  }
+                }, 500);
+              } else {
+                $scope.pluginConfig.isPEPEnabled = false;
+                $scope.pluginConfig.uma_scope_expression = [];
+                $scope.pluginConfig.deny_by_default = true;
+                $scope.pluginConfig.require_id_token = true;
+              }
             })
             .catch(function (error) {
               console.log(error);
@@ -79,6 +170,7 @@
             max_id_token_age_type: 'seconds',
             max_id_token_auth_age_type: 'seconds',
             uma_scope_expression: [],
+            require_id_token: true
           };
           setURLs();
         }
@@ -138,7 +230,7 @@
               $scope.loading = false;
             });
         }
-        
+
         function managePlugin(fElement) {
           var isFormValid = true;
           if (fElement && fElement.$error && fElement.$error.required) {
@@ -165,20 +257,17 @@
           }
 
           var model;
+          model = angular.copy($scope.pluginConfig);
+          var scopeExpression = makeExpression($scope.pluginConfig);
+          if (scopeExpression && scopeExpression.length > 0) {
+            model.uma_scope_expression = scopeExpression;
+          } else {
+            delete model.uma_scope_expression
+          }
 
-          if (!$scope.isPluginAdded) {
-            model = angular.copy($scope.pluginConfig);
-            var scopeExpression = makeExpression($scope.pluginConfig);
-            if (scopeExpression && scopeExpression .length > 0) {
-              model.uma_scope_expression = scopeExpression ;
-            } else {
-              delete model.uma_scope_expression
-            }
-
-            if (model.isPEPEnabled && !model.uma_scope_expression) {
-              MessageService.error("UMA scope expression is required");
-              return;
-            }
+          if (model.isPEPEnabled && !model.uma_scope_expression) {
+            MessageService.error("UMA scope expression is required");
+            return;
           }
 
           if ($scope.openingModal) return;
@@ -214,10 +303,10 @@
           });
 
           createConsumer.result.then(function (comment) {
-            $scope.pluginConfig.comment = comment;
+            model.comment = comment;
 
             if ($scope.isPluginAdded) {
-              updatePlugin()
+              updatePlugin(model)
             } else {
               addPlugin(model)
             }
@@ -240,11 +329,12 @@
               max_id_token_age_type: model.max_id_token_age_type,
               max_id_token_auth_age_value: model.max_id_token_auth_age_value,
               max_id_token_auth_age_type: model.max_id_token_auth_age_type,
+              uma_scope_expression: model.uma_scope_expression || [],
             })
             .then(function (response) {
               var opClient = response.data;
-              var max_id_token_age =  getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
-              var max_id_token_auth_age =  getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
+              var max_id_token_age = getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
+              var max_id_token_auth_age = getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
               var pluginModel = {
                 name: 'gluu-openid-connect',
                 route_id: $scope.route.id,
@@ -267,15 +357,42 @@
                 return PluginHelperService.addPlugin(
                   pluginModel,
                   function success(res) {
-                    return resolve(res);
+                    return resolve(opClient);
                   }, function (err) {
                     return reject(err);
                   });
               });
             })
-            .then(function (res) {
-              $state.go("routes");
-              MessageService.success('Plugin added successfully!');
+            .then(function (opClient) {
+              if (!model.isPEPEnabled) {
+                MessageService.success('Gluu OpenID Connect Plugin added successfully!');
+                $state.go(($scope.context_name || "plugin") + "s");
+                return
+              }
+
+              // var uma_scope_expression = removeExtraScope(model.uma_scope_expression);
+              var pepModel = {
+                name: 'gluu-uma-pep',
+                route_id: $scope.route.id,
+                config: {
+                  oxd_id: opClient.oxd_id,
+                  client_id: opClient.client_id,
+                  client_secret: opClient.client_secret,
+                  op_url: model.op_url,
+                  oxd_url: model.oxd_url,
+                  uma_scope_expression: model.uma_scope_expression,
+                  deny_by_default: model.deny_by_default || false,
+                  require_id_token: model.require_id_token || false,
+                  obtain_rpt: true,
+                }
+              };
+              return PluginHelperService.addPlugin(pepModel,
+                function success(res) {
+                  $state.go("routes");
+                  MessageService.success('Gluu OpenID Connect and UMA PEP Plugin added successfully!');
+                }, function (err) {
+                  return Promise.reject(err);
+                });
             })
             .catch(function (error) {
               $scope.busy = false;
@@ -291,17 +408,17 @@
             });
         }
 
-        function updatePlugin() {
-          var model = angular.copy($scope.pluginConfig);
+        function updatePlugin(model) {
           var extraData = $scope.dbData;
-          var max_id_token_age =  getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
-          var max_id_token_auth_age =  getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
+          var max_id_token_age = getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
+          var max_id_token_auth_age = getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
 
           extraData.comments.push({commentDescription: model.comment, commentDate: Date.now()});
           extraData.max_id_token_age.value = model.max_id_token_age_value;
           extraData.max_id_token_age.type = model.max_id_token_age_type;
           extraData.max_id_token_auth_age.value = model.max_id_token_auth_age_value;
           extraData.max_id_token_auth_age.type = model.max_id_token_auth_age_type;
+          extraData.uma_scope_expression = model.uma_scope_expression || [];
 
           PluginsService
             .updateOPClient({
@@ -337,24 +454,52 @@
                 }
               };
               return new Promise(function (resolve, reject) {
-                return PluginHelperService.updatePlugin($scope.oidcPlugin.id,
+                return PluginHelperService.updatePlugin(model.openid_connect_id,
                   pluginModel,
                   function success(res) {
-                    return resolve(res);
+                    return resolve(opClient);
                   }, function (err) {
                     return reject(err);
                   });
               });
             })
-            .then(function (res) {
-              $state.go("routes");
-              MessageService.success('Plugin added successfully!');
+            .then(function (opClient) {
+              if (!model.isPEPEnabled) {
+                MessageService.success('Gluu OpenID Connect Plugin update successfully!');
+                $state.go("routes");
+                return
+              }
+
+              // var uma_scope_expression = removeExtraScope(model.uma_scope_expression);
+              var pepModel = {
+                name: 'gluu-uma-pep',
+                route_id: $scope.route.id,
+                config: {
+                  oxd_id: opClient.oxd_id,
+                  client_id: opClient.client_id,
+                  client_secret: opClient.client_secret,
+                  op_url: model.op_url,
+                  oxd_url: model.oxd_url,
+                  uma_scope_expression: model.uma_scope_expression,
+                  deny_by_default: model.deny_by_default || false,
+                  require_id_token: model.require_id_token || false,
+                  obtain_rpt: true,
+                }
+              };
+              return PluginHelperService.updatePlugin(model.pepId,
+                pepModel,
+                function success(res) {
+                  $state.go("routes");
+                  MessageService.success('Gluu OpenID Connect and UMA PEP Plugin updated successfully!');
+                }, function (err) {
+                  return Promise.reject(err);
+                });
             })
             .catch(function (error) {
               $scope.busy = false;
               $log.error("create plugin", error);
               console.log(error);
-              if (error.data.body) {
+              if (error.data && error.data.body) {
                 Object.keys(error.data.body).forEach(function (key) {
                   MessageService.error(key + " : " + error.data.body[key]);
                 });
@@ -367,7 +512,7 @@
         function getSeconds(value, type) {
           if (type === 'seconds') {
             return value
-          } else if(type === 'minutes') {
+          } else if (type === 'minutes') {
             return value * 60
           } else if (type === 'hours') {
             return value * 60 * 60

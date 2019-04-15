@@ -345,29 +345,40 @@
             </div>
             <div class="col-md-12">
               <div class="form-group has-feedback">
-                <label>1. UMA PEP Scope expression configuration</label>
+                <label style="font-weight: bolder">UMA PEP Scope expression configuration</label>
                 <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
                        type="checkbox" switch-size="small"
-                       ng-model="pluginConfig.isPEPEnabled" class="form-control"
-                       switch-change="pluginConfig.config.deny_by_default = pluginConfig.isPEPEnabled"/>
+                       ng-model="pluginConfig.isPEPEnabled" class="form-control"/>
 
                 <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
               <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
                    ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-3 control-label">Deny by default
+                <label class="col-sm-2 control-label">Deny by default
                   <br>
                   <em>
                     <small class="help-block">optional</small>
                   </em>
                 </label>
-                <div class="col-sm-9 check-toggle">
+                <div class="col-sm-10 check-toggle">
                   <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
                          ng-model="pluginConfig.deny_by_default" class="form-control"/>
                   <p class="help-block">
                     It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
                     expression. Set it to <code>No</code>, to allow access to unprotected path.
                   </p>
+                </div>
+              </div>
+              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-2 control-label">UMA Push claim Token
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-10">
+                  <input type="checkbox" ng-model="pluginConfig.require_id_token" /> ID Token
                 </div>
               </div>
               <div class="row"></div>
