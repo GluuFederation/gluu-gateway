@@ -27,6 +27,7 @@ cp -a %{SOURCE1} %{buildroot}/etc/init.d/
 cp -a %{SOURCE2} %{buildroot}/etc/init.d/
 cp -a %{SOURCE3} %{buildroot}/etc/init.d/
 cp -a opt/gluu-gateway %{buildroot}/opt/
+cp -a tmp %{buildroot}/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
