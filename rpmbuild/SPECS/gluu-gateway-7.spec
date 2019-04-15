@@ -96,6 +96,7 @@ fi
 /opt/gluu-gateway/*
 /lib/systemd/system/kong.service
 /lib/systemd/system/gluu-gateway.service
+/tmp/*
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
