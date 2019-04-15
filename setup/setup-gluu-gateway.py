@@ -248,7 +248,7 @@ class KongSetup(object):
             install_oxd_cmd = [self.cmd_rpm, '--install', '--verbose', '--hash', oxd_package_file]
 
         if not os.path.exists(oxd_package_file):
-            self.setup.logIt("%s is not found" % oxd_package_file)
+            self.logIt("%s is not found" % oxd_package_file)
             sys.exit(0)
 
         self.run(install_oxd_cmd)
