@@ -25,6 +25,7 @@ mkdir -p %{buildroot}/lib/systemd/system/
 cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
 cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
+cp -a tmp %{buildroot}/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
