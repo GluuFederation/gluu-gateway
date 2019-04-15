@@ -98,6 +98,7 @@ fi
 /etc/init.d/gluu-gateway
 /etc/init.d/kong
 /etc/init.d/konga
+/tmp/*
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
