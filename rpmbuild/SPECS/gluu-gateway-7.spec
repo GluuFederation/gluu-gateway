@@ -1,6 +1,6 @@
 Name:		gluu-gateway
-Version:	1.0.1
-Release:	1%{?dist}
+Version:	%VERSION%
+Release:	%RELEASE%
 Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
@@ -25,7 +25,7 @@ mkdir -p %{buildroot}/lib/systemd/system/
 cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
 cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
-cp -a tmp %{buildroot}/
+cp -a tmp/%OXD_SERVER% %{buildroot}/tmp/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
@@ -96,7 +96,7 @@ fi
 /opt/gluu-gateway/*
 /lib/systemd/system/kong.service
 /lib/systemd/system/gluu-gateway.service
-/tmp/*
+/tmp/%OXD_SERVER%
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
