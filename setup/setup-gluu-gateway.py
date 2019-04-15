@@ -117,8 +117,8 @@ class KongSetup(object):
         self.kongaClientSecret = ''
         self.kongaOxdWeb = ''
         self.kongaKongAdminWebURL = 'http://localhost:8001'
-        self.kongaOxdVersion = '4.0'
-        self.ggVersion = '1.0'
+        self.kongaOxdVersion = '4.0-60'
+        self.ggVersion = '1.0.1'
 
         # oxd licence configuration
         self.oxdServerAuthorizationRedirectUri = ''
