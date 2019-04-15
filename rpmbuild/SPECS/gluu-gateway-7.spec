@@ -18,6 +18,7 @@ deploy an OAuth protected API gateway
 %setup -q
 
 %install
+mkdir -p %{buildroot}/tmp/
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
 mkdir -p %{buildroot}/lib/systemd/system/
