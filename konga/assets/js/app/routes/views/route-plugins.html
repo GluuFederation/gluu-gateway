@@ -46,15 +46,21 @@
       <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a ui-sref="routes.uma-plugin({route_id: route.id})" data-ng-if="['gluu-uma-pep','gluu-uma-auth'].indexOf(item.name) > -1">
+      <a ui-sref="routes.uma-plugin({route_id: route.id})" data-ng-if="['gluu-uma-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a ui-sref="routes.oauth-plugin({route_id: route.id})" data-ng-if="['gluu-oauth-pep','gluu-oauth-auth'].indexOf(item.name) > -1">
+      <a ui-sref="routes.oauth-plugin({route_id: route.id})" data-ng-if="['gluu-oauth-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a href data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(item.name) == -1" ng-click="onEditPlugin(item)">
+      <a ui-sref="routes.openid-plugin({route_id: route.id})" data-ng-if="['gluu-openid-connect'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
+      <a href data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep', 'gluu-oauth-auth', 'gluu-uma-auth', 'gluu-openid-connect'].indexOf(item.name) == -1" ng-click="onEditPlugin(item)">
+        {{item.name}}
+      </a>
+      <span data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep'].indexOf(item.name) >= 0">
+        {{item.name}}
+      </span>
     </th>
     <td>
       <a data-ng-if="item.consumer_id" data-ui-sref="consumers.edit({id:item.consumer_id})">{{item.consumer_id}}</a>

@@ -44,7 +44,11 @@
         }
 
         function onEditPlugin(item) {
-          if (['gluu-oauth-pep','gluu-oauth-auth'].indexOf(item.name) > -1) {
+          if (['gluu-oauth-pep', 'gluu-uma-pep'].indexOf(item.name) >= 0) {
+            return
+          }
+
+          if ('gluu-oauth-auth' === item.name) {
             if (item.service_id) {
               return $state.go("services.oauth-plugin", {service_id: item.service_id});
             } else if (item.route_id) {
@@ -54,7 +58,7 @@
             }
           }
 
-          if (['gluu-uma-pep','gluu-uma-auth'].indexOf(item.name) > -1) {
+          if ('gluu-uma-auth' === item.name) {
             if (item.service_id) {
               return $state.go("services.uma-plugin", {service_id: item.service_id});
             } else if (item.route_id) {
@@ -62,6 +66,10 @@
             } else {
               return $state.go("plugins.uma-plugin");
             }
+          }
+
+          if ('gluu-openid-connect' === item.name) {
+            return $state.go("routes.openid-plugin", {route_id: item.route_id});
           }
 
           if (!$scope.user.hasPermission('plugins', 'edit')) {
@@ -116,16 +124,16 @@
             ariaDescribedBy: 'modal-body',
             windowClass: 'dialog',
             template: '' +
-            '<div class="modal-header dialog no-margin">' +
-            '<h5 class="modal-title">CONFIRM</h5>' +
-            '</div>' +
-            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
-            '</div>' +
-            '<div class="modal-footer dialog">' +
-            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
-            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
-            '</div>',
+              '<div class="modal-header dialog no-margin">' +
+              '<h5 class="modal-title">CONFIRM</h5>' +
+              '</div>' +
+              '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+              '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
+              '</div>' +
+              '<div class="modal-footer dialog">' +
+              '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+              '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+              '</div>',
             controller: function ($scope, $uibModalInstance) {
               $scope.doWantDeleteClient = false;
               $scope.accept = function () {
@@ -173,16 +181,16 @@
             ariaDescribedBy: 'modal-body',
             windowClass: 'dialog',
             template: '' +
-            '<div class="modal-header dialog no-margin">' +
-            '<h5 class="modal-title">CONFIRM</h5>' +
-            '</div>' +
-            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
-            '</div>' +
-            '<div class="modal-footer dialog">' +
-            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
-            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
-            '</div>',
+              '<div class="modal-header dialog no-margin">' +
+              '<h5 class="modal-title">CONFIRM</h5>' +
+              '</div>' +
+              '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+              '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
+              '</div>' +
+              '<div class="modal-footer dialog">' +
+              '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+              '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+              '</div>',
             controller: function ($scope, $uibModalInstance) {
               $scope.doWantDeleteClient = false;
               $scope.accept = function () {
