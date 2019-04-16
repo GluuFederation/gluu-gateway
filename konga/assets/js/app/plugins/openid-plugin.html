@@ -61,7 +61,7 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">Login URLs</label>
+                <label class="col-sm-2 control-label">Login URL</label>
                 <div class="col-sm-5">
                   <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
                   <p class="help-block">
@@ -345,41 +345,12 @@
             </div>
             <div class="col-md-12">
               <div class="form-group has-feedback">
-                <label style="font-weight: bolder">UMA PEP Scope expression configuration</label>
+                <label style="font-weight: bolder">UMA PEP Scope Security configuration</label>
                 <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
                        type="checkbox" switch-size="small"
                        ng-model="pluginConfig.isPEPEnabled" class="form-control"/>
 
                 <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
-              </div>
-              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">Deny by default
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-10 check-toggle">
-                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                         ng-model="pluginConfig.deny_by_default" class="form-control"/>
-                  <p class="help-block">
-                    It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
-                    expression. Set it to <code>No</code>, to allow access to unprotected path.
-                  </p>
-                </div>
-              </div>
-              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">UMA Push claim Token
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-10">
-                  <input type="checkbox" ng-model="pluginConfig.require_id_token" /> ID Token
-                </div>
               </div>
               <div class="row"></div>
               <div data-ng-disabled="!pluginConfig.isPEPEnabled"
@@ -476,6 +447,65 @@
                 <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
                   <i class="mdi mdi-information"></i> View Resource Json
                 </button>
+              </div>
+              <hr/>
+              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-2 control-label">Deny by default
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-10 check-toggle">
+                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                         ng-model="pluginConfig.deny_by_default" class="form-control"/>
+                  <p class="help-block">
+                    It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
+                    expression. Set it to <code>No</code>, to allow access to unprotected path.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-2 control-label">UMA Push claim Token
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-10">
+                  <input type="checkbox" ng-model="pluginConfig.require_id_token" /> ID Token
+                </div>
+              </div>
+              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-2 control-label">Claim Gathering Flow
+                  <br>
+                  <em>
+                    <small class="help-block">optional</small>
+                  </em>
+                </label>
+                <div class="col-sm-10">
+                  <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
+                         ng-model="pluginConfig.redirect_claim_gathering_url" class="form-control"/>
+                </div>
+              </div>
+              <div class="form-group" ng-show="pluginConfig.redirect_claim_gathering_url" data-ng-disabled="!pluginConfig.isPEPEnabled"
+                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
+                <label class="col-sm-2 control-label">Claims Redirect URL</label>
+                <div class="col-sm-5">
+                  <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
+                  <p class="help-block">
+                    Your Kong proxy base URL as per Route configuration.
+                  </p>
+                </div>
+                <div class="col-sm-5">
+                  <input ng-model="pluginConfig.claims_redirect_path" class="form-control"/>
+                  <p class="help-block">
+                    End path
+                  </p>
+                </div>
               </div>
             </div>
           </div>

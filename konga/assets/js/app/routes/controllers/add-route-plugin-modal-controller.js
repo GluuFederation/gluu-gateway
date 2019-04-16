@@ -140,14 +140,22 @@
                 $scope.existingPlugins.forEach(function(obj){
                   if (obj == "gluu-oauth-auth") {
                     $scope.pluginGroups[0].plugins['gluu-uma-auth'].isAllow = false;
+                    $scope.pluginGroups[0].plugins['gluu-openid-connect'].isAllow = false;
                     flag = true
                   }
                   if (obj == "gluu-uma-auth") {
+                    $scope.pluginGroups[0].plugins['gluu-oauth-auth'].isAllow = false;
+                    $scope.pluginGroups[0].plugins['gluu-openid-connect'].isAllow = false;
+                    flag = true
+                  }
+                  if (obj == "gluu-openid-connect") {
+                    $scope.pluginGroups[0].plugins['gluu-uma-auth'].isAllow = false;
                     $scope.pluginGroups[0].plugins['gluu-oauth-auth'].isAllow = false;
                     flag = true
                   }
                 });
                 if (flag == false) {
+                  $scope.pluginGroups[0].plugins['gluu-openid-connect'].isAllow = true;
                   $scope.pluginGroups[0].plugins['gluu-uma-auth'].isAllow = true;
                   $scope.pluginGroups[0].plugins['gluu-oauth-auth'].isAllow = true;
                 }

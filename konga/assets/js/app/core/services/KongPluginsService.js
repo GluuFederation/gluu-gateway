@@ -84,7 +84,7 @@
                   },
                   "gluu-openid-connect": {
                     hideIfNotInConsumerContext: true,
-                    description: "The Gluu OpenID Connect + UMA security."
+                    description: "The Gluu OpenID Connect Authorization code flow and UMA PEP security. The UMA PEP is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
                   },
                   "acl": {
                     hideIfNotInConsumerContext: true,

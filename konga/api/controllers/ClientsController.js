@@ -355,7 +355,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       post_logout_redirect_uri: body.post_logout_redirect_uri,
       scope: body.scope,
       acr_values: body.acr_values,
-      grant_types: ['client_credentials', 'authorization_code', 'refresh_token']
+      grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
+      claims_redirect_uri: body.claims_redirect_uri || [],
     };
 
     const option = {
@@ -562,7 +563,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           post_logout_redirect_uri: body.post_logout_redirect_uri,
           scope: body.scope,
           acr_values: body.acr_values,
-          grant_types: ['client_credentials', 'authorization_code', 'refresh_token']
+          grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
+          claims_redirect_uri: body.claims_redirect_uri || [],
         };
 
         const option = {

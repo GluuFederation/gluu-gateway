@@ -63,6 +63,9 @@
                 $scope.pluginConfig.pepId = pepPlugin.id;
                 $scope.pluginConfig.isPEPEnabled = true;
                 $scope.pluginConfig.deny_by_default = pepPlugin.config.deny_by_default;
+                $scope.pluginConfig.redirect_claim_gathering_url = pepPlugin.config.redirect_claim_gathering_url || false;
+                $scope.pluginConfig.claims_redirect_path = pepPlugin.config.claims_redirect_path || "";
+
                 $scope.pluginConfig.require_id_token = pepPlugin.config.require_id_token;
                 $scope.pluginConfig.uma_scope_expression = (($scope.dbData && $scope.dbData.uma_scope_expression) || []);
                 $scope.ruleScope = {};
@@ -154,6 +157,9 @@
             isPEPEnabled: true,
             deny_by_default: true,
             kong_proxy_url: '',
+            redirect_claim_gathering_url: true,
+            claims_redirect_path: '/claims_callback',
+            claims_redirect_uri: '',
             oxd_url: $scope.globalInfo.oxdWeb,
             op_url: $scope.globalInfo.opHost,
             client_id: $scope.globalInfo.clientId,
@@ -204,6 +210,7 @@
           $scope.pluginConfig.authorization_redirect_path = path + "/callback";
           $scope.pluginConfig.post_logout_redirect_path_or_url = path + "/logout_redirect_uri";
           $scope.pluginConfig.logout_path = path + "/logout";
+          $scope.pluginConfig.claims_redirect_path = path + "/claims_callback";
         }
 
         function addNewScope(scope) {
@@ -321,6 +328,7 @@
               oxd_url: model.oxd_url,
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
               post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
+              claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
               route_id: $scope.route.id,
@@ -366,7 +374,7 @@
             .then(function (opClient) {
               if (!model.isPEPEnabled) {
                 MessageService.success('Gluu OpenID Connect Plugin added successfully!');
-                $state.go(($scope.context_name || "plugin") + "s");
+                $state.go("routes");
                 return
               }
 
@@ -384,6 +392,8 @@
                   deny_by_default: model.deny_by_default || false,
                   require_id_token: model.require_id_token || false,
                   obtain_rpt: true,
+                  redirect_claim_gathering_url: model.redirect_claim_gathering_url || false,
+                  claims_redirect_path: model.claims_redirect_path,
                 }
               };
               return PluginHelperService.addPlugin(pepModel,
@@ -429,9 +439,10 @@
               client_secret: model.client_secret,
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
               post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
+              claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
-              extraData: extraData
+              extraData: extraData,
             })
             .then(function (response) {
               var opClient = response.data;
@@ -453,11 +464,12 @@
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
               };
+
               return new Promise(function (resolve, reject) {
                 return PluginHelperService.updatePlugin(model.openid_connect_id,
                   pluginModel,
                   function success(res) {
-                    return resolve(opClient);
+                    return resolve(model);
                   }, function (err) {
                     return reject(err);
                   });
@@ -484,16 +496,33 @@
                   deny_by_default: model.deny_by_default || false,
                   require_id_token: model.require_id_token || false,
                   obtain_rpt: true,
+                  redirect_claim_gathering_url: model.redirect_claim_gathering_url || false,
+                  claims_redirect_path: model.claims_redirect_path,
                 }
               };
-              return PluginHelperService.updatePlugin(model.pepId,
-                pepModel,
-                function success(res) {
-                  $state.go("routes");
+
+              if (model.pepId) {
+                return PluginHelperService.updatePlugin(model.pepId, pepModel,
+                  success,
+                  error);
+              } else {
+                return PluginHelperService.addPlugin(
+                  pepModel,
+                  success,
+                  error);
+              }
+
+              function success(res, msg) {
+                $state.go("routes");
+                if (model.pepId) {
                   MessageService.success('Gluu OpenID Connect and UMA PEP Plugin updated successfully!');
-                }, function (err) {
-                  return Promise.reject(err);
-                });
+                } else {
+                  MessageService.success('Gluu OpenID Connect updated and UMA PEP Plugin added successfully!');
+                }
+              }
+              function error(err) {
+                return Promise.reject(err);
+              }
             })
             .catch(function (error) {
               $scope.busy = false;
