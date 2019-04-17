@@ -327,7 +327,7 @@
               return AuthService.hasPermission('users', 'read')
             },
             title: 'Users',
-            access: AccessLevels.anon
+            access: AccessLevels.admin
           },
           {
             state: 'connections',
@@ -336,7 +336,7 @@
               return AuthService.isAuthenticated()
             },
             title: 'Connections',
-            access: AccessLevels.anon
+            access: AccessLevels.admin
           },
           {
             state: 'snapshots',
@@ -345,7 +345,7 @@
               return AuthService.isAuthenticated() && UserService.user().node && $rootScope.Gateway
             },
             title: 'Snapshots',
-            access: AccessLevels.anon
+            access: AccessLevels.admin
           },
           {
             state: 'settings',
@@ -354,6 +354,15 @@
               return AuthService.authorize(AccessLevels.admin)
             },
             title: 'Settings',
+            access: AccessLevels.admin
+          },
+          {
+            state: 'logs',
+            icon: 'mdi-format-list-bulleted',
+            show: function () {
+              return AuthService.hasPermission('users', 'read')
+            },
+            title: 'Logs',
             access: AccessLevels.admin
           },
         ];

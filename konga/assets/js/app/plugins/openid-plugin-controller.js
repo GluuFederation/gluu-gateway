@@ -146,6 +146,9 @@
                 $scope.pluginConfig.uma_scope_expression = [];
                 $scope.pluginConfig.deny_by_default = true;
                 $scope.pluginConfig.require_id_token = true;
+                $scope.pluginConfig.redirect_claim_gathering_url = false;
+                $scope.pluginConfig.claims_redirect_path = "";
+                setClaimPath()
               }
             })
             .catch(function (error) {
@@ -210,6 +213,12 @@
           $scope.pluginConfig.authorization_redirect_path = path + "/callback";
           $scope.pluginConfig.post_logout_redirect_path_or_url = path + "/logout_redirect_uri";
           $scope.pluginConfig.logout_path = path + "/logout";
+          $scope.pluginConfig.claims_redirect_path = path + "/claims_callback";
+        }
+        
+        function setClaimPath() {
+          var route = $scope.route;
+          var path = (route.paths && route.paths[0]) || "";
           $scope.pluginConfig.claims_redirect_path = path + "/claims_callback";
         }
 

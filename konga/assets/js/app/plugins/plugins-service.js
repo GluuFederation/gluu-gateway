@@ -86,6 +86,10 @@
           getOPDiscoveryResponse: function (data) {
             return $http.post('api/op_discovery', data)
           },
+
+          deleteOPClient: function (data) {
+            return $http.post('api/clients/op/delete', data)
+          },
         }
       }
     ]);

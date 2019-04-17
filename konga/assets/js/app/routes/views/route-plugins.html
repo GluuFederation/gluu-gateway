@@ -68,7 +68,12 @@
     </td>
     <td>{{item.created_at | date : format : timezone}}</td>
     <td>
-      <button class="btn btn-link btn-danger" ng-click="deletePlugin(item)">
+      <button data-ng-if="item.name == 'gluu-openid-connect'" type="button" ng-click="deleteOPClient(item)" class="btn btn-danger btn-link">
+        <i class="mdi mdi-delete"></i>
+        Delete
+      </button>
+
+      <button data-ng-if="['gluu-openid-connect'].indexOf(item.name) == -1" class="btn btn-link btn-danger" ng-click="deletePlugin(item)">
         <i class="mdi mdi-delete"></i>
         delete
       </button>

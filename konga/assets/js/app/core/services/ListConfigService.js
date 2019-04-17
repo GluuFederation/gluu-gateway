@@ -365,6 +365,27 @@
               width: 1
             },
           ],
+          log: [
+            {
+              title: 'comment',
+              column: 'commentDescription',
+              searchable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'commentDate',
+              sortable: true,
+            },
+            {
+              title: 'route',
+              column: 'route',
+              searchable: true,
+              inSearch: true,
+              inTitle: true
+            },
+          ],
           snapshot: [
             //{
             //  title: 'id',

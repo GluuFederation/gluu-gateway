@@ -103,6 +103,9 @@ module.exports.routes = {
   'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
   'POST /api/clients/oauth/delete': 'ClientsController.deleteGluuClientAuth',
   'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deleteGluuUMAPEP',
+  'POST /api/clients/op/delete': 'ClientsController.deleteOPClientComment',
+  'GET /api/log': 'ClientsController.getComments',
+  'GET /api/log/count': 'ClientsController.getCommentsCount',
 
   /**
    * Fallback to proxy

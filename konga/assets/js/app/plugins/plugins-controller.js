@@ -16,6 +16,7 @@
         $scope.getContext = getContext;
         $scope.deletePEPClient = deletePEPClient;
         $scope.deleteOAuthClient = deleteOAuthClient;
+        $scope.deleteOPClient = deleteOPClient;
 
         /**
          * ----------------------------------------------------------------------
@@ -115,6 +116,56 @@
           } else {
             return 'global'
           }
+        }
+
+        function deleteOPClient(item) {
+          var createConsumer = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/comment-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService) {
+              $scope.close = close;
+              $scope.submit = submit;
+              $scope.comment = "";
+
+              function submit() {
+                if (!$scope.comment) {
+                  MessageService.error('Comment required!');
+                  return
+                }
+                $uibModalInstance.close($scope.comment);
+              }
+
+              function close() {
+                $uibModalInstance.dismiss();
+              }
+            },
+            controllerAs: '$ctrl',
+          });
+
+          createConsumer.result.then(function (comment) {
+            item.config.comment = comment;
+
+            PluginsService
+              .delete(item.id)
+              .then(function (cResponse) {
+                PluginsService
+                  .deleteOPClient(item.config)
+                  .then(function (pResponse) {
+                    MessageService.success("Plugin deleted successfully");
+                    $rootScope.$broadcast('plugin.added');
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                    MessageService.error((error.data && error.data.message) || "Failed to add comment");
+                  });
+              })
+              .catch(function (error) {
+                console.log(error);
+                MessageService.error((error.data && error.data.message) || "Failed to delete Plugin");
+              });
+          })
         }
 
         function deletePEPClient(item) {

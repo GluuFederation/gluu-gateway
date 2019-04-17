@@ -21,6 +21,7 @@
     'frontend.consumers',
     'frontend.connections',
     'frontend.snapshots',
+    'frontend.logs',
     'frontend.cluster',
     'ngTagsInput',
     'checklist-model',

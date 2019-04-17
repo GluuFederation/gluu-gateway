@@ -94,7 +94,12 @@
               Delete
             </button>
 
-            <button data-ng-if="item.name != 'gluu-oauth-auth' && item.name != 'gluu-uma-auth'" type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name == 'gluu-openid-connect'" type="button" ng-click="deleteOPClient(item)" class="btn btn-danger btn-link">
+              <i class="mdi mdi-delete"></i>
+              Delete
+            </button>
+
+            <button data-ng-if="['gluu-oauth-auth', 'gluu-uma-auth', 'gluu-openid-connect'].indexOf(item.name) == -1" type="button" ng-click="deleteItem($index,item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>

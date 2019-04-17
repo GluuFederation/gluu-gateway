@@ -908,4 +908,103 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return res.status(500).send(error);
       });
   },
+
+  // User to update client for OpenID Connect plugin
+  deleteOPClientComment: function (req, res) {
+    // Existing client id and secret
+    const body = req.body;
+    if (!body.oxd_id) {
+      sails.log(new Date(), "Provide oxd_id to add comment");
+      return res.status(500).send({message: "Provide oxd_id to add comment"});
+    }
+
+    if (!body.comment) {
+      return res.status(500).send({message: "Comment is required"});
+    }
+
+    return sails.models.client
+      .findOne({
+        oxd_id: body.oxd_id
+      })
+      .then(function (oClient) {
+        if (!oClient) {
+          sails.log(new Date(), "Failed to fetch client data");
+          return Promise.reject({message: "Failed to fetch client data"});
+        }
+
+        oClient.data.comments.push({commentDescription: body.comment + " - Deleted", commentDate: Date.now()});
+
+        return sails.models.client
+          .update({
+            oxd_id: body.oxd_id
+          }, {
+            data: oClient.data
+          });
+      })
+      .then(function (dbClient) {
+        if (dbClient.length < 1) {
+          sails.log(new Date(), "Failed to update-add comment in konga db in delete case", dbClient);
+          return Promise.reject({message: "Failed to update-add comment in konga db"});
+        }
+
+        return res.send({
+          oxd_id: body.oxd_id
+        })
+      })
+      .catch(function (error) {
+        return res.status(500).send(error);
+      });
+  },
+
+  // Get Comments info
+  getComments: function (req, res) {
+    return sails.models.client
+      .find()
+      .then(function (clients) {
+        var comments = []
+        clients.forEach(function(o) {
+          if (o.data.route_id) {
+            o.data.comments.map(function (c) {
+              c.route = o.data.route_id
+              return c;
+            });
+            comments = [
+              ...comments,
+              ...o.data.comments
+            ]
+          }
+        });
+        return res.status(200).send(comments);
+      })
+      .catch(function (error) {
+        sails.log(new Date(), error);
+        return res.status(500).send("Failed to fetch client data");
+      });
+  },
+
+  // Get Comments info
+  getCommentsCount: function (req, res) {
+    return sails.models.client
+      .find()
+      .then(function (clients) {
+        var comments = []
+        clients.forEach(function(o) {
+          if (o.data.route_id) {
+            o.data.comments.map(function (c) {
+              c.route = o.data.route_id
+              return c;
+            });
+            comments = [
+              ...comments,
+              ...o.data.comments
+            ]
+          }
+        });
+        return res.status(200).send({count: comments.length});
+      })
+      .catch(function (error) {
+        sails.log(new Date(), error);
+        return res.status(500).send("Failed to fetch client data");
+      });
+  },
 });
