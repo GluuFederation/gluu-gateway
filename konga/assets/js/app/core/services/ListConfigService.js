@@ -368,19 +368,19 @@
           log: [
             {
               title: 'comment',
-              column: 'commentDescription',
+              column: 'comment',
               searchable: true,
               inSearch: true,
               inTitle: true
             },
             {
               title: 'created',
-              column: 'commentDate',
+              column: 'createdAt',
               sortable: true,
             },
             {
               title: 'route',
-              column: 'route',
+              column: 'route_id',
               searchable: true,
               inSearch: true,
               inTitle: true

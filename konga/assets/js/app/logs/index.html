@@ -34,9 +34,9 @@
           </th>
         </tr>
         <tr data-ng-repeat="item in items">
-          <td>{{item.commentDescription}}</td>
-          <td>{{item.commentDate | date : "MMM d, y HH:mm"}}</td>
-          <td>{{item.route}}</td>
+          <td>{{item.comment}}</td>
+          <td>{{item.createdAt | date : "MMM d, y HH:mm"}}</td>
+          <td>{{item.route_id}}</td>
         </tr>
 
         <tr data-ng-if="items.length === 0">

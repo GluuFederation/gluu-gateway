@@ -348,21 +348,21 @@
             access: AccessLevels.admin
           },
           {
+            state: 'logs',
+            icon: 'mdi-format-list-bulleted',
+            show: function () {
+              return AuthService.hasPermission('users', 'read')
+            },
+            title: 'Audit Logs',
+            access: AccessLevels.admin
+          },
+          {
             state: 'settings',
             icon: 'mdi-settings',
             show: function () {
               return AuthService.authorize(AccessLevels.admin)
             },
             title: 'Settings',
-            access: AccessLevels.admin
-          },
-          {
-            state: 'logs',
-            icon: 'mdi-format-list-bulleted',
-            show: function () {
-              return AuthService.hasPermission('users', 'read')
-            },
-            title: 'Logs',
             access: AccessLevels.admin
           },
         ];

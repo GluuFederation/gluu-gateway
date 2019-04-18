@@ -14,7 +14,7 @@
             parent: 'frontend',
             cache: false,
             data: {
-              pageName: "Logs",
+              pageName: "Audit Logs",
               pageDescription: "OIDC Plugin change logs"
             },
             views: {

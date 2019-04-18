@@ -303,7 +303,11 @@
               $scope.submit = submit;
               $scope.comment = "";
 
-              function submit() {
+              function submit(valid) {
+                if (!valid) {
+                  return;
+                }
+
                 if (!$scope.comment) {
                   MessageService.error('Comment required!');
                   return
@@ -432,7 +436,6 @@
           var max_id_token_age = getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
           var max_id_token_auth_age = getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
 
-          extraData.comments.push({commentDescription: model.comment, commentDate: Date.now()});
           extraData.max_id_token_age.value = model.max_id_token_age_value;
           extraData.max_id_token_age.type = model.max_id_token_age_type;
           extraData.max_id_token_auth_age.value = model.max_id_token_auth_age_value;
@@ -441,6 +444,8 @@
 
           PluginsService
             .updateOPClient({
+              comment: model.comment,
+              route_id: $scope.route.id,
               oxd_id: model.oxd_id,
               op_host: model.op_url,
               oxd_url: model.oxd_url,

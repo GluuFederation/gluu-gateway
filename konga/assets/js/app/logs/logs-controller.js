@@ -33,7 +33,7 @@
         };
 
         $scope.sort = {
-          column: 'commentDate',
+          column: 'createdAt',
           direction: false
         };
 

@@ -366,7 +366,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       resolveWithFullResponse: true,
       json: true
     };
-
+    var dbOPClient;
     return httpRequest(option)
       .then(function (response) {
         var clientInfo = response.body;
@@ -378,11 +378,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
             context: 'GLUU-OPENID-CONNECT',
             data: {
               uma_scope_expression: body.uma_scope_expression,
-              route_id: body.route_id,
-              comments: [{
-                commentDescription: body.comment,
-                commentDate: Date.now()
-              }],
               max_id_token_age: {
                 value: body.max_id_token_age_value,
                 type: body.max_id_token_age_type,
@@ -400,10 +395,23 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to add client and resources in konga db"});
         }
 
+        dbOPClient = dbClient;
+        return sails.models.auditlog
+          .create({
+            comment: body.comment,
+            route_id: body.route_id
+          })
+      })
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
+        }
+
         return res.send({
-          oxd_id: dbClient.oxd_id,
-          client_id: dbClient.client_id,
-          client_secret: dbClient.client_secret
+          oxd_id: dbOPClient.oxd_id,
+          client_id: dbOPClient.client_id,
+          client_secret: dbOPClient.client_secret
         })
       })
       .catch(function (error) {
@@ -535,6 +543,10 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       return res.status(400).send({message: "OXD Server is required"});
     }
 
+    if (!body.comment) {
+      return res.status(400).send({message: "Comment is required"});
+    }
+
     var option = {
       method: 'POST',
       uri: body.oxd_url + '/get-client-token',
@@ -601,6 +613,17 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         if (dbClient.length < 1) {
           sails.log(new Date(), "Failed to update client in konga db", dbClient);
           return Promise.reject({message: "Failed to update client in konga db"});
+        }
+        return sails.models.auditlog
+          .create({
+            comment: body.comment,
+            route_id: body.route_id
+          })
+      })
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
         }
 
         return res.send({
@@ -913,38 +936,24 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
   deleteOPClientComment: function (req, res) {
     // Existing client id and secret
     const body = req.body;
-    if (!body.oxd_id) {
-      sails.log(new Date(), "Provide oxd_id to add comment");
-      return res.status(500).send({message: "Provide oxd_id to add comment"});
+    if (!body.route_id) {
+      sails.log(new Date(), "Provide route_id to add comment");
+      return res.status(500).send({message: "Provide route_id to add comment"});
     }
 
     if (!body.comment) {
       return res.status(500).send({message: "Comment is required"});
     }
 
-    return sails.models.client
-      .findOne({
-        oxd_id: body.oxd_id
+    return sails.models.auditlog
+      .create({
+        comment: body.comment,
+        route_id: body.route_id
       })
-      .then(function (oClient) {
-        if (!oClient) {
-          sails.log(new Date(), "Failed to fetch client data");
-          return Promise.reject({message: "Failed to fetch client data"});
-        }
-
-        oClient.data.comments.push({commentDescription: body.comment + " - Deleted", commentDate: Date.now()});
-
-        return sails.models.client
-          .update({
-            oxd_id: body.oxd_id
-          }, {
-            data: oClient.data
-          });
-      })
-      .then(function (dbClient) {
-        if (dbClient.length < 1) {
-          sails.log(new Date(), "Failed to update-add comment in konga db in delete case", dbClient);
-          return Promise.reject({message: "Failed to update-add comment in konga db"});
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
         }
 
         return res.send({
@@ -955,56 +964,56 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return res.status(500).send(error);
       });
   },
-
-  // Get Comments info
-  getComments: function (req, res) {
-    return sails.models.client
-      .find()
-      .then(function (clients) {
-        var comments = []
-        clients.forEach(function(o) {
-          if (o.data.route_id) {
-            o.data.comments.map(function (c) {
-              c.route = o.data.route_id
-              return c;
-            });
-            comments = [
-              ...comments,
-              ...o.data.comments
-            ]
-          }
-        });
-        return res.status(200).send(comments);
-      })
-      .catch(function (error) {
-        sails.log(new Date(), error);
-        return res.status(500).send("Failed to fetch client data");
-      });
-  },
-
-  // Get Comments info
-  getCommentsCount: function (req, res) {
-    return sails.models.client
-      .find()
-      .then(function (clients) {
-        var comments = []
-        clients.forEach(function(o) {
-          if (o.data.route_id) {
-            o.data.comments.map(function (c) {
-              c.route = o.data.route_id
-              return c;
-            });
-            comments = [
-              ...comments,
-              ...o.data.comments
-            ]
-          }
-        });
-        return res.status(200).send({count: comments.length});
-      })
-      .catch(function (error) {
-        sails.log(new Date(), error);
-        return res.status(500).send("Failed to fetch client data");
-      });
-  },
+  //
+  // // Get Comments info
+  // getComments: function (req, res) {
+  //   return sails.models.client
+  //     .find()
+  //     .then(function (clients) {
+  //       var comments = []
+  //       clients.forEach(function(o) {
+  //         if (o.data.route_id) {
+  //           o.data.comments.map(function (c) {
+  //             c.route = o.data.route_id
+  //             return c;
+  //           });
+  //           comments = [
+  //             ...comments,
+  //             ...o.data.comments
+  //           ]
+  //         }
+  //       });
+  //       return res.status(200).send(comments);
+  //     })
+  //     .catch(function (error) {
+  //       sails.log(new Date(), error);
+  //       return res.status(500).send("Failed to fetch client data");
+  //     });
+  // },
+  //
+  // // Get Comments info
+  // getCommentsCount: function (req, res) {
+  //   return sails.models.client
+  //     .find()
+  //     .then(function (clients) {
+  //       var comments = []
+  //       clients.forEach(function(o) {
+  //         if (o.data.route_id) {
+  //           o.data.comments.map(function (c) {
+  //             c.route = o.data.route_id
+  //             return c;
+  //           });
+  //           comments = [
+  //             ...comments,
+  //             ...o.data.comments
+  //           ]
+  //         }
+  //       });
+  //       return res.status(200).send({count: comments.length});
+  //     })
+  //     .catch(function (error) {
+  //       sails.log(new Date(), error);
+  //       return res.status(500).send("Failed to fetch client data");
+  //     });
+  // },
 });

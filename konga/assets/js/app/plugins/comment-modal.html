@@ -1,6 +1,6 @@
 <div class="modal-header primary">
   <h4 class="modal-title" id="modal-title">
-    Change log
+    Audit logs
     <a class="modal-close pull-right" ng-click="close()">
       <i class="mdi mdi-close"></i>
     </a>
@@ -12,14 +12,14 @@
   <form name="commentForm" class="form-horizontal" novalidate>
     <div class="form-group"
          ng-class="{'has-error' : commentForm.comment.$invalid && (commentForm.comment.$dirty || commentForm.$submitted)}">
-      <label class="col-sm-2 control-label">Comment <br/>
+      <label class="col-sm-2 control-label">Comment<br/>
         <em>
           <small class="help-block">required</small>
         </em>
       </label>
       <div class="col-sm-7">
-        <textarea rows="4" cols="50" style="border: 1px solid #445862;" ng-model="comment" required></textarea>
-        <p class="help-block"></p>
+        <textarea rows="4" name="comment" cols="50" style="border: 1px solid #445862;" ng-model="comment" required ng-maxlength="500"></textarea>
+        <div class="text-danger" ng-if="commentForm.comment.$invalid && (commentForm.comment.$dirty || commentForm.$submitted)"> Comment is required and max length is 500.</div>
       </div>
     </div>
 

@@ -145,13 +145,11 @@
           });
 
           createConsumer.result.then(function (comment) {
-            item.config.comment = comment;
-
             PluginsService
               .delete(item.id)
               .then(function (cResponse) {
                 PluginsService
-                  .deleteOPClient(item.config)
+                  .deleteOPClient({comment: comment, route_id: item.route_id})
                   .then(function (pResponse) {
                     MessageService.success("Plugin deleted successfully");
                     $rootScope.$broadcast('plugin.added');

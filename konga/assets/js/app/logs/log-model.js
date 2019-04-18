@@ -8,7 +8,7 @@
         .service('LogModel', [
             'DataModel',
             function(DataModel) {
-                var model = new DataModel('log');
+                var model = new DataModel('auditlog');
                 return model;
             }
         ]);
