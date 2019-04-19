@@ -76,7 +76,8 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">Redirect Logout URL <i class="mdi mdi-information" title="Post logout redirect URL, OP will redirect you to this URL after logout from OP server."></i></label>
+                <label class="col-sm-2 control-label">Redirect Logout URL <i class="mdi mdi-information"
+                                                                             title="Post logout redirect URL, OP will redirect you to this URL after logout from OP server."></i></label>
                 <div class="col-sm-5">
                   <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
                   <p class="help-block">
@@ -91,7 +92,9 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-2 control-label">Logout Endpoint <i class="mdi mdi-information" title="Used this endpoint to request logout."></i> </label>
+                <label class="col-sm-2 control-label">Logout Endpoint <i class="mdi mdi-information"
+                                                                         title="Used this endpoint to request logout."></i>
+                </label>
                 <div class="col-sm-5">
                   <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
                   <p class="help-block">
@@ -144,129 +147,129 @@
                 </div>
               </div>
               <!--<div class="form-group">-->
-                <!--<label class="col-sm-2 control-label">Headers</label>-->
-                <!--<div class="col-sm-10 well">-->
-                  <!--<div id="id_token_jwt">-->
-                    <!--<div class="col-sm-4">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox" ng-model="config.headers['id_token_jwt'].isChecked">-->
-                          <!--<span style="font-weight: 600">id_token JWT</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-8">-->
-                      <!--<div class="form-group">-->
-                        <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-                        <!--<div class="col-sm-9">-->
-                          <!--<input ng-model="config.headers['id_token_jwt'].header" class="form-control"/>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                  <!--<div id="userinfo_jwt">-->
-                    <!--<div class="col-sm-4">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox" ng-model="config.headers['userinfo_jwt'].isChecked">-->
-                          <!--<span style="font-weight: 600">Userinfo JWT</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-8">-->
-                      <!--<div class="form-group">-->
-                        <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-                        <!--<div class="col-sm-9">-->
-                          <!--<input ng-model="config.headers['userinfo_jwt'].header" class="form-control"/>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                  <!--<div id="userinfo_claims">-->
-                    <!--<div class="col-sm-4">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox" ng-model="config.headers['userinfo_claims'].isChecked">-->
-                          <!--<span style="font-weight: 600">Userinfo claims</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-8">-->
-                      <!--<div class="form-group">-->
-                        <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-                        <!--<div class="col-sm-9">-->
-                          <!--<input ng-model="config.headers['userinfo_claims'].header" class="form-control"/>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                  <!--<div id="id_token_claims">-->
-                    <!--<div class="col-sm-4">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox" ng-model="config.headers['id_token_claims'].isChecked">-->
-                          <!--<span style="font-weight: 600">id_token claims</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-8">-->
-                      <!--<div class="form-group">-->
-                        <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-                        <!--<div class="col-sm-9">-->
-                          <!--<input ng-model="config.headers['id_token_claims'].header" class="form-control"/>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                  <!--<div id="map_http_remote_user">-->
-                    <!--<div class="col-sm-5">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox"-->
-                                 <!--ng-model="config.headers['map_http_remote_user'].isChecked">-->
-                          <!--<span style="font-weight: 600">map HTTP_REMOTE_USER</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-7">-->
-                      <!--<div class="form-group">-->
-                        <!--<label class="col-sm-3 control-label">Sub</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="col-sm-12">-->
-                    <!--<hr style="border-top-color: #445862"/>-->
-                  <!--</div>-->
-                  <!--<div id="custom_static_headers">-->
-                    <!--<div class="col-sm-4">-->
-                      <!--<div class="checkbox">-->
-                        <!--<label class="custom-checkbox">-->
-                          <!--<input type="checkbox"-->
-                                 <!--ng-model="config.headers['custom_static_header'].isChecked">-->
-                          <!--<span style="font-weight: 600">Custom Static Headers</span>-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-8">-->
-                      <!--<div class="form-group" data-ng-repeat="(key,value) in customHeaders">-->
-                        <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-                        <!--<div class="col-sm-4">-->
-                          <!--<input ng-model="value[0]" class="form-control" placeholder="key"/>-->
-                        <!--</div>-->
-                        <!--<div class="col-sm-4">-->
-                          <!--<input ng-model="value[1]" class="form-control" placeholder="value"/>-->
-                        <!--</div>-->
-                        <!--<div class="col-sm-1">-->
-                          <!--<button type="submit" class="btn btn-primary" data-ng-click="customHeaders.splice(key, 1)">X-->
-                          <!--</button>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                      <!--<button type="submit" class="btn btn-primary"-->
-                              <!--data-ng-click="customHeaders.push(['CUSTOM_KEY', 'VALUE'])">Add-->
-                      <!--</button>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                <!--</div>-->
+              <!--<label class="col-sm-2 control-label">Headers</label>-->
+              <!--<div class="col-sm-10 well">-->
+              <!--<div id="id_token_jwt">-->
+              <!--<div class="col-sm-4">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox" ng-model="config.headers['id_token_jwt'].isChecked">-->
+              <!--<span style="font-weight: 600">id_token JWT</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-8">-->
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
+              <!--<div class="col-sm-9">-->
+              <!--<input ng-model="config.headers['id_token_jwt'].header" class="form-control"/>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div id="userinfo_jwt">-->
+              <!--<div class="col-sm-4">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox" ng-model="config.headers['userinfo_jwt'].isChecked">-->
+              <!--<span style="font-weight: 600">Userinfo JWT</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-8">-->
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
+              <!--<div class="col-sm-9">-->
+              <!--<input ng-model="config.headers['userinfo_jwt'].header" class="form-control"/>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div id="userinfo_claims">-->
+              <!--<div class="col-sm-4">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox" ng-model="config.headers['userinfo_claims'].isChecked">-->
+              <!--<span style="font-weight: 600">Userinfo claims</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-8">-->
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
+              <!--<div class="col-sm-9">-->
+              <!--<input ng-model="config.headers['userinfo_claims'].header" class="form-control"/>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div id="id_token_claims">-->
+              <!--<div class="col-sm-4">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox" ng-model="config.headers['id_token_claims'].isChecked">-->
+              <!--<span style="font-weight: 600">id_token claims</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-8">-->
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
+              <!--<div class="col-sm-9">-->
+              <!--<input ng-model="config.headers['id_token_claims'].header" class="form-control"/>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div id="map_http_remote_user">-->
+              <!--<div class="col-sm-5">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox"-->
+              <!--ng-model="config.headers['map_http_remote_user'].isChecked">-->
+              <!--<span style="font-weight: 600">map HTTP_REMOTE_USER</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-7">-->
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-3 control-label">Sub</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-12">-->
+              <!--<hr style="border-top-color: #445862"/>-->
+              <!--</div>-->
+              <!--<div id="custom_static_headers">-->
+              <!--<div class="col-sm-4">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox"-->
+              <!--ng-model="config.headers['custom_static_header'].isChecked">-->
+              <!--<span style="font-weight: 600">Custom Static Headers</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<div class="col-sm-8">-->
+              <!--<div class="form-group" data-ng-repeat="(key,value) in customHeaders">-->
+              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
+              <!--<div class="col-sm-4">-->
+              <!--<input ng-model="value[0]" class="form-control" placeholder="key"/>-->
+              <!--</div>-->
+              <!--<div class="col-sm-4">-->
+              <!--<input ng-model="value[1]" class="form-control" placeholder="value"/>-->
+              <!--</div>-->
+              <!--<div class="col-sm-1">-->
+              <!--<button type="submit" class="btn btn-primary" data-ng-click="customHeaders.splice(key, 1)">X-->
+              <!--</button>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--<button type="submit" class="btn btn-primary"-->
+              <!--data-ng-click="customHeaders.push(['CUSTOM_KEY', 'VALUE'])">Add-->
+              <!--</button>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
               <!--</div>-->
               <div class="form-group">
                 <label class="col-sm-2 control-label">Security</label>
@@ -278,12 +281,12 @@
                     <div class="col-sm-8">
                       <div class="form-group">
                         <div class="col-sm-2">
-                          <input class="form-control" ng-model="pluginConfig.max_id_token_age_value" />
+                          <input class="form-control" ng-model="pluginConfig.max_id_token_age_value"/>
                         </div>
                         <div class="col-sm-3" class="form-control">
                           <select class="form-control" id="max_id_token_age_type"
                                   ng-model="pluginConfig.max_id_token_age_type"
-                                  ng-options="type as type for type in timeType" />
+                                  ng-options="type as type for type in timeType"/>
                         </div>
                       </div>
                     </div>
@@ -295,216 +298,215 @@
                     <div class="col-sm-8">
                       <div class="form-group">
                         <div class="col-sm-2">
-                          <input class="form-control" ng-model="pluginConfig.max_id_token_auth_age_value" />
+                          <input class="form-control" ng-model="pluginConfig.max_id_token_auth_age_value"/>
                         </div>
                         <div class="col-sm-3">
                           <select class="form-control" id="max_id_token_auth_age_type"
                                   ng-model="pluginConfig.max_id_token_auth_age_type"
-                                  ng-options="type as type for type in timeType" />
+                                  ng-options="type as type for type in timeType"/>
                         </div>
                       </div>
                     </div>
                   </div>
                   <!--<div class="col-sm-12">-->
-                    <!--<hr style="border-top-color: #445862"/>-->
+                  <!--<hr style="border-top-color: #445862"/>-->
                   <!--</div>-->
                   <!--<div id="required_claims">-->
-                    <!--<div class="col-sm-2">-->
-                      <!--<span style="font-weight: 600">Required claims</span>-->
-                    <!--</div>-->
-                    <!--<div class="col-sm-10">-->
-                      <!--<div class="form-group">-->
-                        <!--<input type="radio" value="AND"> AND &nbsp;&nbsp;&nbsp;-->
-                        <!--<input type="radio" value="OR" checked> OR &nbsp;&nbsp;-->
-                        <!--<input type="radio" value="NOT"> NOT-->
-                      <!--</div>-->
-                      <!--<div class="form-group" data-ng-repeat="(key,value) in claimSupported">-->
-                        <!--<div class="col-sm-3">-->
-                          <!--<select class="form-control" id="claims_supported" data-ng-model="value[0]"-->
-                                  <!--ng-options="claim as claim for claim in claims_supported"/>-->
-                        <!--</div>-->
-                        <!--<div class="col-sm-3">-->
-                          <!--<select class="form-control" id="claims_supported_operator" data-ng-model="value[1]"-->
-                                  <!--ng-options="op as op for op in claims_supported_operator"/>-->
-                        <!--</div>-->
-                        <!--<div class="col-sm-3">-->
-                          <!--<input ng-model="value[2]" class="form-control" placeholder="value or value with regular expression"/>-->
-                        <!--</div>-->
-                        <!--<div class="col-sm-1">-->
-                          <!--<button type="submit" class="btn btn-primary" data-ng-click="claimSupported.splice(key, 1)">X-->
-                          <!--</button>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                      <!--<button type="submit" class="btn btn-primary"-->
-                              <!--data-ng-click="claimSupported.push(['', '==', '[Mm][Aa]'])">Add-->
-                      <!--</button>-->
-                    <!--</div>-->
+                  <!--<div class="col-sm-2">-->
+                  <!--<span style="font-weight: 600">Required claims</span>-->
+                  <!--</div>-->
+                  <!--<div class="col-sm-10">-->
+                  <!--<div class="form-group">-->
+                  <!--<input type="radio" value="AND"> AND &nbsp;&nbsp;&nbsp;-->
+                  <!--<input type="radio" value="OR" checked> OR &nbsp;&nbsp;-->
+                  <!--<input type="radio" value="NOT"> NOT-->
+                  <!--</div>-->
+                  <!--<div class="form-group" data-ng-repeat="(key,value) in claimSupported">-->
+                  <!--<div class="col-sm-3">-->
+                  <!--<select class="form-control" id="claims_supported" data-ng-model="value[0]"-->
+                  <!--ng-options="claim as claim for claim in claims_supported"/>-->
+                  <!--</div>-->
+                  <!--<div class="col-sm-3">-->
+                  <!--<select class="form-control" id="claims_supported_operator" data-ng-model="value[1]"-->
+                  <!--ng-options="op as op for op in claims_supported_operator"/>-->
+                  <!--</div>-->
+                  <!--<div class="col-sm-3">-->
+                  <!--<input ng-model="value[2]" class="form-control" placeholder="value or value with regular expression"/>-->
+                  <!--</div>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<button type="submit" class="btn btn-primary" data-ng-click="claimSupported.splice(key, 1)">X-->
+                  <!--</button>-->
+                  <!--</div>-->
+                  <!--</div>-->
+                  <!--<button type="submit" class="btn btn-primary"-->
+                  <!--data-ng-click="claimSupported.push(['', '==', '[Mm][Aa]'])">Add-->
+                  <!--</button>-->
+                  <!--</div>-->
                   <!--</div>-->
                 </div>
               </div>
             </div>
             <div class="col-md-12">
               <div class="form-group has-feedback">
-                <label style="font-weight: bolder">UMA PEP Scope Security configuration</label>
+                <label style="font-weight: bolder">UMA PEP Security configuration</label>
                 <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
                        type="checkbox" switch-size="small"
                        ng-model="pluginConfig.isPEPEnabled" class="form-control"/>
 
-                <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                <span class="help-block error-block basic-block">Enable plugin first using above button to configure UMA PEP. It protect API paths by requiring specific UMA Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
               <div class="row"></div>
-              <div data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <div class="row" ng-repeat="element in pluginConfig.uma_scope_expression"
-                     ng-init="pIndex = $index"
-                     style="border: 1px dotted;">
+              <div data-ng-show="pluginConfig.isPEPEnabled">
+                <div>
+                  <div class="row" ng-repeat="element in pluginConfig.uma_scope_expression"
+                       ng-init="pIndex = $index"
+                       style="border: 1px dotted;">
+                    <hr/>
+                    <div class="col-md-1">
+                      <button type="button" title="Delete path" class="btn btn-danger"
+                              ng-click="pluginConfig.uma_scope_expression.splice($index,1)">
+                        <i class="mdi mdi-close"></i>
+                      </button>
+                    </div>
+                    <div class="col-md-11">
+                      <div class="form-group has-feedback col-md-4">
+                        <input type="text" class="form-control" value="{{pluginConfig.kong_proxy_url}}"
+                               title="Upstream URL" disabled/>
+                        <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
+                      </div>
+                      <div class="form-group has-feedback col-md-8"
+                           ng-class="{'pathValidationClass': PluginForm['path'+$index].$invalid}">
+                        <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
+                               title="Enter path"
+                               placeholder="/path"
+                               ng-model="element.path"
+                               ng-required="true" required/>
+                        <span
+                          class="help-block error-block basic-block">The path which you want to have protected.</span>
+                      </div>
+                      <div class="col-md-12">
+                        <div class="row" ng-repeat="cond in element.conditions">
+                          <div class="row">
+                            <div class="col-md-10">
+                              <div class="form-group has-feedback">
+                                <tags-input ng-model="cond.httpMethods"
+                                            id="httpMethods{{pIndex}}{{$index}}"
+                                            add-from-autocomplete-only="true"
+                                            placeholder="Enter HTTP methods" required>
+                                  <auto-complete source="loadMethods($query)"
+                                                 min-length="0"
+                                                 debounce-delay="0"></auto-complete>
+                                </tags-input>
+                                <span class="help-block error-block basic-block"></span>
+                              </div>
+                            </div>
+                            <div class="col-md-2">
+                              <button type="button" title="Delete condition" class="btn btn-danger"
+                                      ng-click="element.conditions.splice($index,1)">
+                                <i class="mdi mdi-close"></i>
+                              </button>
+                            </div>
+                          </div>
+                          <div class="row">
+                            <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
+                            <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isPluginAdded">
+                            </div>
+                            <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isPluginAdded">
+                              <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0" checked>or |
+                              <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
+                              <input type="radio" value="!" name="condition{{pIndex}}{{$index}}0">not
+                              <button type="button" class="btn btn-xs btn-success" data-add="rule"
+                                      name="btnAdd{{pIndex}}{{$index}}0"
+                                      data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
+                                Add Group
+                              </button>
+                              <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
+                                     name="hdScope{{pIndex}}{{$index}}0"/>
+                              <div class="form-group has-feedback">
+                                <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                                            name="scope{{pIndex}}{{$index}}0"
+                                            id="scopes{{pIndex}}{{$index}}"
+                                            placeholder="Enter scopes" required>
+                                </tags-input>
+                              </div>
+                              <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
+                              </div>
+                            </div>
+                          </div>
+                          <hr/>
+                        </div>
+                        <div class="row">
+                          <button type="button" class="btn btn-info" ng-click="addNewCondition($index)">
+                            <i class="mdi mdi-plus"></i> Add Condition
+                          </button>
+                        </div>
+                        <br/>
+                      </div>
+                    </div>
+                  </div>
                   <hr/>
-                  <div class="col-md-1">
-                    <button type="button" title="Delete path" class="btn btn-danger"
-                            ng-click="pluginConfig.uma_scope_expression.splice($index,1)">
-                      <i class="mdi mdi-close"></i>
-                    </button>
-                  </div>
-                  <div class="col-md-11">
-                    <div class="form-group has-feedback col-md-4">
-                      <input type="text" class="form-control" value="{{pluginConfig.kong_proxy_url}}"
-                             title="Upstream URL" disabled/>
-                      <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
-                    </div>
-                    <div class="form-group has-feedback col-md-8"
-                         ng-class="{'pathValidationClass': PluginForm['path'+$index].$invalid}">
-                      <input type="text" class="form-control" id="path{{$index}}" name="path{{$index}}"
-                             title="Enter path"
-                             placeholder="/path"
-                             ng-model="element.path"
-                             ng-required="true" required/>
-                      <span class="help-block error-block basic-block">The path which you want to have protected.</span>
-                    </div>
-                    <div class="col-md-12">
-                      <div class="row" ng-repeat="cond in element.conditions">
-                        <div class="row">
-                          <div class="col-md-10">
-                            <div class="form-group has-feedback">
-                              <tags-input ng-model="cond.httpMethods"
-                                          id="httpMethods{{pIndex}}{{$index}}"
-                                          add-from-autocomplete-only="true"
-                                          placeholder="Enter HTTP methods" required>
-                                <auto-complete source="loadMethods($query)"
-                                               min-length="0"
-                                               debounce-delay="0"></auto-complete>
-                              </tags-input>
-                              <span class="help-block error-block basic-block"></span>
-                            </div>
-                          </div>
-                          <div class="col-md-2">
-                            <button type="button" title="Delete condition" class="btn btn-danger"
-                                    ng-click="element.conditions.splice($index,1)">
-                              <i class="mdi mdi-close"></i>
-                            </button>
-                          </div>
-                        </div>
-                        <div class="row">
-                          <input type="hidden" value="1" name="hdScopeCount{{pIndex}}{{$index}}"/>
-                          <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="isPluginAdded">
-                          </div>
-                          <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}0" data-ng-if="!isPluginAdded">
-                            <input type="radio" value="or" name="condition{{pIndex}}{{$index}}0" checked>or |
-                            <input type="radio" value="and" name="condition{{pIndex}}{{$index}}0">and |
-                            <input type="radio" value="!" name="condition{{pIndex}}{{$index}}0">not
-                            <button type="button" class="btn btn-xs btn-success" data-add="rule"
-                                    name="btnAdd{{pIndex}}{{$index}}0"
-                                    data-ng-click="addGroup(pIndex +''+ $index,1)"><i class="mdi mdi-plus"></i>
-                              Add Group
-                            </button>
-                            <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
-                                   name="hdScope{{pIndex}}{{$index}}0"/>
-                            <div class="form-group has-feedback">
-                              <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
-                                          name="scope{{pIndex}}{{$index}}0"
-                                          id="scopes{{pIndex}}{{$index}}"
-                                          placeholder="Enter scopes" required>
-                              </tags-input>
-                            </div>
-                            <div class="col-md-12" id="dyScope{{pIndex}}{{$index}}1">
-                            </div>
-                          </div>
-                        </div>
-                        <hr/>
-                      </div>
-                      <div class="row">
-                        <button type="button" class="btn btn-info" ng-click="addNewCondition($index)">
-                          <i class="mdi mdi-plus"></i> Add Condition
-                        </button>
-                      </div>
-                      <br/>
-                    </div>
-                  </div>
+                  <button type="button" class="btn btn-info" ng-click="addNewPath()">
+                    <i class="mdi mdi-plus"></i> Add path
+                  </button>
+                  <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
+                    <i class="mdi mdi-information"></i> View Resource Json
+                  </button>
                 </div>
                 <hr/>
-                <button type="button" class="btn btn-info" ng-click="addNewPath()">
-                  <i class="mdi mdi-plus"></i> Add path
-                </button>
-                <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
-                  <i class="mdi mdi-information"></i> View Resource Json
-                </button>
-              </div>
-              <hr/>
-              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">Deny by default
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-10 check-toggle">
-                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                         ng-model="pluginConfig.deny_by_default" class="form-control"/>
-                  <p class="help-block">
-                    It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
-                    expression. Set it to <code>No</code>, to allow access to unprotected path.
-                  </p>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Deny by default
+                    <br>
+                    <em>
+                      <small class="help-block">optional</small>
+                    </em>
+                  </label>
+                  <div class="col-sm-10 check-toggle">
+                    <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
+                           ng-model="pluginConfig.deny_by_default" class="form-control"/>
+                    <p class="help-block">
+                      It will denied access to <code>Unprotected path</code>: The path which is not registered in scope
+                      expression. Set it to <code>No</code>, to allow access to unprotected path.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">UMA Push claim Token
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-10">
-                  <input type="checkbox" ng-model="pluginConfig.require_id_token" /> ID Token
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">UMA Push claim Token
+                    <br>
+                    <em>
+                      <small class="help-block">optional</small>
+                    </em>
+                  </label>
+                  <div class="col-sm-10">
+                    <input type="checkbox" ng-model="pluginConfig.require_id_token"/> ID Token
+                  </div>
                 </div>
-              </div>
-              <div class="form-group" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">Claim Gathering Flow
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
-                <div class="col-sm-10">
-                  <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
-                         ng-model="pluginConfig.redirect_claim_gathering_url" class="form-control"/>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Claim Gathering Flow
+                    <br>
+                    <em>
+                      <small class="help-block">optional</small>
+                    </em>
+                  </label>
+                  <div class="col-sm-10">
+                    <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox"
+                           switch-size="small"
+                           ng-model="pluginConfig.redirect_claim_gathering_url" class="form-control"/>
+                  </div>
                 </div>
-              </div>
-              <div class="form-group" ng-show="pluginConfig.redirect_claim_gathering_url" data-ng-disabled="!pluginConfig.isPEPEnabled"
-                   ng-class="{'disabled': !pluginConfig.isPEPEnabled}">
-                <label class="col-sm-2 control-label">Claims Redirect URL</label>
-                <div class="col-sm-5">
-                  <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
-                  <p class="help-block">
-                    Your Kong proxy base URL as per Route configuration.
-                  </p>
-                </div>
-                <div class="col-sm-5">
-                  <input ng-model="pluginConfig.claims_redirect_path" class="form-control"/>
-                  <p class="help-block">
-                    End path
-                  </p>
+                <div class="form-group" ng-show="pluginConfig.redirect_claim_gathering_url">
+                  <label class="col-sm-2 control-label">Claims Redirect URL</label>
+                  <div class="col-sm-5">
+                    <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
+                    <p class="help-block">
+                      Your Kong proxy base URL as per Route configuration.
+                    </p>
+                  </div>
+                  <div class="col-sm-5">
+                    <input ng-model="pluginConfig.claims_redirect_path" class="form-control"/>
+                    <p class="help-block">
+                      End path
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

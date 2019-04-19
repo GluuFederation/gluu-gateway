@@ -176,8 +176,8 @@
             required_acrs: ['auth_ldap_server', 'u2f', 'otp'],
             max_id_token_age_value: 60,
             max_id_token_auth_age_value: 60,
-            max_id_token_age_type: 'seconds',
-            max_id_token_auth_age_type: 'seconds',
+            max_id_token_age_type: 'minutes',
+            max_id_token_auth_age_type: 'minutes',
             uma_scope_expression: [],
             require_id_token: true
           };

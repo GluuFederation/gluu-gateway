@@ -43,7 +43,7 @@
                        ng-model="modelPlugin.isPEPEnabled" class="form-control"
                        switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
 
-                <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                <span class="help-block error-block basic-block">Enable plugin first using above button to configure UMA PEP. It protect API paths by requiring specific UMA Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
               </div>
               <div class="form-group" data-ng-disabled="!modelPlugin.isPEPEnabled"
                    ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
