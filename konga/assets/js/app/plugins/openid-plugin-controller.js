@@ -34,6 +34,7 @@
 
         $scope.pluginConfig = {};
         $scope.isPluginAdded = false;
+        $scope.alreadyAddedUMAExpression = false;
         var pepPlugin, oidcPlugin;
         $scope.plugins.forEach(function (o) {
           if (o.name === "gluu-openid-connect") {
@@ -62,6 +63,7 @@
               if (pepPlugin) {
                 $scope.pluginConfig.pepId = pepPlugin.id;
                 $scope.pluginConfig.isPEPEnabled = true;
+                $scope.alreadyAddedUMAExpression = true;
                 $scope.pluginConfig.deny_by_default = pepPlugin.config.deny_by_default;
                 $scope.pluginConfig.redirect_claim_gathering_url = pepPlugin.config.redirect_claim_gathering_url || false;
                 $scope.pluginConfig.claims_redirect_path = pepPlugin.config.claims_redirect_path || "";
@@ -457,6 +459,7 @@
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
               extraData: extraData,
+              alreadyAddedUMAExpression: $scope.alreadyAddedUMAExpression || false,
             })
             .then(function (response) {
               var opClient = response.data;

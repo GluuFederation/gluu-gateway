@@ -366,10 +366,60 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       resolveWithFullResponse: true,
       json: true
     };
-    var dbOPClient;
+    var opClient;
     return httpRequest(option)
       .then(function (response) {
-        var clientInfo = response.body;
+        opClient = response.body;
+        if (!opClient.client_id && !opClient.client_secret && !opClient.oxd_id) {
+          sails.log(new Date(), "Failed to register client", opClient);
+          return Promise.reject({message: "Failed to register client"});
+        }
+
+        if (!(body.uma_scope_expression && body.uma_scope_expression.length > 0)) {
+          return Promise.resolve(opClient)
+        }
+
+        var option = {
+          method: 'POST',
+          uri: body.oxd_url + '/get-client-token',
+          body: {
+            op_host: body.op_host,
+            client_id: opClient.client_id,
+            client_secret: opClient.client_secret,
+            scope: ['openid', 'oxd']
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option)
+          .then(function (response) {
+            var clientToken = response.body;
+            var option = {
+              method: 'POST',
+              uri: body.oxd_url + '/uma-rs-protect',
+              body: {
+                oxd_id: opClient.oxd_id,
+                resources: body.uma_scope_expression
+              },
+              headers: {
+                Authorization: 'Bearer ' + clientToken.access_token
+              },
+              resolveWithFullResponse: true,
+              json: true
+            };
+
+            sails.log(new Date(), "--------------OXD API Call----------------");
+            sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+
+            return httpRequest(option);
+          });
+      })
+      .then(function (response) {
+        var clientInfo = opClient;
         return sails.models.client
           .create({
             oxd_id: clientInfo.oxd_id,
@@ -395,7 +445,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to add client and resources in konga db"});
         }
 
-        dbOPClient = dbClient;
         return sails.models.auditlog
           .create({
             comment: body.comment,
@@ -409,9 +458,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         }
 
         return res.send({
-          oxd_id: dbOPClient.oxd_id,
-          client_id: dbOPClient.client_id,
-          client_secret: dbOPClient.client_secret
+          oxd_id: opClient.oxd_id,
+          client_id: opClient.client_id,
+          client_secret: opClient.client_secret
         })
       })
       .catch(function (error) {
@@ -561,10 +610,11 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     };
     sails.log(new Date(), "--------------OXD API Call----------------");
     sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
-
+    var clientATToken;
     return httpRequest(option)
       .then(function (response) {
         var clientToken = response.body;
+        clientATToken = clientToken.access_token;
 
         // Create new client
         const reqBody = {
@@ -594,6 +644,41 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/update-site'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
 
         return httpRequest(option)
+      })
+      .then(function (response) {
+        if (!(body.extraData.uma_scope_expression && body.extraData.uma_scope_expression.length > 0)) {
+          return Promise.resolve(response)
+        }
+
+        var reqBody = {};
+        if (body.alreadyAddedUMAExpression) {
+          reqBody = {
+            oxd_id: body.oxd_id,
+            resources: body.extraData.uma_scope_expression,
+            overwrite: true
+          }
+        } else {
+          reqBody = {
+            oxd_id: body.oxd_id,
+            resources: body.extraData.uma_scope_expression
+          }
+        }
+
+        var option = {
+          method: 'POST',
+          uri: body.oxd_url + '/uma-rs-protect',
+          body: reqBody,
+          headers: {
+            Authorization: 'Bearer ' + clientATToken
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientATToken}' -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option);
       })
       .then(function (response) {
         var updateSite = response.body;
