@@ -8,7 +8,7 @@ Source0:	gluu-gateway-1.0.1.tar.gz
 Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
 BuildArch:      noarch
-Requires:	postgresql >= 10.0, postgresql-server >= 10.0, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
 %description
 The Gluu Gateway is a package which can be used to quickly
