@@ -102,7 +102,7 @@ local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
 
     if conf.require_id_token then
         requestBody.claim_token = id_token_jwt
-        requestBody.claim_token_format = "https://openid.net/specs/openid-connect-core-1_0.html#IDToken"
+        requestBody.claim_token_format = "http://openid.net/specs/openid-connect-core-1_0.html#IDToken"
     end
 
     local response = oxd.uma_rp_get_rpt(conf.oxd_url,
