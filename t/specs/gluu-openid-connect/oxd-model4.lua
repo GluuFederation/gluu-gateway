@@ -143,23 +143,19 @@ model = {
         end,
         response = {
             error = "need_info",
-            error_description  = "The authorization server needs additional information in order to determine whether the client is authorized to have these permissions.",
-            details = {
-                error = "need_info",
-                ticket = "ZXJyb3JfZGV0YWlscw==",
-                required_claims = {
-                    {
-                        claim_token_format = {
-                            "http://openid.net/specs/openid-connect-core-1_0.html#IDToken"
-                        },
-                        claim_type = "urn:oid:0.9.2342.19200300.100.1.3",
-                        friendly_name = "email",
-                        issuer = {"https://example.com/idp"},
-                        name = "email23423453ou453"
-                    }
-                },
-                redirect_user = "https://as.example.com/rqp_claims?id=2346576421"
-            }
+            ticket = "ZXJyb3JfZGV0YWlscw==",
+            required_claims = {
+                {
+                    claim_token_format = {
+                        "http://openid.net/specs/openid-connect-core-1_0.html#IDToken"
+                    },
+                    claim_type = "urn:oid:0.9.2342.19200300.100.1.3",
+                    friendly_name = "email",
+                    issuer = {"https://example.com/idp"},
+                    name = "email23423453ou453"
+                }
+            },
+            redirect_user = "https://as.example.com/rqp_claims?id=2346576421"
         },
         httpStatus = 403
     },
@@ -174,7 +170,7 @@ model = {
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[2].response.access_token)
-            assert(json.ticket == model[6].response.ticket)
+            assert(json.ticket == model[7].response.ticket)
             assert(json.claims_redirect_uri == "http://backend.com:8000/claim_gathering_path")
         end,
         response = {

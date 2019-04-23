@@ -114,7 +114,7 @@ local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
     if status ~= 200 then
         if conf.redirect_claim_gathering_url and status == 403 and body.error and body.error == "need_info" then
             kong.log.debug("Starting claim gathering flow")
-            redirect_to_claim_url(conf, ticket)
+            redirect_to_claim_url(conf, body.ticket)
         end
 
         return unexpected_error("Failed to get RPT token")
