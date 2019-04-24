@@ -1,7 +1,8 @@
 [Unit]
-Description=Gluu-Gateway server daemon
+Description=konga server daemon
 After=network.target kong.service oxd-server.service
 Requires=kong.service oxd-server.service
+PartOf=gluu-gateway.service
 
 [Service]
 Type=simple
