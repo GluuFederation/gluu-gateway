@@ -72,6 +72,7 @@ class KongSetup(object):
         self.cmd_systemctl = 'systemctl'
         self.cmd_rpm = '/bin/rpm'
         self.cmd_dpkg = '/usr/bin/dpkg'
+        self.cmd_kong = '/usr/local/bin/kong'
 
         self.countryCode = ''
         self.state = ''
@@ -594,11 +595,11 @@ class KongSetup(object):
             self.logIt(traceback.format_exc(), True)
 
     def startKong(self):
-        self.run(["kong", "stop"])
-        self.run(["kong", "start"])
+        self.run([self.cmd_kong, "stop"])
+        self.run([self.cmd_kong, "start"])
 
     def migrateKong(self):
-        self.run(["kong", "migrations", "up"])
+        self.run([self.cmd_kong, "migrations", "up"])
 
     def startKongaService(self):
         self.logIt("Starting %s..." % self.kongaService)
