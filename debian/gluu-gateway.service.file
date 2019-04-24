@@ -1,12 +1,12 @@
 [Unit]
 Description=Gluu-Gateway server daemon
 After=network.target konga.service
-Requires=konga.service 
+Requires=konga.service kong.service oxd-server.service
 
 [Service]
 Type=forking
-ExecStart=/bin/bash -c 'systemctl start konga'
-ExecStop=/bin/bash -c 'systemctl stop konga && systemctl stop kong && systemctl stop oxd-server'
+ExecStart=/bin/bash -c ''
+ExecStop=/bin/bash -c ''
 RemainAfterExit=yes
 
 [Install]
