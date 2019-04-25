@@ -143,7 +143,7 @@ model = {
             assert(token == model[2].response.access_token)
             assert(json.ticket == model[6].response.ticket)
             assert(json.claim_token == model[4].response.id_token)
-            assert(json.claim_token_format == "https://openid.net/specs/openid-connect-core-1_0.html#IDToken")
+            assert(json.claim_token_format == "http://openid.net/specs/openid-connect-core-1_0.html#IDToken")
         end,
         response = {
             access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f2",
