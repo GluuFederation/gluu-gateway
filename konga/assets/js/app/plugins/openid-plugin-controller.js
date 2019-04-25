@@ -207,6 +207,13 @@
             return
           }
           $scope.pluginConfig.kong_proxy_url = (port === 443) ? protocol + "://" + host : protocol + "://" + host + ":" + port;
+          if ($scope.isPluginAdded) {
+            if (!$scope.pluginConfig.post_logout_redirect_path_or_url.startsWith('/')) {
+              $scope.pluginConfig.post_logout_redirect_uri = $scope.pluginConfig.post_logout_redirect_path_or_url
+              return
+            }
+          }
+          $scope.pluginConfig.post_logout_redirect_uri = $scope.pluginConfig.kong_proxy_url + $scope.pluginConfig.post_logout_redirect_path_or_url;
         }
 
         function setURLs() {
@@ -342,7 +349,7 @@
               op_host: model.op_url,
               oxd_url: model.oxd_url,
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
-              post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
+              post_logout_redirect_uri: model.post_logout_redirect_uri,
               claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
@@ -358,6 +365,11 @@
               var opClient = response.data;
               var max_id_token_age = getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
               var max_id_token_auth_age = getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
+              if (model.post_logout_redirect_uri.startsWith(model.kong_proxy_url)) {
+                model.post_logout_redirect_path_or_url = model.post_logout_redirect_uri.replace(model.kong_proxy_url, '');
+              } else {
+                model.post_logout_redirect_path_or_url = model.post_logout_redirect_uri
+              }
               var pluginModel = {
                 name: 'gluu-openid-connect',
                 route_id: $scope.route.id,
@@ -454,7 +466,7 @@
               client_id: model.client_id,
               client_secret: model.client_secret,
               authorization_redirect_uri: model.kong_proxy_url + model.authorization_redirect_path,
-              post_logout_redirect_uri: model.kong_proxy_url + model.post_logout_redirect_path_or_url,
+              post_logout_redirect_uri: model.post_logout_redirect_uri,
               claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
@@ -463,6 +475,11 @@
             })
             .then(function (response) {
               var opClient = response.data;
+              if (model.post_logout_redirect_uri.startsWith(model.kong_proxy_url)) {
+                model.post_logout_redirect_path_or_url = model.post_logout_redirect_uri.replace(model.kong_proxy_url, '');
+              } else {
+                model.post_logout_redirect_path_or_url = model.post_logout_redirect_uri
+              }
               var pluginModel = {
                 name: 'gluu-openid-connect',
                 route_id: $scope.route.id,

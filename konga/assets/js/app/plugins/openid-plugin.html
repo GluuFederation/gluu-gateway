@@ -78,16 +78,10 @@
               <div class="form-group">
                 <label class="col-sm-2 control-label">Redirect Logout URL <i class="mdi mdi-information"
                                                                              title="Post logout redirect URL, OP will redirect you to this URL after logout from OP server."></i></label>
-                <div class="col-sm-5">
-                  <input ng-model="pluginConfig.kong_proxy_url" class="form-control"/>
+                <div class="col-sm-10">
+                  <input ng-model="pluginConfig.post_logout_redirect_uri" class="form-control"/>
                   <p class="help-block">
-                    Your Kong proxy base URL as per Route configuration.
-                  </p>
-                </div>
-                <div class="col-sm-5">
-                  <input ng-model="pluginConfig.post_logout_redirect_path_or_url" class="form-control"/>
-                  <p class="help-block">
-                    End path
+                    You can use internal proxy endpoint or any external url.
                   </p>
                 </div>
               </div>
