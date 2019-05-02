@@ -224,7 +224,7 @@
           $scope.pluginConfig.logout_path = path + "/logout";
           $scope.pluginConfig.claims_redirect_path = path + "/claims_callback";
         }
-        
+
         function setClaimPath() {
           var route = $scope.route;
           var path = (route.paths && route.paths[0]) || "";
@@ -245,7 +245,23 @@
           PluginsService
             .getOPDiscoveryResponse({op_url: $scope.pluginConfig.op_url})
             .then(function (opRes) {
-              $scope.opResponse = opRes.data
+              $scope.opResponse = opRes.data;
+              $scope.opResponse.acr_values_supported = $scope.opResponse.acr_values_supported.map(function (acr) {
+                return {
+                  value: acr, level: Object.keys($scope.opResponse.auth_level_mapping).find(function (level) {
+                    if ($scope.opResponse.auth_level_mapping[level].indexOf(acr) > -1) {
+                      return true;
+                    }
+                  })
+                }
+              });
+              $scope.opResponse.acr_values_supported.sort((a, b) => {
+                if (parseInt(a.level) > parseInt(b.level)) {
+                  return -1;
+                } else {
+                  return 1;
+                }
+              })
             })
             .catch(function (error) {
               console.log(error);
@@ -554,6 +570,7 @@
                   MessageService.success('Gluu OpenID Connect updated and UMA PEP Plugin added successfully!');
                 }
               }
+
               function error(err) {
                 return Promise.reject(err);
               }
