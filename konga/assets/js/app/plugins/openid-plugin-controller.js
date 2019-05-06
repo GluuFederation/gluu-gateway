@@ -255,7 +255,7 @@
                   })
                 }
               });
-              $scope.opResponse.acr_values_supported.sort((a, b) => {
+              $scope.opResponse.acr_values_supported.sort(function (a, b) {
                 if (parseInt(a.level) > parseInt(b.level)) {
                   return -1;
                 } else {
