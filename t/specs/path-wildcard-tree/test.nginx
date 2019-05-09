@@ -1,0 +1,29 @@
+worker_processes 1;
+
+error_log logs/error.log info;
+
+events {
+    worker_connections 512;
+}
+
+http {
+
+    server {
+        listen 80;
+
+        location = /add {
+            content_by_lua_block{
+                require "gluu.path-wildcard-tree-tester".add()
+            }
+        }
+
+        location = /match {
+            content_by_lua_block{
+                require "gluu.path-wildcard-tree-tester".match()
+            }
+        }
+
+
+    }
+}
+
