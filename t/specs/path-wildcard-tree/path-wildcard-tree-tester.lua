@@ -65,7 +65,7 @@ function _M.add()
 
     local data = ngx.req.get_body_data()
 
-    path_wildcard_tree.addPath(tree, data, { path = data } )
+    path_wildcard_tree.addPath(tree, "GET", data, { path = data } )
 
     ngx.say(serialize(tree))
 end
@@ -75,7 +75,7 @@ function _M.match()
 
     local data = ngx.req.get_body_data()
 
-    local node = path_wildcard_tree.matchPath(tree, data)
+    local node = path_wildcard_tree.matchPath(tree, "GET", data)
 
     if node then
         ngx.say(node.path)

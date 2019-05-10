@@ -14,12 +14,15 @@ local _M = {}
 
 local EXPRESSION_KEY = "#"
 
-_M.addPath = function(self, path, exp)
+_M.addPath = function(self, method, path, exp)
     -- TODO here must be special version of split with {regexp} support
     -- or should we forbid slash within regexp?
     local path_as_array = path_plit(path)
 
-    local node = self
+    if not self[method] then
+        self[method] = {}
+    end
+    local node = self[method]
     for i = 1, #path_as_array do
         local item = path_as_array[i]
 
@@ -47,71 +50,6 @@ _M.addPath = function(self, path, exp)
         end
     end
     node[EXPRESSION_KEY] = exp
-end
-
-local function isNotKeysExist(t)
-    for k,v in pairs(t) do
-        if k ~= EXPRESSION_KEY then
-            return false
-        end
-    end
-    return true
-end
-
-local function serialize(val, stringOnlyKeys)
-    stringOnlyKeys = stringOnlyKeys or false
-    -- here cannot be userdata
-
-    local function serializeInternal(val, name, t, depth, stringOnlyKeys)
-        local vt = type(val)
-        if vt == "function" or vt == "thread" or vt == "userdata" then
-            return
-        end
-
-        depth = depth - 1
-        if depth == 0 then
-            return
-        end
-
-        if name then
-            t[#t + 1] = "["
-            if type(name) == "string" then
-                t[#t + 1] = string.format("%q", name)
-            else
-                t[#t + 1] = tostring(name)
-            end
-            t[#t + 1] = "]"
-            t[#t + 1] = " = "
-        end
-        if vt == "table" then
-            t[#t + 1] = "{"
-            for k, v in pairs(val) do
-                if stringOnlyKeys and type(k) == "string" then
-                    serializeInternal(v, k, t, depth)
-                elseif not stringOnlyKeys then
-                    serializeInternal(v, k, t, depth)
-                end
-            end
-            t[#t + 1] = "}"
-        elseif vt == "number" then
-            t[#t + 1] = tostring(val)
-        elseif vt == "string" then
-            t[#t + 1] = string.format("%q", val)
-        elseif vt == "boolean" then
-            t[#t + 1] = tostring(val)
-        end
-
-        if name then
-            t[#t + 1] = ","
-        end
-    end
-
-    local t = {}
-    local depth = 100 -- limit nested levels
-
-    serializeInternal(val, nil, t, depth)
-
-    return table.concat(t)
 end
 
 local function isKeysExist(t)
@@ -176,10 +114,14 @@ local function processItem(node, path_as_array, index)
     end
 end
 
-_M.matchPath = function(self, path)
+_M.matchPath = function(self, method, path)
+    if not self[method] then
+        return false
+    end
+
     local path_as_array = path_plit(path)
 
-    local node = self
+    local node = self[method]
     local matched, last_index
 
     for i = 1, #path_as_array do

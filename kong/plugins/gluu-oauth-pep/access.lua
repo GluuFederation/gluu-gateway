@@ -45,10 +45,9 @@ end
 -- @return json expression Example: {path: "/posts", ...}
 function hooks.get_path_by_request_path_method(self, conf, path, method)
     local exp = conf.oauth_scope_expression
-    -- TODO the complexity is O(N), think how to optimize
 
     local method_path_tree = conf.method_path_tree
-    local rule = path_wildcard_tree.matchPath(method_path_tree, table.concat{"/", method, path})
+    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
     if rule then
         return rule.path, rule.scope_expression

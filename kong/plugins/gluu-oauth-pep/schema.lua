@@ -31,7 +31,7 @@ return {
 
                 for j = 1, #condition.httpMethods do
                     local t = { path = item.path, scope_expression = condition.scope_expression }
-                    path_wildcard_tree.addPath(method_path_tree, "/" .. condition.httpMethods[j] .. item.path, t)
+                    path_wildcard_tree.addPath(method_path_tree, condition.httpMethods[j], item.path, t)
                 end
             end
         end
