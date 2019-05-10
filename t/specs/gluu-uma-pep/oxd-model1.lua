@@ -76,7 +76,7 @@ model = {
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[3].response.access_token, 403)
-            assert(json.path == "/")
+            assert(json.path == "/??")
             assert(json.http_method == "GET")
             assert(json.rpt == "")
         end,
@@ -120,7 +120,7 @@ model = {
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[3].response.access_token, 403)
-            assert(json.path == "/")
+            assert(json.path == "/??")
             assert(json.http_method == "GET")
             assert(json.rpt == "1234567890")
         end,
@@ -221,7 +221,7 @@ model = {
         request_check = function(json, token)
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[3].response.access_token, 403)
-            assert(json.path == "/")
+            assert(json.path == "/??")
             assert(json.http_method == "GET")
             assert(json.rpt == "POSTS1234567890")
         end,

@@ -3,6 +3,7 @@ local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 
 local kong_auth_pep_common = require"gluu.kong-common"
+local path_wildcard_tree = require"gluu.path-wildcard-tree"
 
 local unexpected_error = kong_auth_pep_common.unexpected_error
 
@@ -130,32 +131,13 @@ end
 -- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
 -- @param method: requested http method Example: GET
 -- @return protected_path; may returns no values
-function hooks.get_path_by_request_path_method(self, conf, request_path, method)
-    local exp = conf.uma_scope_expression
-    -- TODO the complexity is O(N), think how to optimize
-    local found_paths = {}
-    print(request_path)
-    for i = 1, #exp do
-        print(exp[i]["path"])
-        if kong_auth_pep_common.is_path_match(request_path, exp[i]["path"]) then
-            print(exp[i]["path"])
-            found_paths[#found_paths + 1] = exp[i]
-        end
-    end
+function hooks.get_path_by_request_path_method(self, conf, path, method)
+    local method_path_tree = conf.method_path_tree
+    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
-    for i = 1, #found_paths do
-        local path_item = found_paths[i]
-        kong.log.inspect(path_item)
-        for k = 1, #path_item.conditions do
-            local rule = path_item.conditions[k]
-            kong.log.inspect(rule)
-            if pl_tablex.find(rule.httpMethods, method) then
-                return path_item.path
-            end
-        end
+    if rule then
+        return rule.path
     end
-
-    return nil
 end
 
 function hooks.no_token_protected_path(self, conf, protected_path, method)

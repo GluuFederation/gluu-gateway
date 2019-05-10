@@ -196,7 +196,7 @@ test("with and without token, metrics, uma-auth and check UMA scope", function()
         {
             uma_scope_expression = {
                 {
-                    path = "/",
+                    path = "/??",
                     conditions = {
                         {
                             httpMethods = {"GET"},

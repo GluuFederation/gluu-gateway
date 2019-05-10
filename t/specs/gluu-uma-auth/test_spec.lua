@@ -38,7 +38,6 @@ local function setup(model)
     kong_utils.kong_postgress_custom_plugins{
         plugins = {
             ["gluu-uma-auth"] = host_git_root .. "/kong/plugins/gluu-uma-auth",
-            ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
             ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
         },
         modules = {
