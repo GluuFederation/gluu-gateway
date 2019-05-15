@@ -92,5 +92,21 @@ test("basic tests", function()
     local res, err = matchPath("/path/123/image.jpg")
     assert(res:find("/path/?/image.jpg", 1 , true))
 
+    addPath("/users/?/{todos|photos}")
+
+    local res, err = matchPath("/users/123/todos")
+    assert(res:find("/users/?/{todos|photos}", 1 , true))
+
+    addPath("/users/?/{todos|photos}/?")
+
+    local res, err = matchPath("/users/123/todos/")
+    assert(res:find("/users/?/{todos|photos}/?", 1 , true))
+
+    local res, err = matchPath("/users/123/todos/321")
+    assert(res:find("/users/?/{todos|photos}/?", 1 , true))
+
+    local res, err = matchPath("/users/123/todos/321")
+    assert(res:find("/users/?/{todos|photos}/?", 1 , true))
+
     print_logs = false
 end)
