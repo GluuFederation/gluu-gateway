@@ -226,6 +226,66 @@ model = {
         response = {
             access = "granted",
         },
+    },
+    -- #12, Get ticket for path "/path/?/image.jpg"
+    {
+        expect = "/uma-rs-check-access",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+            "path",
+            "http_method",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[2].response.access_token)
+            assert(json.path == "/path/?/image.jpg")
+            assert(json.http_method == "GET")
+            assert(json.rpt == "")
+        end,
+        response = {
+            access = "denied",
+            ["www-authenticate_header"] = "UMA realm=\"rs\",as_uri=\"https://op-hostname\",error=\"insufficient_scope\",ticket=\"e986fd2b-de83-4947-a889-8f63c7c409c0\"",
+            ticket = "e986fd2b-de83-4947-a889-8f63c7c409c0"
+        },
+    },
+    -- #13, Obtain RPT for path "/path/?/image.jpg"
+    {
+        expect = "/uma-rp-get-rpt",
+        required_fields = {
+            "oxd_id",
+            "ticket"
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[2].response.access_token)
+            assert(json.ticket == model[12].response.ticket)
+        end,
+        response = {
+            access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f4",
+            pct = "pct",
+            token_type = "bearer"
+        },
+    },
+    -- #14, plugin check_access with RPT, "/path/?/image.jpg", GET
+    {
+        expect = "/uma-rs-check-access",
+        required_fields = {
+            "oxd_id",
+            "rpt",
+            "path",
+            "http_method",
+        },
+        request_check = function(json, token)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(token == model[2].response.access_token)
+            assert(json.path == "/path/?/image.jpg")
+            assert(json.http_method == "GET")
+            assert(json.rpt ==  model[13].response.access_token)
+        end,
+        response = {
+            access = "granted",
+        },
     }
 }
 

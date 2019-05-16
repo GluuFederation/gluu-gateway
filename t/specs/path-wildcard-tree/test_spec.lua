@@ -51,10 +51,16 @@ test("basic tests", function()
 
     addPath("/folder/?/file")
 
+    local res, err = matchPath("/folder/?/file")
+    assert(res:find("/folder/?/file", 1 , true))
+
     local res, err = matchPath("/folder/xxx/file")
     assert(res:find("/folder/?/file", 1 , true))
 
     addPath("/path/??")
+
+    local res, err = matchPath("/path/??")
+    assert(res:find("/path/??", 1 , true))
 
     local res, err = matchPath("/path/xxx/file")
     assert(res:find("/path/??", 1 , true))
@@ -68,6 +74,9 @@ test("basic tests", function()
 
     addPath("/path/??/image.jpg")
 
+    local res, err = matchPath("/path/??/image.jpg")
+    assert(res:find("/path/??/image.jpg", 1 , true))
+
     local res, err = matchPath("/path/one/two/image.jpg")
     assert(res:find("/path/??/image.jpg", 1 , true))
 
@@ -75,6 +84,9 @@ test("basic tests", function()
     assert(res:find("/path/??/image.jpg", 1 , true))
 
     addPath("/path/?/image.jpg")
+
+    local res, err = matchPath("/path/?/image.jpg")
+    assert(res:find("/path/?/image.jpg", 1 , true))
 
     -- ensure wildcard has a prioroty on multiple wildcard
     local res, err = matchPath("/path/xxx/image.jpg")
