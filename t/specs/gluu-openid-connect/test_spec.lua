@@ -331,7 +331,7 @@ test("OpenID Connect with UMA", function()
 
     print"request to another path /path/one/two/image.jpg"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/path/?/image.jpg --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        ctx.kong_proxy_port, [[/path/123/image.jpg --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))
