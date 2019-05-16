@@ -88,7 +88,7 @@ test("basic tests", function()
     local res, err = matchPath("/path/xyz/image.jpg")
     assert(res:find("/path/{abc|xyz}/image.jpg", 1 , true))
 
-    -- regexo doesn't match, wildcard does
+    -- regexp doesn't match, wildcard does
     local res, err = matchPath("/path/123/image.jpg")
     assert(res:find("/path/?/image.jpg", 1 , true))
 
@@ -98,6 +98,7 @@ test("basic tests", function()
     assert(res:find("/users/?/{todos|photos}", 1 , true))
 
     addPath("/users/?/{todos|photos}/?")
+    addPath("/users/?/{todos|photos}/123")
 
     local res, err = matchPath("/users/123/todos/")
     assert(res:find("/users/?/{todos|photos}/?", 1 , true))
@@ -105,8 +106,8 @@ test("basic tests", function()
     local res, err = matchPath("/users/123/todos/321")
     assert(res:find("/users/?/{todos|photos}/?", 1 , true))
 
-    local res, err = matchPath("/users/123/todos/321")
-    assert(res:find("/users/?/{todos|photos}/?", 1 , true))
+    local res, err = matchPath("/users/123/todos/123")
+    assert(res:find("/users/?/{todos|photos}/123", 1 , true))
 
     print_logs = false
 end)

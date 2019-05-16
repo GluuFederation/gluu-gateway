@@ -1,5 +1,5 @@
 local gmatch = string.gmatch
-local function path_plit(s)
+local function path_split(s)
     local result = {};
     for match in (s):gmatch([[/([^/]*)]]) do
         result[#result + 1] = match
@@ -13,11 +13,12 @@ local WILDCARD_MULTIPLE_ELEMENTS = "??"
 local _M = {}
 
 local EXPRESSION_KEY = "#"
+local REGEXP_KEY = "##"
 
 _M.addPath = function(self, method, path, exp)
     -- TODO here must be special version of split with {regexp} support
     -- or should we forbid slash within regexp?
-    local path_as_array = path_plit(path)
+    local path_as_array = path_split(path)
 
     if not self[method] then
         self[method] = {}
@@ -39,8 +40,17 @@ _M.addPath = function(self, method, path, exp)
         else
             local regexp = item:match"^{(.+)}$"
             if regexp then
-                node[#node + 1] = { regexp }
-                node = node[#node]
+                local found_node
+                for k = 1, #node do
+                    if node[k][REGEXP_KEY] == regexp then
+                        found_node = node[k]
+                    end
+                end
+                if not found_node then
+                    found_node = { [REGEXP_KEY] = regexp }
+                    node[#node + 1] = found_node
+                end
+                node = found_node
             else
                 if not node[item] then
                     node[item] = {}
@@ -72,7 +82,7 @@ local function processItem(node, path_as_array, index)
 
     -- next check regexp match
     for i = 1, #node do
-        local regexp = node[i][1]
+        local regexp = node[i][REGEXP_KEY]
         local m, err = ngx.re.match(item, regexp, "jo")
         if m then
             return node[i]
@@ -81,6 +91,7 @@ local function processItem(node, path_as_array, index)
 
     local wildcard_node = node[WILDCARD_ELEMENT]
     if wildcard_node then
+        print"wildcard match"
         return wildcard_node
     end
 
@@ -119,7 +130,7 @@ _M.matchPath = function(self, method, path)
         return false
     end
 
-    local path_as_array = path_plit(path)
+    local path_as_array = path_split(path)
 
     local node = self[method]
     local matched, last_index
