@@ -45,6 +45,7 @@ local function setup(model)
             ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
+            ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -426,7 +427,7 @@ test("check oauth_scope_expression and metrics", function()
     configure_pep_plugin(register_site_response, create_service_response, {
         oauth_scope_expression = {
             {
-                path = "/",
+                path = "/??",
                 conditions = {
                     {
                         scope_expression = {

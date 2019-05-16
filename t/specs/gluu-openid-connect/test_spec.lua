@@ -50,6 +50,7 @@ local function setup(model)
         modules = {
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
+            ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
             ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
@@ -263,6 +264,22 @@ test("OpenID Connect with UMA", function()
                             httpMethods = {"GET"},
                         }
                     }
+                },
+                {
+                    path = "/page2/{todos|photos}",
+                    conditions = {
+                        {
+                            httpMethods = {"GET"},
+                        }
+                    }
+                },
+                {
+                    path = "/path/?/image.jpg",
+                    conditions = {
+                        {
+                            httpMethods = {"GET"},
+                        }
+                    }
                 }
             },
             deny_by_default = true,
@@ -299,6 +316,22 @@ test("OpenID Connect with UMA", function()
     print"request third time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"request to another path page2/photos"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page2/photos --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"request to another path /path/one/two/image.jpg"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/path/123/image.jpg --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))

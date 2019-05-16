@@ -1,4 +1,5 @@
 local kong_auth_pep_common = require "gluu.kong-common"
+local path_wildcard_tree = require"gluu.path-wildcard-tree"
 local pl_tablex = require "pl.tablex"
 local logic = require "rucciva.json_logic"
 
@@ -31,6 +32,10 @@ end
 
 local hooks = {}
 
+local function strip_method(path)
+
+end
+
 --- Fetch oauth scope expression based on path and http methods
 -- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
 -- @param self: Kong plugin object
@@ -40,22 +45,12 @@ local hooks = {}
 -- @return json expression Example: {path: "/posts", ...}
 function hooks.get_path_by_request_path_method(self, conf, path, method)
     local exp = conf.oauth_scope_expression
-    -- TODO the complexity is O(N), think how to optimize
-    local found_paths = {}
-    for i = 1, #exp do
-        if kong_auth_pep_common.is_path_match(path, exp[i]["path"]) then
-            found_paths[#found_paths + 1] = exp[i]
-        end
-    end
 
-    for i = 1, #found_paths do
-        local conditions = found_paths[i].conditions
-        for k = 1, #conditions do
-            local rule = conditions[k]
-            if pl_tablex.find(rule.httpMethods, method) then
-                return found_paths[i].path, rule.scope_expression
-            end
-        end
+    local method_path_tree = conf.method_path_tree
+    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
+
+    if rule then
+        return rule.path, rule.scope_expression
     end
 
     return nil
