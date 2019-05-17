@@ -31,6 +31,7 @@
         $scope.removeGroup = removeGroup;
         $scope.openCreateConsumerModal = openCreateConsumerModal;
         $scope.openConsumerListModal = openConsumerListModal;
+        $scope.showPathPossibilities = showPathPossibilities;
 
         $scope.pluginConfig = {};
         $scope.isPluginAdded = false;
@@ -654,10 +655,21 @@
           }
         }
 
+        function showPathPossibilities() {
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/path-possibilities-modal.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', function ($uibModalInstance, $scope) {
+            }],
+          }).result.then(function (result) {
+          });
+        }
+
         function showResourceJSON() {
           var model = angular.copy($scope.pluginConfig);
-          model.config.uma_scope_expression = makeExpression(model);
-          if (model.config.uma_scope_expression == null) {
+          var uma_scope_expression = makeExpression(model);
+          if (uma_scope_expression == null) {
             return
           }
           if (!model) {
@@ -668,18 +680,16 @@
             animation: true,
             templateUrl: 'js/app/plugins/modals/show-uma-scope-json-modal.html',
             size: 'lg',
-            controller: ['$uibModalInstance', '$scope', 'pluginConfig', ShowScriptController],
+            controller: ['$uibModalInstance', '$scope', 'uma_scope_expression', function ($uibModalInstance, $scope, uma_scope_expression) {
+              $scope.uma_scope_expression = uma_scope_expression;
+            }],
             resolve: {
-              pluginConfig: function () {
-                return model;
+              uma_scope_expression: function () {
+                return uma_scope_expression;
               }
             }
           }).result.then(function (result) {
           });
-        }
-
-        function ShowScriptController($uibModalInstance, $scope, pluginConfig) {
-          $scope.model = angular.copy(pluginConfig);
         }
 
         function addNewPath() {

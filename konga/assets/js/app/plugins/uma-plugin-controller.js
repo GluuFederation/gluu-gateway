@@ -229,8 +229,8 @@
 
         function showResourceJSON() {
           var model = angular.copy($scope.modelPlugin);
-          model.config.uma_scope_expression = makeExpression(model);
-          if (model.config.uma_scope_expression == null) {
+          var uma_scope_expression = makeExpression(model);
+          if (uma_scope_expression == null) {
             return
           }
           if (!model) {
@@ -241,18 +241,16 @@
             animation: true,
             templateUrl: 'js/app/plugins/modals/show-uma-scope-json-modal.html',
             size: 'lg',
-            controller: ['$uibModalInstance', '$scope', 'modelPlugin', ShowScriptController],
+            controller: ['$uibModalInstance', '$scope', 'uma_scope_expression', function ($uibModalInstance, $scope, uma_scope_expression) {
+              $scope.uma_scope_expression = uma_scope_expression;
+            }],
             resolve: {
-              modelPlugin: function () {
-                return model;
+              uma_scope_expression : function () {
+                return uma_scope_expression;
               }
             }
           }).result.then(function (result) {
           });
-        }
-
-        function ShowScriptController($uibModalInstance, $scope, modelPlugin) {
-          $scope.model = angular.copy(modelPlugin);
         }
 
         function addNewPath() {
