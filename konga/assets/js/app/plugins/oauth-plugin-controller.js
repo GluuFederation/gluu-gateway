@@ -22,6 +22,7 @@
         $scope.addGroup = addGroup;
         $scope.removeGroup = removeGroup;
         $scope.fetchData = fetchData;
+        $scope.showPathPossibilities = showPathPossibilities;
 
         if (_context_name == 'service') {
           $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
@@ -487,6 +488,7 @@
                   MessageService.success('Gluu OAuth Auth updated and PEP Plugin added successfully!');
                 }
               }
+
               function error(err) {
                 return Promise.reject(err);
               }
@@ -608,6 +610,53 @@
             paths.push(path.path);
           });
           return pathFlag;
+        }
+
+        function showPathPossibilities() {
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/path-possibilities-modal.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', function ($uibModalInstance, $scope) {
+              $scope.paths = [
+                {
+                  path: '/folder/file.ext',
+                  allow: ['/folder/file.ext'],
+                  deny: ['/folder/file']
+                }, {
+                  path: '/folder/?/file',
+                  allow: ['/folder/123/file', '/folder/xxx/file'],
+                  deny: []
+                }, {
+                  path: '/path/??',
+                  allow: ['/path/', '/path/xxx', '/path/xxx/yyy/file'],
+                  deny: ['/path - Need slash at last']
+                }, {
+                  path: '/path/??/image.jpg',
+                  allow: ['/path/one/two/image.jpg', '/path/image.jpg'],
+                  deny: []
+                }, {
+                  path: '/path/?/image.jpg',
+                  allow: ['/path/xxx/image.jpg - ? has higher priority than ??'],
+                  deny: []
+                }, {
+                  path: '/path/{abc|xyz}/image.jpg',
+                  allow: ['/path/abc/image.jpg', '/path/xyz/image.jpg'],
+                  deny: []
+                }, {
+                  path: '/users/?/{todos|photos}',
+                  allow: ['/users/123/todos', '/users/xxx/photos'],
+                  deny: []
+                }, {
+                  path: '/users/?/{todos|photos}/?',
+                  allow: ['/users/123/todos/', '/users/123/todos/321', '/users/123/photos/321'],
+                  deny: []
+                }
+              ]
+            }],
+          }).result.then(function (result) {
+
+          });
         }
 
         //init

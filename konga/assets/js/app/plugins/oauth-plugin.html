@@ -42,6 +42,7 @@
                          switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
 
                   <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                  <span>There is dynamic path facility. Click <a ng-click="showPathPossibilities()" href>here for possible dynamic path expressions</a></span>
                 </div>
                 <div class="form-group" data-ng-disabled="!modelPlugin.isPEPEnabled"
                      ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
