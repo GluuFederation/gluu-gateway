@@ -9,6 +9,6 @@ return {
         op_url = { required = true, type = "url" },
         oxd_url = { required = true, type = "url" },
         anonymous = { type = "string", func = kong_auth_pep_common.check_user, default = "" },
-        hide_credentials = { type = "boolean", default = false },
+        pass_credentials = { type = "string", enum = {"pass", "hide", "phantom_token"}, default = "pass" },
     }
 }
