@@ -265,7 +265,7 @@ test("Anonymous test and metrics", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("hide_credentials = true and metrics", function()
+test("pass_credentials = hide and metrics", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -283,7 +283,7 @@ test("hide_credentials = true and metrics", function()
 
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
-            hide_credentials = true
+            pass_credentials = "hide"
         }
     )
 
@@ -666,6 +666,54 @@ test("2 different service with different clients", function()
         [[/ --header 'Host: backend2.com' --header 'Authorization: Bearer ]],
         access_token2, [[']]
     )
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Test phantom token", function()
+
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,{
+        pass_credentials = "phantom_token",
+    })
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"check headers, auth header should not have requsted bearer token"
+    assert.equal(nil, res:lower():find("authorization: Bearer " .. access_token))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
+
+    print"second time call"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    assert.equal(nil, res:lower():find("authorization: Bearer " .. access_token))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(consumer_response.custom_id), 1, true))
+    assert(res:lower():find("x-consumer-custom-id: " .. string.lower(consumer_response.custom_id), 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

@@ -351,7 +351,7 @@ test("deny_by_default = true, uma-auth", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("deny_by_default = false and hide_credentials = true, uma-auth", function()
+test("deny_by_default = false and pass_credentials = hide, uma-auth", function()
     setup("oxd-model2.lua")
 
     local create_service_response = configure_service_route()
@@ -364,7 +364,7 @@ test("deny_by_default = false and hide_credentials = true, uma-auth", function()
 
     local register_site_response, access_token = configure_auth_plugin(create_service_response,{
         anonymous = consumer_response.id,
-        hide_credentials = true
+        pass_credentials = "hide"
     })
 
     configure_pep_plugin(register_site_response, create_service_response,

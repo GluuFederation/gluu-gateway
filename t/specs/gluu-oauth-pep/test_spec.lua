@@ -336,7 +336,7 @@ test("deny_by_default = true and metrics", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("deny_by_default = false, hide_credentials = true and metrics", function()
+test("deny_by_default = false, pass_credentials = hide and metrics", function()
 
     setup("oxd-model1.lua") -- yes, model1 should work
 
@@ -354,7 +354,7 @@ test("deny_by_default = false, hide_credentials = true and metrics", function()
 
     local register_site_response, access_token = configure_auth_plugin(create_service_response,
         {
-            hide_credentials = true
+            pass_credentials = "hide"
         }
     )
 
