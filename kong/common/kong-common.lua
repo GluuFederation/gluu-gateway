@@ -4,6 +4,7 @@ local oxd = require "gluu.oxdweb"
 local jwt = require "resty.jwt"
 local evp = require "resty.evp"
 local validators = require "resty.jwt-validators"
+local cjson = require"cjson"
 
 local EXPIRE_DELTA = 10
 local MAX_PENDING_SLEEPS = 40
@@ -216,12 +217,29 @@ local function process_jwt(self, conf, jwt_obj)
     return nil, 401, "JWT - malformed payload"
 end
 
+local function get_phantom_token(token_data)
+    local header = ngx.encode_base64(cjson.encode({ typ = "JWT", alg = "none" }))
+    local payload = ngx.encode_base64(cjson.encode(token_data))
+    local phantom_token = table.concat({
+        header,
+        ".",
+        payload,
+        "."
+    })
+
+    return phantom_token
+end
 
 local function request_authenticated(conf, token_data)
     kong.log.debug("request_authenticated")
-    if conf.hide_credentials then
+    if conf.pass_credentials == "hide" then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
+    end
+
+    if conf.pass_credentials == "phantom_token" and token_data.active then
+        kong.log.debug("Phantom token requested")
+        kong.service.request.set_header("authorization", "Bearer " .. get_phantom_token(token_data))
     end
 
     local consumer = token_data.consumer
