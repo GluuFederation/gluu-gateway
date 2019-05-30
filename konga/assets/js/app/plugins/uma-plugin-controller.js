@@ -25,6 +25,8 @@
         $scope.openCreateConsumerModal = openCreateConsumerModal;
         $scope.openConsumerListModal = openConsumerListModal;
         $scope.showPathPossibilities = showPathPossibilities;
+        $scope.passCredentials = ['pass', 'hide', 'phantom_token'];
+
         if (_context_name == 'service') {
           $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
         } else if (_context_name == 'route') {
@@ -41,7 +43,7 @@
             uma_scope_expression: [],
             ignore_scope: false,
             deny_by_default: true,
-            hide_credentials: false
+            pass_credentials: 'pass'
           }
         };
 
@@ -351,7 +353,7 @@
                   op_url: model.config.op_url,
                   oxd_url: model.config.oxd_url,
                   anonymous: model.config.anonymous,
-                  hide_credentials: model.config.hide_credentials || false
+                  pass_credentials: model.config.pass_credentials
                 }
               };
               if ($scope.context_name) {
@@ -445,7 +447,7 @@
                   op_url: model.config.op_url,
                   oxd_url: model.config.oxd_url,
                   anonymous: model.config.anonymous,
-                  hide_credentials: model.config.hide_credentials || false
+                  pass_credentials: model.config.pass_credentials
                 }
               };
               if ($scope.context_name) {

@@ -366,6 +366,10 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       resolveWithFullResponse: true,
       json: true
     };
+
+    sails.log(new Date(), "--------------OXD API Call----------------");
+    sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/register-site'} -d '${JSON.stringify(option.body)}'`);
+
     var opClient;
     return httpRequest(option)
       .then(function (response) {

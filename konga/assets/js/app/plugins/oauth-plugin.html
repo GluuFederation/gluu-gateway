@@ -281,18 +281,13 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-3 control-label">Hide credentials
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
+                <label class="col-sm-3 control-label">Pass credentials</label>
                 <div class="col-sm-9 check-toggle">
-                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                         ng-model="modelPlugin.config.hide_credentials" class="form-control"/>
+                  <select class="form-control" id="max_id_token_age_type"
+                          ng-model="modelPlugin.config.pass_credentials"
+                          ng-options="value as value for value in passCredentials"></select>
                   <p class="help-block">
-                    An optional boolean value telling the plugin to hide the credential to the upstream API server. It
-                    will be removed by Kong before proxying the request
+                    It provide 3 behaviour. <code>pass</code>, <code>hide</code>and <code>phantom_token</code>. <code>pass</code> is used to pass authorization header as it is to Upstream API. <code>hide</code> is used to remove header at proxy so it will not available at Upstream API side. <code>phantom_token</code> is used to pass phantom token to Upstream API.
                   </p>
                 </div>
               </div>
