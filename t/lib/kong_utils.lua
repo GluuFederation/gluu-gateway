@@ -189,4 +189,23 @@ _M.oxd_mock = function(model, image)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.oxd_port)
 end
 
+_M.opa = function()
+    local image = "openpolicyagent/opa:0.10.5"
+    local ctx = _G.ctx
+    ctx.opa_id = stdout("docker run -p 8181 -d ",
+        " --network=", ctx.network_name,
+        " --name opa ", -- TODO avoid hardcoded name
+        image,
+        " run --server "
+    )
+
+    check_container_is_running(ctx.opa_id, "opa")
+
+    ctx.opa_port =
+        stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8181/tcp\") 0).HostPort}}' ", ctx.opa_id)
+
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.opa_port)
+end
+
+
 return _M
