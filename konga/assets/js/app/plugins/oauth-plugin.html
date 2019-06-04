@@ -34,7 +34,11 @@
         <form name="PluginForm" novalidate>
           <div class="row">
             <div class="col-md-12">
-              <div class="col-md-12">
+              <div class="col-md-12" data-ng-disabled="!isAllowPEP"
+                   ng-class="{'disabled': !isAllowPEP}">
+                <div class="form-group has-feedback" ng-if="!isAllowPEP">
+                  <code> * Not allow you already configured gluu-opa-pep plugin</code>
+                </div>
                 <div class="form-group has-feedback">
                   <label>1. OAUTH PEP Scope expression configuration</label> &nbsp;&nbsp;&nbsp;
                   <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"

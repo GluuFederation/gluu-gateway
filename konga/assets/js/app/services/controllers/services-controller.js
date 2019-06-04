@@ -3,9 +3,9 @@
 
   angular.module('frontend.services')
     .controller('ServicesController', [
-      '$scope', '$rootScope', '$log', '$state', 'ServiceService', 'ListConfig', 'ServiceModel',
+      '$scope', '$rootScope', '$log', '$state', 'ServiceService', 'PluginsService', 'ListConfig', 'ServiceModel',
       'UserService', '$uibModal', 'PluginModel',
-      function controller($scope, $rootScope, $log, $state, ServiceService, ListConfig, ServiceModel,
+      function controller($scope, $rootScope, $log, $state, ServiceService, PluginsService, ListConfig, ServiceModel,
                           UserService, $uibModal, PluginModel) {
 
         ServiceModel.setScope($scope, false, 'items', 'itemCount');
@@ -15,7 +15,7 @@
         $scope.isRequestPathOrUriStripped = isRequestPathOrUriStripped
         $scope.openAddServiceModal = openAddServiceModal
         $scope.updateService = updateService
-
+        $scope.onEditPlugin = onEditPlugin
 
         /**
          * -----------------------------------------------------------------------------------------------------------
@@ -92,7 +92,7 @@
                 serviceResponse.data.map(function(service) {
                   service.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    if (plugin.service_id == service.id && (plugin.name == 'gluu-oauth-auth' || plugin.name == 'gluu-uma-auth')) {
+                    if (plugin.service_id == service.id && (plugin.name == 'gluu-opa-pep' || plugin.name == 'gluu-oauth-auth' || plugin.name == 'gluu-uma-auth')) {
                       service.plugins.push(plugin);
                     }
                   });
@@ -144,8 +144,34 @@
         })
 
 
-        // Init
+        function onEditPlugin(item) {
+          $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/modals/edit-plugin-modal.html',
+            size: 'lg',
+            controller: 'EditPluginController',
+            resolve: {
+              _plugin: function () {
+                return _.cloneDeep(item)
+              },
+              _schema: function () {
+                return PluginsService.schema(item.name)
+              }
+            }
+          });
+        }
 
+        $scope.$on("plugin.added", function () {
+          _fetchData()
+        });
+
+        $scope.$on("plugin.updated", function (ev, plugin) {
+          _fetchData()
+        });
+
+        // Init
         _fetchData();
 
       }

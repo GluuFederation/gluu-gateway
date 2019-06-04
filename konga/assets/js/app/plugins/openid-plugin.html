@@ -340,7 +340,11 @@
                 </div>
               </div>
             </div>
-            <div class="col-md-12">
+            <div class="col-md-12"  data-ng-disabled="!isAllowPEP"
+                 ng-class="{'disabled': !isAllowPEP}">
+              <div class="form-group has-feedback" ng-if="!isAllowPEP">
+                <code> * Not allow you already configured gluu-opa-pep plugin</code>
+              </div>
               <div class="form-group has-feedback">
                 <label style="font-weight: bolder">UMA PEP Security configuration</label>
                 <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch

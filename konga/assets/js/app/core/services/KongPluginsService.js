@@ -86,6 +86,10 @@
                     hideIfNotInConsumerContext: true,
                     description: "The Gluu OpenID Connect Authorization code flow and UMA PEP security. The UMA PEP is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
                   },
+                  "gluu-opa-pep": {
+                    hideIfNotInConsumerContext: true,
+                    description: "The Open Policy Agent PEP plugin for Gluu Authentication plugins, Gluu-OAuth-Auth and Gluu-OpenID-Connect"
+                  },
                   "acl": {
                     hideIfNotInConsumerContext: true,
                     description: "Control which consumers can access APIs"
@@ -712,7 +716,22 @@
                   help: "List of property:value pairs. If the property is not present in the JSON body, add it with the given value. If it is already present, the two values (old and new) will be aggregated in an array."
                 },
               },
-            }
+            },
+            "gluu-opa-pep": {
+              'meta': {
+                description: 'The Open Policy Agent PEP plugin for Gluu Authentication plugins, Gluu-OAuth-Auth and Gluu-OpenID-Connect'
+              },
+              'opa_url': {
+                type: 'text',
+                value: null,
+                help: 'The URL of your OPA Policy. It must a valid URL.'
+              },
+              'forward_request_body': {
+                type: 'checkbox',
+                value: false,
+                help: 'Whether you want to forward request body to OPA policy or not.'
+              },
+            },
           };
 
           // Monkey patch to help with transition

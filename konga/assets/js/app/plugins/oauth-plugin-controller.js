@@ -24,6 +24,7 @@
         $scope.fetchData = fetchData;
         $scope.showPathPossibilities = showPathPossibilities;
         $scope.passCredentials = ['pass', 'hide', 'phantom_token'];
+        $scope.isAllowPEP = true;
 
         if (_context_name == 'service') {
           $scope.context_upstream = $scope.context_data.protocol + "://" + $scope.context_data.host;
@@ -59,10 +60,14 @@
         var authPlugin, pepPlugin;
 
         $scope.plugins.forEach(function (o) {
-          if (o.name == "gluu-oauth-auth") {
+          if (o.name === "gluu-opa-pep") {
+            $scope.isAllowPEP = false;
+            $scope.modelPlugin.isPEPEnabled = false;
+          }
+          if (o.name === "gluu-oauth-auth") {
             authPlugin = o;
           }
-          if (o.name == "gluu-oauth-pep") {
+          if (o.name === "gluu-oauth-pep") {
             pepPlugin = o;
           }
         });

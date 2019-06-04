@@ -19,8 +19,6 @@
       <table class="table table-hover table-striped">
         <tr>
           <th></th>
-          <th></th>
-          <th></th>
           <th width="{{item.width}}" class="text-nowrap" data-ng-repeat="item in titleItems | filter:titleFilter">
             <a
               data-ng-show="item.column"
@@ -37,25 +35,11 @@
         <tr
           dir-paginate="route in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
           <td>
-            <i uib-tooltip="Strip Path"
-               ng-click="toggleStripPath(route)"
-               data-ng-class="{'text-primary' : route.strip_path,'text-muted' : !route.strip_path}"
-               class="mdi mdi-link-off clickable">
-            </i>
-          </td>
-          <td>
-            <i uib-tooltip="Preserve Host"
-               ng-click="route.preserve_host=!route.preserve_host;updateRoute(route.id,{preserve_host : route.preserve_host})"
-               class="mdi clickable"
-               ng-class="route.preserve_host ? 'mdi-cloud-outline text-primary' : 'mdi-cloud-off-outline text-muted'">
-            </i>
-          </td>
-          <td>
             <raw-view data-item="route"></raw-view>
           </td>
           <td>
             <strong>
-              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">{{ route.id}}</a>
+              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">...{{ route.id.substring(route.id.length - 12, route.id.length) }}</a>
             </strong>
           </td>
           <td>{{ route.hosts.join(", ") || "-" }}</td>
@@ -64,7 +48,7 @@
           <td>{{ route.paths.join(", ") || "-" }}</td>
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <div data-ng-repeat="plugin in route.plugins">
+            <span data-ng-repeat="plugin in route.plugins">
               <a data-ng-if="plugin.name == 'gluu-oauth-auth'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
                 <i class="mdi mdi-pencil"></i> OAUTH
               </a>
@@ -74,7 +58,10 @@
               <a data-ng-if="plugin.name == 'gluu-openid-connect'" ui-sref="routes.openid-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
                 <i class="mdi mdi-pencil"></i> OIDC
               </a>
-            </div>
+              <a data-ng-if="plugin.name == 'gluu-opa-pep'" ng-click="onEditPlugin(plugin)" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OPA
+              </a>
+            </span>
             <span data-ng-if="route.plugins.length < 1">-</span>
           </td>
           <td>

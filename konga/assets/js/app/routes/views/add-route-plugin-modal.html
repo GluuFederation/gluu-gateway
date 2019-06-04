@@ -40,29 +40,30 @@
                vertilize>
             <div class="panel-heading">
               <div class="panel-title">
+                <span class="capitalize" data-ng-if="key == 'gluu-opa-pep'">Gluu OPA PEP</span>
                 <span class="capitalize" data-ng-if="key == 'gluu-oauth-auth'">Gluu OAuth Auth & PEP</span>
                 <span class="capitalize" data-ng-if="key == 'gluu-uma-auth'">Gluu UMA Auth & PEP</span>
                 <span class="capitalize" data-ng-if="key == 'gluu-openid-connect'">Gluu OIDC & UMA PEP</span>
-                <span class="capitalize" data-ng-if="['gluu-openid-connect', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(key) == -1">{{key.split('-').join(" ")}}</span>
+                <span class="capitalize" data-ng-if="['gluu-opa-pep', 'gluu-openid-connect', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(key) == -1">{{key.split('-').join(" ")}}</span>
                 <div class="pull-right">
                   <!--Add Button in kong plugins case-->
                   <button
-                    data-ng-if="['gluu-openid-connect', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(key) == -1 && existingPlugins.indexOf(key) < 0"
+                    data-ng-if="(['gluu-openid-connect', 'gluu-opa-pep', 'gluu-oauth-auth','gluu-uma-auth'].indexOf(key) < 0) && existingPlugins.indexOf(key) < 0"
                     class="btn btn-link btn-icon btn-primary"
                     angular-ripple data-ng-click="onAddPlugin(key)">
                     <i class="mdi mdi-plus plugin_i"></i>
                   </button>
 
                   <!--Add Button in Gluu plugins case-->
-                  <button data-ng-if="(['gluu-openid-connect', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(key) >= 0) && value.isAllow == true"
+                  <button data-ng-if="(['gluu-openid-connect', 'gluu-opa-pep', 'gluu-oauth-auth','gluu-uma-auth'].indexOf(key) > -1) && checkAllow(key)"
                           class="btn btn-link btn-icon btn-primary"
                           angular-ripple data-ng-click="onAddPlugin(key)">
                     <i class="mdi mdi-plus plugin_i"></i>
                   </button>
 
                   <i class="mdi mdi-check-all" data-ng-if="existingPlugins.indexOf(key) > -1"></i>
-                  <i class="mdi mdi-block-helper text-danger clickable" uib-tooltip="Not allowed, Already config other Gluu plugins."
-                     data-ng-if="(['gluu-openid-connect', 'gluu-oauth-auth', 'gluu-uma-auth'].indexOf(key) >= 0) && value.isAllow == false"></i>
+                  <i class="mdi mdi-block-helper text-danger clickable" uib-tooltip="Not allowed, Already config other Auth or PEP plugins"
+                     data-ng-if="(['gluu-openid-connect', 'gluu-opa-pep', 'gluu-oauth-auth','gluu-uma-auth'].indexOf(key) > -1) && existingPlugins.indexOf(key) < 0 && !checkAllow(key)"></i>
                 </div>
               </div>
             </div>

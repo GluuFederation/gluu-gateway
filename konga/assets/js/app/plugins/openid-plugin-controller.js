@@ -32,8 +32,11 @@
         $scope.openCreateConsumerModal = openCreateConsumerModal;
         $scope.openConsumerListModal = openConsumerListModal;
         $scope.showPathPossibilities = showPathPossibilities;
+        $scope.isAllowPEP = true;
 
-        $scope.pluginConfig = {};
+        $scope.pluginConfig = {
+          isPEPEnabled: true
+        };
         $scope.isPluginAdded = false;
         $scope.alreadyAddedUMAExpression = false;
         var pepPlugin, oidcPlugin;
@@ -45,6 +48,11 @@
 
           if (o.name == "gluu-uma-pep") {
             pepPlugin = o;
+          }
+
+          if (o.name === "gluu-opa-pep") {
+            $scope.isAllowPEP = false;
+            $scope.pluginConfig.isPEPEnabled = false;
           }
         });
 
@@ -160,7 +168,7 @@
             });
         } else {
           $scope.pluginConfig = {
-            isPEPEnabled: true,
+            isPEPEnabled: $scope.pluginConfig.isPEPEnabled,
             deny_by_default: true,
             kong_proxy_url: '',
             redirect_claim_gathering_url: true,
