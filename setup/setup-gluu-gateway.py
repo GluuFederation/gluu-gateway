@@ -205,7 +205,7 @@ class KongSetup(object):
             # Initialize PostgreSQL first time
             self.run([self.cmd_ln, '/usr/lib/systemd/system/postgresql-10.service', '/usr/lib/systemd/system/postgresql.service'])
             self.run(['/usr/pgsql-10/bin/postgresql-10-setup', 'initdb'])
-            self.renderTemplateInOut(self.dist_pg_hba_config_file, self.template_folder, self.dist_pg_hba_config_path)
+            self.render_template_in_out(self.dist_pg_hba_config_file, self.template_folder, self.dist_pg_hba_config_path)
             self.run([self.cmd_systemctl, 'enable', 'postgresql'])
             self.run([self.cmd_systemctl, 'start', 'postgresql'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pg_pwd)
@@ -216,14 +216,18 @@ class KongSetup(object):
             # Initialize PostgreSQL first time
             self.run([self.cmd_ln, '/etc/init.d/postgresql-10', '/etc/init.d/postgresql'])
             self.run([self.cmd_service, 'postgresql-10', 'initdb'])
-            self.renderTemplateInOut(self.dist_pg_hba_config_file, self.template_folder, self.dist_pg_hba_config_path)
+            self.render_template_in_out(self.dist_pg_hba_config_file, self.template_folder, self.dist_pg_hba_config_path)
             self.run([self.cmd_service, 'postgresql', 'start'])
             os.system('sudo -iu postgres /bin/bash -c "psql -c \\\"ALTER USER postgres WITH PASSWORD \'%s\';\\\""' % self.pg_pwd)
             os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'kong\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE kong;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql -U postgres -tc \\\"SELECT 1 FROM pg_database WHERE datname = \'konga\'\\\" | grep -q 1 || psql -U postgres -c \\\"CREATE DATABASE konga;\\\""')
             os.system('sudo -iu postgres /bin/bash -c "psql konga < %s"' % self.dist_konga_db_file)
 
-    def configure_oxd(self):
+    def configure_install_oxd(self):
+        if not self.install_oxd:
+            self.log_it("Skipping OXD Server installation, install_oxd: false")
+            return
+
         # Install OXD
         oxd_package_file = ''
         install_oxd_cmd = []
@@ -246,30 +250,30 @@ class KongSetup(object):
 
         self.run(install_oxd_cmd)
 
-        self.renderTemplateInOut(self.dist_oxd_server_config_file, self.template_folder, self.dist_oxd_server_config_folder)
+        self.render_template_in_out(self.dist_oxd_server_config_file, self.template_folder, self.dist_oxd_server_config_folder)
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             self.run([self.cmd_service, self.oxd_server_service, 'start'])
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             self.run([self.cmd_systemctl, 'start', self.oxd_server_service])
 
     def detect_host_name(self):
-        detectedHostname = None
+        detected_host_name = None
         try:
-            detectedHostname = socket.gethostbyaddr(socket.gethostname())[0]
+            detected_host_name = socket.gethostbyaddr(socket.gethostname())[0]
         except:
             try:
-                detectedHostname = os.popen("/bin/hostname").read().strip()
+                detected_host_name = os.popen("/bin/hostname").read().strip()
             except:
                 self.log_it("No detected hostname", True)
                 self.log_it(traceback.format_exc(), True)
-        return detectedHostname
+        return detected_host_name
 
-    def gen_cert(self, serviceName, password, user='root', cn=None):
-        self.log_it('Generating Certificate for %s' % serviceName)
-        key_with_password = '%s/%s.key.orig' % (self.cert_folder, serviceName)
-        key = '%s/%s.key' % (self.cert_folder, serviceName)
-        csr = '%s/%s.csr' % (self.cert_folder, serviceName)
-        public_certificate = '%s/%s.crt' % (self.cert_folder, serviceName)
+    def gen_cert(self, service_name, password, user='root', cn=None):
+        self.log_it('Generating Certificate for %s' % service_name)
+        key_with_password = '%s/%s.key.orig' % (self.cert_folder, service_name)
+        key = '%s/%s.key' % (self.cert_folder, service_name)
+        csr = '%s/%s.csr' % (self.cert_folder, service_name)
+        public_certificate = '%s/%s.crt' % (self.cert_folder, service_name)
         self.run([self.openssl_command,
                   'genrsa',
                   '-des3',
@@ -289,9 +293,9 @@ class KongSetup(object):
                   key
                   ])
 
-        certCn = cn
-        if certCn == None:
-            certCn = self.host_name
+        cert_cn = cn
+        if cert_cn == None:
+            cert_cn = self.host_name
 
         self.run([self.openssl_command,
                   'req',
@@ -302,7 +306,7 @@ class KongSetup(object):
                   csr,
                   '-subj',
                   '/C=%s/ST=%s/L=%s/O=%s/CN=%s/emailAddress=%s' % (
-                      self.country_code, self.state, self.city, self.org_name, certCn, self.admin_email)
+                      self.country_code, self.state, self.city, self.org_name, cert_cn, self.admin_email)
                   ])
         self.run([self.openssl_command,
                   'x509',
@@ -330,24 +334,24 @@ class KongSetup(object):
         self.kong_ssl_key = self.dist_gluu_gateway_folder + '/setup/certs/gluu-gateway.key'
 
     def get_ip(self):
-        testIP = None
-        detectedIP = None
+        test_ip = None
+        detected_ip = None
         try:
-            testSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            detectedIP = [(testSocket.connect(('8.8.8.8', 80)),
-                           testSocket.getsockname()[0],
-                           testSocket.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
+            test_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            detected_ip = [(test_socket.connect(('8.8.8.8', 80)),
+                           test_socket.getsockname()[0],
+                           test_socket.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
         except:
             self.log_it("No detected IP address", True)
             self.log_it(traceback.format_exc(), True)
-        if detectedIP:
-            testIP = self.get_prompt("Enter IP Address", detectedIP)
+        if detected_ip:
+            test_ip = self.get_prompt("Enter IP Address", detected_ip)
         else:
-            testIP = self.get_prompt("Enter IP Address")
-        if not self.is_ip(testIP):
-            testIP = None
+            test_ip = self.get_prompt("Enter IP Address")
+        if not self.is_ip(test_ip):
+            test_ip = None
             print 'ERROR: The IP Address is invalid. Try again\n'
-        return testIP
+        return test_ip
 
     def get_prompt(self, prompt, default_value=None):
         try:
@@ -453,6 +457,10 @@ class KongSetup(object):
             self.log_it(traceback.format_exc(), True)
 
         if self.generate_client:
+            msg = 'Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...'
+            self.log_it(msg)
+            print msg
+            oxd_registration_endpoint = self.konga_oxd_web + '/register-site'
             authorization_redirect_uri = 'https://' + self.oxd_authorization_redirect_uri + ':' + self.konga_port
             payload = {
                 'op_host': self.konga_op_host,
@@ -462,36 +470,16 @@ class KongSetup(object):
                 'grant_types': ['authorization_code', 'client_credentials'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
             }
-            self.log_it('Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...')
-            print 'Creating OXD OP client for Gluu Gateway GUI used to call oxd-server endpoints...'
-            try:
-                res = requests.post(self.konga_oxd_web + '/register-site', data=json.dumps(payload), headers={'content-type': 'application/json'},  verify=False)
-                resJson = json.loads(res.text)
 
-                if res.ok:
-                    self.konga_oxd_id = resJson['oxd_id']
-                    self.konga_client_secret = resJson['client_secret']
-                    self.konga_client_id = resJson['client_id']
-                else:
-                    msg = """Error: Unable to create the konga oxd client used to call the oxd-server endpoints
-                    Please check oxd-server logs."""
-                    print msg
-                    self.log_it(msg, True)
-                    self.log_it('OXD Error %s' % resJson, True)
-                    sys.exit()
-            except KeyError, e:
-                self.log_it(resJson, True)
-                self.log_it('Error: Failed to register client', True)
-                sys.exit()
-            except requests.exceptions.HTTPError as e:
-                self.log_it('Error: Failed to connect %s' % self.konga_oxd_web, True)
-                self.log_it('%s' % e, True)
-                sys.exit()
+            oxd_registration_response = self.http_call(oxd_registration_endpoint, payload)
+            self.konga_oxd_id = oxd_registration_response['oxd_id']
+            self.konga_client_secret = oxd_registration_response['client_secret']
+            self.konga_client_id = oxd_registration_response['client_id']
 
         # Render konga property
         self.run([self.cmd_touch, os.path.split(self.dist_konga_config_file)[-1]],
                  self.dist_konga_config_folder, os.environ.copy(), True)
-        self.renderTemplateInOut(self.dist_konga_config_file, self.template_folder, self.dist_konga_config_folder)
+        self.render_template_in_out(self.dist_konga_config_file, self.template_folder, self.dist_konga_config_folder)
 
     def is_ip(self, address):
         try:
@@ -500,8 +488,8 @@ class KongSetup(object):
         except socket.error:
             return False
 
-    def log_it(self, msg, errorLog=False):
-        if errorLog:
+    def log_it(self, msg, error_log=False):
+        if error_log:
             f = open(self.log_error, 'a')
             f.write('%s %s\n' % (time.strftime('%X %x'), msg))
             f.close()
@@ -533,7 +521,7 @@ class KongSetup(object):
         self.state = self.get_prompt('Enter two letter State Code')
         self.city = self.get_prompt('Enter your city or locality')
         self.org_name = self.get_prompt('Enter Organization name')
-        self.admin_email = self.get_prompt('Enter email address')
+        self.admin_email = self.get_prompt('Enter Email Address')
 
         # Postgres configuration
         msg = """If you already have a postgres user and database in the
@@ -548,12 +536,17 @@ class KongSetup(object):
 
         # Konga Configuration
         msg = """The next few questions are used to configure Konga.
-            If you are connecting to an existing oxd server on the network,
+            If you are connecting to an existing oxd server from other the network,
             make sure it's available from this server.
             """
         print msg
 
-        self.konga_oxd_web = self.get_prompt('oxd server url', 'https://%s:8443' % self.host_name)
+        self.install_oxd = self.make_boolean(self.get_prompt("Install OXD Server? (y - install, n - skip)", 'y'))
+        if self.install_oxd:
+            self.konga_oxd_web = self.get_prompt('OXD Server URL', 'https://%s:8443' % self.host_name)
+        else:
+            self.konga_oxd_web = self.get_prompt('Enter your existing OXD server URL', 'https://%s:8443' % self.host_name)
+
         self.generate_client = self.make_boolean(self.get_prompt("Generate client creds to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generate_client:
@@ -562,23 +555,23 @@ class KongSetup(object):
             self.konga_client_secret = self.get_prompt('client_secret')
 
     def render_kong_configure(self):
-        self.renderTemplateInOut(self.dist_kong_config_file, self.template_folder, self.dist_kong_config_folder)
+        self.render_template_in_out(self.dist_kong_config_file, self.template_folder, self.dist_kong_config_folder)
 
-    def render_template_in_out(self, filePath, templateFolder, outputFolder):
-        self.log_it("Rendering template %s" % filePath)
-        fn = os.path.split(filePath)[-1]
-        f = open(os.path.join(templateFolder, fn))
+    def render_template_in_out(self, file_path, template_folder, output_folder):
+        self.log_it("Rendering template %s" % file_path)
+        fn = os.path.split(file_path)[-1]
+        f = open(os.path.join(template_folder, fn))
         template_text = f.read()
         f.close()
-        newFn = open(os.path.join(outputFolder, fn), 'w+')
+        newFn = open(os.path.join(output_folder, fn), 'w+')
         newFn.write(template_text % self.__dict__)
         newFn.close()
 
-    def run(self, args, cwd=None, env=None, useWait=False, shell=False):
+    def run(self, args, cwd=None, env=None, use_wait=False, shell=False):
         self.log_it('Running: %s' % ' '.join(args))
         try:
             p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd, env=env, shell=shell)
-            if useWait:
+            if use_wait:
                 code = p.wait()
                 self.log_it('Run: %s with result code: %d' % (' '.join(args), code))
             else:
@@ -598,7 +591,7 @@ class KongSetup(object):
     def migrate_kong(self):
         self.run([self.cmd_kong, "migrations", "up"])
 
-    def start_konga_service(self):
+    def start_gg_service(self):
         self.log_it("Starting %s..." % self.gg_service)
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             self.run([self.cmd_service, self.oxd_server_service, 'stop'])
@@ -794,13 +787,14 @@ SOFTWARE.
                 kongSetup.prompt_for_properties()
             print "\n"
             print "-----------------------".ljust(30) + "-----------------------".rjust(35) + "\n"
-            cnf = 'host'.ljust(30) + kongSetup.host_name.rjust(35) + "\n" \
-                  + 'organization'.ljust(30) + kongSetup.org_name.rjust(35) + "\n" \
-                  + 'city'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
-                  + 'state'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
-                  + 'country'.ljust(30) + kongSetup.country_code.rjust(35) + "\n" \
-                  + 'oxd server url'.ljust(30) + kongSetup.konga_oxd_web.rjust(35) + "\n" \
-                  + 'OP host'.ljust(30) + kongSetup.konga_op_host.rjust(35) + "\n"
+            cnf = 'Host'.ljust(30) + kongSetup.host_name.rjust(35) + "\n" \
+                  + 'Organization'.ljust(30) + kongSetup.org_name.rjust(35) + "\n" \
+                  + 'City'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
+                  + 'State'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
+                  + 'Country'.ljust(30) + kongSetup.country_code.rjust(35) + "\n" \
+                  + 'Install OXD'.ljust(30) + repr(kongSetup.install_oxd).rjust(35) + "\n" \
+                  + 'OXD Server URL'.ljust(30) + kongSetup.konga_oxd_web.rjust(35) + "\n" \
+                  + 'OP Host'.ljust(30) + kongSetup.konga_op_host.rjust(35) + "\n"
 
             if not kongSetup.generate_client:
                 cnf += 'oxd_id'.ljust(30) + kongSetup.konga_oxd_id.rjust(35) + "\n" \
@@ -810,6 +804,8 @@ SOFTWARE.
                 cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generate_client).rjust(35) + "\n"
 
             print cnf
+            kongSetup.log_it(cnf)
+
             if kongSetup.is_prompt:
                 proceed = kongSetup.make_boolean(kongSetup.get_prompt('Proceed with these values (Y|n)', 'Y'))
             else:
@@ -822,13 +818,13 @@ SOFTWARE.
                 kongSetup.gen_kong_ssl_certificate()
                 kongSetup.install_jre()
                 kongSetup.configure_postgres()
-                kongSetup.configure_oxd()
+                kongSetup.configure_install_oxd()
                 kongSetup.config_konga()
                 kongSetup.render_kong_configure()
                 kongSetup.install_plugins()
                 kongSetup.migrate_kong()
                 kongSetup.start_kong()
-                kongSetup.start_konga_service()
+                kongSetup.start_gg_service()
                 kongSetup.configure_metrics()
                 print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.konga_port
             else:

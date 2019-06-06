@@ -31,7 +31,7 @@ module.exports = {
   /**
    * The default fallback URL to Kong's admin API.
    */
-  kong_admin_url: process.env.KONG_ADMIN_URL || '%(kongaKongAdminWebURL)s',
+  kong_admin_url: process.env.KONG_ADMIN_URL || '%(konga_kong_admin_web_url)s',
 
 
   connections: {
@@ -39,7 +39,7 @@ module.exports = {
       adapter: 'sails-postgresql',
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '%(pgPwd)s',
+      password: process.env.DB_PASSWORD || '%(pg_pwd)s',
       port: process.env.DB_PORT || 5432,
       database: process.env.DB_DATABASE || 'konga',
       poolSize: process.env.DB_POOLSIZE || 10,
@@ -56,21 +56,21 @@ module.exports = {
   },
 
   ssl: {
-    key: fs.readFileSync('%(kongSslKey)s'),
-    cert: fs.readFileSync('%(kongSslCert)s')
+    key: fs.readFileSync('%(kong_ssl_key)s'),
+    cert: fs.readFileSync('%(kong_ssl_cert)s')
   },
   hookTimeout: 180000,
-  port: process.env.PORT || %(kongaPort)s,
+  port: process.env.PORT || %(konga_port)s,
   environment: 'development',
   log: {
     level: 'info'
   },
-  oxdWeb: '%(kongaOxdWeb)s',
-  opHost: '%(kongaOPHost)s',
-  oxdId: '%(kongaOxdId)s',
-  clientId: '%(kongaClientId)s',
-  clientSecret: '%(kongaClientSecret)s',
-  oxdVersion: '%(kongaOxdVersion)s',
-  ggVersion: '%(ggVersion)s',
+  oxdWeb: '%(konga_oxd_web)s',
+  opHost: '%(konga_op_host)s',
+  oxdId: '%(konga_oxd_id)s',
+  clientId: '%(konga_client_id)s',
+  clientSecret: '%(konga_client_secret)s',
+  oxdVersion: '%(konga_oxd_version)s',
+  ggVersion: '%(gg_version)s',
   explicitHost: 'localhost'
 };

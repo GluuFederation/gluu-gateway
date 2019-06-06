@@ -51,7 +51,7 @@ logging:
   appenders:
     - type: console
     - type: file
-      threshold: INFO
+      threshold: TRACE
       logFormat: "%%-6level [%%d{HH:mm:ss.SSS}] [%%t] %%logger{5} - %%X{code} %%msg %%n"
       currentLogFilename: /var/log/oxd-server/oxd-server.log
       archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%%d{yyyy-MM-dd}-%%i.log.gz
@@ -60,7 +60,7 @@ logging:
       maxFileSize: 10MB
 
 defaultSiteConfig:
-  op_host: '%(kongaOPHost)s'
+  op_host: '%(konga_op_host)s'
   op_discovery_path: ''
   response_types: ['code']
   grant_type: ['authorization_code']
