@@ -69,8 +69,8 @@ class KongSetup(object):
         self.pg_pwd = 'admin'
         self.kong_admin_listen_ssl_port = '8445'
         self.kong_admin_listen_port = '8001'
-        self.gluu_prometheus_server_ip = '104.131.18.41'
-        self.gluu_prometheus_server_host = 'dev1.gluu.org'
+        self.gluu_prometheus_server_ip = '104.131.17.150'
+        self.gluu_prometheus_server_host = 'license.gluu.org'
         self.dist_kong_config_folder = '/etc/kong'
         self.dist_kong_config_file = '%s/kong.conf' % self.dist_kong_config_folder
         self.dist_lua_folder = '/usr/local/share/lua/5.1'
