@@ -515,30 +515,31 @@ class KongSetup(object):
     def prompt_for_properties(self):
         # Certificate configuration
         self.ip = self.get_ip()
-        self.host_name = self.get_prompt('Enter kong host_name', self.detect_host_name())
+        self.host_name = self.get_prompt('Enter Hostname', self.detect_host_name())
         print 'The next few questions are used to generate the Kong self-signed HTTPS certificate'
         self.country_code = self.get_prompt('Enter two letter Country Code')
         self.state = self.get_prompt('Enter two letter State Code')
         self.city = self.get_prompt('Enter your city or locality')
-        self.org_name = self.get_prompt('Enter Organization name')
+        self.org_name = self.get_prompt('Enter Organization Name')
         self.admin_email = self.get_prompt('Enter Email Address')
 
         # Postgres configuration
-        msg = """If you already have a postgres user and database in the
-            Postgres DB, then enter existing password, otherwise enter new password: """
+        msg = """
+If you already have a postgres user and database in the
+Postgres DB, then enter existing password, otherwise enter new password: """
         print msg
         pg = self.get_pw()
         self.pg_pwd = getpass.getpass(prompt='Password [%s] : ' % pg) or pg
 
         # We are going to ask for 'OP host_name' regardless of whether we're installing oxd or not
-        self.konga_op_host = 'https://' + self.get_prompt('OP host_name')
+        self.konga_op_host = 'https://' + self.get_prompt('OP Server Host')
         self.oxd_server_op_discovery_path = self.konga_op_host + '/.well-known/openid-configuration'
 
         # Konga Configuration
-        msg = """The next few questions are used to configure Konga.
-            If you are connecting to an existing oxd server from other the network,
-            make sure it's available from this server.
-            """
+        msg = """
+The next few questions are used to configure Konga.
+If you are connecting to an existing oxd server from other the network,
+make sure it's available from this server."""
         print msg
 
         self.install_oxd = self.make_boolean(self.get_prompt("Install OXD Server? (y - install, n - skip)", 'y'))
@@ -547,12 +548,12 @@ class KongSetup(object):
         else:
             self.konga_oxd_web = self.get_prompt('Enter your existing OXD server URL', 'https://%s:8443' % self.host_name)
 
-        self.generate_client = self.make_boolean(self.get_prompt("Generate client creds to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
+        self.generate_client = self.make_boolean(self.get_prompt("Generate client credentials to call oxd-server API's? (y - generate, n - enter existing client credentials manually)", 'y'))
 
         if not self.generate_client:
-            self.konga_oxd_id = self.get_prompt('oxd_id')
-            self.konga_client_id = self.get_prompt('client_id')
-            self.konga_client_secret = self.get_prompt('client_secret')
+            self.konga_oxd_id = self.get_prompt('OXD Id')
+            self.konga_client_id = self.get_prompt('Client Id')
+            self.konga_client_secret = self.get_prompt('Client Secret')
 
     def render_kong_configure(self):
         self.render_template_in_out(self.dist_kong_config_file, self.template_folder, self.dist_kong_config_folder)
@@ -792,16 +793,16 @@ SOFTWARE.
                   + 'City'.ljust(30) + kongSetup.city.rjust(35) + "\n" \
                   + 'State'.ljust(30) + kongSetup.state.rjust(35) + "\n" \
                   + 'Country'.ljust(30) + kongSetup.country_code.rjust(35) + "\n" \
-                  + 'Install OXD'.ljust(30) + repr(kongSetup.install_oxd).rjust(35) + "\n" \
+                  + 'Install OXD?'.ljust(30) + repr(kongSetup.install_oxd).rjust(35) + "\n" \
                   + 'OXD Server URL'.ljust(30) + kongSetup.konga_oxd_web.rjust(35) + "\n" \
                   + 'OP Host'.ljust(30) + kongSetup.konga_op_host.rjust(35) + "\n"
 
             if not kongSetup.generate_client:
-                cnf += 'oxd_id'.ljust(30) + kongSetup.konga_oxd_id.rjust(35) + "\n" \
-                       + 'client_id'.ljust(30) + kongSetup.konga_client_id.rjust(35) + "\n" \
-                       + 'client_secret'.ljust(30) + kongSetup.konga_client_secret.rjust(35) + "\n"
+                cnf += 'OXD Id'.ljust(30) + kongSetup.konga_oxd_id.rjust(35) + "\n" \
+                       + 'Client Id'.ljust(30) + kongSetup.konga_client_id.rjust(35) + "\n" \
+                       + 'Client Secret'.ljust(30) + kongSetup.konga_client_secret.rjust(35) + "\n"
             else:
-                cnf += 'Generate client creds'.ljust(30) + repr(kongSetup.generate_client).rjust(35) + "\n"
+                cnf += 'Generate Client Credentials?'.ljust(30) + repr(kongSetup.generate_client).rjust(35) + "\n"
 
             print cnf
             kongSetup.log_it(cnf)

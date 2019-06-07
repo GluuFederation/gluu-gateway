@@ -266,7 +266,7 @@ ALTER TABLE public.konga_kong_snapshot_schedules OWNER TO postgres;
 -- Name: konga_kong_snapshot_schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_kong_snapshot_schedules_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_kong_snapshot_schedules_id_seq
   AS integer
   START WITH 1
   INCREMENT BY 1
