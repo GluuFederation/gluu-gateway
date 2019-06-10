@@ -1,6 +1,7 @@
 local BasePlugin = require "kong.plugins.base_plugin"
 local metrics = require "kong.plugins.gluu-metrics.metrics"
 local basic_serializer = require "kong.plugins.log-serializers.basic"
+local access = require "kong.plugins.gluu-oauth-auth.access"
 
 local handler = BasePlugin:extend()
 handler.PRIORITY = 14
@@ -11,6 +12,11 @@ handler.PRIORITY = 14
 function handler:new()
     handler.super.new(self, "gluu-metrics")
     metrics.init()
+end
+
+function handler:access(conf)
+    handler.super.access(self)
+    access(self, conf)
 end
 
 function handler:log(conf)
