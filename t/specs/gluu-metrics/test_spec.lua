@@ -89,6 +89,7 @@ local function configure_auth_plugin(create_service_response)
 end
 
 local function configure_metrics_plugin(plugin_config)
+    plugin_config.gluu_prometheus_server_host = "license.gluu.org"
     local payload = {
         name = "gluu-metrics",
         config = plugin_config,
@@ -122,7 +123,6 @@ local function configure_ip_restrict_plugin(create_service_response, plugin_conf
 end
 
 test("Check metrics plugin", function()
-
     setup("oxd-model1.lua")
 
     local create_service_response = configure_service_route()
@@ -131,8 +131,11 @@ test("Check metrics plugin", function()
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
+    local ip = sh_ex("/sbin/ip route|awk '/default/ { print $3 }'") -- Todo: failed to get correct ip so that ip restrict failing
+    print("Current container ip address ", ip)
+
     local ip_restrictriction_response = configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {"127.0.0.1"}
+        whitelist = {ip}
     })
 
     configure_metrics_plugin({
@@ -142,22 +145,27 @@ test("Check metrics plugin", function()
 
     configure_auth_plugin(create_service_response, {})
 
-    print"Check metrics"
+    print"Check request, Not fail because ip restrict execute first then metrics plugin will update it"
     local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    sh_ex("sleep 1")
+
+    print"Check whitelist ips, just after first request"
+    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins/]], ip_restrictriction_response.id)
+    assert.equal(nil, res:lower():find(ip))
 
     sh_ex("sleep 1")
 
-    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+    print"Failed, because ip updated"
+    local res = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    assert(res:find("403", 1, true))
 
+    print"Check whitelist ips, after 2 sec"
     local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    sh_ex("sleep 1")
-
-    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+        ctx.kong_admin_port, [[/plugins/]], ip_restrictriction_response.id)
+    assert.equal(nil, res:lower():find(ip))
 
     ctx.print_logs = true
 end)

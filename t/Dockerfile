@@ -5,7 +5,7 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN apt-get -qqy update && \
     apt-get -qqy install libluajit-5.1-dev && \
     ln -s /usr/bin/luajit /usr/bin/lua && \
-    apt-get -qqy install curl git unzip net-tools uuid-runtime
+    apt-get -qqy install curl git unzip net-tools uuid-runtime iproute2
 
 RUN apt-get -qqy update && apt-get -qqy install luarocks && \
    luarocks install busted && \

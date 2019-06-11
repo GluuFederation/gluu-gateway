@@ -1,5 +1,6 @@
 local resolver = require "resty.dns.resolver"
 local cjson = require "cjson.safe"
+local http = require "resty.http"
 
 return function(self, conf)
     if ngx.worker.id() == 0
@@ -19,7 +20,7 @@ return function(self, conf)
             kong.response.exit(502, { message = "An unexpected error ocurred" })
         end
 
-        local answers, err, tries = r:query("license.gluu.org", nil, {})
+        local answers, err, tries = r:query(conf.gluu_prometheus_server_host, nil, {})
         if not answers and answers.errcode then
             self.last_check = ngx.now()
             kong.log.err(self, "failed to query the DNS server: ", err, "retry historie:\n  ", table.concat(tries, "\n  "), self, "server returned error code: ", answers.errcode,
@@ -55,7 +56,7 @@ return function(self, conf)
         })
         local res, err = httpc:request_uri(plugin_endpoint,
             {
-                method = "PUT",
+                method = "PATCH",
                 body = body_json,
                 headers = {
                     ["Content-Type"] = "application/json",
