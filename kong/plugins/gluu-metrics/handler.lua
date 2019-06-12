@@ -12,6 +12,8 @@ handler.PRIORITY = 14
 function handler:new()
     handler.super.new(self, "gluu-metrics")
     metrics.init()
+    self.last_check = 0
+    self.server_ip_address = ""
 end
 
 function handler:access(conf)

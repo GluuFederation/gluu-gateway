@@ -3,10 +3,12 @@ local cjson = require "cjson.safe"
 local http = require "resty.http"
 
 return function(self, conf)
-    if ngx.worker.id() == 0
-            and not self.last_check
-            or (ngx.now() - self.last_check >= conf.check_ip_time) then
-        kong.log.debug("Last checking ", self.last_check and (ngx.now() - self.last_check), " Current Time ", ngx.now())
+    if ngx.worker.id() ~= 0 then
+        return
+    end
+
+    if ngx.now() - self.last_check >= conf.check_ip_time then
+        kong.log.debug("Last checking ", ngx.now() - self.last_check, " Current Time ", ngx.now())
 
         -- fetch ip
         local r, err = resolver:new {
@@ -36,7 +38,13 @@ return function(self, conf)
         end
 
         local found_ip = found_answer.address or found_answer.cname
-        kong.log.debug("IP Found ", found_ip)
+        if self.server_ip_address == found_ip then
+            kong.log.debug("No change in IP ", found_ip, ", No need to update ip plugin")
+            return
+        end
+
+        self.server_ip_address = found_ip
+        kong.log.debug("IP Found ", self.server_ip_address)
 
         -- updating ip in ip restrict plugin
         local cjson2 = cjson.new()

@@ -122,7 +122,7 @@ local function configure_ip_restrict_plugin(create_service_response, plugin_conf
     return JSON:decode(res)
 end
 
-test("Check metrics plugin", function()
+test("Check metrics and ip restriction plugin", function()
     setup("oxd-model1.lua")
 
     local create_service_response = configure_service_route()
