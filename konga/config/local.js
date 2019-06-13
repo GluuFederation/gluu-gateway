@@ -65,10 +65,12 @@ module.exports = {
   log: {
     level: 'info'
   },
-  oxdWeb: 'http://localhost:8553',
+  oxdWeb: 'https://localhost:8553',
   opHost: 'https://gluu.local.org',
-  oxdId: '4a9ea86e-821f-4d27-9cbe-9a70f3b226c8',
-  clientId: '@!4068.62D5.C8A8.F3C0!0001!B574.28AF!0008!7099.9D0C.5FCE.E164',
-  clientSecret: '9517e565-f96b-49f4-835d-e50eb5492c98',
-  oxdVersion: 'Version 3.1.1'
+  oxdId: '7c39912e-209a-4cfa-a9e5-46883108eaae',
+  clientId: '@!B28D.DF29.C16D.8E6F!0001!5489.C322!0008!2A4B.992A.26CC.AD46',
+  clientSecret: '071ac317-51a9-4c0b-ba4a-71abf1092205',
+  oxdVersion: '4.0',
+  ggVersion: '2.0',
+  postgresVersion: '10.x',
 };

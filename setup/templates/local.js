@@ -72,5 +72,6 @@ module.exports = {
   clientSecret: '%(konga_client_secret)s',
   oxdVersion: '%(konga_oxd_version)s',
   ggVersion: '%(gg_version)s',
-  explicitHost: 'localhost'
+  postgresVersion: '%(postgres_version)s',
+  explicitHost: 'localhost',
 };
