@@ -1,4 +1,6 @@
 return {
     no_consumer = true,
-    fields = {}
+    fields = {
+        customer_id = { required = true, type = "string" },
+    }
 }
