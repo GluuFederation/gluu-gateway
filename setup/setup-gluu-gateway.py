@@ -669,15 +669,13 @@ make sure it's available from this server."""
         self.log_it('Configuring Route...')
         route_endpoint = 'http://localhost:%s/routes' % self.kong_admin_listen_port
         payload = {
-            "hosts": [
-                self.gluu_prometheus_server_host
-            ],
             "methods": [
                 "GET"
             ],
             "paths": [
                 "/gluu-metrics"
             ],
+            "strip_path": "false",
             "service": {
                 "id": service_response_json['id']
             }
