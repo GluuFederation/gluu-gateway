@@ -38,6 +38,17 @@ local function init()
         "Endpoint call per service in Kong",
         { "endpoint", "method", "service" })
 
+    metrics.oauth_client_authenticated = prometheus:counter("oauth_client_authenticated",
+        "Client(Consumer) OAuth authenticated per service in Kong",
+        { "consumer", "service" })
+
+    metrics.openid_connect_user_authenticated = prometheus:counter("openid_connect_user_authenticated",
+        "User authenticated per service in Kong",
+        { "service" })
+
+    metrics.opa_granted = prometheus:counter("opa_granted",
+        "User or Client(Consumer) OPA granted per service in Kong",
+        { "consumer", "service" })
 end
 
 local function log(message)
@@ -52,8 +63,10 @@ local function log(message)
             message.service.host
     service_name = service_name or ""
     local consumer, request = message.consumer, message.request
+    local uri = ngx.var.uri
+    local openid_authentication = "openid_authentication"
 
-    metrics.endpoint_method:inc(1, { request.uri, request.method, service_name })
+    metrics.endpoint_method:inc(1, { uri, request.method, service_name })
 
     if kong.ctx.shared.gluu_oauth_client_authenticated then
         metrics.oauth_client_authenticated:inc(1, { consumer.custom_id, service_name })
@@ -68,11 +81,21 @@ local function log(message)
     end
 
     if kong.ctx.shared.gluu_uma_client_granted then
-        metrics.uma_client_granted:inc(1, { consumer.custom_id, service_name })
+        local data = consumer.custom_id and { consumer.custom_id, service_name } or { openid_authentication, service_name }
+        metrics.uma_client_granted:inc(1, data)
     end
 
     if kong.ctx.shared.gluu_uma_ticket then
         metrics.uma_ticket:inc(1, { service_name })
+    end
+
+    if kong.ctx.shared.gluu_openid_connect_user_authenticated then
+        metrics.openid_connect_user_authenticated:inc(1, { service_name })
+    end
+
+    if kong.ctx.shared.gluu_opa_client_granted then
+        local data = consumer.custom_id and { consumer.custom_id, service_name } or { openid_authentication, service_name }
+        metrics.gluu_openid_connect_authentication:inc(1, data)
     end
 end
 

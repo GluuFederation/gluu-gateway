@@ -46,6 +46,7 @@ local function setup(model)
         plugins = {
             ["gluu-openid-connect"] = host_git_root .. "/kong/plugins/gluu-openid-connect",
             ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
+            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
         },
         modules = {
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
@@ -63,6 +64,7 @@ local function setup(model)
             ["resty/session/serializers/json.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/serializers/json.lua",
             ["resty/session/storage/cookie.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/storage/cookie.lua",
             ["resty/session/strategies/default.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/strategies/default.lua",
+            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
         },
         host_git_root = host_git_root,
     }

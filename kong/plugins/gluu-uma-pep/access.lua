@@ -245,6 +245,7 @@ return function(self, conf)
         session:save()
 
         kong.log.debug("Got RPT and Claim flow completed -> Redirecting to original URL (", uma_original_url, ")")
+        kong.ctx.shared[self.metric_client_granted] = true
         ngx.redirect(uma_original_url)
     end
 
