@@ -89,40 +89,6 @@ local function configure_auth_plugin(create_service_response, config)
     )
 end
 
-local function configure_metrics_plugin(plugin_config)
-    plugin_config.gluu_prometheus_server_host = "license.gluu.org"
-    local payload = {
-        name = "gluu-metrics",
-        config = plugin_config,
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable metrics plugin globally"
-    local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-end
-
-local function configure_ip_restrict_plugin(create_service_response, plugin_config)
-    local payload = {
-        name = "ip-restriction",
-        config = plugin_config,
-        service_id = create_service_response.id,
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable ip restriction plugin for the Service"
-    local res, err = sh_ex([[
-        curl --fail -sS -X POST --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-
-    return JSON:decode(res)
-end
-
 test("Check metrics and ip restriction plugin", function()
     setup("oxd-model1.lua")
 
@@ -142,7 +108,6 @@ test("Check metrics and ip restriction plugin", function()
 
     local consumer_response = JSON:decode(res)
 
-
     configure_auth_plugin(create_service_response, {customer_id = consumer_response.id})
 
     print"test it works"
@@ -150,11 +115,12 @@ test("Check metrics and ip restriction plugin", function()
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
 
-    local ip_restrictriction_response = configure_ip_restrict_plugin(create_service_response, {
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
         whitelist = {test_runner_ip}
     })
 
-    configure_metrics_plugin({
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "license.gluu.org",
         check_ip_time = 2,
         ip_restrict_plugin_id = ip_restrictriction_response.id
     })
@@ -181,6 +147,6 @@ test("Check metrics and ip restriction plugin", function()
         ctx.kong_admin_port, [[/plugins/]], ip_restrictriction_response.id)
     assert(not res:lower():find(test_runner_ip))
 
-    ctx.print_logs = true
+    ctx.print_logs = false
 end)
 

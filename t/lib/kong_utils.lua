@@ -1,4 +1,5 @@
 local utils = require"test_utils"
+local JSON = require"JSON"
 local sh, stdout, stderr, sleep, sh_ex, sh_until_ok =
     utils.sh, utils.stdout, utils.stderr, utils.sleep, utils.sh_ex, utils.sh_until_ok
 
@@ -205,6 +206,39 @@ _M.opa = function()
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8181/tcp\") 0).HostPort}}' ", ctx.opa_id)
 
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.opa_port)
+end
+
+_M.configure_metrics_plugin = function(plugin_config)
+    local payload = {
+        name = "gluu-metrics",
+        config = plugin_config,
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"enable metrics plugin globally"
+    local res, err = sh_ex([[
+        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+end
+
+_M.configure_ip_restrict_plugin = function(create_service_response, plugin_config)
+    local payload = {
+        name = "ip-restriction",
+        config = plugin_config,
+        service_id = create_service_response.id,
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"enable ip restriction plugin for the Service"
+    local res, err = sh_ex([[
+        curl --fail -sS -X POST --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+
+    return JSON:decode(res)
 end
 
 

@@ -236,15 +236,27 @@ test("basic", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("OpenID Connect with UMA", function()
+test("OpenID Connect with UMA, Metrics", function()
     setup("oxd-model2.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     local create_service_response = configure_service_route()
 
     print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
 
     local register_site_response = configure_plugin(create_service_response,{
         authorization_redirect_path = "/callback",
@@ -298,7 +310,8 @@ test("OpenID Connect with UMA", function()
     assert(res:find("session=", 1, true)) -- session cookie is here
 
     print"call callback with state from oxd-model1, follow redirect"
-    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+
+    local res, err = sh_ex([[curl -i -sS -X GET -L --url 'http://localhost:]],
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     -- test that we redirected to original url
@@ -314,6 +327,17 @@ test("OpenID Connect with UMA", function()
     assert(res:find("200", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"check metrics, it should return openid_connect_users_authenticated = 2"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_openid_connect_users_authenticated", 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="]] .. create_service_response.name .. [["} 3]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="]] .. create_service_response.name .. [["} 1]]), 1, true))
 
     print"request third time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -338,6 +362,19 @@ test("OpenID Connect with UMA", function()
     assert(res:find("200", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"check metrics, it should return openid_connect_users_authenticated = 5"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_openid_connect_users_authenticated", 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="]] .. create_service_response.name .. [["} 4]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page2/photos",method="GET",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/path/123/image.jpg",method="GET",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="]] .. create_service_response.name .. [["} 5]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="]] .. create_service_response.name .. [["} 5]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="]] .. create_service_response.name .. [["} 3]]), 1, true))
 
     print "deny for tha path which is not registered in UMA resources"
     local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,

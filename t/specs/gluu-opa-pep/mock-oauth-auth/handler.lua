@@ -14,7 +14,10 @@ function handler:access(config)
     -- Eventually, execute the parent implementation
     -- (will log that your plugin is entering this context)
     handler.super.access(self)
-
+    kong.ctx.shared.authenticated_consumer = { custom_id = "1234567", id = config.customer_id, username = "john" }
+    ngx.ctx.authenticated_consumer = kong.ctx.shared.authenticated_consumer
+    kong.ctx.shared.gluu_oauth_client_authenticated = true
+    ngx.ctx.gluu_oauth_client_authenticated = true
     kong.ctx.shared.request_token_data = config.request_token_data
 end
 

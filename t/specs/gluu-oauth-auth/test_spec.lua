@@ -143,14 +143,20 @@ test("with, without token and metrics", function()
     local create_service_response = configure_service_route()
 
     print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
-    )
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
 
     local register_site_response, access_token = configure_plugin(create_service_response,{})
 
@@ -227,11 +233,21 @@ test("Anonymous test and metrics", function()
 
     local create_service_response = configure_service_route()
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
-    )
+    print"test it works"
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
 
     print "Create a anonymous consumer"
     local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
@@ -271,15 +287,21 @@ test("pass_credentials = hide and metrics", function()
 
     local create_service_response = configure_service_route()
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
-    )
-
     print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
 
     local register_site_response, access_token = configure_plugin(create_service_response,
         {
@@ -324,7 +346,7 @@ test("pass_credentials = hide and metrics", function()
         [[/gluu-metrics]]
     )
     assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/todos",method="GET"]]), 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
@@ -450,7 +472,7 @@ test("rate limiter", function()
     assert(res1:find("API rate limit exceeded", 1, true) or res2:find("API rate limit exceeded", 1, true))
     -- if we are here global plugin works
 
-    --ctx.print_logs = false -- comment it out if want to see logs
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
 
 test("JWT RS256", function()
@@ -533,7 +555,7 @@ test("JWT none alg fail", function()
     )
     assert(res:find("401", 1, true))
 
-    --ctx.print_logs = false -- comment it out if want to see logs
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
 
 test("JWT alg mismatch", function()
