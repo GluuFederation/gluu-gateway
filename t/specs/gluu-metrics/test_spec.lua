@@ -106,60 +106,60 @@ local function configure_uma_plugin(create_service_response, config)
     )
 end
 
---test("Check metrics and ip restriction plugin", function()
---    setup("oxd-model1.lua")
---
---    local create_service_response = configure_service_route()
---
---    print"test it works"
---    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
---        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
---
---    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
---    print("test_runner_ip: ", test_runner_ip)
---
---    print"create a consumer"
---    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
---        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567']]
---    )
---
---    local consumer_response = JSON:decode(res)
---
---    configure_auth_plugin(create_service_response, {customer_id = consumer_response.id})
---
---    print"test it works"
---    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
---        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
---
---
---    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
---        whitelist = {test_runner_ip}
---    })
---
---    kong_utils.configure_metrics_plugin({
---        gluu_prometheus_server_host = "license.gluu.org",
---        check_ip_time = 2,
---        ip_restrict_plugin_id = ip_restrictriction_response.id
---    })
---
---    print"Check request, Not fail because ip restrict execute first then metrics plugin will update it"
---    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
---        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
---
---    sh_ex("sleep 3")
---
---    print"Failed, because ip updated"
---    local res = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
---        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
---    assert(res:find("403", 1, true))
---
---    print"Check whitelist ips, after 3 sec"
---    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
---        ctx.kong_admin_port, [[/plugins/]], ip_restrictriction_response.id)
---    assert(not res:lower():find(test_runner_ip))
---
---    ctx.print_logs = false
---end)
+test("Check metrics and ip restriction plugin", function()
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    configure_auth_plugin(create_service_response, {customer_id = consumer_response.id})
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "license.gluu.org",
+        check_ip_time = 2,
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
+
+    print"Check request, Not fail because ip restrict execute first then metrics plugin will update it"
+    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    sh_ex("sleep 3")
+
+    print"Failed, because ip updated"
+    local res = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    assert(res:find("403", 1, true))
+
+    print"Check whitelist ips, after 3 sec"
+    local res = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins/]], ip_restrictriction_response.id)
+    assert(not res:lower():find(test_runner_ip))
+
+    ctx.print_logs = false
+end)
 
 test("Check Total metrics", function()
     setup("oxd-model1.lua")
