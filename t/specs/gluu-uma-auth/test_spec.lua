@@ -145,14 +145,20 @@ test("with and without token, metrics", function()
     local create_service_response = configure_service_route()
 
     print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
-    )
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
 
     local register_site_response, access_token = configure_plugin(create_service_response,
         {}

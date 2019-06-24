@@ -294,6 +294,7 @@ return function(self, conf)
     }
 
     kong.service.request.set_headers(new_headers)
+    kong.ctx.shared.gluu_openid_connect_users_authenticated = true
     -- TODO set other remain headers
 end
 

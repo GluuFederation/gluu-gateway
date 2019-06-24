@@ -119,17 +119,30 @@ test("opa, client_id match", function()
     local create_service_response = configure_service_route()
 
     print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567']]
     )
+    local consumer_response = JSON:decode(res)
 
     configure_auth_plugin(create_service_response,
         {
+            customer_id = consumer_response.id,
             request_token_data = {
                 client_id = "0123456789",
             }
@@ -143,6 +156,17 @@ test("opa, client_id match", function()
     print"test it works"
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/folder/command --header 'Host: backend.com']])
+
+
+    print"check metrics, it should return gluu_opa_granted = 1"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
+        [[/gluu-metrics]]
+    )
+    assert(res:lower():find("gluu_opa_client_granted", 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/folder/command",method="GET",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="1234567",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_opa_client_granted{consumer="1234567",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
 
     print"it should fail, path doesn't match"
     local res = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
@@ -167,14 +191,15 @@ test("opa, client_id doesn't match", function()
     sh([[curl --fail -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
 
-    print "configure gluu-metrics plugin for the Service"
-    local _, _ = sh_ex([[
-        curl --fail -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ --data 'name=gluu-metrics' --data 'service_id=]], create_service_response.id, [[']]
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=1234567']]
     )
+    local consumer_response = JSON:decode(res)
 
     configure_auth_plugin(create_service_response,
         {
+            customer_id = consumer_response.id,
             request_token_data = {
                 client_id = "bla-bla-bla",
             }
