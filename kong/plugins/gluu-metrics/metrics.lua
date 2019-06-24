@@ -45,6 +45,12 @@ local function init()
     metrics.opa_client_granted = prometheus:counter("opa_client_granted",
         "User or Client(Consumer) OPA granted per service in Kong",
         { "consumer", "service" })
+
+    metrics.total_client_authenticated = prometheus:counter("total_client_authenticated",
+        "Total authentication(OAuth, UMA and OpenID Connect) in Kong")
+
+    metrics.total_client_granted = prometheus:counter("total_client_granted",
+        "Total authorization(OAuth, UMA and OPA PEP) in Kong")
 end
 
 local function log(message)
@@ -66,19 +72,23 @@ local function log(message)
 
     if kong.ctx.shared.gluu_oauth_client_authenticated then
         metrics.oauth_client_authenticated:inc(1, { consumer.custom_id, service_name })
+        metrics.total_client_authenticated:inc(1)
     end
 
     if kong.ctx.shared.gluu_oauth_client_granted then
         metrics.oauth_client_granted:inc(1, { consumer.custom_id, service_name })
+        metrics.total_client_granted:inc(1)
     end
 
     if kong.ctx.shared.gluu_uma_client_authenticated then
         metrics.uma_client_authenticated:inc(1, { consumer.custom_id, service_name })
+        metrics.total_client_authenticated:inc(1)
     end
 
     if kong.ctx.shared.gluu_uma_client_granted then
         local data = consumer and { consumer.custom_id, service_name } or { openid_auth, service_name }
         metrics.uma_client_granted:inc(1, data)
+        metrics.total_client_granted:inc(1)
     end
 
     if kong.ctx.shared.gluu_uma_ticket then
@@ -87,11 +97,13 @@ local function log(message)
 
     if kong.ctx.shared.gluu_openid_connect_users_authenticated then
         metrics.openid_connect_users_authenticated:inc(1, { service_name })
+        metrics.total_client_authenticated:inc(1)
     end
 
     if kong.ctx.shared.gluu_opa_client_granted then
         local data = consumer and { consumer.custom_id, service_name } or { openid_auth, service_name }
         metrics.opa_client_granted:inc(1, data)
+        metrics.total_client_granted:inc(1)
     end
 end
 
