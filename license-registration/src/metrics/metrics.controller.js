@@ -57,7 +57,7 @@ function registration(req, res) {
         }
         console.log('----- Prometheus yml file updated successfully ---------');
         console.log('----- Restarting prometheus server -------');
-        exec('pm2 stop ' + process.env.PROMETHEUS_PM2_PROCESS, (err, stdout, stderr) => {
+        exec('pm2 restart ' + process.env.PROMETHEUS_PM2_PROCESS, (err, stdout, stderr) => {
           if (err) {
             console.log('Failed to restart server')
           }
