@@ -1,0 +1,24 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: null
+rule_files: null
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets:
+          - 'localhost:9090'
+  - job_name: dev1_gluu
+    metrics_path: /gluu-metrics
+    scheme: https
+    static_configs:
+      - targets:
+          - dev1.gluu.org
+          - dev2.gluu.org
+          - test2.org
+          - test3.org
+          - test5.org
+          - test6.org
