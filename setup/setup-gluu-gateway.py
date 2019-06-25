@@ -157,9 +157,9 @@ class KongSetup(object):
         self.prometheus_file_path = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.dist_gluu_gateway_folder
 
         # oxd file names
-        self.ubuntu16_oxd_file = "oxd-server_4.0-60~xenial+Ub16.04_all.deb"
-        self.centos7_oxd_file = "oxd-server-4.0-60.centos7.noarch.rpm"
-        self.rhel7_oxd_file = "oxd-server-4.0-60.rhel7.noarch.rpm"
+        self.ubuntu16_oxd_file = "oxd-server_4.0-62~xenial+Ub16.04_all.deb"
+        self.centos7_oxd_file = "oxd-server-4.0-62.centos7.noarch.rpm"
+        self.rhel7_oxd_file = "oxd-server-4.0-62.rhel7.noarch.rpm"
 
     def init_parameters_from_json_argument(self):
         if len(sys.argv) > 1:
