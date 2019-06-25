@@ -71,6 +71,7 @@ class KongSetup(object):
         self.kong_admin_listen_port = '8001'
         self.gluu_prometheus_server_ip = '104.131.17.150'
         self.gluu_prometheus_server_host = 'license.gluu.org'
+        self.gluu_customer_registration_endpoint = 'https://%s:%s' % (self.gluu_prometheus_server_host, '4040')
         self.dist_kong_config_folder = '/etc/kong'
         self.dist_kong_config_file = '%s/kong.conf' % self.dist_kong_config_folder
         self.dist_lua_folder = '/usr/local/share/lua/5.1'
@@ -682,14 +683,6 @@ make sure it's available from this server."""
         }
         self.http_call(route_endpoint, payload)
 
-        # Configuring gluu-metrics plugin globally
-        self.log_it('Configuring gluu-metrics globally...')
-        service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
-        payload = {
-            'name': "gluu-metrics",
-        }
-        self.http_call(service_endpoint, payload)
-
         # Configuring ip-restriction plugin globally
         self.log_it('Configuring ip-restriction globally...')
         service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
@@ -698,7 +691,27 @@ make sure it's available from this server."""
             'service_id': service_response_json['id'],
             'config.whitelist': self.gluu_prometheus_server_ip
         }
+        ip_plugin_response = self.http_call(service_endpoint, payload)
+
+        # Configuring gluu-metrics plugin globally
+        self.log_it('Configuring gluu-metrics globally...')
+        service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
+        payload = {
+            'name': "gluu-metrics",
+            'config.ip_restrict_plugin_id': ip_plugin_response.id,
+            'config.gluu_prometheus_server_host': self.gluu_prometheus_server_host
+        }
         self.http_call(service_endpoint, payload)
+
+        # Register Customer's metrics host at gluu
+        self.log_it('Register Customer at gluu...')
+        registration_endpoint = self.gluu_customer_registration_endpoint
+        payload = {
+            'email': self.admin_email,
+            'organization': self.org_name,
+            'metrics_host': self.host_name
+        }
+        self.http_call(registration_endpoint, payload)
 
     def http_call(self, endpoint, payload):
         response = None
