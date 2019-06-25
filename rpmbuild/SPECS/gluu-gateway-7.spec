@@ -4,7 +4,7 @@ Release:	1%{?dist}
 Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
-Source0:	gluu-gateway-1.0.tar.gz
+Source0:	gluu-gateway-4.0.tar.gz
 Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
 BuildArch:      noarch
