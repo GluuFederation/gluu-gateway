@@ -1,14 +1,15 @@
 Name:		gluu-gateway
-Version:	1.0
-Release:	1%{?dist}
+Version:	%VERSION%
+Release:	%RELEASE%
 Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-4.0.tar.gz
 Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
+Source3:	konga.service.file
 BuildArch:      noarch
-Requires:	postgresql >= 10, postgresql-server = 10, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
 
 %description
 The Gluu Gateway is a package which can be used to quickly
@@ -18,12 +19,15 @@ deploy an OAuth protected API gateway
 %setup -q
 
 %install
+mkdir -p %{buildroot}/tmp/
 mkdir -p %{buildroot}/opt/
 mkdir -p %{buildroot}/etc/init.d
 mkdir -p %{buildroot}/lib/systemd/system/
 cp -a %{SOURCE1} %{buildroot}/lib/systemd/system/gluu-gateway.service
 cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
+cp -a %{SOURCE3} %{buildroot}/lib/systemd/system/konga.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
+cp -a tmp/%OXD_SERVER% %{buildroot}/tmp/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
@@ -32,6 +36,8 @@ mkdir -p /opt/gluu-gateway/konga/config/env
 %post
 systemctl enable kong > /dev/null 2>&1
 systemctl stop kong > /dev/null 2>&1
+systemctl enable konga > /dev/null 2>&1
+systemctl stop konga > /dev/null 2>&1
 systemctl enable gluu-gateway > /dev/null 2>&1
 systemctl stop gluu-gateway > /dev/null 2>&1
 systemctl stop oxd-server > /dev/null 2>&1
@@ -93,7 +99,9 @@ fi
 %config(missingok, noreplace) /opt/gluu-gateway/konga/config/env/production.js
 /opt/gluu-gateway/*
 /lib/systemd/system/kong.service
+/lib/systemd/system/konga.service
 /lib/systemd/system/gluu-gateway.service
+/tmp/%OXD_SERVER%
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
