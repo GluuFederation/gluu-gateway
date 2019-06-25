@@ -1,6 +1,6 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 12h
+  evaluation_interval: 12h
 alerting:
   alertmanagers:
     - static_configs:
@@ -11,9 +11,11 @@ scrape_configs:
     static_configs:
       - targets:
           - 'localhost:9090'
-  - job_name: dev1_gluu
+  - job_name: gluu_gateway
     metrics_path: /gluu-metrics
     scheme: https
+    tls_config:
+      insecure_skip_verify: true
     static_configs:
       - targets:
           - dev1.gluu.org

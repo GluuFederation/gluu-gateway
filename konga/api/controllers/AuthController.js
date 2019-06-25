@@ -264,7 +264,7 @@ var AuthController = {
             }
 
             var sub = userInfo && userInfo.sub;
-
+            console.log('userinfo: ', userInfo);
             if (!sub) {
               return Promise.reject({message: 'Failed to get sub claim.'});
             }

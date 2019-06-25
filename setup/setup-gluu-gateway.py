@@ -818,14 +818,14 @@ SOFTWARE.
                 kongSetup.gen_kong_ssl_certificate()
                 kongSetup.install_jre()
                 kongSetup.configure_postgres()
-                kongSetup.configure_install_oxd()
-                kongSetup.config_konga()
                 kongSetup.render_kong_configure()
                 kongSetup.install_plugins()
                 kongSetup.migrate_kong()
                 kongSetup.start_kong()
-                kongSetup.start_gg_service()
                 kongSetup.configure_metrics()
+                kongSetup.configure_install_oxd()
+                kongSetup.config_konga()
+                kongSetup.start_gg_service()
                 print "\n\nGluu Gateway configuration successful!!! https://localhost:%s\n\n" % kongSetup.konga_port
             else:
                 print "Exit"

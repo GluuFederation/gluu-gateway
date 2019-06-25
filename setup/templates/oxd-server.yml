@@ -1,7 +1,7 @@
 
 # server configuration
 use_client_authentication_for_pat: true
-trust_all_certs: true
+trust_all_certs: false
 trust_store_path: ''
 trust_store_password: ''
 crypt_provider_key_store_path: ''
@@ -13,6 +13,7 @@ nonce_expiration_in_minutes: 5
 public_op_key_cache_expiration_in_minutes: 60
 protect_commands_with_access_token: true
 uma2_auto_register_claims_gathering_endpoint_as_redirect_uri_of_client: true
+add_client_credentials_grant_type_automatically_during_client_registration: true
 migration_source_folder_path: ''
 storage: h2
 storage_configuration:
@@ -36,25 +37,21 @@ server:
 # Logging settings.
 logging:
 
-  # The default level of all loggers. Can be OFF, ERROR, WARN, INFO, DEBUG, TRACE, or ALL.
-  level: INFO
-
   # Logger-specific levels.
   loggers:
     org.gluu: TRACE
-    org.xdi: TRACE
 
-# Logback's Time Based Rolling Policy - archivedLogFilenamePattern: /tmp/application-%%d{yyyy-MM-dd}.log.gz
-# Logback's Size and Time Based Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%%d{yyyy-MM-dd}-%%i.log.gz
-# Logback's Fixed Window Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%%i.log.gz
+  # Logback's Time Based Rolling Policy - archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}.log.gz
+  # Logback's Size and Time Based Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}-%i.log.gz
+  # Logback's Fixed Window Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%i.log.gz
 
   appenders:
     - type: console
     - type: file
       threshold: TRACE
-      logFormat: "%%-6level [%%d{HH:mm:ss.SSS}] [%%t] %%logger{5} - %%X{code} %%msg %%n"
+      logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
       currentLogFilename: /var/log/oxd-server/oxd-server.log
-      archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%%d{yyyy-MM-dd}-%%i.log.gz
+      archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz
       archivedFileCount: 7
       timeZone: UTC
       maxFileSize: 10MB
@@ -69,4 +66,3 @@ defaultSiteConfig:
   ui_locales: ['en']
   claims_locales: ['en']
   contacts: []
-
