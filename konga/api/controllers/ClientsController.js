@@ -682,7 +682,14 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         sails.log(new Date(), "--------------OXD API Call----------------");
         sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientATToken}' -d '${JSON.stringify(option.body)}'`);
 
-        return httpRequest(option);
+        return httpRequest(option)
+          .catch(function(e){
+            if (e.error && e.error.error === "uma_protection_exists") {
+              option.body.overwrite = true;
+              return httpRequest(option)
+            }
+            return Promise.reject({message: "Failed to register client"});
+          });
       })
       .then(function (response) {
         var updateSite = response.body;
