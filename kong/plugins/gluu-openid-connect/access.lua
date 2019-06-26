@@ -1,7 +1,7 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
-local json = require "cjson"
+local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
 
 local function access_token_expires_in(conf, exp)
@@ -179,14 +179,28 @@ local function authorize(conf, session, prompt)
 
     local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
 
+    local claims = {
+        arc = {
+            essential = true,
+            values = conf.required_acrs,
+        }
+    }
+
+    local claims_text, err = cjson.encode(claims)
+    if err then
+        kong.log.err(err)
+        return unexpected_error()
+    end
+    claims_text = ngx.escape_uri(claims_text)
+
     local response, err = oxd.get_authorization_url(conf.oxd_url,
         {
             oxd_id = conf.oxd_id,
             prompt = prompt,
             scope = conf.requested_scopes,
-            acr_values = conf.required_acrs,
             custom_parameters = {
                 max_age = conf.max_id_token_auth_age,
+                claims = claims_text,
             }
         },
         ptoken)
@@ -289,8 +303,8 @@ return function(self, conf)
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
     local new_headers = {
-        ["X-OpenId-Connect-idtoken"] = encode_base64(json.encode(id_token)),
-        ["X-OpenId-Connect-userinfo"] = encode_base64(json.encode(session_data.userinfo))
+        ["X-OpenId-Connect-idtoken"] = encode_base64(cjson.encode(id_token)),
+        ["X-OpenId-Connect-userinfo"] = encode_base64(cjson.encode(session_data.userinfo))
     }
 
     kong.service.request.set_headers(new_headers)
