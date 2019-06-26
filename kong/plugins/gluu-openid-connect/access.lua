@@ -233,6 +233,14 @@ local function authorize(conf, session, prompt)
     ngx.redirect(json.authorization_url)
 end
 
+local function is_acr_enough(required_acrs, acr)
+    for i = 1, #required_acrs do
+        if required_acrs[i] == acr then
+            return true
+        end
+    end
+    return false
+end
 
 return function(self, conf)
     local session = resty_session.start()
@@ -289,6 +297,13 @@ return function(self, conf)
             or token_expired
             or (id_token.auth_time and (id_token.auth_time + conf.max_id_token_auth_age) < ngx.time()) then
         kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
+        return authorize(conf, session)
+    end
+
+    local acr = id_token.acr
+    local required_acrs = conf.required_acrs
+    if required_acrs and #required_acrs > 0 and (not acr or not is_acr_enough(conf.required_acrs, acr)) then
+        kong.log.debug("Authentication is required, not enough acr - Redirecting to OP Authorization endpoint")
         return authorize(conf, session)
     end
 
