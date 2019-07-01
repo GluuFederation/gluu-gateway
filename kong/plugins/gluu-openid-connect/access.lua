@@ -7,7 +7,7 @@ local encode_base64 = ngx.encode_base64
 local function split(str, sep)
     local ret = {}
     local n = 1
-    for w in gmatch(str, "([^" .. sep .. "]*)") do
+    for w in str:gmatch("([^" .. sep .. "]*)") do
         ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
         if w == "" then
             n = n + 1

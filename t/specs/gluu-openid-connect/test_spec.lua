@@ -126,12 +126,29 @@ local function configure_plugin(create_service_response, plugin_config)
 
     print"enable plugin for the Service"
     local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        curl -v -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
+    local plugin_response = JSON:decode(res)
 
-    return register_site_response
+    return register_site_response, plugin_response
+end
+
+local function update_plugin(plugin_id, acr_values)
+    local payload = {
+        config = {
+            required_acrs = acr_values
+        },
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"update plugin"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/]], plugin_id,
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
 end
 
 local function configure_pep_plugin(register_site_response, create_service_response, plugin_config)
@@ -555,5 +572,79 @@ test("OpenID Connect with UMA Claim gathering flow", function()
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
 
-    ctx.print_logs = true
+    ctx.print_logs = false
+end)
+
+
+test("acr_values testing", function()
+    setup("oxd-model5.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local _, plugin = configure_plugin(create_service_response,{
+        authorization_redirect_path = "/callback",
+        requested_scopes = {"openid", "email", "profile"},
+        max_id_token_age = 10,
+        max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+        required_acrs = {"auth_ldap_server"}
+    })
+
+    print"acr=auth_ldap_server"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"follow redirect"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    sh_ex("sleep 2")
+
+    update_plugin(plugin.id, {"otp"})
+
+    print"acr=OTP, acr updated so plugin should redirect for re-auth"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"follow redirect"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    update_plugin(plugin.id, {"auth_ldap_server"})
+
+    sh_ex("sleep 2")
+
+    print"acr=auth_ldap_server, plugin should not allow because already authenticated with auth_ldap_server"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("403", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)
