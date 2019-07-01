@@ -211,15 +211,13 @@ local function acr_already_requested(session_data, required_acrs)
     return true
 end
 
-local function add_requested_acrs(session_data, required_acrs)
-    if not required_acrs then
+local function set_requested_acrs(session_data, required_acrs)
+    if not required_acrs or #required_acrs == 0 then
+        session_data.requested_acrs = nil
         return
     end
+    session_data.requested_acrs = {}
     local requested_acrs = session_data.requested_acrs
-    if not requested_acrs then
-        requested_acrs = {}
-        session_data.requested_acrs = requested_acrs
-    end
     for i = 1, #required_acrs do
         requested_acrs[required_acrs[i]] = true
     end
@@ -267,7 +265,7 @@ local function authorize(conf, session, prompt)
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
-    add_requested_acrs(session_data, conf.required_acrs)
+    set_requested_acrs(session_data, conf.required_acrs)
     session:save()
 
     -- redirect to the /authorization endpoint

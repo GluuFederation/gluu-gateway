@@ -626,7 +626,7 @@ test("acr_values testing", function()
     assert(res:find("response_type=code", 1, true))
     assert(res:find("session=", 1, true)) -- session cookie is here
 
-    print"follow redirect"
+    print"simulate redirect from GS"
     local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
@@ -644,7 +644,16 @@ test("acr_values testing", function()
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"simulate redirect from GS"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     assert(res:find("403", 1, true))
+    assert(res:find("Authentication Context Class is not enough", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
