@@ -1,8 +1,20 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
-local json = require "cjson"
+local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
+
+local function split(str, sep)
+    local ret = {}
+    local n = 1
+    for w in str:gmatch("([^" .. sep .. "]*)") do
+        ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
+        if w == "" then
+            n = n + 1
+        end -- step forwards on a blank but not a string
+    end
+    return ret
+end
 
 local function access_token_expires_in(conf, exp)
     local max_id_token_age = conf.max_id_token_age
@@ -174,6 +186,43 @@ local function refresh_access_token(conf, session)
     return true
 end
 
+local function is_acr_enough(required_acrs, acr)
+    local acr_array = split(acr, " ")
+    for i = 1, #required_acrs do
+        for k = 1, #acr_array do
+            if required_acrs[i] == acr_array[k] then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function acr_already_requested(session_data, required_acrs)
+    local requested_acrs = session_data.requested_acrs
+    if not requested_acrs then
+        return false
+    end
+    for i = 1, #required_acrs do
+        if not requested_acrs[required_acrs[i]] then
+            return false
+        end
+    end
+    return true
+end
+
+local function set_requested_acrs(session_data, required_acrs)
+    if not required_acrs or #required_acrs == 0 then
+        session_data.requested_acrs = nil
+        return
+    end
+    session_data.requested_acrs = {}
+    local requested_acrs = session_data.requested_acrs
+    for i = 1, #required_acrs do
+        requested_acrs[required_acrs[i]] = true
+    end
+end
+
 -- send the browser of to the OP's authorization endpoint
 local function authorize(conf, session, prompt)
 
@@ -185,9 +234,6 @@ local function authorize(conf, session, prompt)
             prompt = prompt,
             scope = conf.requested_scopes,
             acr_values = conf.required_acrs,
-            custom_parameters = {
-                max_age = conf.max_id_token_auth_age,
-            }
         },
         ptoken)
 
@@ -203,22 +249,29 @@ local function authorize(conf, session, prompt)
         return unexpected_error()
     end
 
-    if not json.authorization_url then
+    local authorization_url = json.authorization_url
+    if not authorization_url then
         kong.log.err("get_authorization_url() missed authorization_url")
         return unexpected_error()
     end
+
+    authorization_url = table.concat{
+        authorization_url,
+        "&max_age=",
+        tostring(conf.max_id_token_auth_age),
+    }
 
     local session_data = session.data
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
+    set_requested_acrs(session_data, conf.required_acrs)
     session:save()
 
     -- redirect to the /authorization endpoint
     ngx.header["Cache-Control"] = "no-cache, no-store, max-age=0"
     ngx.redirect(json.authorization_url)
 end
-
 
 return function(self, conf)
     local session = resty_session.start()
@@ -278,6 +331,17 @@ return function(self, conf)
         return authorize(conf, session)
     end
 
+    local acr = id_token.acr
+    local required_acrs = conf.required_acrs
+    if required_acrs and #required_acrs > 0 and (not acr or not is_acr_enough(required_acrs, acr)) then
+        if acr_already_requested(session_data, required_acrs) then
+            kong.log.debug("We already requested all required acrs, avoid a loop")
+            return kong.response.exit(403, { message = "Authentication Context Class is not enough"})
+        end
+        kong.log.debug("Authentication is required, not enough acr - Redirecting to OP Authorization endpoint")
+        return authorize(conf, session, "login")
+    end
+
     if (id_token.iat + conf.max_id_token_auth_age) < ngx.time() or
             id_token.exp < ngx.time() then
         kong.log.debug("Silent authentication is required - Redirecting to OP Authorization endpoint")
@@ -289,8 +353,8 @@ return function(self, conf)
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
     local new_headers = {
-        ["X-OpenId-Connect-idtoken"] = encode_base64(json.encode(id_token)),
-        ["X-OpenId-Connect-userinfo"] = encode_base64(json.encode(session_data.userinfo))
+        ["X-OpenId-Connect-idtoken"] = encode_base64(cjson.encode(id_token)),
+        ["X-OpenId-Connect-userinfo"] = encode_base64(cjson.encode(session_data.userinfo))
     }
 
     kong.service.request.set_headers(new_headers)
