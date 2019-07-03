@@ -278,6 +278,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       access_token_as_jwt: body.access_token_as_jwt || false,
       rpt_as_jwt: body.rpt_as_jwt || false,
       access_token_signing_alg: body.access_token_signing_alg || 'RS256',
+      scope: body.scope
     };
 
     this.registerClient(option)

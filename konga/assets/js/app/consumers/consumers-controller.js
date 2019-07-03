@@ -141,7 +141,8 @@
                 rpt_as_jwt: true,
                 access_token_signing_alg: 'RS256',
                 oxd_url: globalInfo.oxdWeb,
-                op_host: globalInfo.opHost
+                op_host: globalInfo.opHost,
+                scope: ['openid', 'oxd', 'uma_protection']
               };
 
               $scope.close = close;
@@ -172,6 +173,7 @@
               }
             },
             controllerAs: '$ctrl',
+            size: 'lg'
           })
         }
 
