@@ -116,7 +116,6 @@ class KongSetup(object):
         self.install_oxd = True
         self.generate_client = True
         self.oxd_server_authorization_redirect_uri = ''
-        self.oxd_server_op_discovery_path = ''
         self.oxd_server_redirect_uris = ''
         self.oxd_authorization_redirect_uri = 'localhost'
 
@@ -177,11 +176,8 @@ class KongSetup(object):
             self.oxd_authorization_redirect_uri = data['oxd_authorization_redirect_uri']
             self.install_oxd = data['install_oxd']
             self.konga_op_host = 'https://' + data['konga_op_host']
-            self.oxd_server_op_discovery_path = data['oxd_server_op_discovery_path'] + '/.well-known/openid-configuration'
             self.konga_oxd_web = data['konga_oxd_web']
             self.generate_client = data['generate_client']
-            self.gluu_prometheus_server_host = data['gluu_prometheus_server_host']
-            self.gluu_prometheus_server_ip = data['gluu_prometheus_server_ip']
 
             if not self.generate_client:
                 self.konga_oxd_id = data['konga_oxd_id']
@@ -535,7 +531,6 @@ Postgres DB, then enter existing password, otherwise enter new password: """
 
         # We are going to ask for 'OP host_name' regardless of whether we're installing oxd or not
         self.konga_op_host = 'https://' + self.get_prompt('OP Server Host')
-        self.oxd_server_op_discovery_path = self.konga_op_host + '/.well-known/openid-configuration'
 
         # Konga Configuration
         msg = """
