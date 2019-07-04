@@ -1,21 +1,21 @@
 [submodule "third-party/lua-resty-lrucache"]
 	path = third-party/lua-resty-lrucache
-	url = https://github.com/openresty/lua-resty-lrucache.git
+	url = git@github.com:openresty/lua-resty-lrucache.git
 [submodule "third-party/oxd-web-lua"]
 	path = third-party/oxd-web-lua
-	url = https://github.com/GluuFederation/oxd-web-lua.git
+	url = git@github.com:GluuFederation/oxd-web-lua.git
 [submodule "third-party/json-logic-lua"]
 	path = third-party/json-logic-lua
 	url = https://git.rucciva.one/rucciva/json-logic-lua.git
 [submodule "third-party/lua-resty-jwt"]
 	path = third-party/lua-resty-jwt
-	url = https://github.com/altexy/lua-resty-jwt.git
+	url = git@github.com:altexy/lua-resty-jwt.git
 [submodule "third-party/lua-resty-hmac"]
 	path = third-party/lua-resty-hmac
-	url = https://github.com/jkeys089/lua-resty-hmac.git
+	url = git@github.com:jkeys089/lua-resty-hmac.git
 [submodule "third-party/nginx-lua-prometheus"]
 	path = third-party/nginx-lua-prometheus
-	url = https://github.com/knyar/nginx-lua-prometheus.git
+	url = git@github.com:knyar/nginx-lua-prometheus.git
 [submodule "third-party/lua-resty-session"]
 	path = third-party/lua-resty-session
-	url = https://github.com/bungle/lua-resty-session.git
+	url = git@github.com:bungle/lua-resty-session.git
