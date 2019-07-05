@@ -184,7 +184,7 @@
             post_logout_redirect_path_or_url: '/logout_redirect_uri',
             post_logout_redirect_uri: '',
             requested_scopes: ['openid', 'oxd', 'email', 'profile'],
-            required_acrs: ['auth_ldap_server', 'u2f', 'otp'],
+            required_acrs: ['auth_ldap_server'],
             max_id_token_age_value: 60,
             max_id_token_auth_age_value: 60,
             max_id_token_age_type: 'minutes',
