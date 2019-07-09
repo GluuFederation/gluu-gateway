@@ -49,7 +49,7 @@ logging:
     - type: console
     - type: file
       threshold: TRACE
-      logFormat: "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
+      logFormat: '%(oxd_log_format)s'
       currentLogFilename: /var/log/oxd-server/oxd-server.log
       archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz
       archivedFileCount: 7
