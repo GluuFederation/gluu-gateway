@@ -71,7 +71,7 @@ class KongSetup(object):
         self.kong_admin_listen_port = '8001'
         self.gluu_prometheus_server_ip = '104.131.17.150'
         self.gluu_prometheus_server_host = 'license.gluu.org'
-        self.gluu_customer_registration_endpoint = 'https://%s:%s' % (self.gluu_prometheus_server_host, '4040')
+        self.gluu_customer_registration_endpoint = 'https://%s:%s' % (self.gluu_prometheus_server_host, '4040/metrics/registration')
         self.dist_kong_config_folder = '/etc/kong'
         self.dist_kong_config_file = '%s/kong.conf' % self.dist_kong_config_folder
         self.dist_lua_folder = '/usr/local/share/lua/5.1'
