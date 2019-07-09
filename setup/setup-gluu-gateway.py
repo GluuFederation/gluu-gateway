@@ -720,7 +720,8 @@ make sure it's available from this server."""
                 message = """Error: Failed Not Ok Endpoint: %s 
                 Payload %s
                 Response %s 
-                Please check logs.""" % (endpoint, payload, response)
+                Response_Json %s
+                Please check logs.""" % (endpoint, payload, response, response_json)
                 self.exit(message)
 
         except requests.exceptions.HTTPError as e:
