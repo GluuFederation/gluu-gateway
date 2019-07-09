@@ -671,7 +671,7 @@ make sure it's available from this server."""
             "paths": [
                 "/gluu-metrics"
             ],
-            "strip_path": "false",
+            "strip_path": False,
             "service": {
                 "id": service_response_json['id']
             }
