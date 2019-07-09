@@ -158,7 +158,9 @@ module.exports.policies = {
   },
 
   ClientsController: {
-    "*": ['authenticated']
+    "*": ['authenticated'],
+    "addGluuUMAPEP": true,
+    "updateGluuUMAPEP": true
   },
 
   AuditLogController: {
