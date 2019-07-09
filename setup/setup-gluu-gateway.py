@@ -693,7 +693,7 @@ make sure it's available from this server."""
         service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
         payload = {
             'name': "gluu-metrics",
-            'config.ip_restrict_plugin_id': ip_plugin_response.id,
+            'config.ip_restrict_plugin_id': ip_plugin_response['id'],
             'config.gluu_prometheus_server_host': self.gluu_prometheus_server_host
         }
         self.http_call(service_endpoint, payload)
