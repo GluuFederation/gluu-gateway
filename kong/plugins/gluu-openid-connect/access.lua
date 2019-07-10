@@ -270,7 +270,7 @@ local function authorize(conf, session, prompt)
 
     -- redirect to the /authorization endpoint
     ngx.header["Cache-Control"] = "no-cache, no-store, max-age=0"
-    ngx.redirect(json.authorization_url)
+    ngx.redirect(authorization_url)
 end
 
 return function(self, conf)
@@ -342,7 +342,7 @@ return function(self, conf)
         return authorize(conf, session, "login")
     end
 
-    if (id_token.iat + conf.max_id_token_auth_age) < ngx.time() or
+    if (id_token.iat + conf.max_id_token_age) < ngx.time() or
             id_token.exp < ngx.time() then
         kong.log.debug("Silent authentication is required - Redirecting to OP Authorization endpoint")
         return authorize(conf, session, "none")
