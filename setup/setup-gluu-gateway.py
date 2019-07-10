@@ -465,7 +465,7 @@ class KongSetup(object):
             payload = {
                 'op_host': self.konga_op_host,
                 'authorization_redirect_uri': authorization_redirect_uri,
-                'post_logout_redirect_uri': authorization_redirect_uri,
+                'post_logout_redirect_uris': [authorization_redirect_uri],
                 'scope': ['openid', 'oxd', 'permission'],
                 'grant_types': ['authorization_code', 'client_credentials'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
