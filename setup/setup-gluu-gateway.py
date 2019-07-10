@@ -86,9 +86,6 @@ class KongSetup(object):
         self.dist_konga_config_file = '%s/config/local.js' % self.dist_konga_folder
         self.dist_konga_db_file = '%s/setup/templates/konga_db.sql' % self.dist_gluu_gateway_folder
         self.gg_plugins_folder = '%s/kong/plugins' % self.dist_gluu_gateway_folder
-        self.gluu_oauth_pep_plugin = '%s/gluu-oauth-pep' % self.gg_plugins_folder
-        self.gluu_uma_pep_plugin = '%s/gluu-uma-pep' % self.gg_plugins_folder
-        self.gluu_metrics_plugin = '%s/gluu-metrics' % self.gg_plugins_folder
         self.remove_plugin_list = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.gg_comman_folder = '%s/kong/common' % self.dist_gluu_gateway_folder
 
@@ -401,9 +398,7 @@ class KongSetup(object):
         self.run([self.cmd_cp, self.prometheus_file_path, self.dist_lua_folder])
 
         # gluu plugins
-        self.run([self.cmd_cp, '-R', self.gluu_oauth_pep_plugin, self.dist_kong_plugins_folder])
-        self.run([self.cmd_cp, '-R', self.gluu_uma_pep_plugin, self.dist_kong_plugins_folder])
-        self.run([self.cmd_cp, '-R', self.gluu_metrics_plugin, self.dist_kong_plugins_folder])
+        self.run([self.cmd_cp, '-R', '%s/*' % self.gg_plugins_folder, self.dist_kong_plugins_folder])
 
         # gluu plugins common file
         self.run([self.cmd_cp, '-R', '%s/kong-common.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
