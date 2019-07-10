@@ -63,7 +63,7 @@ class KongSetup(object):
         self.org_name = ''
         self.admin_email = ''
 
-        self.kong_custom_plugins = 'gluu-uma-pep,gluu-oauth-pep,gluu-metrics'
+        self.kong_custom_plugins = 'gluu-oauth-auth,gluu-uma-auth,gluu-uma-pep,gluu-oauth-pep,gluu-metrics,gluu-openid-connect,gluu-opa-pep'
         self.kong_ssl_cert = ''
         self.kong_ssl_key = ''
         self.pg_pwd = 'admin'
