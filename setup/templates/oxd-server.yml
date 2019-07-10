@@ -41,17 +41,13 @@ logging:
   loggers:
     org.gluu: TRACE
 
-  # Logback's Time Based Rolling Policy - archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}.log.gz
-  # Logback's Size and Time Based Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%d{yyyy-MM-dd}-%i.log.gz
-  # Logback's Fixed Window Rolling Policy -  archivedLogFilenamePattern: /tmp/application-%i.log.gz
-
   appenders:
     - type: console
     - type: file
       threshold: TRACE
       logFormat: '%(oxd_log_format)s'
       currentLogFilename: /var/log/oxd-server/oxd-server.log
-      archivedLogFilenamePattern: /var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz
+      archivedLogFilenamePattern: %(oxd_archived_log_filename_pattern)s
       archivedFileCount: 7
       timeZone: UTC
       maxFileSize: 10MB

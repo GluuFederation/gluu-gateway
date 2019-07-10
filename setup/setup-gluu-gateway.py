@@ -160,6 +160,7 @@ class KongSetup(object):
         self.centos7_oxd_file = "oxd-server-4.0-62.centos7.noarch.rpm"
         self.rhel7_oxd_file = "oxd-server-4.0-62.rhel7.noarch.rpm"
         self.oxd_log_format = "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
+        self.oxd_archived_log_filename_pattern = "/var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz"
 
     def init_parameters_from_json_argument(self):
         if len(sys.argv) > 1:
