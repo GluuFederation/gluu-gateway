@@ -6,4 +6,4 @@ setup opt/gluu-gateway
 gg_bower_components.tar.gz opt/gluu-gateway/dist
 gg_node_modules.tar.gz opt/gluu-gateway/dist
 third-party opt/gluu-gateway
-oxd-server_4.0-60~xenial+Ub16.04_all.deb /tmp/
+%OXD_SERVER% /tmp/
