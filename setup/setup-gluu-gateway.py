@@ -119,9 +119,7 @@ class KongSetup(object):
         # oxd licence configuration
         self.install_oxd = True
         self.generate_client = True
-        self.oxd_server_authorization_redirect_uri = ''
-        self.oxd_server_redirect_uris = ''
-        self.oxd_authorization_redirect_uri = 'localhost'
+        self.konga_redirect_uri = 'localhost'
 
         # JRE setup properties
         self.jre_version = '162'
@@ -179,7 +177,7 @@ class KongSetup(object):
             self.org_name = data['org_name']
             self.admin_email = data['admin_email']
             self.pg_pwd = data['pg_pwd']
-            self.oxd_authorization_redirect_uri = data['oxd_authorization_redirect_uri']
+            self.konga_redirect_uri = data['konga_redirect_uri']
             self.install_oxd = data['install_oxd']
             self.konga_op_host = 'https://' + data['konga_op_host']
             self.konga_oxd_web = data['konga_oxd_web']
@@ -469,11 +467,11 @@ class KongSetup(object):
             self.log_it(msg)
             print msg
             oxd_registration_endpoint = self.konga_oxd_web + '/register-site'
-            authorization_redirect_uri = 'https://' + self.oxd_authorization_redirect_uri + ':' + self.konga_port
+            redirect_uri = 'https://' + self.konga_redirect_uri + ':' + self.konga_port
             payload = {
                 'op_host': self.konga_op_host,
-                'authorization_redirect_uri': authorization_redirect_uri,
-                'post_logout_redirect_uris': [authorization_redirect_uri],
+                'redirect_uris': [redirect_uri],
+                'post_logout_redirect_uris': [redirect_uri],
                 'scope': ['openid', 'oxd', 'permission'],
                 'grant_types': ['authorization_code', 'client_credentials'],
                 'client_name': 'KONGA_GG_UI_CLIENT'
