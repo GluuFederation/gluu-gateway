@@ -44,7 +44,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         uri: clientRequest.oxd_url + '/register-site',
         body: {
           op_host: clientRequest.op_host || sails.config.opHost,
-          authorization_redirect_uri: clientRequest.authorization_redirect_uri || 'https://client.example.com/cb',
+          redirect_uris: clientRequest.redirect_uris || ['https://client.example.com/cb'],
           client_name: clientRequest.client_name || 'gg-client',
           client_id: clientRequest.client_id || '',
           client_secret: clientRequest.client_secret || '',
@@ -118,7 +118,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     const option = {
       op_host: body.op_host,
       oxd_url: body.oxd_url,
-      authorization_redirect_uri: 'https://client.example.com/cb',
       client_name: body.client_name || 'gg-oauth-client',
       client_id: body.client_id || '',
       client_secret: body.client_secret || ''
@@ -166,7 +165,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         const option = {
           op_host: body.op_host,
           oxd_url: body.oxd_url,
-          authorization_redirect_uri: 'https://client.example.com/cb',
           client_name: body.client_name || 'gg-uma-client',
           client_id: body.client_id || '',
           client_secret: body.client_secret || '',
@@ -271,7 +269,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     const option = {
       op_host: body.op_host,
       oxd_url: body.oxd_url,
-      authorization_redirect_uri: 'https://client.example.com/cb',
       client_name: body.client_name || 'gg-oauth-consumer-client',
       client_id: body.client_id || '',
       client_secret: body.client_secret || '',
@@ -351,9 +348,9 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     const reqBody = {
       op_host: body.op_host,
       oxd_url: body.oxd_url,
-      authorization_redirect_uri: body.authorization_redirect_uri || 'https://client.example.com/cb',
+      redirect_uris: body.redirect_uris || ['https://client.example.com/cb'],
       client_name: body.client_name || 'gg-openid-connect-client',
-      post_logout_redirect_uri: body.post_logout_redirect_uri,
+      post_logout_redirect_uris: body.post_logout_redirect_uris || [],
       scope: body.scope,
       acr_values: body.acr_values,
       grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
@@ -626,8 +623,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           oxd_id: body.oxd_id,
           op_host: body.op_host,
           oxd_url: body.oxd_url,
-          authorization_redirect_uri: body.authorization_redirect_uri || 'https://client.example.com/cb',
-          post_logout_redirect_uri: body.post_logout_redirect_uri,
+          redirect_uris: body.redirect_uris || ['https://client.example.com/cb'],
+          post_logout_redirect_uris: body.post_logout_redirect_uris,
           scope: body.scope,
           acr_values: body.acr_values,
           grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
