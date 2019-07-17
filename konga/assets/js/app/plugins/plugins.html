@@ -84,12 +84,7 @@
           <td>{{item.created_at | date : format : timezone}}</td>
 
           <td ng-if="user.hasPermission($state.name.split('.')[0],'delete')">
-            <button data-ng-if="item.name == 'gluu-oauth-auth'" type="button" ng-click="deleteOAuthClient(item)" class="btn btn-danger btn-link">
-              <i class="mdi mdi-delete"></i>
-              Delete
-            </button>
-
-            <button data-ng-if="item.name == 'gluu-uma-auth'" type="button" ng-click="deletePEPClient(item)" class="btn btn-danger btn-link">
+            <button data-ng-if="item.name == 'gluu-oauth-auth' || item.name == 'gluu-uma-auth'" type="button" ng-click="deleteOAuthClient(item)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
               Delete
             </button>

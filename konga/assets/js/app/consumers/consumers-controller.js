@@ -188,16 +188,14 @@
             '<h5 class="modal-title">CONFIRM</h5>' +
             '</div>' +
             '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
             '</div>' +
             '<div class="modal-footer dialog">' +
             '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
             '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
             '</div>',
             controller: function ($scope, $uibModalInstance) {
-              $scope.doWantDeleteClient = false;
               $scope.accept = function () {
-                $uibModalInstance.close($scope.doWantDeleteClient);
+                $uibModalInstance.close();
               };
 
               $scope.decline = function () {
@@ -207,25 +205,12 @@
             size: 'sm'
           });
 
-          modalInstance.result.then(function (doWantDeleteClient) {
-            console.log('doWantDeleteClient : ', doWantDeleteClient);
+          modalInstance.result.then(function () {
             ConsumerService
               .delete(item)
               .then(function (cResponse) {
                 MessageService.success("Kong consumer deleted successfully");
                 $rootScope.$broadcast('consumer.created');
-
-                PluginsService
-                  .deleteConsumerClient(item.custom_id, doWantDeleteClient)
-                  .then(function (pResponse) {
-                    if (doWantDeleteClient) {
-                      MessageService.success("Client deleted successfully from OXD");
-                    }
-                  })
-                  .catch(function (error) {
-                    console.log(error);
-                    MessageService.error((error.data && error.data.message) || "Failed to delete client");
-                  });
               })
               .catch(function (error) {
                 console.log(error);

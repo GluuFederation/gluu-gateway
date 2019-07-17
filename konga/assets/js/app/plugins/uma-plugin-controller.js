@@ -76,92 +76,84 @@
 
         if (pepPlugin) {
           $scope.modelPlugin.isPEPEnabled = true;
-          PluginsService
-            .getOAuthClient(pepPlugin.config.oxd_id)
-            .then(function (response) {
-              $scope.modelPlugin.pepId = pepPlugin.id;
-              $scope.modelPlugin.config.deny_by_default = pepPlugin.config.deny_by_default;
-              $scope.modelPlugin.isPEPEnabled = true;
-              $scope.isPluginAdded = true;
-              $scope.ruleScope = {};
-              $scope.ruleOauthScope = {};
-              $scope.modelPlugin.config.uma_scope_expression = (response.data && response.data.data) || [];
-              setTimeout(function () {
-                if ($scope.modelPlugin.config.uma_scope_expression && $scope.modelPlugin.config.uma_scope_expression.length > 0) {
-                  $scope.modelPlugin.config.uma_scope_expression.forEach(function (path, pIndex) {
-                    path.conditions.forEach(function (cond, cIndex) {
-                      var pRule = cond.scope_expression.rule;
-                      var op = '';
-                      if (pRule['and']) {
-                        op = 'and'
-                      } else if (pRule['or']) {
-                        op = 'or'
-                      } else if (pRule['!']) {
-                        op = '!'
-                      }
+          $scope.modelPlugin.pepId = pepPlugin.id;
+          $scope.modelPlugin.config.deny_by_default = pepPlugin.config.deny_by_default;
+          $scope.modelPlugin.isPEPEnabled = true;
+          $scope.isPluginAdded = true;
+          $scope.ruleScope = {};
+          $scope.ruleOauthScope = {};
+          $scope.modelPlugin.config.uma_scope_expression = pepPlugin.config.uma_scope_expression || [];
+          setTimeout(function () {
+            if ($scope.modelPlugin.config.uma_scope_expression && $scope.modelPlugin.config.uma_scope_expression.length > 0) {
+              $scope.modelPlugin.config.uma_scope_expression.forEach(function (path, pIndex) {
+                path.conditions.forEach(function (cond, cIndex) {
+                  var pRule = cond.scope_expression.rule;
+                  var op = '';
+                  if (pRule['and']) {
+                    op = 'and'
+                  } else if (pRule['or']) {
+                    op = 'or'
+                  } else if (pRule['!']) {
+                    op = '!'
+                  }
 
-                      _repeat(pRule[op], op, 0);
+                  _repeat(pRule[op], op, 0);
 
-                      function _repeat(rule, op, id) {
-                        if (op == "!") {
-                          rule = rule['or'];
+                  function _repeat(rule, op, id) {
+                    if (op == "!") {
+                      rule = rule['or'];
+                    }
+
+                    $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                    rule.forEach(function (oRule, oRuleIndex) {
+                      if (oRule['var'] == 0 || oRule['var']) {
+                        if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                          $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
                         }
 
-                        $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
-                        rule.forEach(function (oRule, oRuleIndex) {
-                          if (oRule['var'] == 0 || oRule['var']) {
-                            if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
-                              $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
-                            }
+                        $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+                      }
 
-                            $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
-                          }
+                      if (rule.length - 1 == oRuleIndex) {
+                        // show remove button
+                        var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
+                        if (id == 0) {
+                          removeBtn = "";
+                        }
+                        // render template
+                        var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                          "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                          "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
+                          "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                          removeBtn +
+                          "<div class=\"form-group has-feedback\"> " +
+                          "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                          "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                          "</div>" +
+                          "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
-                          if (rule.length - 1 == oRuleIndex) {
-                            // show remove button
-                            var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
-                            if (id == 0) {
-                              removeBtn = "";
-                            }
-                            // render template
-                            var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
-                              "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                              "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
-                              "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
-                              removeBtn +
-                              "<div class=\"form-group has-feedback\"> " +
-                              "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                              "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
-                              "</div>" +
-                              "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+                        $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                        $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                        $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
+                        // end
+                      }
 
-                            $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
-                            $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
-                            $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
-                            // end
-                          }
-
-                          if (oRule['and']) {
-                            _repeat(oRule['and'], 'and', ++id);
-                          } else if (oRule['or']) {
-                            _repeat(oRule['or'], 'or', ++id);
-                          } else if (oRule['!']) {
-                            _repeat(oRule['!'], '!', ++id);
-                          } else {
-                            $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
-                          }
-                        });
+                      if (oRule['and']) {
+                        _repeat(oRule['and'], 'and', ++id);
+                      } else if (oRule['or']) {
+                        _repeat(oRule['or'], 'or', ++id);
+                      } else if (oRule['!']) {
+                        _repeat(oRule['!'], '!', ++id);
+                      } else {
+                        $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
                       }
                     });
-                    path.pathIndex = pIndex;
-                  });
-                }
-              }, 500);
-            })
-            .catch(function (error) {
-              console.log(error);
-              MessageService.error((error.data && error.data.message) || "Failed to update UMA resources");
-            });
+                  }
+                });
+                path.pathIndex = pIndex;
+              });
+            }
+          }, 500);
         }
 
         /**
@@ -248,7 +240,7 @@
               $scope.uma_scope_expression = uma_scope_expression;
             }],
             resolve: {
-              uma_scope_expression : function () {
+              uma_scope_expression: function () {
                 return uma_scope_expression;
               }
             }
@@ -370,7 +362,6 @@
               });
             })
             .then(function (oauthClient) {
-              var uma_scope_expression = removeExtraScope(model.config.uma_scope_expression);
               var pepModel = {
                 name: 'gluu-uma-pep',
                 config: {
@@ -379,7 +370,7 @@
                   client_secret: oauthClient.client_secret,
                   op_url: model.config.op_url,
                   oxd_url: model.config.oxd_url,
-                  uma_scope_expression: uma_scope_expression,
+                  uma_scope_expression: model.config.uma_scope_expression,
                   deny_by_default: model.config.deny_by_default || false
                 }
               };
@@ -465,7 +456,6 @@
               });
             })
             .then(function () {
-              var uma_scope_expression = removeExtraScope(model.config.uma_scope_expression);
               var pepModel = {
                 name: 'gluu-uma-pep',
                 config: {
@@ -474,7 +464,7 @@
                   client_secret: model.client_secret,
                   op_url: model.config.op_url,
                   oxd_url: model.config.oxd_url,
-                  uma_scope_expression: uma_scope_expression,
+                  uma_scope_expression: model.config.uma_scope_expression,
                   deny_by_default: model.config.deny_by_default || false
                 }
               };

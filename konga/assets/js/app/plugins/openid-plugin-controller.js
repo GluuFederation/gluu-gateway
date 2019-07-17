@@ -61,111 +61,105 @@
           $scope.pluginConfig = oidcPlugin.config;
           $scope.pluginConfig.openid_connect_id = oidcPlugin.id;
           $scope.pluginConfig.isPEPEnabled = false;
-          PluginsService
-            .getOAuthClient($scope.pluginConfig.oxd_id)
-            .then(function (response) {
-              $scope.dbData = response.data.data;
-              $scope.pluginConfig.max_id_token_age_value = $scope.dbData.max_id_token_age.value;
-              $scope.pluginConfig.max_id_token_age_type = $scope.dbData.max_id_token_age.type;
-              $scope.pluginConfig.max_id_token_auth_age_value = $scope.dbData.max_id_token_auth_age.value;
-              $scope.pluginConfig.max_id_token_auth_age_type = $scope.dbData.max_id_token_auth_age.type;
-              if (pepPlugin) {
-                $scope.pluginConfig.pepId = pepPlugin.id;
-                $scope.pluginConfig.isPEPEnabled = true;
-                $scope.alreadyAddedUMAExpression = true;
-                $scope.pluginConfig.deny_by_default = pepPlugin.config.deny_by_default;
-                $scope.pluginConfig.redirect_claim_gathering_url = pepPlugin.config.redirect_claim_gathering_url || false;
-                $scope.pluginConfig.claims_redirect_path = pepPlugin.config.claims_redirect_path || "";
+          
+          var maxAge = convertSeconds($scope.pluginConfig.max_id_token_age);
+          var maxAuthAge = convertSeconds($scope.pluginConfig.max_id_token_auth_age);
+          $scope.pluginConfig.max_id_token_age_value = maxAge.value;
+          $scope.pluginConfig.max_id_token_age_type = maxAge.type;
+          $scope.pluginConfig.max_id_token_auth_age_value = maxAuthAge.value;
+          $scope.pluginConfig.max_id_token_auth_age_type = maxAuthAge.type;
+          if (pepPlugin) {
+            $scope.pluginConfig.pepId = pepPlugin.id;
+            $scope.pluginConfig.isPEPEnabled = true;
+            $scope.alreadyAddedUMAExpression = true;
+            $scope.pluginConfig.deny_by_default = pepPlugin.config.deny_by_default;
+            $scope.pluginConfig.redirect_claim_gathering_url = pepPlugin.config.redirect_claim_gathering_url || false;
+            $scope.pluginConfig.claims_redirect_path = pepPlugin.config.claims_redirect_path || "";
 
-                $scope.pluginConfig.require_id_token = pepPlugin.config.require_id_token;
-                $scope.pluginConfig.uma_scope_expression = (($scope.dbData && $scope.dbData.uma_scope_expression) || []);
-                $scope.ruleScope = {};
-                $scope.ruleOauthScope = {};
-                setTimeout(function () {
-                  if ($scope.pluginConfig.uma_scope_expression && $scope.pluginConfig.uma_scope_expression.length > 0) {
-                    $scope.pluginConfig.uma_scope_expression.forEach(function (path, pIndex) {
-                      path.conditions.forEach(function (cond, cIndex) {
-                        var pRule = cond.scope_expression.rule;
-                        var op = '';
-                        if (pRule['and']) {
-                          op = 'and'
-                        } else if (pRule['or']) {
-                          op = 'or'
-                        } else if (pRule['!']) {
-                          op = '!'
-                        }
+            $scope.pluginConfig.require_id_token = pepPlugin.config.require_id_token;
+            $scope.pluginConfig.uma_scope_expression = pepPlugin.config.uma_scope_expression || [];
+            $scope.ruleScope = {};
+            $scope.ruleOauthScope = {};
+            setTimeout(function () {
+              if ($scope.pluginConfig.uma_scope_expression && $scope.pluginConfig.uma_scope_expression.length > 0) {
+                $scope.pluginConfig.uma_scope_expression.forEach(function (path, pIndex) {
+                  path.conditions.forEach(function (cond, cIndex) {
+                    var pRule = cond.scope_expression.rule;
+                    var op = '';
+                    if (pRule['and']) {
+                      op = 'and'
+                    } else if (pRule['or']) {
+                      op = 'or'
+                    } else if (pRule['!']) {
+                      op = '!'
+                    }
 
-                        _repeat(pRule[op], op, 0);
+                    _repeat(pRule[op], op, 0);
 
-                        function _repeat(rule, op, id) {
-                          if (op == "!") {
-                            rule = rule['or'];
+                    function _repeat(rule, op, id) {
+                      if (op == "!") {
+                        rule = rule['or'];
+                      }
+
+                      $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
+                      rule.forEach(function (oRule, oRuleIndex) {
+                        if (oRule['var'] == 0 || oRule['var']) {
+                          if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
+                            $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
                           }
 
-                          $("input[name=hdScopeCount" + pIndex + cIndex + "]").val(id + 1);
-                          rule.forEach(function (oRule, oRuleIndex) {
-                            if (oRule['var'] == 0 || oRule['var']) {
-                              if (!$scope.ruleScope["scope" + pIndex + cIndex + id]) {
-                                $scope.ruleScope["scope" + pIndex + cIndex + id] = [];
-                              }
+                          $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
+                        }
 
-                              $scope.ruleScope["scope" + pIndex + cIndex + id].push({text: cond.scope_expression.data[oRule['var']]});
-                            }
+                        if (rule.length - 1 == oRuleIndex) {
+                          // show remove button
+                          var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
+                          if (id == 0) {
+                            removeBtn = "";
+                          }
+                          // render template
+                          var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
+                            "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
+                            "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
+                            "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
+                            removeBtn +
+                            "<div class=\"form-group has-feedback\"> " +
+                            "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
+                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                            "</div>" +
+                            "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
-                            if (rule.length - 1 == oRuleIndex) {
-                              // show remove button
-                              var removeBtn = " <button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + pIndex + cIndex + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>";
-                              if (id == 0) {
-                                removeBtn = "";
-                              }
-                              // render template
-                              var htmlRender = "<input type=\"radio\" value=\"or\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "or" ? "checked" : "") + ">or | " +
-                                "<input type=\"radio\" value=\"and\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "and" ? "checked" : "") + ">and | " +
-                                "<input type=\"radio\" value=\"!\" name=\"condition" + pIndex + cIndex + id + "\" " + (op == "!" ? "checked" : "") + ">not " +
-                                "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + pIndex + cIndex + "', " + (id + 1) + ")\" name=\"btnAdd" + pIndex + cIndex + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group</button> " +
-                                removeBtn +
-                                "<div class=\"form-group has-feedback\"> " +
-                                "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                                "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
-                                "</div>" +
-                                "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
+                          $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
+                          $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
+                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
+                          // end
+                        }
 
-                              $("#dyScope" + pIndex + cIndex + id).append(htmlRender);
-                              $compile(angular.element("#dyScope" + pIndex + cIndex + id).contents())($scope)
-                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").hide();
-                              // end
-                            }
-
-                            if (oRule['and']) {
-                              _repeat(oRule['and'], 'and', ++id);
-                            } else if (oRule['or']) {
-                              _repeat(oRule['or'], 'or', ++id);
-                            } else if (oRule['!']) {
-                              _repeat(oRule['!'], '!', ++id);
-                            } else {
-                              $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
-                            }
-                          });
+                        if (oRule['and']) {
+                          _repeat(oRule['and'], 'and', ++id);
+                        } else if (oRule['or']) {
+                          _repeat(oRule['or'], 'or', ++id);
+                        } else if (oRule['!']) {
+                          _repeat(oRule['!'], '!', ++id);
+                        } else {
+                          $("button[name=btnAdd" + pIndex + cIndex + id + "]").show();
                         }
                       });
-                      path.pathIndex = pIndex;
-                    });
-                  }
-                }, 500);
-              } else {
-                $scope.pluginConfig.isPEPEnabled = false;
-                $scope.pluginConfig.uma_scope_expression = [];
-                $scope.pluginConfig.deny_by_default = true;
-                $scope.pluginConfig.require_id_token = true;
-                $scope.pluginConfig.redirect_claim_gathering_url = false;
-                $scope.pluginConfig.claims_redirect_path = "";
-                setClaimPath()
+                    }
+                  });
+                  path.pathIndex = pIndex;
+                });
               }
-            })
-            .catch(function (error) {
-              console.log(error);
-              MessageService.error((error.data && error.data.message) || "Failed to get Client details");
-            });
+            }, 500);
+          } else {
+            $scope.pluginConfig.isPEPEnabled = false;
+            $scope.pluginConfig.uma_scope_expression = [];
+            $scope.pluginConfig.deny_by_default = true;
+            $scope.pluginConfig.require_id_token = true;
+            $scope.pluginConfig.redirect_claim_gathering_url = false;
+            $scope.pluginConfig.claims_redirect_path = "";
+            setClaimPath()
+          }
         } else {
           $scope.pluginConfig = {
             isPEPEnabled: $scope.pluginConfig.isPEPEnabled,
@@ -380,10 +374,6 @@
               acr_values: model.required_acrs,
               route_id: $scope.route.id,
               comment: model.comment,
-              max_id_token_age_value: model.max_id_token_age_value,
-              max_id_token_age_type: model.max_id_token_age_type,
-              max_id_token_auth_age_value: model.max_id_token_auth_age_value,
-              max_id_token_auth_age_type: model.max_id_token_auth_age_type,
               uma_scope_expression: model.uma_scope_expression || [],
             })
             .then(function (response) {
@@ -471,20 +461,14 @@
         }
 
         function updatePlugin(model) {
-          var extraData = $scope.dbData;
           var max_id_token_age = getSeconds(model.max_id_token_age_value, model.max_id_token_age_type);
           var max_id_token_auth_age = getSeconds(model.max_id_token_auth_age_value, model.max_id_token_auth_age_type);
-
-          extraData.max_id_token_age.value = model.max_id_token_age_value;
-          extraData.max_id_token_age.type = model.max_id_token_age_type;
-          extraData.max_id_token_auth_age.value = model.max_id_token_auth_age_value;
-          extraData.max_id_token_auth_age.type = model.max_id_token_auth_age_type;
-          extraData.uma_scope_expression = model.uma_scope_expression || [];
 
           PluginsService
             .updateOPClient({
               comment: model.comment,
               route_id: $scope.route.id,
+              uma_scope_expression: model.uma_scope_expression  || [],
               oxd_id: model.oxd_id,
               op_host: model.op_url,
               oxd_url: model.oxd_url,
@@ -495,7 +479,6 @@
               claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
               acr_values: model.required_acrs,
-              extraData: extraData,
               alreadyAddedUMAExpression: $scope.alreadyAddedUMAExpression || false,
             })
             .then(function (response) {
@@ -608,6 +591,32 @@
           } else if (type === 'days') {
             return value * 60 * 60 * 24
           }
+        }
+
+        function convertSeconds(seconds) {
+          var value = seconds / (1 * 60 * 60 * 24);
+          if (isInt(value)){
+            return { value: value, type: 'days' }
+          }
+
+          value = seconds / (1 * 60 * 60);
+          if (isInt(value)){
+            return { value: value, type: 'hours' }
+          }
+
+          value = seconds / (1 * 60);
+          if (isInt(value)){
+            return { value: value, type: 'minutes' }
+          }
+
+          value = seconds / 1;
+          if (isInt(value)){
+            return { value: value, type: 'seconds' }
+          }
+        }
+
+        function isInt(n){
+          return Number(n) === n && n % 1 === 0;
         }
 
         /**
