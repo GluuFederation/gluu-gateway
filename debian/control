@@ -9,7 +9,7 @@ Homepage: https://www.gluu.org
 Package: gluu-gateway
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
- postgresql (= 10),
+ postgresql-10,
  nodejs,
  unzip,
  lua-cjson,
