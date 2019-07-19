@@ -177,7 +177,7 @@
             logout_path: '/logout',
             post_logout_redirect_path_or_url: '/logout_redirect_uri',
             post_logout_redirect_uri: '',
-            requested_scopes: ['openid', 'oxd', 'email', 'profile'],
+            requested_scopes: ['openid', 'oxd', 'email', 'profile', 'uma_protection'],
             required_acrs: ['auth_ldap_server'],
             max_id_token_age_value: 60,
             max_id_token_auth_age_value: 60,
@@ -302,6 +302,12 @@
 
           var model;
           model = angular.copy($scope.pluginConfig);
+
+          if ($scope.pluginConfig.isPEPEnabled &&  model.requested_scopes.indexOf('uma_protection') < 0) {
+            MessageService.error("uma_protection scope is required for gluu-uma-pep plugin configuration.");
+            return false;
+          }
+
           var scopeExpression = makeExpression($scope.pluginConfig);
           if (scopeExpression && scopeExpression.length > 0) {
             model.uma_scope_expression = scopeExpression;

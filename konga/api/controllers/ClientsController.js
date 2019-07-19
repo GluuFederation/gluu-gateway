@@ -112,6 +112,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         })
       })
       .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
@@ -313,7 +314,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         }
 
         if (!(body.uma_scope_expression && body.uma_scope_expression.length > 0)) {
-          return Promise.resolve(opClient)
+          return Promise.resolve(response)
         }
 
         var option = {
@@ -356,8 +357,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           });
       })
       .then(function (response) {
-        var umaProtect = response.body;
-        if (!umaProtect.oxd_id) {
+        var result = response.body;
+        if (!result.oxd_id) {
           sails.log(new Date(), "Failed to update resources", response);
           return Promise.reject({message: "Failed to update resources"});
         }
@@ -381,6 +382,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         })
       })
       .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
@@ -546,6 +548,10 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         return httpRequest(option)
       })
       .then(function (response) {
+        if (!(body.uma_scope_expression && body.uma_scope_expression.length > 0)) {
+          return Promise.resolve(response)
+        }
+
         var reqBody = {};
         if (body.alreadyAddedUMAExpression) {
           reqBody = {
@@ -580,13 +586,14 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
               option.body.overwrite = true;
               return httpRequest(option)
             }
+
             return Promise.reject({message: "Failed to register client"});
           });
       })
       .then(function (response) {
-        var updateSite = response.body;
-        if (!updateSite.oxd_id) {
-          sails.log(new Date(), "Failed to update resources", response);
+        var result = response.body;
+        if (!result.oxd_id) {
+          sails.log(new Date(), "Failed to update resources or update site", result);
           return Promise.reject({message: "Failed to update resources"});
         }
 
@@ -607,6 +614,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         })
       })
       .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
@@ -718,6 +726,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         })
       })
       .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
