@@ -158,9 +158,9 @@ class KongSetup(object):
         self.prometheus_file_path = '%s/third-party/nginx-lua-prometheus/prometheus.lua' % self.dist_gluu_gateway_folder
 
         # oxd file names
-        self.ubuntu16_oxd_file = "oxd-server_4.0-68~xenial+Ub16.04_all.deb"
-        self.centos7_oxd_file = "oxd-server-4.0-68.centos7.noarch.rpm"
-        self.rhel7_oxd_file = "oxd-server-4.0-68.rhel7.noarch.rpm"
+        self.ubuntu16_oxd_file = "oxd-server_4.0-70-beta1~xenial+Ub16.04_all.deb"
+        self.centos7_oxd_file = "oxd-server-4.0-70-beta1.centos7.noarch.rpm"
+        self.rhel7_oxd_file = "oxd-server-4.0-70-beta1.rhel7.noarch.rpm"
         self.oxd_log_format = "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
         self.oxd_archived_log_filename_pattern = "/var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz"
 
