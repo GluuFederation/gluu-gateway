@@ -113,7 +113,7 @@ class KongSetup(object):
         self.konga_oxd_web = ''
         self.konga_kong_admin_web_url = 'http://localhost:%s' % self.kong_admin_listen_port
         self.konga_oxd_version = '4.0-60'
-        self.gg_version = '2.0'
+        self.gg_version = '4.0'
         self.postgres_version = '10.x'
 
         # oxd licence configuration
