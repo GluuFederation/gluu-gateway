@@ -13,16 +13,16 @@ SERVICE_NAME=gluu-gateway
 GLUU_GATEWAY_INIT_LOG=/var/log/gluu-gateway.log
 
 do_start () {
-        /etc/init.d/postgresql start
-        /etc/init.d/kong start
-        /etc/init.d/oxd-server start
-        /etc/init.d/konga start
+        service postgresql start
+        service kong start
+        service oxd-server start
+        service konga start
 }
 
 do_stop () {        
-        /etc/init.d/kong stop
-        /etc/init.d/oxd-server stop
-        /etc/init.d/konga stop
+        service kong stop
+        service oxd-server stop
+        service konga stop
 }
 
 do_status () {        
