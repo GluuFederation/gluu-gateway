@@ -35,7 +35,6 @@ function prepareSourcesCentos7 {
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
         "xenial") prepareSourcesXenial ;;
-        "centos6") prepareSourcesCentos6 ;;
         "centos7") prepareSourcesCentos7 ;;
     esac
 }
