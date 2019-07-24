@@ -178,6 +178,10 @@ function config_oidc_and_uma_pep() {
     #####################################
     # Configure OIDC Plugin
     #####################################
+    if [ "$DISTRIBUTION" == "centos7" ]; then
+        yum install git -y
+    fi
+
     git clone https://github.com/ldeveloperl1985/node-ejs.git
     cd node-ejs
     npm i
@@ -246,7 +250,7 @@ function test_oauth_auth_and_opa_pep() {
     function docker_centos7 {
         yum install -y yum-utils device-mapper-persistent-data lvm2
         yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-        yum install docker-ce docker-ce-cli containerd.io
+        yum install -y docker-ce docker-ce-cli containerd.io
         systemctl start docker
     }
 
