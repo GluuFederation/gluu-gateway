@@ -38,13 +38,20 @@
             <raw-view data-item="route"></raw-view>
           </td>
           <td>
-            <strong>
+            <strong ng-if="route.service.name === 'gluu-org-metrics-service'">
+              ...{{ route.id.substring(route.id.length - 12, route.id.length) }}
+            </strong>
+            <strong ng-if="!(route.service.name === 'gluu-org-metrics-service')">
               <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">...{{ route.id.substring(route.id.length - 12, route.id.length) }}</a>
             </strong>
           </td>
           <td>{{ route.hosts.join(", ") || "-" }}</td>
-          <td><a data-ui-sref="services.edit({service_id:route.service.id})">{{route.service.name ||
-            route.service.id}}</a></td>
+          <td>
+            <span ng-if="route.service.name === 'gluu-org-metrics-service'">{{route.service.name ||
+              route.service.id}}</span>
+            <a ng-if="!(route.service.name === 'gluu-org-metrics-service')" data-ui-sref="services.edit({service_id:route.service.id})">{{route.service.name ||
+            route.service.id}}</a>
+          </td>
           <td>{{ route.paths.join(", ") || "-" }}</td>
           <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
@@ -65,11 +72,11 @@
             <span data-ng-if="route.plugins.length < 1">-</span>
           </td>
           <td>
-            <a class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
+            <a ng-if="!(route.service.name === 'gluu-org-metrics-service')" class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
                class="btn btn-default btn-link">
               <i class="mdi mdi-pencil"></i>
             </a>
-            <button type="button" ng-click="deleteItem($index,route)" class="btn btn-danger btn-link">
+            <button ng-if="!(route.service.name === 'gluu-org-metrics-service')" type="button" ng-click="deleteItem($index,route)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
             </button>
           </td>

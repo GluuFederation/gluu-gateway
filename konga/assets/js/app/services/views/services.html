@@ -46,8 +46,8 @@
           </td>
           <td>
             <p class="no-margin">
-              <a class="clickable"
-                 data-ui-sref="services.edit({service_id:service.id})"><strong>{{ service.name || "-" }}</strong></a>
+              <span ng-if="service.name === 'gluu-org-metrics-service'"><strong>{{ service.name || "-" }}</strong></span>
+              <a ng-if="!(service.name === 'gluu-org-metrics-service')" class="clickable" data-ui-sref="services.edit({service_id:service.id})"><strong>{{ service.name || "-" }}</strong></a>
             </p>
             <p ng-if="service.extras && service.extras.description" class="text-small help-block no-margin">
               {{service.extras.description}}</p>
@@ -69,10 +69,10 @@
             <span data-ng-if="service.plugins.length < 1">-</span>
           </td>
           <td>
-            <a ui-sref="services.edit({ service_id: service.id })" class="btn btn-info btn-link">
+            <a ng-if="!(service.name === 'gluu-org-metrics-service')" ui-sref="services.edit({ service_id: service.id })" class="btn btn-info btn-link">
               <i class="mdi mdi-pencil"></i>
             </a>
-            <button type="button" ng-click="deleteItem($index,service)" class="btn btn-danger btn-link">
+            <button ng-if="!(service.name === 'gluu-org-metrics-service')" type="button" ng-click="deleteItem($index,service)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
             </button>
           </td>

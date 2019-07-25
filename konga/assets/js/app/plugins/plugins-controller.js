@@ -4,9 +4,9 @@
   angular.module('frontend.plugins')
     .controller('PluginsController', [
       '_', '$scope', '$log', '$state', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', '$rootScope',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ServiceService', '$rootScope',
       function controller(_, $scope, $log, $state, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, $rootScope) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ServiceService, $rootScope) {
 
         PluginModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('plugin', PluginModel)));
@@ -16,7 +16,7 @@
         $scope.getContext = getContext;
         $scope.deleteOAuthClient = deleteOAuthClient;
         $scope.deleteOPClient = deleteOPClient;
-
+        $scope.gluuMetricsServiceId = '';
         /**
          * ----------------------------------------------------------------------
          * Functions
@@ -101,7 +101,16 @@
             size: $scope.itemsFetchSize
           }).then(function (response) {
             $scope.items = response;
-            $scope.loading = false;
+            ServiceService.findByName('gluu-org-metrics-service')
+              .then(function (response) {
+                $scope.loading = false;
+                $scope.gluuMetricsServiceId = response.data && response.data.id;
+              })
+              .catch(function (error) {
+                $scope.loading = false;
+                console.log('Failed to get service', error)
+              });
+
           })
         }
 

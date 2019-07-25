@@ -59,6 +59,10 @@
             return $http.get('kong/services/' + serviceId)
           },
 
+          findByName: function (name) {
+            return $http.get('kong/services/' + name)
+          },
+
           update: function (service) {
             return $http.patch('kong/services/' + service.id, service)
           },
