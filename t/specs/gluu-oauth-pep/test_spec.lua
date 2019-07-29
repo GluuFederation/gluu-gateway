@@ -82,7 +82,7 @@ local function configure_service_route(service_name, service, route)
     return create_service_response
 end
 
-local function configure_pep_plugin(register_site_response, create_service_response, plugin_config)
+local function configure_pep_plugin(register_site_response, create_service_response, plugin_config, disableFail)
     plugin_config.op_url = "http://stub"
     plugin_config.oxd_url = "http://oxd-mock"
     plugin_config.client_id = register_site_response.client_id
@@ -98,10 +98,11 @@ local function configure_pep_plugin(register_site_response, create_service_respo
 
     print"enable plugin for the Service"
     local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        curl ]], (disableFail and "" or "--fail") ,[[ -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
+    return res
 end
 
 local function configure_auth_plugin(create_service_response, plugin_config)
@@ -185,7 +186,32 @@ test("with, without token and metrics", function()
     local register_site_response, access_token = configure_auth_plugin(create_service_response, {})
 
     configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {},
+        oauth_scope_expression = {
+            {
+                path = "/todos",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            }
+        },
         deny_by_default = false
     })
 
@@ -277,7 +303,32 @@ test("Anonymous test", function()
 
     configure_pep_plugin(register_site_response, create_service_response,
         {
-            oauth_scope_expression = {},
+            oauth_scope_expression = {
+                {
+                    path = "/todos",
+                    conditions = {
+                        {
+                            scope_expression = {
+                                rule = {
+                                    ["and"] = {
+                                        {
+                                            var = 0
+                                        }
+                                    }
+                                },
+                                data = {
+                                    "admin"
+                                }
+                            },
+                            httpMethods = {
+                                "GET",
+                                "DELETE",
+                                "POST"
+                            }
+                        }
+                    }
+                }
+            },
             deny_by_default = false
         }
     )
@@ -317,7 +368,32 @@ test("deny_by_default = true and metrics", function()
     local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
 
     configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {},
+        oauth_scope_expression = {
+            {
+                path = "/todos",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            }
+        },
         deny_by_default = true
     })
 
@@ -377,7 +453,32 @@ test("deny_by_default = false, pass_credentials = hide and metrics", function()
     )
 
     configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {},
+        oauth_scope_expression = {
+            {
+                path = "/posts",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            }
+        },
         deny_by_default = false,
     })
 
@@ -657,7 +758,32 @@ test("JWT RS256", function()
     local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
 
     configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {},
+        oauth_scope_expression = {
+            {
+                path = "/todos",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            }
+        },
         deny_by_default = false,
     })
 
@@ -951,6 +1077,272 @@ test("2 different service with different clients", function()
         access_token2, [[']]
     )
 
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("validate oauth_scope_expression", function()
+
+    setup("oxd-model3.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
+    print("test_runner_ip: ", test_runner_ip)
+
+    print "configure gluu-metrics and ip restriction plugin for the Service"
+    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
+        whitelist = {test_runner_ip}
+    })
+    kong_utils.configure_metrics_plugin({
+        gluu_prometheus_server_host = "localhost",
+        ip_restrict_plugin_id = ip_restrictriction_response.id
+    })
+
+    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
+
+    print "Empty or invalid item in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {},
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Empty expression not allowed", 1, true))
+
+    print "Path is missing in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            },
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Path is missing or empty in expression", 1, true))
+
+    print "Path is empty in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            }
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Path is missing or empty in expression", 1, true))
+
+    print "Duplicate path in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "/posts/??",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            },
+            {
+                path = "/posts/??",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    },
+                                    {
+                                        var = 1
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin",
+                                "employee"
+                            }
+                        },
+                        httpMethods = {
+                            "GET",
+                            "DELETE",
+                            "POST"
+                        }
+                    }
+                }
+            },
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Duplicate path in expression", 1, true))
+
+    print "Conditions are missing in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "/posts/??",
+            },
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Conditions are missing in expression", 1, true))
+
+    print "HTTP Methods are missing from condition in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "/posts/??",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                    }
+                }
+            }
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+
+    print "HTTP Methods are empty from condition in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "/posts/??",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {}
+                    }
+                }
+            }
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+
+    print "Duplicate http method from conditions in expression"
+    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
+        oauth_scope_expression = {
+            {
+                path = "/posts/??",
+                conditions = {
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {"GET", "POST"}
+                    },
+                    {
+                        scope_expression = {
+                            rule = {
+                                ["and"] = {
+                                    {
+                                        var = 0
+                                    }
+                                }
+                            },
+                            data = {
+                                "admin"
+                            }
+                        },
+                        httpMethods = {"POST","PUT"}
+                    }
+                }
+            }
+        },
+        deny_by_default = true,
+    }, true)
+    assert(res:find("Duplicate http method from conditions in expression", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
