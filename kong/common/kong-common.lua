@@ -5,6 +5,7 @@ local jwt = require "resty.jwt"
 local evp = require "resty.evp"
 local validators = require "resty.jwt-validators"
 local cjson = require"cjson"
+local pl_tablex = require "pl.tablex"
 
 local EXPIRE_DELTA = 10
 local MAX_PENDING_SLEEPS = 40
@@ -555,6 +556,49 @@ function _M.check_user(anonymous)
     end
 
     return false, "the anonymous user must be empty or a valid uuid"
+end
+
+--- Check OAuth and UMA scope expression
+-- @param expression: JSON expression
+function _M.check_expression(expression, config)
+    local paths = {}
+    if #expression == 0 then
+        return false, "Empty expression not allowed"
+    end
+
+    for k = 1, #expression do
+        local item = expression[k]
+
+        if not item.path or #item.path == 0 then
+            return false, "Path is missing or empty in expression"
+        end
+
+        if pl_tablex.find(paths, item.path) then
+            return false, "Duplicate path in expression"
+        end
+        table.insert(paths, item.path)
+
+        if not item.conditions or #item.conditions == 0 then
+            return false, "Conditions are missing in expression"
+        end
+
+        local http_methods = {}
+        for i = 1, #item.conditions do
+            local condition = item.conditions[i]
+
+            if not condition.httpMethods or #condition.httpMethods == 0 then
+                return false, "HTTP Methods are missing or empty from condition in expression"
+            end
+
+            for j = 1, #condition.httpMethods do
+                if pl_tablex.find(http_methods, condition.httpMethods[j]) then
+                    return false, "Duplicate http method from conditions in expression"
+                end
+            end
+            http_methods = pl_tablex.merge(http_methods, condition.httpMethods, true)
+        end
+    end
+    return true
 end
 
 _M.get_protection_token = get_protection_token
