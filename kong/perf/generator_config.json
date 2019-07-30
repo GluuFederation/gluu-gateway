@@ -1,0 +1,95 @@
+{
+  "oauth_scope_expression" : [
+    {
+      "path" : "/posts/?/{.+\\.php}",
+      "conditions" : [
+        {
+          "scope_expression": {
+            "rule": {
+              "and": [
+                {
+                  "var": 0
+                },
+                {
+                  "var": 1
+                }
+              ]
+            },
+            "data": [
+              "admin",
+              "employee"
+            ]
+          },
+          "httpMethods": [
+              "GET",
+              "DELETE",
+              "POST"
+          ]
+        }
+      ]
+    },
+    {
+      "path" : "/??",
+      "conditions" : [
+        {
+          "scope_expression": {
+            "rule": {
+              "and": [
+                {
+                  "var": 0
+                }
+              ]
+            },
+            "data": [
+              "employee"
+            ]
+          },
+          "httpMethods": [
+            "GET"
+          ]
+        }
+      ]
+    },
+    {
+      "path" : "/api/?/?",
+      "conditions" : [
+        {
+          "scope_expression": {
+            "rule": {
+              "and": [
+                {
+                  "var": 0
+                },
+                {
+                  "var": 1
+                }
+              ]
+            },
+            "data": [
+              "admin",
+              "superhero"
+            ]
+          },
+          "httpMethods": [
+            "GET",
+            "DELETE",
+            "POST"
+          ]
+        }
+      ]
+    }
+  ],
+  "regexp_map" : { ".+\\.php" : "test.php" },
+  "token_data" : [
+    {"client_id" : "0123456789qwerty_admin", "scope" : ["admin", "employee"] },
+    {"client_id" : "0123456789qwerty_admin", "scope" : ["admin", "employee"] },
+    {"client_id" : "0123456789qwerty_employee1", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_employee2", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_employee3", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_employee4", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_employee5", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_employee6", "scope" : ["employee"] },
+    {"client_id" : "0123456789qwerty_superhero", "scope" : ["admin", "superhero"] }
+  ]
+}
+
