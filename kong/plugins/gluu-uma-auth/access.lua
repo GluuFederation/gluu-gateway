@@ -31,7 +31,7 @@ local function try_introspect_rpt(conf, token, access_token)
 end
 
 local function introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local introspect_rpt_response_data = try_introspect_rpt(conf, token, ptoken)
     if not introspect_rpt_response_data.active then

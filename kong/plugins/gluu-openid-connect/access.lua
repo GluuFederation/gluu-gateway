@@ -29,8 +29,7 @@ local function process_logout(conf, session)
     local session_token = session.data.enc_id_token
     session:destroy()
 
-    -- TODO get rid of self parameter of get_protection_token(), make it as separate commit
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local post_logout_redirect_uri
     if conf.post_logout_redirect_path_or_url:sub(1, 1) == "/" then
@@ -75,7 +74,7 @@ local function authorization_response(self, conf, session)
 
     kong.log.debug("Authentication with OP done -> Calling OP Token Endpoint to obtain tokens")
 
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_tokens_by_code(conf.oxd_url,
         {
@@ -110,7 +109,7 @@ local function authorization_response(self, conf, session)
     session_data.access_token_expiration = ngx.time() + access_token_expires_in(conf, json.expires_in)
     session_data.refresh_token = json.refresh_token
 
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_user_info(conf.oxd_url,
         {
@@ -153,7 +152,7 @@ local function refresh_access_token(conf, session)
 
     kong.log.debug("refreshing expired access_token: ", session_data.access_token, " with: ", session_data.refresh_token)
 
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_access_token_by_refresh_token(conf.oxd_url,
         {
@@ -226,7 +225,7 @@ end
 -- send the browser of to the OP's authorization endpoint
 local function authorize(conf, session, prompt)
 
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_authorization_url(conf.oxd_url,
         {

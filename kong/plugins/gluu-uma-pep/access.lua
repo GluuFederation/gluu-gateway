@@ -49,7 +49,7 @@ end
 local hooks = {}
 
 local function redirect_to_claim_url(conf, ticket)
-    local ptoken = kong_auth_pep_common.get_protection_token(nil, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
     local claims_redirect_uri = kong_auth_pep_common.get_path_with_base_url(conf.claims_redirect_path)
     local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
         {
@@ -90,7 +90,7 @@ end
 
 -- call /uma_rp_get_rpt oxd API, handle errors
 local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local requestBody = {
         oxd_id = conf.oxd_id,
@@ -145,7 +145,7 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
         return unexpected_error("Expect id_token")
     end
 
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
 
@@ -160,7 +160,7 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
 end
 
 local function get_ticket(self, conf, protected_path, method)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
 
@@ -204,7 +204,7 @@ function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
         local id_token = kong.ctx.shared.request_token
         rpt =  get_rpt_by_ticket(self, conf, ticket, state, id_token)
     end
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local check_access_response = try_check_access(conf, protected_path, method, rpt, ptoken)
 

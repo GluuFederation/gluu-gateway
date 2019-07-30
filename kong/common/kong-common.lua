@@ -58,7 +58,7 @@ end
 -- here we store access tokens per client_id
 local access_tokens_per_client_id = {}
 
-local function get_protection_token(self, conf)
+local function get_protection_token(conf)
     local access_token = access_tokens_per_client_id[conf.client_id]
     if not access_token then
         access_token = { expire = 0 }
@@ -110,7 +110,7 @@ local supported_algs = {
 }
 
 local function refresh_jwks(self, conf, jwks)
-    local ptoken = get_protection_token(self, conf)
+    local ptoken = get_protection_token(conf)
 
     local response, err = oxd.get_jwks(conf.oxd_url,
         { op_host = conf.op_url },
