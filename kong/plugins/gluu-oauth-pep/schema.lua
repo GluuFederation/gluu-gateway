@@ -1,12 +1,5 @@
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-
---- Check OAuth scope expression
--- @param v: JSON expression
-local function check_expression(v)
-    -- TODO check the structure, required fields, etc
-    return true
-end
-
+local common = require "gluu.kong-common"
 
 return {
     no_consumer = true,
@@ -16,7 +9,7 @@ return {
         client_secret = { required = true, type = "string" },
         op_url = { required = true, type = "url" },
         oxd_url = { required = true, type = "url" },
-        oauth_scope_expression = { required = false, type = "table", func = check_expression },
+        oauth_scope_expression = { required = false, type = "table", func = common.check_expression },
         deny_by_default = { type = "boolean", default = true },
         method_path_tree = { required = false, type = "table" },
     },

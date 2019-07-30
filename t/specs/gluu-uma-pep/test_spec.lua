@@ -106,7 +106,7 @@ local function configure_pep_plugin(register_site_response, create_service_respo
 
     print"enable plugin for the Service"
     local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        curl --fail -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )

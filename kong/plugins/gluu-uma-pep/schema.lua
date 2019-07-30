@@ -1,11 +1,5 @@
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-
---- Check UMA protection document
--- @param v: JSON expression
-local function check_expression(v)
-    -- TODO check the structure, required fields, etc
-    return true
-end
+local common = require "gluu.kong-common"
 
 return {
     no_consumer = true,
@@ -15,7 +9,7 @@ return {
         client_secret = { required = true, type = "string" },
         oxd_id = { required = true, type = "string" },
         op_url = { required = true, type = "url" },
-        uma_scope_expression = { required = true, func = check_expression, type = "table" },
+        uma_scope_expression = { required = true, func = common.check_expression, type = "table" },
         method_path_tree = { required = false, type = "table" },
         deny_by_default = { type = "boolean", default = true },
         require_id_token = { type = "boolean", default = false },
