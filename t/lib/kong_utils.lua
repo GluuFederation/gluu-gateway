@@ -119,15 +119,20 @@ _M.kong_postgress_custom_plugins = function(opts)
     -- TODO something better?
     sleep(2)
 
+    -- important! oxd-mock logic assume one worker
+    local nginx_worker_processes = opts.nginx_worker_processes or 1
+    local nginx_log_level = opts.nginx_log_level or "debug"
+
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
-        " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
+        " --name kong ", -- TODO avoid hardcoded name
+        " -e KONG_NGINX_WORKER_PROCESSES=", tostring(nginx_worker_processes),
         " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1M\" ",
         " -e KONG_DATABASE=postgres ",
         " -e KONG_PG_HOST=kong-database ",
         " -e KONG_PG_DATABASE=kong ",
         " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
-        " -e KONG_LOG_LEVEL=debug ",
+        " -e KONG_LOG_LEVEL=", nginx_log_level,
         " -e KONG_PROXY_ACCESS_LOG=/dev/stdout ",
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
@@ -186,6 +191,46 @@ _M.oxd_mock = function(model, image)
 
     ctx.oxd_port =
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"80/tcp\") 0).HostPort}}' ", ctx.oxd_id)
+
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.oxd_port)
+end
+
+_M.jwt_proxy = function(model, image)
+    local ctx = _G.ctx
+    ctx.jwt_proxy_id = stdout("docker run -p 80 -d ",
+        " --network=", ctx.network_name,
+        " -v ", ctx.host_git_root, "/kong/perf/jwt-proxy.lua:/usr/local/openresty/lualib/gluu/jwt-proxy.lua:ro ",
+        " -v ", ctx.host_git_root, "/kong/perf/jwt-proxy.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/jwt.lua:/usr/local/openresty/lualib/resty/jwt.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/evp.lua:/usr/local/openresty/lualib/resty/evp.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua:/usr/local/openresty/lualib/resty/jwt-validators.lua:ro ",
+        " -v ", ctx.host_git_root, "/third-party/lua-resty-hmac/lib/resty/hmac.lua:/usr/local/openresty/lualib/resty/hmac.lua:ro ",
+        " --name jwt-proxy ", -- TODO avoid hardcoded name
+        image or openresty_image
+    )
+
+    check_container_is_running(ctx.jwt_proxy_id, "jwt-proxy")
+
+    ctx.jwt_proxy_port =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"80/tcp\") 0).HostPort}}' ", ctx.jwt_proxy_id)
+
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.jwt_proxy_port)
+end
+
+_M.oxd_mock_perf = function(image)
+    local ctx = _G.ctx
+    ctx.oxd_id = stdout("docker run -p 80 -d ",
+        " --network=", ctx.network_name,
+        " -v ", ctx.host_git_root, "/kong/perf/oxd-mock.lua:/usr/local/openresty/lualib/gluu/oxd-mock.lua:ro ",
+        " -v ", ctx.host_git_root, "/kong/perf/oxd-mock.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
+        " --name oxd-mock ", -- TODO avoid hardcoded name
+        image or openresty_image
+    )
+
+    check_container_is_running(ctx.oxd_id, "oxd")
+
+    ctx.oxd_port =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"80/tcp\") 0).HostPort}}' ", ctx.oxd_id)
 
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.oxd_port)
 end

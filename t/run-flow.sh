@@ -21,4 +21,4 @@ docker run --net host --rm -v /var/run/docker.sock:/var/run/docker.sock \
     -v $HOST_GIT_ROOT:$GIT_ROOT \
     -v /tmp:/tmp \
     --env HOST_GIT_ROOT --env GIT_ROOT \
-    $TEST_RUNNER_IMAGE_ID busted -m=$GIT_ROOT/t/lib/?.lua $GIT_ROOT/t/flow$TEST
+    $TEST_RUNNER_IMAGE_ID busted -m=$GIT_ROOT/t/lib/?.lua $GIT_ROOT/t/flows$TEST

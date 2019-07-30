@@ -181,6 +181,7 @@ local function refresh_jwks(self, conf, jwks)
         local key = keys[i]
         local ttl = key.exp - ngx.now()
         local alg = key.alg
+
         if ttl > 0 and supported_algs[alg] and
                 key.x5c and type(key.x5c) == "table" and key.x5c[1] then
             local pem = "-----BEGIN CERTIFICATE-----\n" ..
@@ -199,6 +200,7 @@ local function refresh_jwks(self, conf, jwks)
 end
 
 local function process_jwt(self, conf, jwt_obj)
+    print"process_jwt"
     if not supported_algs[jwt_obj.header.alg] then
         kong.log.info("JWT - unsupported alg=", jwt_obj.header.alg)
         return nil, 401, "Bad JWT"
@@ -497,6 +499,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
         if #conf.anonymous > 1 then --TODO
             return handle_anonymous(conf)
         end
+        ngx.log(ngx.DEBUG, "Failed to get bearer token from Authorization header")
         return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
     end
 

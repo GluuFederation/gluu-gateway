@@ -67,9 +67,10 @@ end
 -- @return true or false
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, requested_scopes)
     scope_expression = scope_expression or {}
-    kong.log.inspect(scope_expression)
+
     local data = {}
     local scope_expression_data = scope_expression.data
+
     for i = 1, #scope_expression_data do
         data[#data + 1] = pl_tablex.find(requested_scopes, scope_expression_data[i]) and true or false
     end
