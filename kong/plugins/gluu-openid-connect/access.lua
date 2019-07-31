@@ -16,11 +16,6 @@ local function split(str, sep)
     return ret
 end
 
-local function access_token_expires_in(conf, exp)
-    local max_id_token_age = conf.max_id_token_age
-    return max_id_token_age < exp and max_id_token_age or exp
-end
-
 local function unexpected_error()
     kong.response.exit(502, { message = "An unexpected error ocurred" })
 end
@@ -106,7 +101,7 @@ local function authorization_response(self, conf, session)
     session_data.id_token = id_token
 
     session_data.access_token = json.access_token
-    session_data.access_token_expiration = ngx.time() + access_token_expires_in(conf, json.expires_in)
+    session_data.access_token_expiration = ngx.time() + json.expires_in
     session_data.refresh_token = json.refresh_token
 
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
@@ -138,10 +133,14 @@ local function authorization_response(self, conf, session)
     ngx.redirect(original_url)
 end
 
+-- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
+-- kong-common also has similar const but for oxd AT
+local EXPIRE_DELTA = 5
+
 local function refresh_access_token(conf, session)
     local current_time = ngx.time()
     local session_data = session.data
-    if current_time < session_data.access_token_expiration then
+    if current_time < session_data.access_token_expiration - EXPIRE_DELTA then
         return true
     end
 
@@ -176,7 +175,7 @@ local function refresh_access_token(conf, session)
     kong.log.debug("access_token refreshed: ", json.access_token, " updated refresh_token: ", json.refresh_token)
 
     session_data.access_token = json.access_token
-    session_data.access_token_expiration = current_time + access_token_expires_in(conf, json.expires_in)
+    session_data.access_token_expiration = ngx.time() + json.expires_in
     session_data.refresh_token = json.refresh_token
 
     -- save the session with the new access_token and optionally the new refresh_token and id_token

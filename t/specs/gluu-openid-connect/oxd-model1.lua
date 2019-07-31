@@ -43,7 +43,7 @@ model = {
         response = {
             scope = { "openid", "profile", "email" },
             access_token = "b75434ff-f465-4b70-92e4-b7ba6b6c58f2",
-            expires_in = 299,
+            expires_in = 60*60,
         }
     },
     -- #3
@@ -75,7 +75,7 @@ model = {
         end,
         response = {
             access_token = "88bba7f5-961c-4b71-8053-9ab35f1ad395",
-            expires_in = 60,
+            expires_in = 10,
             id_token = "eyJraWQiOiI5MTUyNTU1Ni04YmIwLTQ2MzYtYTFhYy05ZGVlNjlhMDBmYWUiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NlLWRldjMuZ2x1dS5vcmciLCJhdWQiOiJAITE3MzYuMTc5RS5BQTYwLjE2QjIhMDAwMSE4RjdDLkI5QUIhMDAwOCE5Njk5LkFFQzcuOTM3MS4yODA3IiwiZXhwIjoxNTAxODYwMzMwLCJpYXQiOjE1MDE4NTY3MzAsIm5vbmNlIjoiOGFkbzJyMGMzYzdyZG03OHU1OTUzbTc5MXAiLCJhdXRoX3RpbWUiOjE1MDE4NTY2NzIsImF0X2hhc2giOiItQ3gyZHo1V3Z3X2tCWEFjVHMzbUZBIiwib3hPcGVuSURDb25uZWN0VmVyc2lvbiI6Im9wZW5pZGNvbm5lY3QtMS4wIiwic3ViIjoialNadE9rOUlGTmdLRTZUVVNGMHlUbHlzLVhCYkpic0dSckY5eG9JV2c4dyJ9.gi5tvt-duNygoDGjCqQqdKH6D6jJnpW5p6zYzxYiHtYecxkp8ks6AUJ4bmvkVHBd7a3vNbbFDY9Z3wsHGIMRXZRUXFVSQL1-JG0ye9zFH6Pp--Ky3Hexrl7V8PJ-AAFJwX3s854svIXugKNJMwPMmOvKcdzhhPgMBjh8GfVCpTW415iIBg2XcCmoq40zMIdya2WFeBy7IndcaoKcyUKQwqvtGfA53K3qe6RnKS_ps116n24RyBGypovLlThnoGdh20SZfaGVzoumRwW5-wBR6Iff97jgjx_SEOhhJK7Dr4dxliePd6H5ZtgUmFFoxm6Jyln9LKx-WrrUZRYNuFkh-w",
             refresh_token = "33d7988e-6ffb-4fe5-8c2a-0e158691d446",
             id_token_claims = {
@@ -124,22 +124,8 @@ model = {
             refresh_token = "33d7988e-6ffb-4fe5-8c2a-0e158691d333"
         }
     },
-    -- #7 Failed to get new access token, invalid refresh token, may expired and OP server failed to return new access token.
-    {
-        expect = "/get-access-token-by-refresh-token",
-        required_fields = {
-            "oxd_id",
-            "refresh_token",
-        },
-        request_check = function(json)
-            assert(json.oxd_id == model[1].response.oxd_id)
-        end,
-        response = {
-            message = "invalid_request"
-        },
-        httpStatus = 400
-    },
-    -- #8 Get new access token failed so go for authentication
+
+    -- #7 silent reauth
     {
         expect = "/get-authorization-url",
         required_fields = {
@@ -150,10 +136,57 @@ model = {
             assert(json.oxd_id == model[1].response.oxd_id)
         end,
         response = {
-            authorization_url = "https://stub.com/oxauth/restv1/authorize?response_type=code&client_id=@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4&redirect_uri=https://192.168.200.95/callback&scope=openid+profile+email+uma_protection+uma_authorization&state=473ot4nuqb4ubeokc139raur13&nonce=lbrdgorr974q66q6q9g454iccm",
+            authorization_url = "https://stub.com/oxauth/restv1/authorize?response_type=code&client_id=@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4&redirect_uri=https://192.168.200.95/callback&scope=openid+profile+email+uma_protection+uma_authorization&state=473ot4nuqb4ubeokc139raur13&nonce=lbrdgorr974q66q6q9g454iccm123",
         }
     },
-    -- #9: Logout
+    -- #8
+    {
+        expect = "/get-tokens-by-code",
+        required_fields = {
+            "oxd_id",
+            "code",
+            "state",
+        },
+        request_check = function(json)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.state == [[473ot4nuqb4ubeokc139raur13123]])
+            assert(json.code == [[1234567890123]])
+        end,
+        response = {
+            access_token = "88bba7f5-961c-4b71-8053-9ab35f1ad395",
+            expires_in = 30,
+            id_token = "eyJraWQiOiI5MTUyNTU1Ni04YmIwLTQ2MzYtYTFhYy05ZGVlNjlhMDBmYWUiLCJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJodHRwczovL2NlLWRldjMuZ2x1dS5vcmciLCJhdWQiOiJAITE3MzYuMTc5RS5BQTYwLjE2QjIhMDAwMSE4RjdDLkI5QUIhMDAwOCE5Njk5LkFFQzcuOTM3MS4yODA3IiwiZXhwIjoxNTAxODYwMzMwLCJpYXQiOjE1MDE4NTY3MzAsIm5vbmNlIjoiOGFkbzJyMGMzYzdyZG03OHU1OTUzbTc5MXAiLCJhdXRoX3RpbWUiOjE1MDE4NTY2NzIsImF0X2hhc2giOiItQ3gyZHo1V3Z3X2tCWEFjVHMzbUZBIiwib3hPcGVuSURDb25uZWN0VmVyc2lvbiI6Im9wZW5pZGNvbm5lY3QtMS4wIiwic3ViIjoialNadE9rOUlGTmdLRTZUVVNGMHlUbHlzLVhCYkpic0dSckY5eG9JV2c4dyJ9.gi5tvt-duNygoDGjCqQqdKH6D6jJnpW5p6zYzxYiHtYecxkp8ks6AUJ4bmvkVHBd7a3vNbbFDY9Z3wsHGIMRXZRUXFVSQL1-JG0ye9zFH6Pp--Ky3Hexrl7V8PJ-AAFJwX3s854svIXugKNJMwPMmOvKcdzhhPgMBjh8GfVCpTW415iIBg2XcCmoq40zMIdya2WFeBy7IndcaoKcyUKQwqvtGfA53K3qe6RnKS_ps116n24RyBGypovLlThnoGdh20SZfaGVzoumRwW5-wBR6Iff97jgjx_SEOhhJK7Dr4dxliePd6H5ZtgUmFFoxm6Jyln9LKx-WrrUZRYNuFkh-w",
+            refresh_token = "33d7988e-6ffb-4fe5-8c2a-0e158691d446",
+            id_token_claims = {
+                at_hash = "-Cx2dz5Wvw_kBXAcTs3mFA",
+                aud = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!9699.AEC7.9371.2807",
+                sub = "john doe",
+                iss = "https://<op-hostname>",
+                nonce = "lbrdgorr974q66q6q9g454iccm123",
+            }
+        },
+        response_callback = function(response, request_json)
+            response.id_token_claims.iat = ngx.time()
+            response.id_token_claims.exp = ngx.time() + 60
+            response.id_token_claims.auth_time = ngx.time()
+        end
+    },
+    -- #9
+    {
+        expect = "/get-user-info",
+        required_fields = {
+            "oxd_id",
+            "access_token",
+        },
+        request_check = function(json)
+            assert(json.oxd_id == model[1].response.oxd_id)
+            assert(json.access_token == model[8].response.access_token)
+        end,
+        response = {
+            sub = "john doe",
+        }
+    },
+    -- #10: Logout
     {
         expect = "/get-logout-uri",
         required_fields = {
