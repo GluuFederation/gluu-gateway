@@ -100,10 +100,6 @@ local function authorization_response(self, conf, session)
     session_data.enc_id_token = json.id_token
     session_data.id_token = id_token
 
-    session_data.access_token = json.access_token
-    session_data.access_token_expiration = ngx.time() + json.expires_in
-    session_data.refresh_token = json.refresh_token
-
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_user_info(conf.oxd_url,
@@ -131,57 +127,6 @@ local function authorization_response(self, conf, session)
     -- redirect to the URL that was accessed originally
     kong.log.debug("OIDC Authorization Code Flow completed -> Redirecting to original URL (", original_url, ")")
     ngx.redirect(original_url)
-end
-
--- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
--- kong-common also has similar const but for oxd AT
-local EXPIRE_DELTA = 5
-
-local function refresh_access_token(conf, session)
-    local current_time = ngx.time()
-    local session_data = session.data
-    if current_time < session_data.access_token_expiration - EXPIRE_DELTA then
-        return true
-    end
-
-    if not session_data.refresh_token then
-        kong.log.debug("token expired and no refresh token available")
-        return
-    end
-
-    kong.log.debug("refreshing expired access_token: ", session_data.access_token, " with: ", session_data.refresh_token)
-
-    local ptoken = kong_auth_pep_common.get_protection_token(conf)
-
-    local response, err = oxd.get_access_token_by_refresh_token(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            refresh_token = session_data.refresh_token,
-        },
-        ptoken)
-
-    if err then
-        kong.log.err(err)
-        return unexpected_error()
-    end
-
-    local status, json = response.status, response.body
-
-    if status ~= 200 then
-        kong.log.err("get_access_token_by_refresh_token() responds with status ", status)
-        return false
-    end
-
-    kong.log.debug("access_token refreshed: ", json.access_token, " updated refresh_token: ", json.refresh_token)
-
-    session_data.access_token = json.access_token
-    session_data.access_token_expiration = ngx.time() + json.expires_in
-    session_data.refresh_token = json.refresh_token
-
-    -- save the session with the new access_token and optionally the new refresh_token and id_token
-    session:save()
-
-    return true
 end
 
 local function is_acr_enough(required_acrs, acr)
@@ -307,23 +252,13 @@ return function(self, conf)
         return
     end
 
-    local token_expired = false
-    if session.present and session_data.id_token then
-        -- refresh access_token if necessary
-        if not refresh_access_token(conf, session) then
-            token_expired = true
-        end
-    end
-
     local id_token = session_data.id_token
     kong.log.debug(
         "session.present=", session.present,
-        ", session.data.id_token=", id_token ~= nil,
-        ", token_expired=", token_expired)
+        ", session.data.id_token=", id_token ~= nil)
 
     if not session.present
             or not id_token
-            or token_expired
             or (id_token.auth_time and (id_token.auth_time + conf.max_id_token_auth_age) < ngx.time()) then
         kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
         return authorize(conf, session)
