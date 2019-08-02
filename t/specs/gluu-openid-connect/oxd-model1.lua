@@ -107,25 +107,8 @@ model = {
             sub = "john doe",
         }
     },
-    -- #6 get_access_token_by_refresh_token
-    {
-        expect = "/get-access-token-by-refresh-token",
-        required_fields = {
-            "oxd_id",
-            "refresh_token",
-        },
-        request_check = function(json)
-            assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.refresh_token == model[4].response.refresh_token)
-        end,
-        response = {
-            access_token = "88bba7f5-961c-4b71-8053-9ab35f1ad333",
-            expires_in = 60,
-            refresh_token = "33d7988e-6ffb-4fe5-8c2a-0e158691d333"
-        }
-    },
 
-    -- #7 silent reauth
+    -- #6 silent reauth
     {
         expect = "/get-authorization-url",
         required_fields = {
@@ -139,7 +122,7 @@ model = {
             authorization_url = "https://stub.com/oxauth/restv1/authorize?response_type=code&client_id=@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4&redirect_uri=https://192.168.200.95/callback&scope=openid+profile+email+uma_protection+uma_authorization&state=473ot4nuqb4ubeokc139raur13&nonce=lbrdgorr974q66q6q9g454iccm123",
         }
     },
-    -- #8
+    -- #7
     {
         expect = "/get-tokens-by-code",
         required_fields = {
@@ -171,7 +154,7 @@ model = {
             response.id_token_claims.auth_time = ngx.time()
         end
     },
-    -- #9
+    -- #8
     {
         expect = "/get-user-info",
         required_fields = {
@@ -180,7 +163,7 @@ model = {
         },
         request_check = function(json)
             assert(json.oxd_id == model[1].response.oxd_id)
-            assert(json.access_token == model[8].response.access_token)
+            assert(json.access_token == model[7].response.access_token)
         end,
         response = {
             sub = "john doe",

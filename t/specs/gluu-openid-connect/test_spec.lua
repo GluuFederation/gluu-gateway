@@ -219,16 +219,7 @@ test("basic", function()
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
 
-    sh_ex("sleep 10");
-    print"OIDC access token has 10 second expiration, should expire, request for new access token using refresh token"
-    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
-        [[ -b ]], cookie_tmp_filename)
-    assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
-
-    sh_ex("sleep 6");
+    sh_ex("sleep 15");
 
     print"id_token is expired, require silent reauth"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
