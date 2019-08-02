@@ -7,7 +7,8 @@ local validators = require "resty.jwt-validators"
 local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 
-local EXPIRE_DELTA = 10
+-- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
+local EXPIRE_DELTA = 5
 local MAX_PENDING_SLEEPS = 40
 local PENDING_EXPIRE = 0.2
 local PENDING_TABLE = {}
@@ -58,20 +59,10 @@ end
 -- here we store access tokens per client_id
 local access_tokens_per_client_id = {}
 
-local function get_protection_token(self, conf)
-    local access_token = access_tokens_per_client_id[conf.client_id]
-    if not access_token then
-        access_token = { expire = 0 }
-        access_tokens_per_client_id[conf.client_id] = access_token
-    end
-
-    local now = ngx.now()
-    kong.log.debug("Current datetime: ", now, " access_token.expire: ", access_token.expire)
-    if not access_token.token or access_token.expire < now + EXPIRE_DELTA then
-        if access_token.token then
-            access_token.expire = access_token.expire + EXPIRE_DELTA -- avoid multiple token requests
-        end
-        local response = oxd.get_client_token(conf.oxd_url,
+local function get_protection_token(conf)
+    local access_token_data = access_tokens_per_client_id[conf.client_id]
+    if not access_token_data then
+        local response, err = oxd.get_client_token(conf.oxd_url,
             {
                 client_id = conf.client_id,
                 client_secret = conf.client_secret,
@@ -79,25 +70,76 @@ local function get_protection_token(self, conf)
                 op_host = conf.op_url,
             })
 
-        local status = response.status
         local body = response.body
-
-        kong.log.debug("Protection access token -- status: ", status)
-        if status >= 300 or not body.access_token then
-            access_token.token = nil
-            access_token.expire = 0
-            return unexpected_error("Failed to get access token.")
+        if response.status >= 300 or not body.access_token then
+            access_tokens_per_client_id[conf.client_id] = nil
+            return unexpected_error("Failed to get access token")
         end
 
-        access_token.token = body.access_token
-        if body.expires_in then
-            access_token.expire = ngx.now() + body.expires_in
-        else
-            -- use once
-            access_token.expire = 0
+        access_token_data = body
+        access_token_data.expire = ngx.time() + body.expires_in
+        access_tokens_per_client_id[conf.client_id] = access_token_data
+        return access_token_data.access_token
+    end
+
+    local now = ngx.time()
+    local ptoken = access_token_data.token
+
+    kong.log.debug("Current datetime: ", now, " access_token_data.expire: ", access_token_data.expire)
+    if access_token_data.expire > now - EXPIRE_DELTA then
+        return access_token_data.access_token
+    end
+
+    if access_token_data.expire < now and access_token_data.refresh_pending then
+        -- refreshing access token is in progress, avoid multiple token requests
+        return access_token_data.access_token
+    end
+
+    -- token will expire soon, we are trying to refresh it
+    -- avoid multiple token requests
+    access_token_data.refresh_pending = true
+
+    local refresh_token = access_token_data.refresh_token
+
+    local response, err
+    if refresh_token then
+        local response, err = oxd.get_access_token_by_refresh_token(conf.oxd_url,
+            {
+                oxd_id = conf.oxd_id,
+                refresh_token = refresh_token,
+            },
+            ptoken)
+
+        local body = response.body
+        if response.status < 300 and body.access_token then
+            access_token_data = body
+            access_token_data.expire = ngx.time() + response.body.expires_in
+            access_tokens_per_client_id[conf.client_id] = access_token_data
+            access_token_data.refresh_pending = nil
+            return access_token_data.access_token
         end
     end
-    return access_token.token
+
+    -- last chance, get_access_token by client credentials
+    local response, err = oxd.get_client_token(conf.oxd_url,
+        {
+            client_id = conf.client_id,
+            client_secret = conf.client_secret,
+            scope = { "openid", "oxd" },
+            op_host = conf.op_url,
+        })
+
+    local body = response.body
+    if response.status >= 300 or not body.access_token then
+        access_tokens_per_client_id[conf.client_id] = nil
+        return unexpected_error("Failed to get access token, status: ", status)
+    end
+
+    access_token_data = body
+    access_token_data.refresh_pending = nil
+    access_token_data.expire = ngx.time() + body.expires_in
+    access_tokens_per_client_id[conf.client_id] = access_token_data
+    return access_token_data.access_token
 end
 
 -- here we store jwks per op_url
@@ -110,7 +152,7 @@ local supported_algs = {
 }
 
 local function refresh_jwks(self, conf, jwks)
-    local ptoken = get_protection_token(self, conf)
+    local ptoken = get_protection_token(conf)
 
     local response, err = oxd.get_jwks(conf.oxd_url,
         { op_host = conf.op_url },

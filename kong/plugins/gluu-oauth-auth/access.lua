@@ -5,7 +5,7 @@ local kong_auth_pep_common = require "gluu.kong-common"
 -- upon success returns only introspect_response,
 -- otherwise return nil, status, err
 local function introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response = oxd.introspect_access_token(conf.oxd_url,
         {
