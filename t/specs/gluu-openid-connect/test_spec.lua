@@ -667,9 +667,9 @@ test("acr_values testing", function()
     assert(res:find("Authentication Context Class is not enough", 1, true))
 
 
-    print"test url based required acrs"
-    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/superhero --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+    print"test url based required acrs, unescaped space in URI"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/superhero bla' --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("302", 1, true))
     assert(res:find("response_type=code", 1, true))

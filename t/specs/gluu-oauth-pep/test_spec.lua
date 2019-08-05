@@ -958,6 +958,11 @@ test("check metrics client auth and grant", function()
     assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/posts",method="GET"]]), 1, true))
 
+    print "test with unescaped space in the path, path /posts"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url 'http://localhost:]], ctx.kong_proxy_port,
+        [[/posts bla' --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
