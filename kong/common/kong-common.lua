@@ -416,7 +416,7 @@ _M.access_pep_handler = function(self, conf, hooks)
     local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
-    local path = ngx.var.uri
+    local path = ngx.var.uri:match"^([^%s]+)"
     local protected_path, scope_expression = get_path_by_request_path_method(self, conf, path, method)
 
     if token and not protected_path and conf.deny_by_default then

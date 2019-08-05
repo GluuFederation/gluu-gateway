@@ -196,7 +196,7 @@ function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
 end
 
 return function(self, conf)
-    local path = ngx.var.uri
+    local path = ngx.var.uri:match"^([^%s]+)"
     if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then
         kong.log.debug("Claim Redirect URI path (", path, ") is currently navigated -> Processing ticket response coming from OP")
 
