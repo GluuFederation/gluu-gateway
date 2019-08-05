@@ -576,7 +576,6 @@ test("OpenID Connect with UMA Claim gathering flow", function()
     ctx.print_logs = false
 end)
 
-
 test("acr_values testing", function()
     setup("oxd-model5.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
@@ -594,7 +593,18 @@ test("acr_values testing", function()
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
         post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs = {"auth_ldap_server"}
+        required_acrs = {"auth_ldap_server"},
+        required_acrs_expression = {
+            {
+                path = "/superhero",
+                conditions = {
+                    {
+                        required_acrs = { "superhero" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            }
+        },
     })
 
     print"acr=auth_ldap_server"
@@ -655,6 +665,26 @@ test("acr_values testing", function()
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     assert(res:find("403", 1, true))
     assert(res:find("Authentication Context Class is not enough", 1, true))
+
+
+    print"test url based required acrs"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/superhero --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"follow redirect"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890qwerty&state=473ot4nuqb4ubeokc139raur13qwerty' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("superhero", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
