@@ -13,7 +13,7 @@ return function(self, conf)
     local input = {}
     -- current request info
     input.method = ngx.req.get_method()
-    input.path = path_split(ngx.var.uri) -- split normilized URI
+    input.path = path_split(ngx.var.uri:match"^([^%s]+)") -- split normilized URI
     input.uri_args = ngx.req.get_uri_args()
     input.headers = ngx.req.get_headers()
     if conf.forward_request_body then

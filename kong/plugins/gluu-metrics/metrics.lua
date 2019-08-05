@@ -65,7 +65,7 @@ local function log(message)
             message.service.host
     service_name = service_name or ""
     local consumer, request = message.consumer, message.request
-    local uri = ngx.var.uri
+    local uri = ngx.var.uri:match"^([^%s]+)"
     local openid_auth = "openid_connect_authentication"
 
     metrics.endpoint_method:inc(1, { uri, request.method, service_name })

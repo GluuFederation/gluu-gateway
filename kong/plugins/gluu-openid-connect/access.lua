@@ -221,7 +221,7 @@ return function(self, conf)
     local session_data = session.data
 
     -- see if this is a request to the redirect_uri i.e. an authorization response
-    local path = ngx.var.uri
+    local path = ngx.var.uri:match"^([^%s]+)"
     if path == conf.authorization_redirect_path then
         kong.log.debug("Redirect URI path (", path, ") is currently navigated -> Processing authorization response coming from OP")
 
