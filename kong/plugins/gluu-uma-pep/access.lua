@@ -124,22 +124,6 @@ local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
     return body.access_token
 end
 
---- lookup registered protected path by path and http methods
--- @param self: Kong plugin object instance
--- @param conf:
--- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
--- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
--- @param method: requested http method Example: GET
--- @return protected_path; may returns no values
-function hooks.get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree = conf.method_path_tree
-    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
-
-    if rule then
-        return rule.path
-    end
-end
-
 function hooks.no_token_protected_path(self, conf, protected_path, method)
     if conf.require_id_token then
         return unexpected_error("Expect id_token")

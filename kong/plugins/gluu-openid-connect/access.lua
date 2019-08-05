@@ -1,6 +1,7 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
+local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
 
@@ -167,8 +168,7 @@ local function set_requested_acrs(session_data, required_acrs)
 end
 
 -- send the browser of to the OP's authorization endpoint
-local function authorize(conf, session, prompt)
-
+local function authorize(conf, session, prompt, required_acrs)
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_authorization_url(conf.oxd_url,
@@ -176,7 +176,7 @@ local function authorize(conf, session, prompt)
             oxd_id = conf.oxd_id,
             prompt = prompt,
             scope = conf.requested_scopes,
-            acr_values = conf.required_acrs,
+            acr_values = required_acrs,
         },
         ptoken)
 
@@ -257,28 +257,36 @@ return function(self, conf)
         "session.present=", session.present,
         ", session.data.id_token=", id_token ~= nil)
 
+    local method_path_tree = conf.method_path_tree
+    local required_acrs
+    if method_path_tree then
+        local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
+        required_acrs = rule and rule.required_acrs
+    end
+    required_acrs =  required_acrs or conf.required_acrs
+
     if not session.present
             or not id_token
             or (id_token.auth_time and (id_token.auth_time + conf.max_id_token_auth_age) < ngx.time()) then
         kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session)
+        return authorize(conf, session, nil, required_acrs)
     end
 
     local acr = id_token.acr
-    local required_acrs = conf.required_acrs
+
     if required_acrs and #required_acrs > 0 and (not acr or not is_acr_enough(required_acrs, acr)) then
         if acr_already_requested(session_data, required_acrs) then
             kong.log.debug("We already requested all required acrs, avoid a loop")
             return kong.response.exit(403, { message = "Authentication Context Class is not enough"})
         end
         kong.log.debug("Authentication is required, not enough acr - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session, "login")
+        return authorize(conf, session, "login", required_acrs)
     end
 
     if (id_token.iat + conf.max_id_token_age) < ngx.time() or
             id_token.exp < ngx.time() then
         kong.log.debug("Silent authentication is required - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session, "none")
+        return authorize(conf, session, "none", required_acrs)
     end
 
     -- request_token_data need in uma-pep in both case i.e. uma-auth and openid-connect

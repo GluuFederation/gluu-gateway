@@ -36,26 +36,6 @@ local function strip_method(path)
 
 end
 
---- Fetch oauth scope expression based on path and http methods
--- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
--- @param self: Kong plugin object
--- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
--- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
--- @param method: requested http method Example: GET
--- @return json expression Example: {path: "/posts", ...}
-function hooks.get_path_by_request_path_method(self, conf, path, method)
-    local exp = conf.oauth_scope_expression
-
-    local method_path_tree = conf.method_path_tree
-    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
-
-    if rule then
-        return rule.path, rule.scope_expression
-    end
-
-    return nil
-end
-
 function hooks.no_token_protected_path()
     -- no pending cache state at the moment, may use PDK directly
     kong.response.exit(401, { message = "Missed OAuth token" })
