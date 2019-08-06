@@ -618,7 +618,7 @@ end
 --- Check OAuth and UMA scope expression
 -- @param expression: JSON expression
 function _M.check_expression(expression, config)
-    if not expression then
+    if not expression or expression == cjson.null then
         -- it is possible that expression is not required, but this function is called
         return true
     end
@@ -665,7 +665,7 @@ end
 
 -- @param exp: scope expression or acrs expression
 function _M.convert_scope_expression_to_path_wildcard_tree(exp)
-    if not exp then
+    if not exp or exp == cjson.null then
         -- it is possible that expression is not required, but this function is called
         return
     end
