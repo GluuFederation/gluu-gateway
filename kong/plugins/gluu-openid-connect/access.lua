@@ -208,7 +208,7 @@ local function authorize(conf, session, prompt, required_acrs)
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
-    set_requested_acrs(session_data, conf.required_acrs)
+    set_requested_acrs(session_data, required_acrs)
     session:save()
 
     -- redirect to the /authorization endpoint
