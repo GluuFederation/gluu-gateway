@@ -19,12 +19,16 @@
         $scope.customHeaders = [['CUSTOM_NUMBER', '123321123']];
         $scope.claimSupported = [['role', '==', '[Mm][Aa]']];
         $scope.timeType = ['seconds', 'minutes', 'hours', 'days'];
+        $scope.op_acr_values_supported = ['auth_ldap_server'];
         $scope.getKongProxyURL = getKongProxyURL;
 
         $scope.addNewCondition = addNewCondition;
         $scope.addNewPath = addNewPath;
+        $scope.addACRNewCondition = addACRNewCondition;
+        $scope.addACRNewPath = addACRNewPath;
         $scope.showResourceJSON = showResourceJSON;
         $scope.managePlugin = managePlugin;
+        $scope.loadACRMethods = loadACRMethods;
         $scope.loadMethods = loadMethods;
         $scope.loadScopes = loadScopes;
         $scope.addGroup = addGroup;
@@ -61,7 +65,13 @@
           $scope.pluginConfig = oidcPlugin.config;
           $scope.pluginConfig.openid_connect_id = oidcPlugin.id;
           $scope.pluginConfig.isPEPEnabled = false;
-          
+          if ($scope.pluginConfig.required_acrs_expression) {
+            $scope.pluginConfig.isACRExpEnabled = true;
+          } else {
+            $scope.pluginConfig.required_acrs_expression = [];
+            $scope.pluginConfig.isACRExpEnabled = false;
+          }
+
           var maxAge = convertSeconds($scope.pluginConfig.max_id_token_age);
           var maxAuthAge = convertSeconds($scope.pluginConfig.max_id_token_auth_age);
           $scope.pluginConfig.max_id_token_age_value = maxAge.value;
@@ -125,7 +135,7 @@
                             removeBtn +
                             "<div class=\"form-group has-feedback\"> " +
                             "<input type=\"hidden\" value=\"{{ruleScope['scope" + pIndex + cIndex + id + "']}}\" name=\"hdScope" + pIndex + cIndex + id + "\" /> " +
-                            "<tags-input ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
+                            "<tags-input min-length=\"1\" ng-model=\"ruleScope['scope" + pIndex + cIndex + id + "']\" required name=\"scope" + pIndex + cIndex + id + "\" id=\"scope" + pIndex + cIndex + id + "\" placeholder=\"Enter scopes\"></tags-input> " +
                             "</div>" +
                             "<div class=\"col-md-12\" id=\"dyScope" + pIndex + cIndex + (id + 1) + "\"></div>";
 
@@ -179,6 +189,16 @@
             post_logout_redirect_uri: '',
             requested_scopes: ['openid', 'oxd', 'email', 'profile', 'uma_protection'],
             required_acrs: ['auth_ldap_server'],
+            required_acrs_expression: [
+              {
+                path: "/??",
+                conditions: [{
+                  httpMethods: ["?"],
+                  required_acrs: ["auth_ldap_server"]
+                }]
+              }
+            ],
+            isACRExpEnabled: true,
             max_id_token_age_value: 60,
             max_id_token_auth_age_value: 60,
             max_id_token_age_type: 'minutes',
@@ -249,6 +269,7 @@
             .getOPDiscoveryResponse({op_url: $scope.pluginConfig.op_url})
             .then(function (opRes) {
               $scope.opResponse = opRes.data;
+              $scope.op_acr_values_supported = $scope.opResponse.acr_values_supported;
               $scope.opResponse.acr_values_supported = $scope.opResponse.acr_values_supported.map(function (acr) {
                 return {
                   value: acr, level: Object.keys($scope.opResponse.auth_level_mapping).find(function (level) {
@@ -286,7 +307,12 @@
           }
 
           if ($scope.pluginConfig.isPEPEnabled && !isFormValid) {
-            MessageService.error("Please fill all the fields marked in red");
+            MessageService.error("Please fill all the UMA PEP Expression fields marked in red");
+            return false;
+          }
+
+          if ($scope.pluginConfig.isACRExpEnabled && !isFormValid) {
+            MessageService.error("Please fill all the ACRs Expression Configuration fields marked in red");
             return false;
           }
 
@@ -313,6 +339,12 @@
             model.uma_scope_expression = scopeExpression;
           } else {
             delete model.uma_scope_expression
+          }
+
+          if ($scope.pluginConfig.isACRExpEnabled) {
+            model.required_acrs_expression = makeACRExpression($scope.pluginConfig);
+          } else {
+            delete model.required_acrs_expression
           }
 
           if (model.isPEPEnabled && !model.uma_scope_expression) {
@@ -405,10 +437,12 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   required_acrs: model.required_acrs,
+                  required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
               };
+
               return new Promise(function (resolve, reject) {
                 return PluginHelperService.addPlugin(
                   pluginModel,
@@ -508,6 +542,7 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   required_acrs: model.required_acrs,
+                  required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
@@ -644,7 +679,7 @@
             "<button type=\"button\" class=\"btn btn-xs btn-danger\" data-add=\"rule\" data-ng-click=\"removeGroup('" + parent + "', " + id + ")\"><i class=\"mdi mdi-close\"></i> Delete</button>" +
             "<input type=\"hidden\" value=\"{{cond['scopes" + parent + id + "']}}\" name=\"hdScope" + parent + id + "\" />" +
             "<div class=\"form-group has-feedback\">" +
-            "<tags-input type=\"url\" required ng-model=\"cond['scopes" + parent + id + "']\" name=\"scope" + id + "\" id=\"scopes{{$parent.$index}}{{$index}}\" placeholder=\"Enter scopes\"> </tags-input>" +
+            "<tags-input min-length=\"1\" type=\"url\" required ng-model=\"cond['scopes" + parent + id + "']\" name=\"scope" + id + "\" id=\"scopes{{$parent.$index}}{{$index}}\" placeholder=\"Enter scopes\"> </tags-input>" +
             "</div>" +
             "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
             "</div>";
@@ -668,7 +703,7 @@
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
+                "<tags-input min-length=\"1\" ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"></tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>";
 
@@ -686,6 +721,10 @@
             controller: ['$uibModalInstance', '$scope', function ($uibModalInstance, $scope) {
               $scope.paths = [
                 {
+                  path: '/??',
+                  allow: ['/folder/file.ext', '/folder/file2', 'Allow all the paths'],
+                  deny: []
+                }, {
                   path: '/folder/file.ext',
                   allow: ['/folder/file.ext'],
                   deny: ['/folder/file']
@@ -771,7 +810,7 @@
                 "<button type=\"button\" class=\"btn btn-xs btn-success\" data-add=\"rule\" data-ng-click=\"addGroup('" + parent + "',1)\" name=\"btnAdd" + parent + id + "\"><i class=\"mdi mdi-plus\"></i> Add Group </button>" +
                 "<input type=\"hidden\" value=\"{{cond['scopes' + " + parent + " + '0']}}\" name=\"hdScope" + parent + "0\"/>" +
                 "<div class=\"form-group has-feedback\">" +
-                "<tags-input ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
+                "<tags-input min-length=\"1\" ng-model=\"cond['scopes' + " + parent + " + '0']\" required name=\"scope" + parent + "0\" id=\"scopes" + parent + "\" placeholder=\"Enter scopes\"> </tags-input>" +
                 "</div>" +
                 "<div class=\"col-md-12\" id=\"dyScope" + parent + (id + 1) + "\"></div>" +
                 "</div>";
@@ -781,10 +820,37 @@
           }
         }
 
+        function addACRNewPath() {
+          $scope.pluginConfig.required_acrs_expression.push({
+            path: "/??",
+            conditions: [{
+              httpMethods: ["?"],
+              required_acrs: ["auth_ldap_server"]
+            }]
+          });
+        }
+
+        function addACRNewCondition(pIndex) {
+          $scope.pluginConfig.required_acrs_expression[pIndex].conditions.push(
+            {
+              httpMethods: ["?"],
+              required_acrs: ["auth_ldap_server"]
+            }
+          );
+        }
+
         function loadMethods(query) {
-          var arr = ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'];
+          var arr = ['GET', 'POST', 'DELETE', 'PUT', 'PATCH', 'OPTIONS', 'CONNECT', 'TRACE', 'HEAD', '?'];
           arr = arr.filter(function (o) {
             return o.indexOf(query.toUpperCase()) >= 0;
+          });
+          return arr;
+        }
+
+        function loadACRMethods(query) {
+          var arr = $scope.op_acr_values_supported;
+          arr = arr.filter(function (o) {
+            return o.indexOf(query.toLowerCase()) >= 0;
           });
           return arr;
         }
@@ -845,6 +911,26 @@
             return model.uma_scope_expression;
           } catch (e) {
             MessageService.error("Invalid UMA scope expression");
+            return null;
+          }
+        }
+
+        function makeACRExpression(data) {
+          try {
+            var model = angular.copy(data);
+            model.required_acrs_expression.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                cond.httpMethods = cond.httpMethods.map(function (o) {
+                  return o.text;
+                });
+                cond.required_acrs = cond.required_acrs.map(function (o) {
+                  return o.text;
+                });
+              });
+            });
+            return model.required_acrs_expression;
+          } catch (e) {
+            MessageService.error("Invalid acr expression");
             return null;
           }
         }

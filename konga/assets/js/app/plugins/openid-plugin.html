@@ -102,20 +102,20 @@
                   </p>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="col-sm-2 control-label">Required acrs (optional)</label>
-                <div class="col-sm-10 well">
-                  <div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">
-                    <div class="checkbox">
-                      <label class="custom-checkbox">
-                        <input type="checkbox" id="acr_values_supported{{key}}"
-                               checklist-model="pluginConfig.required_acrs" checklist-value="value.value">
-                        <span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <!--<div class="form-group">-->
+              <!--<label class="col-sm-2 control-label">Required acrs (optional)</label>-->
+              <!--<div class="col-sm-10 well">-->
+              <!--<div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">-->
+              <!--<div class="checkbox">-->
+              <!--<label class="custom-checkbox">-->
+              <!--<input type="checkbox" id="acr_values_supported{{key}}"-->
+              <!--checklist-model="pluginConfig.required_acrs" checklist-value="value.value">-->
+              <!--<span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>-->
+              <!--</label>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
+              <!--</div>-->
               <div class="form-group">
                 <label class="col-sm-2 control-label">Requested scopes</label>
                 <div class="col-sm-10 well">
@@ -129,142 +129,7 @@
                     </div>
                   </div>
                 </div>
-                <!--<label class="col-sm-2 control-label">Add Scope</label>-->
-                <!--<div class="col-sm-5">-->
-                  <!--<input type="text" ng-model="newScope"-->
-                         <!--class="form-control">-->
-                <!--</div>-->
-                <!--<div class="col-sm-1">-->
-                  <!--<button class="btn-sm btn-success" data-ng-click="addNewScope(newScope);newScope='';"-->
-                          <!--title="Add">Add-->
-                  <!--</button>-->
-                <!--</div>-->
               </div>
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-2 control-label">Headers</label>-->
-              <!--<div class="col-sm-10 well">-->
-              <!--<div id="id_token_jwt">-->
-              <!--<div class="col-sm-4">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox" ng-model="config.headers['id_token_jwt'].isChecked">-->
-              <!--<span style="font-weight: 600">id_token JWT</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-8">-->
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-              <!--<div class="col-sm-9">-->
-              <!--<input ng-model="config.headers['id_token_jwt'].header" class="form-control"/>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div id="userinfo_jwt">-->
-              <!--<div class="col-sm-4">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox" ng-model="config.headers['userinfo_jwt'].isChecked">-->
-              <!--<span style="font-weight: 600">Userinfo JWT</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-8">-->
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-              <!--<div class="col-sm-9">-->
-              <!--<input ng-model="config.headers['userinfo_jwt'].header" class="form-control"/>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div id="userinfo_claims">-->
-              <!--<div class="col-sm-4">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox" ng-model="config.headers['userinfo_claims'].isChecked">-->
-              <!--<span style="font-weight: 600">Userinfo claims</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-8">-->
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-              <!--<div class="col-sm-9">-->
-              <!--<input ng-model="config.headers['userinfo_claims'].header" class="form-control"/>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div id="id_token_claims">-->
-              <!--<div class="col-sm-4">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox" ng-model="config.headers['id_token_claims'].isChecked">-->
-              <!--<span style="font-weight: 600">id_token claims</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-8">-->
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-              <!--<div class="col-sm-9">-->
-              <!--<input ng-model="config.headers['id_token_claims'].header" class="form-control"/>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div id="map_http_remote_user">-->
-              <!--<div class="col-sm-5">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox"-->
-              <!--ng-model="config.headers['map_http_remote_user'].isChecked">-->
-              <!--<span style="font-weight: 600">map HTTP_REMOTE_USER</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-7">-->
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-3 control-label">Sub</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-12">-->
-              <!--<hr style="border-top-color: #445862"/>-->
-              <!--</div>-->
-              <!--<div id="custom_static_headers">-->
-              <!--<div class="col-sm-4">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox"-->
-              <!--ng-model="config.headers['custom_static_header'].isChecked">-->
-              <!--<span style="font-weight: 600">Custom Static Headers</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<div class="col-sm-8">-->
-              <!--<div class="form-group" data-ng-repeat="(key,value) in customHeaders">-->
-              <!--<label class="col-sm-3 control-label">HTTP_KONG_</label>-->
-              <!--<div class="col-sm-4">-->
-              <!--<input ng-model="value[0]" class="form-control" placeholder="key"/>-->
-              <!--</div>-->
-              <!--<div class="col-sm-4">-->
-              <!--<input ng-model="value[1]" class="form-control" placeholder="value"/>-->
-              <!--</div>-->
-              <!--<div class="col-sm-1">-->
-              <!--<button type="submit" class="btn btn-primary" data-ng-click="customHeaders.splice(key, 1)">X-->
-              <!--</button>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--<button type="submit" class="btn btn-primary"-->
-              <!--data-ng-click="customHeaders.push(['CUSTOM_KEY', 'VALUE'])">Add-->
-              <!--</button>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
               <div class="form-group">
                 <label class="col-sm-2 control-label">Security</label>
                 <div class="col-sm-10 well">
@@ -302,45 +167,124 @@
                       </div>
                     </div>
                   </div>
-                  <!--<div class="col-sm-12">-->
-                  <!--<hr style="border-top-color: #445862"/>-->
-                  <!--</div>-->
-                  <!--<div id="required_claims">-->
-                  <!--<div class="col-sm-2">-->
-                  <!--<span style="font-weight: 600">Required claims</span>-->
-                  <!--</div>-->
-                  <!--<div class="col-sm-10">-->
-                  <!--<div class="form-group">-->
-                  <!--<input type="radio" value="AND"> AND &nbsp;&nbsp;&nbsp;-->
-                  <!--<input type="radio" value="OR" checked> OR &nbsp;&nbsp;-->
-                  <!--<input type="radio" value="NOT"> NOT-->
-                  <!--</div>-->
-                  <!--<div class="form-group" data-ng-repeat="(key,value) in claimSupported">-->
-                  <!--<div class="col-sm-3">-->
-                  <!--<select class="form-control" id="claims_supported" data-ng-model="value[0]"-->
-                  <!--ng-options="claim as claim for claim in claims_supported"/>-->
-                  <!--</div>-->
-                  <!--<div class="col-sm-3">-->
-                  <!--<select class="form-control" id="claims_supported_operator" data-ng-model="value[1]"-->
-                  <!--ng-options="op as op for op in claims_supported_operator"/>-->
-                  <!--</div>-->
-                  <!--<div class="col-sm-3">-->
-                  <!--<input ng-model="value[2]" class="form-control" placeholder="value or value with regular expression"/>-->
-                  <!--</div>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<button type="submit" class="btn btn-primary" data-ng-click="claimSupported.splice(key, 1)">X-->
-                  <!--</button>-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<button type="submit" class="btn btn-primary"-->
-                  <!--data-ng-click="claimSupported.push(['', '==', '[Mm][Aa]'])">Add-->
-                  <!--</button>-->
-                  <!--</div>-->
-                  <!--</div>-->
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Required acrs (optional)</label>
+                <div class="col-sm-10 well">
+                  <div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">
+                    <div class="checkbox">
+                      <label class="custom-checkbox">
+                        <input type="checkbox" id="acr_values_supported{{key}}"
+                               checklist-model="pluginConfig.required_acrs" checklist-value="value.value">
+                        <span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="col-md-12"  data-ng-disabled="!isAllowPEP"
+            <div style="background-color: #d7ede8" class="col-md-12 well">
+              <label style="font-weight: bolder">ACRs Expression</label>
+              <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
+                     type="checkbox" switch-size="small"
+                     ng-model="pluginConfig.isACRExpEnabled" class="form-control"/>
+              <span class="help-block error-block basic-block">Used to configure <code>URL Based ACRs Configuration - Stepped Up Authentication</code>. You need to enable above button to configure URL Based ACRs. Click on <code>Add Path</code> button to start.</span>
+              <span>There is dynamic path facility. Click <a ng-click="showPathPossibilities()" href>here for possible dynamic path expressions</a></span>
+              <!--<table class="table table-striped table-bordered">-->
+              <!--<tr>-->
+              <!--<td data-ng-repeat="(key,value) in opResponse.acr_values_supported">-->
+              <!--<b>{{value.value}} (Level: {{value.level}})</b>-->
+              <!--</td>-->
+              <!--</tr>-->
+              <!--</table>-->
+              <div data-ng-show="pluginConfig.isACRExpEnabled">
+                <div class="row" ng-repeat="element in pluginConfig.required_acrs_expression"
+                     ng-init="pIndex = $index"
+                     style="border: 1px dotted;">
+                  <hr/>
+                  <div class="col-md-1">
+                    <button type="button" title="Delete path" class="btn btn-danger"
+                            ng-click="pluginConfig.required_acrs_expression.splice($index,1)">
+                      <i class="mdi mdi-close"></i>
+                    </button>
+                  </div>
+                  <div class="col-md-11">
+                    <div class="form-group has-feedback col-md-4">
+                      <input type="text" class="form-control" value="{{pluginConfig.kong_proxy_url}}"
+                             title="Upstream URL" disabled/>
+                      <span class="help-block error-block basic-block" title="Kong proxy point">http://{{info.hostname}}:{{info.configuration.proxy_listeners[0].port}}</span>
+                    </div>
+                    <div class="form-group has-feedback col-md-8"
+                         ng-class="{'pathValidationClass': PluginForm['path'+$index].$invalid}">
+                      <input type="text" class="form-control" id="acrpath{{$index}}" name="acrpath{{$index}}"
+                             title="Enter path"
+                             placeholder="/path"
+                             ng-model="element.path"
+                             ng-required="true" required/>
+                      <span
+                        class="help-block error-block basic-block">The path where you want to have stepped auth.</span>
+                    </div>
+                    <div class="col-md-12">
+                      <div class="row" ng-repeat="cond in element.conditions">
+                        <div class="row">
+                          <div class="col-md-10">
+                            <div class="form-group has-feedback">
+                              <tags-input min-length="1" ng-model="cond.httpMethods"
+                                          name="httpMethodsACR{{pIndex}}{{$index}}"
+                                          id="httpMethodsACR{{pIndex}}{{$index}}"
+                                          add-from-autocomplete-only="true"
+                                          placeholder="Enter HTTP methods" required>
+                                <auto-complete source="loadMethods($query)"
+                                               min-length="0"
+                                               debounce-delay="0"></auto-complete>
+                              </tags-input>
+                              <span class="help-block error-block basic-block"></span>
+                            </div>
+                          </div>
+                          <div class="col-md-2">
+                            <button type="button" title="Delete condition" class="btn btn-danger"
+                                    ng-click="element.conditions.splice($index,1)">
+                              <i class="mdi mdi-close"></i>
+                            </button>
+                          </div>
+                        </div>
+                        <div class="row">
+                          <div class="col-md-10">
+                            <div class="form-group has-feedback">
+                              <tags-input min-length="1" ng-model="cond.required_acrs"
+                                          id="acrs{{pIndex}}{{$index}}"
+                                          name="acrs{{pIndex}}{{$index}}"
+                                          placeholder="Enter acr value" required>
+                                <auto-complete source="loadACRMethods($query)"
+                                min-length="0"
+                                debounce-delay="0"></auto-complete>
+                              </tags-input>
+                              <span class="help-block error-block basic-block"></span>
+                            </div>
+                          </div>
+                          <hr/>
+                        </div>
+                      </div>
+                      <div class="row">
+                        <button type="button" class="btn btn-info" ng-click="addACRNewCondition($index)">
+                          <i class="mdi mdi-plus"></i> Add Condition
+                        </button>
+                      </div>
+                      <br/>
+                    </div>
+                  </div>
+                </div>
+                <hr/>
+                <button type="button" class="btn btn-info" ng-click="addACRNewPath()">
+                  <i class="mdi mdi-plus"></i> Add path
+                </button>
+                <button type="button" class="btn btn-primary" ng-click="showResourceJSON()">
+                  <i class="mdi mdi-information"></i> View Resource Json
+                </button>
+              </div>
+            </div>
+            <div style="background-color: #d7ede8" class="col-md-12 well" data-ng-disabled="!isAllowPEP"
                  ng-class="{'disabled': !isAllowPEP}">
               <div class="form-group has-feedback" ng-if="!isAllowPEP">
                 <code> * Not allow you already configured gluu-opa-pep plugin</code>
@@ -389,7 +333,7 @@
                           <div class="row">
                             <div class="col-md-10">
                               <div class="form-group has-feedback">
-                                <tags-input ng-model="cond.httpMethods"
+                                <tags-input min-length="1" ng-model="cond.httpMethods"
                                             id="httpMethods{{pIndex}}{{$index}}"
                                             add-from-autocomplete-only="true"
                                             placeholder="Enter HTTP methods" required>
@@ -423,7 +367,7 @@
                               <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
                                      name="hdScope{{pIndex}}{{$index}}0"/>
                               <div class="form-group has-feedback">
-                                <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                                <tags-input min-length="1" ng-model="cond['scopes' + pIndex + $index + '0']"
                                             name="scope{{pIndex}}{{$index}}0"
                                             id="scopes{{pIndex}}{{$index}}"
                                             placeholder="Enter scopes" required>
@@ -513,7 +457,7 @@
           </div>
           <div class="row">
             <hr/>
-            <button type="submit" class="btn btn-primary" ng-click="managePlugin(PluginForm)">
+            <button type="submit" class="btn btn-primary col-sm-12" ng-click="managePlugin(PluginForm)">
               <i class="mdi mdi-check"></i> {{isPluginAdded ? "Update Plugin" : "Add Plugin" }}
             </button>
           </div>
