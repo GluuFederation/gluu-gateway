@@ -27,6 +27,7 @@
         $scope.addACRNewCondition = addACRNewCondition;
         $scope.addACRNewPath = addACRNewPath;
         $scope.showResourceJSON = showResourceJSON;
+        $scope.showACRExpressionJSON = showACRExpressionJSON;
         $scope.managePlugin = managePlugin;
         $scope.loadACRMethods = loadACRMethods;
         $scope.loadMethods = loadMethods;
@@ -788,6 +789,33 @@
           }).result.then(function (result) {
           });
         }
+
+        function showACRExpressionJSON() {
+          var model = angular.copy($scope.pluginConfig);
+          var acr_expression = makeACRExpression(model);
+          if (acr_expression == null) {
+            return
+          }
+          if (!model) {
+            return false;
+          }
+
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/show-acr-expression-json-modal.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', 'acr_expression', function ($uibModalInstance, $scope, acr_expression) {
+              $scope.acr_expression = acr_expression;
+            }],
+            resolve: {
+              acr_expression: function () {
+                return acr_expression;
+              }
+            }
+          }).result.then(function (result) {
+          });
+        }
+
 
         function addNewPath() {
           $scope.pluginConfig.uma_scope_expression.push({
