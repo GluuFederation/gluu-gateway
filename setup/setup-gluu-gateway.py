@@ -14,6 +14,7 @@ import json
 import getpass
 import urllib3
 import platform
+import pwd
 
 class Distribution:
     Ubuntu = "ubuntu"
@@ -822,8 +823,21 @@ make sure it's available from this server."""
         self.log_it(message, True)
         sys.exit()
 
+    def check_root(self):
+        try:
+            user = pwd.getpwuid(os.getuid()).pw_name
+            print user
+            if user != "root":
+                msg="Your user is not root user, Run setup script in root user."
+                print msg
+                self.log_it(msg, True)
+                sys.exit()
+        except Exception as err:
+            self.log_it("Failed to execute `pwd.getpwuid(os.getuid()).pw_name` %s " % err, True)
+
 if __name__ == "__main__":
     kongSetup = KongSetup()
+    kongSetup.check_root()
     try:
         if kongSetup.is_prompt:
             msg = """
