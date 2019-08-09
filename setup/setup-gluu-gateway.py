@@ -824,17 +824,15 @@ make sure it's available from this server."""
 
     def check_root(self):
         try:
-            user = getpass.getuser()
+            user = os.geteuid()
             print user
-            if user == "root":
-                self.log_it(user)
-            else:
-                msg="%s is not root user, Run setup script in root user." % user
+            if user != 0:
+                msg="Your user is not root user, Run setup script in root user."
                 print msg
                 self.log_it(msg, True)
                 sys.exit()
         except Exception as err:
-            self.log_it("Failed to execute `getpass.getuser()` %s " % err, True)
+            self.log_it("Failed to execute `os.geteuid()` %s " % err, True)
 
 if __name__ == "__main__":
     kongSetup = KongSetup()
