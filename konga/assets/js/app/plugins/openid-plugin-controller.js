@@ -330,7 +330,7 @@
           var model;
           model = angular.copy($scope.pluginConfig);
 
-          if ($scope.pluginConfig.isPEPEnabled &&  model.requested_scopes.indexOf('uma_protection') < 0) {
+          if ($scope.pluginConfig.isPEPEnabled && model.requested_scopes.indexOf('uma_protection') < 0) {
             MessageService.error("uma_protection scope is required for gluu-uma-pep plugin configuration.");
             return false;
           }
@@ -342,16 +342,32 @@
             delete model.uma_scope_expression
           }
 
+          if (model.isPEPEnabled && !model.uma_scope_expression) {
+            MessageService.error("UMA scope expression is required");
+            return;
+          }
+
           if ($scope.pluginConfig.isACRExpEnabled) {
             model.required_acrs_expression = makeACRExpression($scope.pluginConfig);
           } else {
             delete model.required_acrs_expression
           }
 
-          if (model.isPEPEnabled && !model.uma_scope_expression) {
-            MessageService.error("UMA scope expression is required");
-            return;
+          if (model.required_acrs_expression) {
+            model.required_acrs = [];
+            model.required_acrs_expression.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                cond.required_acrs.forEach(function (acr) {
+                  if (model.required_acrs.indexOf(acr) < 0) {
+                    model.required_acrs.push(acr);
+                  }
+                })
+              });
+            });
+          } else {
+            delete model.required_acrs
           }
+
 
           if ($scope.openingModal) return;
 
@@ -410,7 +426,7 @@
               post_logout_redirect_uris: [model.post_logout_redirect_uri],
               claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
-              acr_values: model.required_acrs,
+              acr_values: model.required_acrs || null,
               route_id: $scope.route.id,
               comment: model.comment,
               uma_scope_expression: model.uma_scope_expression || [],
@@ -437,7 +453,7 @@
                   logout_path: model.logout_path,
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
-                  required_acrs: model.required_acrs,
+                  required_acrs: model.required_acrs || null,
                   required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
@@ -509,7 +525,7 @@
             .updateOPClient({
               comment: model.comment,
               route_id: $scope.route.id,
-              uma_scope_expression: model.uma_scope_expression  || [],
+              uma_scope_expression: model.uma_scope_expression || [],
               oxd_id: model.oxd_id,
               op_host: model.op_url,
               oxd_url: model.oxd_url,
@@ -519,7 +535,7 @@
               post_logout_redirect_uris: [model.post_logout_redirect_uri],
               claims_redirect_uri: [model.kong_proxy_url + model.claims_redirect_path],
               scope: model.requested_scopes,
-              acr_values: model.required_acrs,
+              acr_values: model.required_acrs || null,
               alreadyAddedUMAExpression: $scope.alreadyAddedUMAExpression || false,
             })
             .then(function (response) {
@@ -542,7 +558,7 @@
                   logout_path: model.logout_path,
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
-                  required_acrs: model.required_acrs,
+                  required_acrs: model.required_acrs || null,
                   required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
@@ -637,27 +653,27 @@
 
         function convertSeconds(seconds) {
           var value = seconds / (1 * 60 * 60 * 24);
-          if (isInt(value)){
-            return { value: value, type: 'days' }
+          if (isInt(value)) {
+            return {value: value, type: 'days'}
           }
 
           value = seconds / (1 * 60 * 60);
-          if (isInt(value)){
-            return { value: value, type: 'hours' }
+          if (isInt(value)) {
+            return {value: value, type: 'hours'}
           }
 
           value = seconds / (1 * 60);
-          if (isInt(value)){
-            return { value: value, type: 'minutes' }
+          if (isInt(value)) {
+            return {value: value, type: 'minutes'}
           }
 
           value = seconds / 1;
-          if (isInt(value)){
-            return { value: value, type: 'seconds' }
+          if (isInt(value)) {
+            return {value: value, type: 'seconds'}
           }
         }
 
-        function isInt(n){
+        function isInt(n) {
           return Number(n) === n && n % 1 === 0;
         }
 
@@ -949,9 +965,6 @@
             model.required_acrs_expression.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
                 cond.httpMethods = cond.httpMethods.map(function (o) {
-                  return o.text;
-                });
-                cond.required_acrs = cond.required_acrs.map(function (o) {
                   return o.text;
                 });
               });

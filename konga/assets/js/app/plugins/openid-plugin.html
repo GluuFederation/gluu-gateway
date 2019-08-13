@@ -102,20 +102,6 @@
                   </p>
                 </div>
               </div>
-              <!--<div class="form-group">-->
-              <!--<label class="col-sm-2 control-label">Required acrs (optional)</label>-->
-              <!--<div class="col-sm-10 well">-->
-              <!--<div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">-->
-              <!--<div class="checkbox">-->
-              <!--<label class="custom-checkbox">-->
-              <!--<input type="checkbox" id="acr_values_supported{{key}}"-->
-              <!--checklist-model="pluginConfig.required_acrs" checklist-value="value.value">-->
-              <!--<span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>-->
-              <!--</label>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
-              <!--</div>-->
               <div class="form-group">
                 <label class="col-sm-2 control-label">Requested scopes</label>
                 <div class="col-sm-10 well">
@@ -169,26 +155,26 @@
                   </div>
                 </div>
               </div>
-              <div class="form-group">
-                <label class="col-sm-2 control-label">Required acrs (optional)</label>
-                <div class="col-sm-10 well">
-                  <div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">
-                    <div class="checkbox">
-                      <label class="custom-checkbox">
-                        <input type="checkbox" id="acr_values_supported{{key}}"
-                               checklist-model="pluginConfig.required_acrs" checklist-value="value.value">
-                        <span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <!--<div class="form-group">-->
+                <!--<label class="col-sm-2 control-label">Required acrs (optional)</label>-->
+                <!--<div class="col-sm-10 well">-->
+                  <!--<div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">-->
+                    <!--<div class="checkbox">-->
+                      <!--<label class="custom-checkbox">-->
+                        <!--<input type="checkbox" id="acr_values_supported{{key}}"-->
+                               <!--checklist-model="pluginConfig.required_acrs" checklist-value="value.value">-->
+                        <!--<span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>-->
+                      <!--</label>-->
+                    <!--</div>-->
+                  <!--</div>-->
+                <!--</div>-->
+              <!--</div>-->
             </div>
             <div style="background-color: #d7ede8" class="col-md-12 well">
               <label style="font-weight: bolder">ACRs Expression</label>
-              <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
-                     type="checkbox" switch-size="small"
-                     ng-model="pluginConfig.isACRExpEnabled" class="form-control"/>
+              <!--<input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch-->
+                     <!--type="checkbox" switch-size="small"-->
+                     <!--ng-model="pluginConfig.isACRExpEnabled" class="form-control"/>-->
               <span class="help-block error-block basic-block">Used to configure <code>URL Based ACRs Configuration - Stepped Up Authentication</code>. You need to enable above button to configure URL Based ACRs. Click on <code>Add Path</code> button to start.</span>
               <span>There is dynamic path facility. Click <a ng-click="showPathPossibilities()" href>here for possible dynamic path expressions</a></span>
               <!--<table class="table table-striped table-bordered">-->
@@ -204,7 +190,7 @@
                      style="border: 1px dotted;">
                   <hr/>
                   <div class="col-md-1">
-                    <button type="button" title="Delete path" class="btn btn-danger"
+                    <button type="button" title="Delete path" class="btn btn-danger" ng-if="pluginConfig.required_acrs_expression.length > 1"
                             ng-click="pluginConfig.required_acrs_expression.splice($index,1)">
                       <i class="mdi mdi-close"></i>
                     </button>
@@ -250,16 +236,28 @@
                           </div>
                         </div>
                         <div class="row">
-                          <div class="col-md-10">
+                          <div class="col-md-10 well">
                             <div class="form-group has-feedback">
-                              <tags-input min-length="1" ng-model="cond.required_acrs"
-                                          id="acrs{{pIndex}}{{$index}}"
-                                          name="acrs{{pIndex}}{{$index}}"
-                                          placeholder="Enter acr value" required>
-                                <auto-complete source="loadACRMethods($query)"
-                                min-length="0"
-                                debounce-delay="0"></auto-complete>
-                              </tags-input>
+                              <!--<tags-input min-length="1" ng-model="cond.required_acrs"-->
+                                          <!--id="acrs{{pIndex}}{{$index}}"-->
+                                          <!--name="acrs{{pIndex}}{{$index}}"-->
+                                          <!--placeholder="Enter acr value" required>-->
+                                <!--<auto-complete source="loadACRMethods($query)"-->
+                                               <!--min-length="0"-->
+                                               <!--debounce-delay="0"></auto-complete>-->
+                              <!--</tags-input>-->
+
+                              <div class="col-sm-offset-1 col-sm-6"
+                                   data-ng-repeat="(key,value) in opResponse.acr_values_supported">
+                                <div class="checkbox">
+                                  <label class="custom-checkbox">
+                                    <input type="checkbox" id="acr_values_supported{{key}}"
+                                           checklist-model="cond.required_acrs" checklist-value="value.value" />
+                                    <span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>
+                                  </label>
+                                </div>
+                              </div>
+
                               <span class="help-block error-block basic-block"></span>
                             </div>
                           </div>
