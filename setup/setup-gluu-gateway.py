@@ -70,6 +70,8 @@ class KongSetup(object):
         self.pg_pwd = 'admin'
         self.kong_admin_listen_ssl_port = '8445'
         self.kong_admin_listen_port = '8001'
+        self.kong_lua_ssl_trusted_certificate = ''
+        self.kong_lua_ssl_verify_depth = 3
         self.gluu_prometheus_server_ip = '104.131.17.150'
         self.gluu_prometheus_server_host = 'license.gluu.org'
         self.gluu_customer_registration_endpoint = 'https://%s:%s' % (self.gluu_prometheus_server_host, '4040/metrics/registration')
@@ -562,6 +564,12 @@ make sure it's available from this server."""
             self.konga_client_secret = self.get_prompt('Client Secret')
 
     def render_kong_configure(self):
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            self.kong_lua_ssl_trusted_certificate = "/etc/ssl/certs/ca-certificates.crt"
+
+        if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
+            self.kong_lua_ssl_trusted_certificate = "/etc/ssl/certs/ca-bundle.crt"
+
         self.render_template_in_out(self.dist_kong_config_file, self.template_folder, self.dist_kong_config_folder)
 
     def render_template_in_out(self, file_path, template_folder, output_folder):
