@@ -9,7 +9,7 @@ Source1:	 gluu-gateway.init.d
 Source2:	 kong
 Source3:   konga
 BuildArch: noarch
-Requires:	 postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	 postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests, ca-certificates
 
 %description
 The Gluu Gateway is a package which can be used to quickly
