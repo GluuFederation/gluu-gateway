@@ -321,6 +321,7 @@ return function(self, conf)
         return
     end
 
+
     if not session.present or not id_tokens then
         kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
         return authorize(conf, session, nil, required_acrs)

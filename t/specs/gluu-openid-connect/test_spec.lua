@@ -158,8 +158,6 @@ local function configure_pep_plugin(register_site_response, create_service_respo
     )
 end
 
-if false then
-
 test("basic", function()
     setup("oxd-model1.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
@@ -562,8 +560,6 @@ test("OpenID Connect with UMA Claim gathering flow", function()
     ctx.print_logs = false
 end)
 
-end
-
 local function update_required_acrs_expression(plugin_id, required_acrs_expression)
     local payload = {
         config = {
@@ -579,7 +575,6 @@ local function update_required_acrs_expression(plugin_id, required_acrs_expressi
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
 end
-
 
 test("acr_values testing", function()
     setup("oxd-model5.lua")
@@ -598,7 +593,6 @@ test("acr_values testing", function()
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
         post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs = {"auth_ldap_server"},
         required_acrs_expression = {
             {
                 path = "/??",
@@ -754,22 +748,12 @@ test("not enough acr", function()
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
         post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs = {"auth_ldap_server"},
         required_acrs_expression = {
             {
                 path = "/??",
                 conditions = {
                     {
                         required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/superhero",
-                conditions = {
-                    {
-                        required_acrs = { "superhero" },
                         httpMethods = { "?" }, -- any
                     }
                 }
@@ -790,7 +774,7 @@ test("not enough acr", function()
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     assert(res:find("403", 1, true))
-    assert(res:find("The resource require one of the", 1, true))
+    assert(res:find("The resource requires one of the", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
