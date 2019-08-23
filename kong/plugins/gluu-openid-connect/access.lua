@@ -308,19 +308,16 @@ return function(self, conf)
         ", session.data.id_tokens=", id_tokens ~= nil)
 
     local method_path_tree = conf.method_path_tree
-    local required_acrs
+    local required_acrs, no_auth
     if method_path_tree then
         local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
+        no_auth = rule and rule.no_auth
     end
-    required_acrs =  required_acrs or conf.required_acrs -- TODO remove conf.required_acrs here should be default exp
 
-    if required_acrs and #required_acrs == 0  then
-        -- treat empty array as no auth required
-        -- missed required_acrs treated as any acr as before
+    if no_auth then
         return
     end
-
 
     if not session.present or not id_tokens then
         kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")

@@ -612,8 +612,21 @@ test("acr_values testing", function()
                     }
                 }
             },
+            {
+                path = "/open/??",
+                conditions = {
+                    {
+                        no_auth = true,
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
         },
     })
+
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/open/page,html --header 'Host: backend.com' ]])
+    assert(res:find("200", 1, true))
 
     print"acr=auth_ldap_server"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -695,6 +708,14 @@ test("acr_values testing", function()
                     }
                 }
             },
+            {
+                path = "/any_acr",
+                conditions = {
+                    {
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
         })
 
 
@@ -727,6 +748,14 @@ test("acr_values testing", function()
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
 
+    print"should allow, this path accept any acr"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/any_acr --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("any_acr", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
