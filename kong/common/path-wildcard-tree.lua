@@ -18,12 +18,16 @@ local REGEXP_KEY = "##"
 _M.addPath = function(self, method, path, exp)
     -- TODO here must be special version of split with {regexp} support
     -- or should we forbid slash within regexp?
+
+    -- for methods we support exact mact or wildcard
+    assert(method ~= "??")
+    assert(not method:match"^{(.+)}$")
+
+    path = "/" .. method .. path
+
     local path_as_array = path_split(path)
 
-    if not self[method] then
-        self[method] = {}
-    end
-    local node = self[method]
+    local node = self
     for i = 1, #path_as_array do
         local item = path_as_array[i]
 
@@ -126,13 +130,11 @@ local function processItem(node, path_as_array, index)
 end
 
 _M.matchPath = function(self, method, path)
-    if not self[method] then
-        return false
-    end
+    path = "/" .. method .. path
 
     local path_as_array = path_split(path)
 
-    local node = self[method]
+    local node = self
     local matched, last_index
 
     for i = 1, #path_as_array do

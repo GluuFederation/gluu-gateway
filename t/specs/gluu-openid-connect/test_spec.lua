@@ -135,22 +135,6 @@ local function configure_plugin(create_service_response, plugin_config)
     return register_site_response, plugin_response
 end
 
-local function update_plugin(plugin_id, acr_values)
-    local payload = {
-        config = {
-            required_acrs = acr_values
-        },
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"update plugin"
-    local res, err = sh_ex([[
-        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/]], plugin_id,
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-end
-
 local function configure_pep_plugin(register_site_response, create_service_response, plugin_config)
     plugin_config.op_url = "http://stub"
     plugin_config.oxd_url = "http://oxd-mock"
@@ -202,7 +186,7 @@ test("basic", function()
     assert(res:find("session=", 1, true)) -- session cookie is here
 
     print"call callback with state from oxd-model1, follow redirect"
-    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+    local res, err = sh_ex([[curl -i -v -sS -X GET -L --url 'http://localhost:]],
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     -- test that we redirected to original url
@@ -576,6 +560,21 @@ test("OpenID Connect with UMA Claim gathering flow", function()
     ctx.print_logs = false
 end)
 
+local function update_required_acrs_expression(plugin_id, required_acrs_expression)
+    local payload = {
+        config = {
+            required_acrs_expression = required_acrs_expression
+        },
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"update plugin"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/]], plugin_id,
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+end
 
 test("acr_values testing", function()
     setup("oxd-model5.lua")
@@ -594,7 +593,201 @@ test("acr_values testing", function()
         max_id_token_auth_age = 60*60*24,
         logout_path = "/logout_path",
         post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs = {"auth_ldap_server"}
+        required_acrs_expression = {
+            {
+                path = "/??",
+                conditions = {
+                    {
+                        required_acrs = { "auth_ldap_server" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/superhero",
+                conditions = {
+                    {
+                        required_acrs = { "superhero" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/open/??",
+                conditions = {
+                    {
+                        no_auth = true,
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+        },
+    })
+
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/open/page,html --header 'Host: backend.com' ]])
+    assert(res:find("200", 1, true))
+
+    print"acr=auth_ldap_server"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"follow redirect 1"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    update_required_acrs_expression(plugin.id,
+        {
+            {
+                path = "/??",
+                conditions = {
+                    {
+                        required_acrs = { "otp" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/superhero",
+                conditions = {
+                    {
+                        required_acrs = { "superhero" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+        })
+
+    sh_ex("sleep 1")
+
+    print"acr=OTP, acr updated so plugin should redirect for re-auth"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"simulate redirect from GS 2"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    update_required_acrs_expression(plugin.id,
+        {
+            {
+                path = "/??",
+                conditions = {
+                    {
+                        required_acrs = { "auth_ldap_server" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/superhero",
+                conditions = {
+                    {
+                        required_acrs = { "superhero" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/any_acr",
+                conditions = {
+                    {
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+        })
+
+
+    sh_ex("sleep 1")
+
+    print"acr=auth_ldap_server, plugin should allow because already authenticated with auth_ldap_server"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"test url based required acrs, unescaped space in URI, protected with superhero acr"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/superhero bla' --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"simulate redirect from GS 3"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890qwerty&state=473ot4nuqb4ubeokc139raur13qwerty' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("superhero", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    print"should allow, this path accept any acr"
+    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/any_acr --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("any_acr", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("not enough acr", function()
+    setup("oxd-model6.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local _, plugin = configure_plugin(create_service_response,{
+        authorization_redirect_path = "/callback",
+        requested_scopes = {"openid", "email", "profile"},
+        max_id_token_age = 10,
+        max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+        required_acrs_expression = {
+            {
+                path = "/??",
+                conditions = {
+                    {
+                        required_acrs = { "auth_ldap_server" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+        },
     })
 
     print"acr=auth_ldap_server"
@@ -605,56 +798,12 @@ test("acr_values testing", function()
     assert(res:find("response_type=code", 1, true))
     assert(res:find("session=", 1, true)) -- session cookie is here
 
-    print"follow redirect"
-    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
-        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
-        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
-    -- test that we redirected to original url
-    assert(res:find("200", 1, true))
-    assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
-
-    sh_ex("sleep 2")
-
-    update_plugin(plugin.id, {"otp"})
-
-    print"acr=OTP, acr updated so plugin should redirect for re-auth"
-    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
-        [[ -b ]], cookie_tmp_filename)
-    assert(res:find("302", 1, true))
-    assert(res:find("response_type=code", 1, true))
-    assert(res:find("session=", 1, true)) -- session cookie is here
-
-    print"simulate redirect from GS"
-    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
-        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
-        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
-    -- test that we redirected to original url
-    assert(res:find("200", 1, true))
-    assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
-
-    update_plugin(plugin.id, {"auth_ldap_server"})
-
-    sh_ex("sleep 2")
-
-    print"acr=auth_ldap_server, plugin should not allow because already authenticated with auth_ldap_server"
-    local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
-        [[ -b ]], cookie_tmp_filename)
-    assert(res:find("302", 1, true))
-    assert(res:find("response_type=code", 1, true))
-    assert(res:find("session=", 1, true)) -- session cookie is here
-
-    print"simulate redirect from GS"
+    print"simulate redirect from OP, model returns only basic acr, should be redjected"
     local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
         ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     assert(res:find("403", 1, true))
-    assert(res:find("Authentication Context Class is not enough", 1, true))
+    assert(res:find("The resource requires one of the", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

@@ -6,6 +6,7 @@ local evp = require "resty.evp"
 local validators = require "resty.jwt-validators"
 local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
+local path_wildcard_tree = require "gluu.path-wildcard-tree"
 
 -- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
 local EXPIRE_DELTA = 5
@@ -378,12 +379,26 @@ _M.get_path_with_base_url = function(path)
     return table.concat(url_params)
 end
 
+--- Fetch oauth scope expression based on path and http methods
+-- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
+-- @param self: Kong plugin object
+-- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
+-- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
+-- @param method: requested http method Example: GET
+-- @return json protected_path path, expression Example: {path: "/posts", ...}
+local function get_path_by_request_path_method(self, conf, path, method)
+    local method_path_tree = conf.method_path_tree
+
+    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
+
+    if rule then
+        return rule.path, rule.scope_expression
+    end
+end
+
+
 --[[
 hooks must be a table with methods below:
-
-@return protected_path, scope_expression; may returns no values
-function hooks.get_path_by_request_path_method(self, conf, path, method)
-end
 
 it shoud never return, it must call kong.exit
 function hooks.no_token_protected_path(self, conf, protected_path, method)
@@ -401,8 +416,8 @@ _M.access_pep_handler = function(self, conf, hooks)
     local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
-    local path = ngx.var.uri
-    local protected_path, scope_expression = hooks.get_path_by_request_path_method(self, conf, path, method)
+    local path = ngx.var.uri:match"^([^%s]+)"
+    local protected_path, scope_expression = get_path_by_request_path_method(self, conf, path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -603,6 +618,11 @@ end
 --- Check OAuth and UMA scope expression
 -- @param expression: JSON expression
 function _M.check_expression(expression, config)
+    if not expression or expression == cjson.null then
+        -- it is possible that expression is not required, but this function is called
+        return true
+    end
+
     local paths = {}
     if #expression == 0 then
         return false, "Empty expression not allowed"
@@ -641,6 +661,36 @@ function _M.check_expression(expression, config)
         end
     end
     return true
+end
+
+-- @param exp: scope expression or acrs expression
+function _M.convert_scope_expression_to_path_wildcard_tree(exp)
+    if not exp or exp == cjson.null then
+        -- it is possible that expression is not required, but this function is called
+        return
+    end
+
+    local method_path_tree = {}
+
+    for k = 1, #exp do
+        local item = exp[k]
+
+        for i = 1, #item.conditions do
+            local condition = item.conditions[i]
+
+            for j = 1, #condition.httpMethods do
+                local t = { path = item.path }
+                -- copy all conditions keys except httpMethods
+                for k, v in pairs(condition) do
+                    if k ~= "httpMethods" then
+                        t[k] = v
+                    end
+                end
+                path_wildcard_tree.addPath(method_path_tree, condition.httpMethods[j], item.path, t)
+            end
+        end
+    end
+    return method_path_tree
 end
 
 _M.get_protection_token = get_protection_token

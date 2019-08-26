@@ -1,6 +1,7 @@
 local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
+local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
 
@@ -21,7 +22,11 @@ local function unexpected_error()
 end
 
 local function process_logout(conf, session)
-    local session_token = session.data.enc_id_token
+    local session_token
+    -- get any first id_token to use as id_token_hint
+    for k, _ in pairs(session.data.id_tokens) do
+        session_token = k
+    end
     session:destroy()
 
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
@@ -58,7 +63,7 @@ local function process_logout(conf, session)
 end
 
 -- handle a "code" authorization response from the OP
-local function authorization_response(self, conf, session)
+local function authorization_response(conf, session)
     local args = ngx.req.get_uri_args()
 
     local code, state = args.code, args.state
@@ -97,8 +102,16 @@ local function authorization_response(self, conf, session)
     local original_url = session_data.original_url
     session_data.original_url = nil
 
-    session_data.enc_id_token = json.id_token
-    session_data.id_token = id_token
+    local id_tokens = session_data.id_tokens
+
+    if not id_tokens then
+        id_tokens = {}
+        session_data.id_tokens = id_tokens
+    end
+
+    id_token.requested_acrs = session_data.requested_acrs
+    session_data.requested_acrs = nil
+    id_tokens[json.id_token] = id_token
 
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
@@ -130,6 +143,9 @@ local function authorization_response(self, conf, session)
 end
 
 local function is_acr_enough(required_acrs, acr)
+    if not required_acrs then
+        return true
+    end
     local acr_array = split(acr, " ")
     for i = 1, #required_acrs do
         for k = 1, #acr_array do
@@ -141,17 +157,22 @@ local function is_acr_enough(required_acrs, acr)
     return false
 end
 
-local function acr_already_requested(session_data, required_acrs)
-    local requested_acrs = session_data.requested_acrs
-    if not requested_acrs then
-        return false
-    end
-    for i = 1, #required_acrs do
-        if not requested_acrs[required_acrs[i]] then
-            return false
+local function acr_already_requested(id_tokens, required_acrs)
+    assert(required_acrs and #required_acrs > 0)
+    for _, id_token in pairs(id_tokens) do
+        local requested_acrs = id_token.requested_acrs
+        local match = true
+        for i = 1, #required_acrs do
+            if not requested_acrs[required_acrs[i]] then
+                match = false
+                break
+            end
+        end
+        if match then
+            return true
         end
     end
-    return true
+    return false
 end
 
 local function set_requested_acrs(session_data, required_acrs)
@@ -166,9 +187,16 @@ local function set_requested_acrs(session_data, required_acrs)
     end
 end
 
--- send the browser of to the OP's authorization endpoint
-local function authorize(conf, session, prompt)
+local function get_acrs(id_tokens)
+    local t = {}
+    for k, v in pairs(id_tokens) do
+        t[#t + 1] = v.acr
+    end
+    return t
+end
 
+-- send the browser of to the OP's authorization endpoint
+local function authorize(conf, session, prompt, required_acrs)
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local response, err = oxd.get_authorization_url(conf.oxd_url,
@@ -176,7 +204,7 @@ local function authorize(conf, session, prompt)
             oxd_id = conf.oxd_id,
             prompt = prompt,
             scope = conf.requested_scopes,
-            acr_values = conf.required_acrs,
+            acr_values = required_acrs,
         },
         ptoken)
 
@@ -198,6 +226,7 @@ local function authorize(conf, session, prompt)
         return unexpected_error()
     end
 
+    -- TODO does oxd support this now?
     authorization_url = table.concat{
         authorization_url,
         "&max_age=",
@@ -208,7 +237,7 @@ local function authorize(conf, session, prompt)
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
-    set_requested_acrs(session_data, conf.required_acrs)
+    set_requested_acrs(session_data, required_acrs)
     session:save()
 
     -- redirect to the /authorization endpoint
@@ -216,12 +245,32 @@ local function authorize(conf, session, prompt)
     ngx.redirect(authorization_url)
 end
 
+local function purge_id_tokens(session_data, conf)
+    local id_tokens = session_data.id_tokens
+    if not  id_tokens then
+        return
+    end
+    local active_id_tokens = 0
+    for token, token_data in pairs(id_tokens) do
+        if token_data.auth_time and (token_data.auth_time + conf.max_id_token_auth_age) < ngx.time() then
+            kong.log.debug("Token ", token, " auth. is expired, remove from user session")
+            id_tokens[token] = nil
+        else
+            active_id_tokens = active_id_tokens + 1
+        end
+    end
+    if active_id_tokens == 0 then
+        session_data.id_tokens = nil
+    end
+end
+
 return function(self, conf)
     local session = resty_session.start()
     local session_data = session.data
 
+    local path = ngx.var.uri:match"^([^%s]+)"
+
     -- see if this is a request to the redirect_uri i.e. an authorization response
-    local path = ngx.var.uri
     if path == conf.authorization_redirect_path then
         kong.log.debug("Redirect URI path (", path, ") is currently navigated -> Processing authorization response coming from OP")
 
@@ -230,7 +279,7 @@ return function(self, conf)
             return kong.response.exit(400)
         end
 
-        return authorization_response(self, conf, session)
+        return authorization_response(conf, session)
     end
 
     -- see is this a request to logout
@@ -252,37 +301,88 @@ return function(self, conf)
         return
     end
 
-    local id_token = session_data.id_token
+    purge_id_tokens(session_data, conf)
+    local id_tokens = session_data.id_tokens
     kong.log.debug(
         "session.present=", session.present,
-        ", session.data.id_token=", id_token ~= nil)
+        ", session.data.id_tokens=", id_tokens ~= nil)
 
-    if not session.present
-            or not id_token
-            or (id_token.auth_time and (id_token.auth_time + conf.max_id_token_auth_age) < ngx.time()) then
-        kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session)
+    local method_path_tree = conf.method_path_tree
+    local required_acrs, no_auth
+    if method_path_tree then
+        local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
+        required_acrs = rule and rule.required_acrs
+        no_auth = rule and rule.no_auth
     end
 
-    local acr = id_token.acr
-    local required_acrs = conf.required_acrs
-    if required_acrs and #required_acrs > 0 and (not acr or not is_acr_enough(required_acrs, acr)) then
-        if acr_already_requested(session_data, required_acrs) then
-            kong.log.debug("We already requested all required acrs, avoid a loop")
-            return kong.response.exit(403, { message = "Authentication Context Class is not enough"})
+    if no_auth then
+        return
+    end
+
+    if not session.present or not id_tokens then
+        kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
+        return authorize(conf, session, nil, required_acrs)
+    end
+
+    local enc_id_token, id_token
+
+    if not required_acrs then
+        -- means any acr match
+        for token, token_data in pairs(id_tokens) do
+            if (token_data.iat + conf.max_id_token_age) > ngx.time() and token_data.exp > ngx.time() then
+                enc_id_token, id_token = token, token_data
+                break
+            end
         end
+       if not id_token then
+           -- all tokens are expired, renew first
+           for token, token_data in pairs(id_tokens) do
+               id_tokens[token] = nil
+               kong.log.debug("Authentication is required, no active tokens - Redirecting to OP Authorization endpoint")
+               return authorize(conf, session, "none", { token_data.acr }) -- request the same acr
+           end
+       end
+    end
+
+
+    for token, token_data in pairs(id_tokens) do
+        local acr = token_data.acr
+
+        if acr and  is_acr_enough(required_acrs, acr) then
+            enc_id_token, id_token = token, token_data
+            break
+        end
+    end
+
+    if not id_token then
+        if acr_already_requested(id_tokens, required_acrs) then
+            kong.log.debug("We already requested all required acrs, avoid a loop")
+
+            local message = {
+                "The resource requires one of the [",
+                table.concat(required_acrs, ";"),
+                "] acr(s), you have [",
+                table.concat(get_acrs(id_tokens)),
+                "]"
+            }
+            return kong.response.exit(403, { message = table.concat(message)})
+        end
+
         kong.log.debug("Authentication is required, not enough acr - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session, "login")
+        return authorize(conf, session, "login", required_acrs)
     end
 
     if (id_token.iat + conf.max_id_token_age) < ngx.time() or
             id_token.exp < ngx.time() then
+        -- clear expired id_token
+        id_tokens[enc_id_token] = nil
+
         kong.log.debug("Silent authentication is required - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session, "none")
+        return authorize(conf, session, "none", required_acrs)
     end
 
     -- request_token_data need in uma-pep in both case i.e. uma-auth and openid-connect
-    kong.ctx.shared.request_token = session_data.enc_id_token
+    kong.ctx.shared.request_token = enc_id_token
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
     local new_headers = {
