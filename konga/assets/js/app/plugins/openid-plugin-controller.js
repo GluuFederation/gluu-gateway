@@ -38,6 +38,7 @@
         $scope.openConsumerListModal = openConsumerListModal;
         $scope.showPathPossibilities = showPathPossibilities;
         $scope.isAllowPEP = true;
+        $scope.authSwitchClicked = authSwitchClicked;
 
         $scope.pluginConfig = {
           isPEPEnabled: true
@@ -68,6 +69,15 @@
           $scope.pluginConfig.isPEPEnabled = false;
           if ($scope.pluginConfig.required_acrs_expression) {
             $scope.pluginConfig.isACRExpEnabled = true;
+            $scope.pluginConfig.required_acrs_expression.forEach(function (path, pIndex) {
+              path.conditions.forEach(function (cond, cIndex) {
+                if (cond.required_acrs) {
+                  cond.apply_auth = true
+                } else {
+                  cond.apply_auth = false
+                }
+              });
+            });
           } else {
             $scope.pluginConfig.required_acrs_expression = [];
             $scope.pluginConfig.isACRExpEnabled = false;
@@ -195,6 +205,7 @@
                 path: "/??",
                 conditions: [{
                   httpMethods: ["?"],
+                  apply_auth: true,
                   required_acrs: ["auth_ldap_server"]
                 }]
               }
@@ -353,10 +364,16 @@
             delete model.required_acrs_expression
           }
 
-          if (model.required_acrs_expression) {
+          if (model.required_acrs_expression && model.required_acrs_expression.length > 0) {
             model.required_acrs = [];
             model.required_acrs_expression.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
+                var apply_auth = angular.copy(cond.apply_auth);
+                cond.no_auth = !cond.apply_auth;
+                delete cond.apply_auth;
+                if (!apply_auth) {
+                  return
+                }
                 cond.required_acrs.forEach(function (acr) {
                   if (model.required_acrs.indexOf(acr) < 0) {
                     model.required_acrs.push(acr);
@@ -453,7 +470,7 @@
                   logout_path: model.logout_path,
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
-                  required_acrs: model.required_acrs || null,
+                  // required_acrs: model.required_acrs || null,
                   required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
@@ -558,7 +575,7 @@
                   logout_path: model.logout_path,
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
-                  required_acrs: model.required_acrs || null,
+                  // required_acrs: model.required_acrs || null,
                   required_acrs_expression: model.required_acrs_expression || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
@@ -869,6 +886,7 @@
             path: "/??",
             conditions: [{
               httpMethods: ["?"],
+              apply_auth: true,
               required_acrs: ["auth_ldap_server"]
             }]
           });
@@ -878,6 +896,7 @@
           $scope.pluginConfig.required_acrs_expression[pIndex].conditions.push(
             {
               httpMethods: ["?"],
+              apply_auth: true,
               required_acrs: ["auth_ldap_server"]
             }
           );
@@ -1119,6 +1138,14 @@
             },
             controllerAs: '$ctrl',
           });
+        }
+
+        function authSwitchClicked(cond) {
+          if (!cond.apply_auth && cond.required_acrs) {
+            delete cond.required_acrs
+          } else {
+            cond.required_acrs = ['auth_ldap_server']
+          }
         }
 
         // init

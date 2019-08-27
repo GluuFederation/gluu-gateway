@@ -172,9 +172,9 @@
             </div>
             <div style="background-color: #d7ede8" class="col-md-12 well">
               <label style="font-weight: bolder">ACRs Expression</label>
-              <!--<input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch-->
-                     <!--type="checkbox" switch-size="small"-->
-                     <!--ng-model="pluginConfig.isACRExpEnabled" class="form-control"/>-->
+              <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch
+                     type="checkbox" switch-size="small"
+                     ng-model="pluginConfig.isACRExpEnabled" class="form-control"/>
               <span class="help-block error-block basic-block">Used to configure <code>URL Based ACRs Configuration - Stepped Up Authentication</code>. You need to enable above button to configure URL Based ACRs. Click on <code>Add Path</code> button to start.</span>
               <span>There is dynamic path facility. Click <a ng-click="showPathPossibilities()" href>here for possible dynamic path expressions</a></span>
               <!--<table class="table table-striped table-bordered">-->
@@ -212,7 +212,7 @@
                         class="help-block error-block basic-block">The path where you want to have stepped auth.</span>
                     </div>
                     <div class="col-md-12">
-                      <div class="row" ng-repeat="cond in element.conditions">
+                      <div ng-repeat="cond in element.conditions">
                         <div class="row">
                           <div class="col-md-10">
                             <div class="form-group has-feedback">
@@ -236,6 +236,16 @@
                           </div>
                         </div>
                         <div class="row">
+                          <div class="form-group">
+                            <label class="col-sm-2">Authentication</label>
+                            <div class="col-sm-5">
+                              <input switch-on-text="Yes" switch-off-text="No" bs-switch switch-off-color="danger"
+                                     type="checkbox" switch-size="small"
+                                     ng-model="cond.apply_auth" class="form-control" ng-change="authSwitchClicked(cond)" />
+                            </div>
+                          </div>
+                        </div>
+                        <div class="row" ng-show="cond.apply_auth">
                           <div class="col-md-10 well">
                             <div class="form-group has-feedback">
                               <!--<tags-input min-length="1" ng-model="cond.required_acrs"-->
@@ -261,7 +271,6 @@
                               <span class="help-block error-block basic-block"></span>
                             </div>
                           </div>
-                          <hr/>
                         </div>
                       </div>
                       <div class="row">

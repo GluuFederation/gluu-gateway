@@ -288,7 +288,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       client_name: body.client_name || 'gg-openid-connect-client',
       post_logout_redirect_uris: body.post_logout_redirect_uris || [],
       scope: body.scope,
-      acr_values: body.acr_values,
+      acr_values: body.acr_values || [],
       grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
       claims_redirect_uri: body.claims_redirect_uri || [],
     };
@@ -526,7 +526,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           redirect_uris: body.redirect_uris || ['https://client.example.com/cb'],
           post_logout_redirect_uris: body.post_logout_redirect_uris,
           scope: body.scope,
-          acr_values: body.acr_values,
+          acr_values: body.acr_values || [],
           grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
           claims_redirect_uri: body.claims_redirect_uri || [],
         };
