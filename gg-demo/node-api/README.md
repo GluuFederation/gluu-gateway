@@ -7,8 +7,9 @@
 ## Installation
 
 1. `mkdir node-api`
-1. `wget `
 1. `cd node-api`
+1. `wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0/gg-demo/node-api/index.js`
+1. `wget https://raw.githubusercontent.com/GluuFederation/gluu-gateway/version_4.0/gg-demo/node-api/package.json`
 1. `npm install`
 
 ## Start
