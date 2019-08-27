@@ -1,0 +1,14 @@
+{
+  "name": "node-upstream-api",
+  "version": "1.0.0",
+  "description": "Node JS Demo Upstream API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "author": "Meghna Joshi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
