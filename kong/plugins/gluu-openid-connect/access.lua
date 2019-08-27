@@ -161,15 +161,18 @@ local function acr_already_requested(id_tokens, required_acrs)
     assert(required_acrs and #required_acrs > 0)
     for _, id_token in pairs(id_tokens) do
         local requested_acrs = id_token.requested_acrs
-        local match = true
-        for i = 1, #required_acrs do
-            if not requested_acrs[required_acrs[i]] then
-                match = false
-                break
+
+        if requested_acrs then
+            local match = true
+            for i = 1, #required_acrs do
+                if not requested_acrs[required_acrs[i]] then
+                    match = false
+                    break
+                end
             end
-        end
-        if match then
-            return true
+            if match then
+                return true
+            end
         end
     end
     return false
