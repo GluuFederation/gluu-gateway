@@ -174,6 +174,21 @@ local function update_required_acrs_expression(plugin_id, required_acrs_expressi
     )
 end
 
+local function unset_required_acrs_expression(plugin_id)
+    local payload = [[{
+        "config": { "required_acrs_expression" : null }
+    }]]
+
+    print"unset_required_acrs_expression"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/]], plugin_id,
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload, [[']]
+    )
+end
+
+if false then
+
 test("basic", function()
     setup("oxd-model1.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
@@ -809,7 +824,7 @@ test("not enough acr", function()
 end)
 
 -- https://github.com/GluuFederation/gluu-gateway/issues/355
-test("acr_values testing", function()
+test("required_acrs in user session", function()
     setup("oxd-model7.lua")
     local cookie_tmp_filename = ctx.cookie_tmp_filename
 
@@ -924,6 +939,76 @@ test("acr_values testing", function()
     assert(res:find("page1", 1, true))
     assert(res:find("x-openid-connect-idtoken", 1, true))
     assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+end
+
+test("unset required_acrs_expression", function()
+
+    setup("oxd-model7.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print "test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local _, plugin = configure_plugin(create_service_response, {
+        authorization_redirect_path = "/callback",
+        requested_scopes = { "openid", "email", "profile" },
+        max_id_token_age = 10,
+        max_id_token_auth_age = 60 * 60 * 24,
+        logout_path = "/logout_path",
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+        required_acrs_expression = {
+            {
+                path = "/??",
+                conditions = {
+                    {
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+            {
+                path = "/users/??",
+                conditions = {
+                    {
+                        required_acrs = { "auth_ldap_server" },
+                        httpMethods = { "?" }, -- any
+                    }
+                }
+            },
+        },
+    })
+
+    print "acr=any"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print "follow redirect 1"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+
+    unset_required_acrs_expression(plugin.id)
+
+    print"it should allow, because we already have any acr id_token"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/users/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("HTTP/1.1 200", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

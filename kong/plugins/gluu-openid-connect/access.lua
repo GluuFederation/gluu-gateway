@@ -310,9 +310,12 @@ return function(self, conf)
         "session.present=", session.present,
         ", session.data.id_tokens=", id_tokens ~= nil)
 
-    local method_path_tree = conf.method_path_tree
+    local method_path_tree, required_acrs_expression = conf.method_path_tree, conf.required_acrs_expression
     local required_acrs, no_auth
-    if method_path_tree then
+
+    -- we use required_acrs_expression as a flag, because Kong merge behavior
+    -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
+    if required_acrs_expression then
         local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth
