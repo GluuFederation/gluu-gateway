@@ -208,6 +208,9 @@ local function authorize(conf, session, prompt, required_acrs)
             prompt = prompt,
             scope = conf.requested_scopes,
             acr_values = required_acrs,
+            params = {
+                max_age = conf.max_id_token_age,
+            },
         },
         ptoken)
 
@@ -228,13 +231,6 @@ local function authorize(conf, session, prompt, required_acrs)
         kong.log.err("get_authorization_url() missed authorization_url")
         return unexpected_error()
     end
-
-    -- TODO does oxd support this now?
-    authorization_url = table.concat{
-        authorization_url,
-        "&max_age=",
-        tostring(conf.max_id_token_auth_age),
-    }
 
     local session_data = session.data
     -- by original_url session's field we distinguish enduser session previously redirected
