@@ -826,12 +826,21 @@
         function showACRExpressionJSON() {
           var model = angular.copy($scope.pluginConfig);
           var acr_expression = makeACRExpression(model);
+
           if (acr_expression == null) {
             return
           }
           if (!model) {
             return false;
           }
+
+          acr_expression.forEach(function (path, pIndex) {
+            path.conditions.forEach(function (cond, cIndex) {
+              var apply_auth = angular.copy(cond.apply_auth);
+              cond.no_auth = !cond.apply_auth;
+              delete cond.apply_auth;
+            });
+          });
 
           $uibModal.open({
             animation: true,
