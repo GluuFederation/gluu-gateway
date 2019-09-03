@@ -1,0 +1,15 @@
+{
+  "name": "node-upstream-website",
+  "version": "1.0.0",
+  "description": "Node JS Demo Upstream Website",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "author": "Meghna Joshi",
+  "license": "ISC",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.4"
+  }
+}
