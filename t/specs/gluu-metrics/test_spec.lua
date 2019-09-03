@@ -77,7 +77,7 @@ end
 local function configure_auth_plugin(create_service_response, config)
     local payload = {
         name = "gluu-oauth-auth",
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
         config = config,
     }
     local payload_json = JSON:encode(payload)
@@ -93,7 +93,7 @@ end
 local function configure_uma_plugin(create_service_response, config)
     local payload = {
         name = "gluu-uma-auth",
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
         config = config,
     }
     local payload_json = JSON:encode(payload)

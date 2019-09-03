@@ -1,8 +1,17 @@
+local typedefs = require "kong.db.schema.typedefs"
+
 return {
-    no_consumer = true,
+    name = "gluu-metrics",
     fields = {
-        opa_url = { required = true, type = "url" },
-        forward_request_body = { type = "boolean", default = false },
+        { run_on = typedefs.run_on_first },
+        {
+            config = {
+                type = "record",
+                fields = {
+                    { forward_request_body = { type = "boolean", default = false }, },
+                    { opa_url = typedefs.url { required = true, default = "http://localhost:8001" }, },
+                },
+            },
+        },
     }
 }
-

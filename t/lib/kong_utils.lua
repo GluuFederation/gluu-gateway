@@ -6,7 +6,7 @@ local sh, stdout, stderr, sleep, sh_ex, sh_until_ok =
 
 local _M = {}
 
-local kong_image = "kong:0.14.1-alpine"
+local kong_image = "kong:1.3.0-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
 --local oxd_image = "gluu/oxd:4.0-beta-1"
@@ -113,7 +113,7 @@ _M.kong_postgress_custom_plugins = function(opts)
         build_plugins_volumes(plugins),
         build_modules_volumes(modules),
         opts.kong_image or kong_image,
-        " kong migrations up"
+        " kong migrations bootstrap"
     )
 
     -- TODO something better?
@@ -227,7 +227,7 @@ _M.configure_ip_restrict_plugin = function(create_service_response, plugin_confi
     local payload = {
         name = "ip-restriction",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 

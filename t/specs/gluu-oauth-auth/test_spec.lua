@@ -45,6 +45,7 @@ local function setup(model)
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
+            ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -123,7 +124,7 @@ local function configure_plugin(create_service_response, plugin_config)
     local payload = {
         name = "gluu-oauth-auth",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 
@@ -397,11 +398,12 @@ test("rate limiter", function()
     -- TODO test comma separated list of scopes
 
     print"configure rate-limiting global plugin"
-    local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+    local res, err = sh_ex([[curl -v -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=consumer" ]],
         -- [[--data "consumer_id=]], consumer_response.id,
         [[ --data "config.policy=local" ]]
     )
+    assert(err:find("HTTP/1.1 201", 1, true))
     local rate_limiting_global = JSON:decode(res)
 
     print"test it work with token first time"
@@ -433,11 +435,12 @@ test("rate limiter", function()
     )
 
     print"configure rate limiting plugin for a consumer"
-    local res, err = sh_ex([[curl -v --fail -sS -X POST --url http://localhost:]],
+    local res, err = sh_ex([[curl -v -sS -X POST --url http://localhost:]],
         ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" ]],
         [[ --data "config.second=1"  --data "config.policy=local" --data "config.limit_by=consumer" ]],
-        [[ --data "consumer_id=]], consumer_response.id, [["]]
+        [[ --data "consumer.id=]], consumer_response.id, [["]]
     )
+    assert(err:find("HTTP/1.1 201", 1, true))
     local rate_limiting_consumer = JSON:decode(res)
 
     sleep(2) -- TODO is it required?!

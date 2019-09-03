@@ -4,6 +4,7 @@ local kong_auth_pep_common = require "gluu.kong-common"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
+local json_cache = require "gluu.json-cache"
 
 local function split(str, sep)
     local ret = {}
@@ -312,7 +313,7 @@ return function(self, conf)
     -- we use required_acrs_expression as a flag, because Kong merge behavior
     -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
     if required_acrs_expression then
-        local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
+        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree), ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth
     end

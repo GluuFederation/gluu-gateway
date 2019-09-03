@@ -1,4 +1,3 @@
-local responses = require "kong.tools.responses"
 local metrics = {}
 local prometheus
 
@@ -112,7 +111,7 @@ local function collect()
     if not prometheus or not metrics then
         kong.log.err("gluu_oauth_pep: plugin is not initialized, please make sure ",
             " 'gluu_oauth_pep_metrics' shared dict is present in nginx template")
-        return responses.send_HTTP_INTERNAL_SERVER_ERROR()
+        return ngx.exit(500)
     end
 
     prometheus:collect()
