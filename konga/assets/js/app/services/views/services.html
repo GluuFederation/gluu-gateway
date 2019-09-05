@@ -53,7 +53,11 @@
               {{service.extras.description}}</p>
           </td>
           <td>{{ service.host || "-" }}</td>
-          <td>{{service.created_at*1000 | date : format : timezone}}</td>
+          <td>
+            <span class="badge badge-tag badge-success badge-inverse" ng-repeat="tag in service.tags">
+              <i class="mdi mdi-tag"></i>&nbsp;{{tag}}
+            </span>
+          </td>
           <td>
             <span data-ng-repeat="plugin in service.plugins">
               <a data-ng-if="plugin.name == 'gluu-oauth-auth'" ui-sref="services.oauth-plugin({service_id: service.id })" class="btn btn-sm btn-primary">

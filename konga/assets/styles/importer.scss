@@ -805,3 +805,10 @@ tr.disabled{
 .check-toggle-size {
   letter-spacing: 0 !important;
 }
+
+.badge.badge-tag {
+  margin-right: 5px;
+  i.mdi:before {
+    font-size: .9em;
+  }
+}

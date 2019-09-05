@@ -41,15 +41,18 @@
               inTitle: true
             },
             {
-              title: 'created',
-              column: 'created_at',
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
             }
           ],
           route: [
             {
-              title: 'id',
-              column: 'id',
+              title: 'Name / ID',
+              column: 'name',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -80,9 +83,12 @@
               inTitle: true
             },
             {
-              title: 'created',
-              column: 'created_at',
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
             }
           ],
           api: [
@@ -313,6 +319,14 @@
             {
               title: 'gluu client id',
               column: 'custom_id',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'tags',
+              column: 'tags',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -618,12 +632,15 @@
           ],
         };
 
+        let defaultLimit = 1000;
+
         return {
+          defaultLimit: defaultLimit,
           getConfig: function getConfig(property, model) {
             return {
               itemCount: 0,
               items: [],
-              itemsFetchSize: 4294967295,
+              itemsFetchSize: defaultLimit,
               itemsPerPage: 25,
               titleItems: this.getTitleItems(property),
               itemsPerPageOptions: [10, 25, 50, 100],

@@ -42,7 +42,7 @@
               ...{{ route.id.substring(route.id.length - 12, route.id.length) }}
             </strong>
             <strong ng-if="!(route.service.name === 'gluu-org-metrics-service')">
-              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">...{{ route.id.substring(route.id.length - 12, route.id.length) }}</a>
+              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">{{ route.name || '...' + route.id.substring(route.id.length - 12, route.id.length) }}</a>
             </strong>
           </td>
           <td>{{ route.hosts.join(", ") || "-" }}</td>
@@ -53,7 +53,9 @@
             route.service.id}}</a>
           </td>
           <td>{{ route.paths.join(", ") || "-" }}</td>
-          <td>{{route.created_at*1000 | date : format : timezone}}</td>
+          <td>
+            <span class="badge badge-tag badge-success badge-inverse" ng-repeat="tag in route.tags"><i class="mdi mdi-tag"></i>&nbsp;{{tag}}</span>
+          </td>
           <td>
             <span data-ng-repeat="plugin in route.plugins">
               <a data-ng-if="plugin.name == 'gluu-oauth-auth'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
