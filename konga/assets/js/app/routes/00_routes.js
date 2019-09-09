@@ -86,7 +86,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ]
                 }
@@ -128,7 +128,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _activeNode: [
@@ -172,7 +172,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _activeNode: [
@@ -210,7 +210,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _info: [
@@ -252,9 +252,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({
-                        route_id: $stateParams.route_id
-                      })
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _activeNode: [

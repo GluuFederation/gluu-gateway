@@ -35,6 +35,7 @@
         }
 
         $scope.modelPlugin = {
+          tags: [],
           isPEPEnabled: true,
           config: {
             oxd_url: $scope.globalInfo.oxdWeb,
@@ -49,10 +50,12 @@
         };
 
         if ($scope.context_name) {
-          $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
+          $scope.modelPlugin[$scope.context_name] = {
+            id: $scope.context_data.id
+          }
         } else {
           $scope.plugins = $scope.plugins.filter(function (item) {
-            return (!(item.service_id || item.route_id || item.api_id))
+            return (!((item.service && item.service.id) || (item.route && item.route.id)))
           });
         }
 
@@ -87,7 +90,7 @@
 
           $scope.ruleScope = {};
           $scope.ruleOauthScope = {};
-          $scope.modelPlugin.config.oauth_scope_expression = pepPlugin.config.oauth_scope_expression || [];
+          $scope.modelPlugin.config.oauth_scope_expression = JSON.parse(pepPlugin.config.oauth_scope_expression) || [];
           setTimeout(function () {
             if ($scope.modelPlugin.config.oauth_scope_expression && $scope.modelPlugin.config.oauth_scope_expression.length > 0) {
               $scope.modelPlugin.config.oauth_scope_expression.forEach(function (path, pIndex) {
@@ -322,7 +325,7 @@
           var model = angular.copy($scope.modelPlugin);
           var oauthScopeExpression = makeExpression($scope.modelPlugin);
           if (oauthScopeExpression && oauthScopeExpression.length > 0) {
-            model.config.oauth_scope_expression = oauthScopeExpression;
+            model.config.oauth_scope_expression = JSON.stringify(oauthScopeExpression);
           } else {
             delete model.config.oauth_scope_expression
           }
@@ -337,7 +340,7 @@
               oxd_id: model.config.oxd_id || null,
               client_id: model.config.client_id || null,
               client_secret: model.config.client_secret || null,
-              client_name: 'gluu-introspect-client',
+              client_name: 'gluu-oauth-client',
               op_host: model.config.op_url,
               oxd_url: model.config.oxd_url
             })
@@ -345,6 +348,7 @@
               var oauthClient = response.data;
               var authModel = {
                 name: 'gluu-oauth-auth',
+                tags: model.tags || null,
                 config: {
                   oxd_id: oauthClient.oxd_id,
                   client_id: oauthClient.client_id,
@@ -356,7 +360,9 @@
                 }
               };
               if ($scope.context_name) {
-                authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                authModel[$scope.context_name] ={
+                  id: $scope.context_data.id
+                };
               }
               return new Promise(function (resolve, reject) {
                 return PluginHelperService.addPlugin(
@@ -388,7 +394,9 @@
                 }
               };
               if ($scope.context_name) {
-                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                pepModel[$scope.context_name] ={
+                  id: $scope.context_data.id
+                }
               }
               return PluginHelperService.addPlugin(
                 pepModel,
@@ -415,10 +423,10 @@
 
         function updatePlugin() {
           var model = angular.copy($scope.modelPlugin);
-          model.config.oauth_scope_expression = $scope.modelPlugin.config.oauth_scope_expression;
+          var oauth_scope_expression = makeExpression($scope.modelPlugin);
 
-          if (model.config.oauth_scope_expression && model.config.oauth_scope_expression.length > 0) {
-            model.config.oauth_scope_expression = makeExpression($scope.modelPlugin);
+          if (oauth_scope_expression && oauth_scope_expression.length > 0) {
+            model.config.oauth_scope_expression = JSON.stringify(oauth_scope_expression);
           } else {
             model.config.oauth_scope_expression = null;
           }
@@ -430,6 +438,7 @@
 
           var authModel = {
             name: 'gluu-oauth-auth',
+            tags: model.tags || null,
             config: {
               oxd_id: model.config.oxd_id,
               client_id: model.config.client_id,
@@ -441,7 +450,9 @@
             }
           };
           if ($scope.context_name) {
-            authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+            authModel[$scope.context_name] = {
+              id: $scope.context_data.id
+            };
           }
           return new Promise(function (resolve, reject) {
             return PluginHelperService.updatePlugin(model.authId,
@@ -472,7 +483,9 @@
                 }
               };
               if ($scope.context_name) {
-                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                pepModel[$scope.context_name] = {
+                  id: $scope.context_data.id
+                };
               }
 
               if (model.pepId) {

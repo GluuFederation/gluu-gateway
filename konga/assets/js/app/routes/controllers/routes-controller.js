@@ -77,7 +77,7 @@
                 routeResponse.data.map(function(route) {
                   route.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    if (plugin.route_id == route.id && (plugin.name == 'gluu-opa-pep' || plugin.name == 'gluu-openid-connect' || plugin.name == 'gluu-oauth-auth' || plugin.name == 'gluu-uma-auth')) {
+                    if ((plugin.route && plugin.route.id === route.id) && (plugin.name === 'gluu-opa-pep' || plugin.name === 'gluu-openid-connect' || plugin.name === 'gluu-oauth-auth' || plugin.name === 'gluu-uma-auth')) {
                       route.plugins.push(plugin);
                     }
                   });

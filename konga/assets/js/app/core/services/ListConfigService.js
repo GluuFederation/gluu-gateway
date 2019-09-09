@@ -491,7 +491,15 @@
               sortable: false,
               inSearch: false,
               inTitle: true
-            }
+            },
+            {
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
           ],
           certificate: [
             {

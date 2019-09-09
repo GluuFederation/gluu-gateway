@@ -48,10 +48,12 @@
         };
 
         if ($scope.context_name) {
-          $scope.modelPlugin[$scope.context_name + "_id"] = $scope.context_data.id;
+          $scope.modelPlugin[$scope.context_name] = {
+            id: $scope.context_data.id
+          }
         } else {
           $scope.plugins = $scope.plugins.filter(function (item) {
-            return (!(item.service_id || item.route_id || item.api_id))
+            return (!((item.service && item.service.id) || (item.route && item.route.id)))
           });
         }
 
@@ -82,7 +84,7 @@
           $scope.isPluginAdded = true;
           $scope.ruleScope = {};
           $scope.ruleOauthScope = {};
-          $scope.modelPlugin.config.uma_scope_expression = pepPlugin.config.uma_scope_expression || [];
+          $scope.modelPlugin.config.uma_scope_expression = JSON.parse(pepPlugin.config.uma_scope_expression) || [];
           setTimeout(function () {
             if ($scope.modelPlugin.config.uma_scope_expression && $scope.modelPlugin.config.uma_scope_expression.length > 0) {
               $scope.modelPlugin.config.uma_scope_expression.forEach(function (path, pIndex) {
@@ -318,9 +320,9 @@
 
         function addPlugin() {
           var model = angular.copy($scope.modelPlugin);
-          var oauthScopeExpression = makeExpression($scope.modelPlugin);
-          if (oauthScopeExpression && oauthScopeExpression.length > 0) {
-            model.config.uma_scope_expression = oauthScopeExpression;
+          var uma_scope_expression = makeExpression($scope.modelPlugin);
+          if (uma_scope_expression && uma_scope_expression.length > 0) {
+            model.config.uma_scope_expression = JSON.stringify(uma_scope_expression);
           } else {
             return MessageService.error('UMA Scope Expression is required');
           }
@@ -329,7 +331,7 @@
               oxd_id: model.config.oxd_id || null,
               client_id: model.config.client_id || null,
               client_secret: model.config.client_secret || null,
-              uma_scope_expression: model.config.uma_scope_expression,
+              uma_scope_expression: uma_scope_expression,
               client_name: 'gluu-uma-client',
               op_host: model.config.op_url,
               oxd_url: model.config.oxd_url
@@ -338,6 +340,7 @@
               var oauthClient = response.data;
               var authModel = {
                 name: 'gluu-uma-auth',
+                tags: model.tags || null,
                 config: {
                   oxd_id: oauthClient.oxd_id,
                   client_id: oauthClient.client_id,
@@ -349,7 +352,9 @@
                 }
               };
               if ($scope.context_name) {
-                authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                authModel[$scope.context_name] ={
+                  id: $scope.context_data.id
+                };
               }
               return new Promise(function (resolve, reject) {
                 PluginHelperService.addPlugin(
@@ -375,7 +380,9 @@
                 }
               };
               if ($scope.context_name) {
-                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                pepModel[$scope.context_name] ={
+                  id: $scope.context_data.id
+                }
               }
               return PluginHelperService.addPlugin(
                 pepModel,
@@ -402,10 +409,10 @@
 
         function updatePlugin() {
           var model = angular.copy($scope.modelPlugin);
-          model.config.uma_scope_expression = $scope.modelPlugin.config.uma_scope_expression;
+          var uma_scope_expression = makeExpression($scope.modelPlugin);
 
-          if (model.config.uma_scope_expression && model.config.uma_scope_expression.length > 0) {
-            model.config.uma_scope_expression = makeExpression($scope.modelPlugin);
+          if (uma_scope_expression && uma_scope_expression.length > 0) {
+            model.config.uma_scope_expression = JSON.stringify(uma_scope_expression);
           } else {
             model.config.uma_scope_expression = null;
           }
@@ -420,7 +427,7 @@
               oxd_id: model.config.oxd_id || null,
               client_id: model.config.client_id || null,
               client_secret: model.config.client_secret || null,
-              uma_scope_expression: model.config.uma_scope_expression,
+              uma_scope_expression: uma_scope_expression,
               op_host: model.config.op_url,
               oxd_url: model.config.oxd_url
             })
@@ -431,6 +438,7 @@
               }
               var authModel = {
                 name: 'gluu-uma-auth',
+                tags: model.tags || null,
                 config: {
                   oxd_id: model.oxd_id,
                   client_id: model.client_id,
@@ -442,7 +450,9 @@
                 }
               };
               if ($scope.context_name) {
-                authModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                authModel[$scope.context_name] = {
+                  id: $scope.context_data.id
+                };
               }
 
               return new Promise(function (resolve, reject) {
@@ -469,7 +479,9 @@
                 }
               };
               if ($scope.context_name) {
-                pepModel[$scope.context_name + "_id"] = $scope.context_data.id;
+                pepModel[$scope.context_name] = {
+                  id: $scope.context_data.id
+                };
               }
               return PluginHelperService.updatePlugin(model.pepId,
                 pepModel,

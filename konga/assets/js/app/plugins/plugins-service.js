@@ -19,6 +19,10 @@
             })
           },
 
+          getPluginsByContext: function (context, service_id) {
+            return $http.get('kong/' + context + '/' + service_id + '/plugins')
+          },
+
           add: function (data) {
             return $http.post('kong/plugins', data)
           },

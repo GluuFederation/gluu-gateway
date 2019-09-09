@@ -49,27 +49,27 @@
           }
 
           if ('gluu-oauth-auth' === item.name) {
-            if (item.service_id) {
-              return $state.go("services.oauth-plugin", {service_id: item.service_id});
-            } else if (item.route_id) {
-              return $state.go("routes.oauth-plugin", {route_id: item.route_id});
+            if (item.service && item.service.id) {
+              return $state.go("services.oauth-plugin", {service_id: item.service.id});
+            } else if (item.route && item.route.id) {
+              return $state.go("routes.oauth-plugin", {route_id: item.route.id});
             } else {
               return $state.go("plugins.oauth-plugin");
             }
           }
 
           if ('gluu-uma-auth' === item.name) {
-            if (item.service_id) {
-              return $state.go("services.uma-plugin", {service_id: item.service_id});
-            } else if (item.route_id) {
-              return $state.go("routes.uma-plugin", {route_id: item.route_id});
+            if (item.service && item.service.id) {
+              return $state.go("services.uma-plugin", {service_id: item.service.id});
+            } else if (item.route && item.route.id) {
+              return $state.go("routes.uma-plugin", {route_id: item.route.id});
             } else {
               return $state.go("plugins.uma-plugin");
             }
           }
 
           if ('gluu-openid-connect' === item.name) {
-            return $state.go("routes.openid-plugin", {route_id: item.route_id});
+            return $state.go("routes.openid-plugin", {route_id: item.route.id});
           }
 
           if (!$scope.user.hasPermission('plugins', 'edit')) {
@@ -115,12 +115,10 @@
         }
 
         function getContext(plugin) {
-          if (plugin.service_id) {
+          if (plugin.service && plugin.service.id) {
             return 'services'
-          } else if (plugin.route_id) {
+          } else if (plugin.route && plugin.route.id) {
             return 'routes'
-          } else if (plugin.api_id) {
-            return 'apis'
           } else {
             return 'global'
           }

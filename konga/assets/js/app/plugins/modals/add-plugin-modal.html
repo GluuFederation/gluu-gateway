@@ -22,7 +22,7 @@
             <div class="col-sm-7">
                 <input
                         type="text"
-                        ng-model="data.consumer_id"
+                        ng-model="data.consumer.id"
                         class="form-control"
                         >
                 <p class="help-block">
@@ -34,10 +34,59 @@
             </div>
         </div>
 
+        <div class="form-group">
+            <label class="col-sm-4 control-label">Tags <br><em><small class="help-block">optional</small></em></label>
+            <div class="col-sm-7">
+                <chips ng-model="data.tags">
+                    <chip-tmpl>
+                        <div class="default-chip">
+                            {{chip}}
+                            <i class="mdi mdi-close" remove-chip></i>
+                        </div>
+                    </chip-tmpl>
+                    <input chip-control/>
+                </chips>
+                <p class="help-block">Tip: Press <code>Enter</code> to accept a value.</p>
+                <p class="help-block">
+                    An optional set of strings associated with the plugin, for grouping and filtering.
+                </p>
+            </div>
+        </div>
         <div class="form-group" ng-class="{'has-error' : errors[key]}" data-ng-repeat="(key,value) in data.fields">
             <label class="col-sm-4 control-label"><strong>{{humanizeLabel(key)}}</strong></label>
             <div class="col-sm-7">
                 <div ng-switch on="value.type">
+                    <!-- TYPE: RECORD -->
+                    <div ng-switch-when="record">
+                        <div class="plugin-field-table">
+                            <div data-ng-repeat="field in value.fields">
+                                <!--<pre>{{field | json}}</pre>-->
+                                <label><i class="mdi mdi-chevron-right"></i>{{getFieldProp(field)}}</label>
+                                <div ng-switch on="field[getFieldProp(field)].type">
+                                    <div ng-switch-when="array">
+                                        <chips ng-model="field[getFieldProp(field)].value">
+                                            <chip-tmpl>
+                                                <div class="default-chip">
+                                                    {{chip}}
+                                                    <i class="mdi mdi-close" remove-chip></i>
+                                                </div>
+                                            </chip-tmpl>
+                                            <input chip-control/>
+                                        </chips>
+                                    </div>
+                                    <div ng-switch-default>
+                                        <input type="{{field[getFieldProp(field)].type}}" ng-model="field[getFieldProp(field)].value" class="form-control">
+                                    </div>
+                                    <div class="text-danger" ng-if="errors[key]" data-ng-bind="errors[key]"></div>
+                                    <p class="help-block">{{data.help}}</p>
+                                </div>
+                            </div>
+                        </div>
+
+
+                    </div>
+
+                    <!-- TYPE: TABLE -->
                     <div ng-switch-when="table">
 
                         <div ng-if="value.schema.flexible">
@@ -98,15 +147,25 @@
 
 
                     </div>
+
+                    <!-- TYPE: STRING -->
                     <div ng-switch-when="string">
-                        <div data-ng-if="value.enum">
-                            <select class="form-control" ng-model="value.value" ng-options="x for x in value.enum">
+                        <div data-ng-if="value.one_of">
+                            <select class="form-control" ng-model="value.value" ng-options="x for x in value.one_of">
                             </select>
                         </div>
-                        <div data-ng-if="!value.enum">
-                          <input type="text" ng-model="value.value" class="form-control"> <button type="button" class="btn btn-danger btn-xs" data-ng-click="value.value = ''">Clear</button>
+                        <div data-ng-if="!value.one_of">
+                            <!--<input type="text" ng-model="value.value" class="form-control">-->
+                            <textarea ng-model="value.value" class="form-control"></textarea>
                         </div>
                     </div>
+
+                    <!-- TYPE: INTEGER -->
+                    <div ng-switch-when="integer">
+                        <input type="number" ng-model="value.value" class="form-control"></input>
+                    </div>
+
+                    <!-- TYPE: ARRAY -->
                     <div ng-switch-when="array">
                         <chips ng-model="value.value">
                             <chip-tmpl>
@@ -119,28 +178,50 @@
                         </chips>
                         <p class="help-block">Tip: Press <code>Enter</code> to accept a value.</p>
                     </div>
+
+                    <!-- TYPE: SET -->
+                    <div ng-switch-when="set">
+                        <chips ng-model="value.value">
+                            <chip-tmpl>
+                                <div class="default-chip">
+                                    {{chip}}
+                                    <i class="mdi mdi-close" remove-chip></i>
+                                </div>
+                            </chip-tmpl>
+                            <input chip-control/>
+                        </chips>
+                        <p class="help-block">Tip: Press <code>Enter</code> to accept a value.</p>
+                    </div>
+
+                    <!-- TYPE: SELECT -->
                     <div ng-switch-when="select">
                         <select class="form-control"  ng-model="value.value">
                             <option  ng-repeat="item in units" ng-value="item">{{item}}</option>
                         </select>
                     </div>
+
+                    <!-- TYPE: BOOLEAN -->
                     <div ng-switch-when="boolean">
                         <input
-                                bs-switch
-                                ng-model="value.value"
-                                switch-size="small"
-                                type="checkbox"
-                                switch-on-text="YES"
-                                switch-off-text="NO"
-                                ng-change="updateApi(api)"
+                          bs-switch
+                          ng-model="value.value"
+                          switch-size="small"
+                          type="checkbox"
+                          switch-on-text="YES"
+                          switch-off-text="NO"
+                          ng-change="updateApi(api)"
                         >
 
                     </div>
+
+                    <!-- TYPE: FILE -->
                     <div ng-switch-when="file">
                         <input type="file"
                                ngf-select ng-model="data.value" name="data.value"
                         />
                     </div>
+
+                    <!-- DEFAULT -->
                     <div ng-switch-default>
                         <input type="{{value.type}}" ng-model="value.value" class="form-control">
 
