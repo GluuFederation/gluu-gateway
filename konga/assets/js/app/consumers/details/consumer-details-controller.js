@@ -19,7 +19,8 @@
           function updateConsumerDetails() {
               ConsumerModel.update($scope.consumer.id,{
                       username : $scope.consumer.username,
-                      custom_id : $scope.consumer.custom_id
+                      custom_id : $scope.consumer.custom_id,
+                      tags: $scope.consumer.tags
                   })
                   .then(function(res){
                       $log.debug(res.data)

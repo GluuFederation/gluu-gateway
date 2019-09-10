@@ -18,6 +18,7 @@
         $scope.route.service = {
           id: _service.id
         };
+        $scope.addMoreHeader = addMoreHeader;
 
         console.log("$scope.route", $scope.route, _service.id);
 
@@ -27,7 +28,11 @@
 
         $scope.submit = function () {
           clearRoute();
-          RoutesService.add($scope.route)
+          var route = angular.copy($scope.route);
+          if (route.bHeaders) {
+            delete route.bHeaders;
+          }
+          RoutesService.add(route)
             .then(function (res) {
               $rootScope.$broadcast('route.created')
               MessageService.success('Route created!')
@@ -50,7 +55,6 @@
           })
         };
 
-
         function clearRoute() {
           for (var key in $scope.route) {
 
@@ -62,6 +66,22 @@
               delete($scope.route[key]);
             }
           }
+
+          var baseHeaders = $scope.route.bHeaders;
+          if (baseHeaders && baseHeaders.length > 0) {
+            var newHeader = {};
+            baseHeaders.forEach(function (header) {
+              newHeader[header.name] = header.values;
+            });
+            $scope.route.headers = newHeader;
+          }
+        }
+
+        function addMoreHeader() {
+          if (!$scope.route.bHeaders) {
+            $scope.route.bHeaders = []
+          }
+          $scope.route.bHeaders.push({name: 'header1', values: ['v1']})
         }
       }
     ]);
