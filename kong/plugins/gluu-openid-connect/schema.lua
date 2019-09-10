@@ -7,6 +7,7 @@ return {
     name = "gluu-openid-connect",
     fields = {
         { run_on = typedefs.run_on_first },
+        { consumer = typedefs.no_consumer },
         {
             config = {
                 type = "record",
