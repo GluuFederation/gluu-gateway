@@ -65,6 +65,7 @@
           $scope.description = $scope.data.meta ? $scope.data.meta.description
             : 'Configure the Plugin.';
 
+          $scope.consumer_id = options.consumer_id && true || false;
           // Remove unwanted data fields that start with "_"
           Object.keys($scope.data.fields).forEach(function (key) {
             if (key.startsWith("_")) delete $scope.data.fields[key];

@@ -271,6 +271,15 @@
               meta: {
                 description: 'This plugin terminates incoming requests with a specified status code and message. This allows to (temporarily) block an API or Consumer.'
               },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
+              },
               content_type: {
                 type: 'text',
                 value: 'application/json; charset=utf-8',
@@ -387,6 +396,15 @@
             "correlation-id": {
               meta: {
                 description: 'Correlate requests and responses using a unique ID transmitted over an HTTP header.'
+              },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
               },
               'header_name': {
                 type: 'text',
@@ -632,6 +650,15 @@
               meta: {
                 description: 'Transform the request sent by a client on the fly on Kong, before hitting the upstream server.'
               },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
+              },
               "http_method": {
                 help: "Changes the HTTP method for the upstream request."
               },
@@ -683,6 +710,15 @@
             "response-transformer": {
               meta: {
                 description: 'Transform the response sent by the upstream server on the fly on Kong, before returning the response to the client.'
+              },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
               },
               "remove": {
                 "headers": {
