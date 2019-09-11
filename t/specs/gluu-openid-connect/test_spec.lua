@@ -52,6 +52,7 @@ local function setup(model)
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
+            ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
             ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
@@ -95,6 +96,10 @@ local function configure_service_route(service_name, service, route)
 end
 
 local function configure_plugin(create_service_response, plugin_config)
+    if plugin_config.required_acrs_expression then
+        plugin_config.required_acrs_expression = JSON:encode(plugin_config.required_acrs_expression)
+    end
+
     local register_site = {
         scope = { "openid", "uma_protection" },
         op_host = "just_stub",
@@ -120,7 +125,7 @@ local function configure_plugin(create_service_response, plugin_config)
     local payload = {
         name = "gluu-openid-connect",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 
@@ -136,6 +141,10 @@ local function configure_plugin(create_service_response, plugin_config)
 end
 
 local function configure_pep_plugin(register_site_response, create_service_response, plugin_config)
+    if plugin_config.uma_scope_expression then
+        plugin_config.uma_scope_expression = JSON:encode(plugin_config.uma_scope_expression)
+    end
+
     plugin_config.op_url = "http://stub"
     plugin_config.oxd_url = "http://oxd-mock"
     plugin_config.client_id = register_site_response.client_id
@@ -145,23 +154,25 @@ local function configure_pep_plugin(register_site_response, create_service_respo
     local payload = {
         name = "gluu-uma-pep",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
 
     local payload_json = JSON:encode(payload)
 
     print"enable plugin for the Service"
     local res, err = sh_ex([[
-        curl --fail -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
+    assert(res:find("HTTP/1.1 201", 1, true))
 end
 
 local function update_required_acrs_expression(plugin_id, required_acrs_expression)
+    local required_acrs_expression_json = JSON:encode(required_acrs_expression)
     local payload = {
         config = {
-            required_acrs_expression = required_acrs_expression
+            required_acrs_expression = required_acrs_expression_json
         },
     }
     local payload_json = JSON:encode(payload)
@@ -186,8 +197,6 @@ local function unset_required_acrs_expression(plugin_id)
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload, [[']]
     )
 end
-
-if false then
 
 test("basic", function()
     setup("oxd-model1.lua")
@@ -942,8 +951,6 @@ test("required_acrs in user session", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
-
-end
 
 test("unset required_acrs_expression", function()
 

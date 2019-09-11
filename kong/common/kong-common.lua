@@ -7,6 +7,7 @@ local validators = require "resty.jwt-validators"
 local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
+local json_cache = require "gluu.json-cache"
 
 -- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
 local EXPIRE_DELTA = 5
@@ -387,7 +388,7 @@ end
 -- @param method: requested http method Example: GET
 -- @return json protected_path path, expression Example: {path: "/posts", ...}
 local function get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree = conf.method_path_tree
+    local method_path_tree = json_cache(conf.method_path_tree)
 
     local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
@@ -493,7 +494,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     local token = get_token(authorization)
 
     if not token then
-        if #conf.anonymous > 0 then
+        if #conf.anonymous > 1 then --TODO
             return handle_anonymous(conf)
         end
         return kong.response.exit(401, { message = "Failed to get bearer token from Authorization header" })
@@ -521,7 +522,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
                 return unexpected_error(err)
             end
 
-            if #conf.anonymous > 0 then
+            if #conf.anonymous > 1 then -- TODO
                 return handle_anonymous(conf)
             end
 
@@ -597,7 +598,7 @@ end
 --- Check user valid UUID
 -- @param anonymous: anonymous consumer id
 function _M.check_user(anonymous)
-    if anonymous == "" then
+    if anonymous == " " then
         return true
     end
     if utils.is_valid_uuid(anonymous) then

@@ -82,7 +82,7 @@ local function configure_pep_plugin(create_service_response)
     local payload = {
         name = "gluu-opa-pep",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 
@@ -98,7 +98,7 @@ local function configure_auth_plugin(create_service_response, plugin_config)
     local payload = {
         name = "gluu-oauth-auth",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 

@@ -46,6 +46,7 @@ local function setup(model)
             ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
+            ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
             ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
             ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
             ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
@@ -83,6 +84,10 @@ local function configure_service_route(service_name, service, route)
 end
 
 local function configure_pep_plugin(register_site_response, create_service_response, plugin_config, disableFail)
+    if plugin_config.oauth_scope_expression then
+        plugin_config.oauth_scope_expression = JSON:encode(plugin_config.oauth_scope_expression)
+    end
+
     plugin_config.op_url = "http://stub"
     plugin_config.oxd_url = "http://oxd-mock"
     plugin_config.client_id = register_site_response.client_id
@@ -92,7 +97,7 @@ local function configure_pep_plugin(register_site_response, create_service_respo
     local payload = {
         name = "gluu-oauth-pep",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 
@@ -102,7 +107,7 @@ local function configure_pep_plugin(register_site_response, create_service_respo
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
-    return res
+    return res, err
 end
 
 local function configure_auth_plugin(create_service_response, plugin_config)
@@ -147,7 +152,7 @@ local function configure_auth_plugin(create_service_response, plugin_config)
     local payload = {
         name = "gluu-oauth-auth",
         config = plugin_config,
-        service_id = create_service_response.id,
+        service = { id = create_service_response.id},
     }
     local payload_json = JSON:encode(payload)
 
