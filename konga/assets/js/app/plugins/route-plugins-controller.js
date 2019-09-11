@@ -115,7 +115,7 @@
               .delete(item.id)
               .then(function (cResponse) {
                 PluginsService
-                  .deleteOPClient({comment: comment, route_id: item.route_id})
+                  .deleteOPClient({comment: comment, route_id: item.route.id})
                   .then(function (pResponse) {
                     MessageService.success("Plugin deleted successfully");
                     $rootScope.$broadcast('plugin.added');
