@@ -65,9 +65,11 @@
         if ($scope.isPluginAdded && oidcPlugin) {
           $scope.isPluginAdded = true;
           $scope.pluginConfig = oidcPlugin.config;
+          $scope.pluginConfig.tags = oidcPlugin.tags;
           $scope.pluginConfig.openid_connect_id = oidcPlugin.id;
           $scope.pluginConfig.isPEPEnabled = false;
           if ($scope.pluginConfig.required_acrs_expression) {
+            $scope.pluginConfig.required_acrs_expression = JSON.parse($scope.pluginConfig.required_acrs_expression);
             $scope.pluginConfig.isACRExpEnabled = true;
             $scope.pluginConfig.required_acrs_expression.forEach(function (path, pIndex) {
               path.conditions.forEach(function (cond, cIndex) {
@@ -98,7 +100,7 @@
             $scope.pluginConfig.claims_redirect_path = pepPlugin.config.claims_redirect_path || "";
 
             $scope.pluginConfig.require_id_token = pepPlugin.config.require_id_token;
-            $scope.pluginConfig.uma_scope_expression = pepPlugin.config.uma_scope_expression || [];
+            $scope.pluginConfig.uma_scope_expression = JSON.parse(pepPlugin.config.uma_scope_expression) || [];
             $scope.ruleScope = {};
             $scope.ruleOauthScope = {};
             setTimeout(function () {
@@ -459,7 +461,10 @@
               }
               var pluginModel = {
                 name: 'gluu-openid-connect',
-                route_id: $scope.route.id,
+                route: {
+                  id: $scope.route.id
+                },
+                tags: model.tags || null,
                 config: {
                   oxd_id: opClient.oxd_id,
                   oxd_url: model.oxd_url,
@@ -471,7 +476,7 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   // required_acrs: model.required_acrs || null,
-                  required_acrs_expression: model.required_acrs_expression || null,
+                  required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
@@ -497,14 +502,16 @@
               // var uma_scope_expression = removeExtraScope(model.uma_scope_expression);
               var pepModel = {
                 name: 'gluu-uma-pep',
-                route_id: $scope.route.id,
+                route: {
+                  id: $scope.route.id
+                },
                 config: {
                   oxd_id: opClient.oxd_id,
                   client_id: opClient.client_id,
                   client_secret: opClient.client_secret,
                   op_url: model.op_url,
                   oxd_url: model.oxd_url,
-                  uma_scope_expression: model.uma_scope_expression,
+                  uma_scope_expression: JSON.stringify(model.uma_scope_expression),
                   deny_by_default: model.deny_by_default || false,
                   require_id_token: model.require_id_token || false,
                   obtain_rpt: true,
@@ -564,7 +571,10 @@
               }
               var pluginModel = {
                 name: 'gluu-openid-connect',
-                route_id: $scope.route.id,
+                route: {
+                  id: $scope.route.id
+                },
+                tags: model.tags || null,
                 config: {
                   oxd_id: opClient.oxd_id,
                   oxd_url: model.oxd_url,
@@ -576,7 +586,7 @@
                   post_logout_redirect_path_or_url: model.post_logout_redirect_path_or_url,
                   requested_scopes: model.requested_scopes,
                   // required_acrs: model.required_acrs || null,
-                  required_acrs_expression: model.required_acrs_expression || null,
+                  required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
@@ -602,14 +612,16 @@
               // var uma_scope_expression = removeExtraScope(model.uma_scope_expression);
               var pepModel = {
                 name: 'gluu-uma-pep',
-                route_id: $scope.route.id,
+                route: {
+                  id: $scope.route.id
+                },
                 config: {
                   oxd_id: opClient.oxd_id,
                   client_id: opClient.client_id,
                   client_secret: opClient.client_secret,
                   op_url: model.op_url,
                   oxd_url: model.oxd_url,
-                  uma_scope_expression: model.uma_scope_expression,
+                  uma_scope_expression: JSON.stringify(model.uma_scope_expression),
                   deny_by_default: model.deny_by_default || false,
                   require_id_token: model.require_id_token || false,
                   obtain_rpt: true,

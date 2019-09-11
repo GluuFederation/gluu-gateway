@@ -10,12 +10,12 @@
     .controller('AddPluginController', [
       '_', '$scope', '$rootScope', '$log', '$state', 'ListConfig',
       'MessageService', 'ConsumerModel', 'ServiceService', 'SocketHelperService', 'PluginHelperService',
-      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_context', '$localStorage',
+      'KongPluginsService', '$uibModalInstance', 'PluginsService', '_pluginName', '_schema', '_context',
       function controller(_, $scope, $rootScope, $log, $state, ListConfig,
                           MessageService, ConsumerModel, ServiceService, SocketHelperService, PluginHelperService,
-                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _context, $localStorage) {
+                          KongPluginsService, $uibModalInstance, PluginsService, _pluginName, _schema, _context) {
 
-        $scope.globalInfo = $localStorage.credentials.user;
+
         if (_.isArray(_context)) {
           _context.forEach(function (ctx) {
             $scope[ctx.name] = ctx.data;
@@ -29,9 +29,22 @@
         //var pluginOptions = new KongPluginsService().pluginOptions()
         var options = new KongPluginsService().pluginOptions(_pluginName);
 
-        $scope.schema = _schema.data;
+
+        var sch = _schema.data;
+        $scope.schema = {
+          fields: {}
+        };
+
+        if (_.isArray(sch.fields)) {
+          sch.fields.forEach(function(item) {
+            $scope.schema.fields[Object.keys(item)[0]] = item[Object.keys(item)[0]];
+          })
+        }
+
+
+        // $scope.schema = _schema.data
         $scope.pluginName = _pluginName;
-        $log.debug("Schema", $scope.schema);
+        console.log("Schema", $scope.schema);
         //$log.debug("Options", options)
         $scope.close = close;
 
@@ -41,7 +54,7 @@
 
         $scope.humanizeLabel = function (key) {
           return key.split("_").join(" ");
-        }
+        };
 
 
         function initialize() {
@@ -52,16 +65,17 @@
           $scope.description = $scope.data.meta ? $scope.data.meta.description
             : 'Configure the Plugin.';
 
+          $scope.consumer_id = options.consumer_id && true || false;
           // Remove unwanted data fields that start with "_"
           Object.keys($scope.data.fields).forEach(function (key) {
-            if (key.startsWith("_")) delete $scope.data.fields[key]
+            if (key.startsWith("_")) delete $scope.data.fields[key];
           });
 
           // Customize data fields according to plugin
           PluginHelperService.customizeDataFieldsForPlugin(_pluginName, $scope.data.fields);
 
           // Assign extra properties from options to data fields
-          PluginHelperService.assignExtraProperties(options, $scope.data.fields);
+          PluginHelperService.assignExtraProperties(_pluginName, options, $scope.data.fields);
 
           console.log("Extra properties added to fields =>", $scope.data.fields);
         }
@@ -84,51 +98,67 @@
         };
 
         $scope.addPlugin = function (back) {
-
           $scope.busy = true;
 
           // Initialize request data
           var request_data = {
             name: _pluginName,
+            tags: $scope.data.tags || null,
           };
-
-          // Add api_id to request_data if defined
-          if ($scope.api) {
-            request_data.api_id = $scope.api.id;
-          }
 
           // Add service_id to request_data if defined
           if ($scope.service) {
-            request_data.service_id = $scope.service.id;
+            request_data.service = {
+              id: $scope.service.id
+            };
           }
 
           // Add route_id to request_data if defined
           if ($scope.route) {
-            request_data.route_id = $scope.route.id;
+            request_data.route = {
+              id: $scope.route.id
+            };
           }
 
-          // If a consumer is defined, add consumer_id to request data
+          // If a consumer is defined, add consumer id to request data
           if ($scope.consumer) {
-            request_data.consumer_id = $scope.consumer.id;
+            request_data.consumer = {
+              id: $scope.consumer.id
+            };
           }
 
-          if ($scope.data.consumer_id) { // Overwrite consumer if explicitly set
-            request_data.consumer_id = $scope.data.consumer_id;
+          // Overwrite consumer if explicitly set
+          const explicitlySetConsumer = _.get($scope, 'data.consumer.id');
+          if (explicitlySetConsumer) {
+            request_data.consumer = {
+              id: explicitlySetConsumer
+            };
           }
 
           // Apply monkey patches to request data if needed
           PluginHelperService.applyMonkeyPatches(request_data, $scope.data.fields);
-          // Create request data "config." properties
-          var config = PluginHelperService.createConfigProperties($scope.data.fields);
 
-          request_data = _.merge(request_data, config);
+          // Create request data "config." properties
+          var config = PluginHelperService.createConfigProperties(request_data.name, $scope.data.fields);
+
+          request_data = _.merge(request_data, config || {});
 
           // Delete unset fields
           Object.keys(request_data).forEach(function (key) {
             if (!request_data[key]) delete request_data[key]
           });
 
+          // Delete unset config fields
+          if (request_data.config) {
+            Object.keys(request_data.config).forEach(function (key) {
+              if (!request_data.config[key]) delete request_data.config[key]
+            })
+          }
+
+
           console.log("REQUEST DATA =>", request_data);
+
+
           PluginHelperService.addPlugin(
             request_data,
             function success(res) {
@@ -141,22 +171,24 @@
             }, function (err) {
               $scope.busy = false;
               $log.error("create plugin", err);
-              var errors = {};
+              $scope.errors = {};
 
-              if (err.data.customMessage) {
-                Object.keys(err.data.customMessage).forEach(function (key) {
-                  errors[key.replace('config.', '')] = err.data.customMessage[key];
-                  MessageService.error(key + " : " + err.data.customMessage[key]);
-                })
+              const errorBody = _.get(err, 'data.body');
+              if (errorBody) {
+                if (errorBody.fields) {
+
+                  for (let key in errorBody.fields) {
+                    $scope.errors[key] = errorBody.fields[key]
+                  }
+                }
+                $scope.errorMessage = errorBody.message || '';
+              } else {
+                $scope.errorMessage = "An unknown error has occured"
               }
 
-              if (err.data.body) {
-                Object.keys(err.data.body).forEach(function (key) {
-                  errors[key] = err.data.body[key];
-                  MessageService.error(key + " : " + err.data.body[key])
-                })
-              }
-              $scope.errors = errors
+              MessageService.error($scope.errorMessage);
+
+
             }, function evt(event) {
               // Only used for ssl plugin certs upload
               var progressPercentage = parseInt(100.0 * event.loaded / event.total);
@@ -197,6 +229,62 @@
 
 
         initialize();
+
+        /**
+         * -----------------------------------------------------------------------------------
+         * CUSTOM FORMS LOGIC ADDITIONS
+         * -----------------------------------------------------------------------------------
+         */
+
+        /**
+         * STATSD
+         */
+
+        $scope.statsd = {
+          metricNames: [
+            'request_count',
+            'request_size',
+            'response_size',
+            'latency',
+            'status_count',
+            'unique_users',
+            'request_per_user',
+            'upstream_latency',
+            'kong_latency',
+            'status_count_per_user'
+          ],
+          statTypes: [
+            'gauge',
+            'timer',
+            'counter',
+            'histogram',
+            'meter',
+            'set'
+          ],
+          consumerIndentifiers: [
+            'consumer_id',
+            'custom_id',
+            'username'
+          ],
+          addMetric: function (metrics) {
+
+            var template = {
+              name: 'upstream_latency',
+              stat_type: 'gauge',
+              custom_identifier: 'consumer_id'
+            };
+
+            metrics.push(template);
+
+          },
+          removeMetric: function (metrics, index) {
+            metrics.splice(index, 1);
+          }
+        };
+
+        $scope.getFieldProp = function (field) {
+          return Object.keys(field)[0];
+        }
       }
     ]);
 }());

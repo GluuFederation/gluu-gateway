@@ -417,6 +417,7 @@ class KongSetup(object):
         # gluu plugins common file
         self.run([self.cmd_cp, '-R', '%s/kong-common.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
         self.run([self.cmd_cp, '-R', '%s/path-wildcard-tree.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
+        self.run([self.cmd_cp, '-R', '%s/json-cache.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
 
         # Remove kong default plugins
         for plugin in self.remove_plugin_list:
@@ -604,7 +605,7 @@ make sure it's available from this server."""
         self.run([self.cmd_kong, "start"])
 
     def migrate_kong(self):
-        self.run([self.cmd_kong, "migrations", "up"])
+        self.run([self.cmd_kong, "migrations", "bootstrap"])
 
     def start_gg_service(self):
         self.log_it("Starting %s..." % self.gg_service)
@@ -729,7 +730,9 @@ make sure it's available from this server."""
             service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
             payload = {
                 'name': 'ip-restriction',
-                'service_id': service_response_json['id'],
+                'service':{
+                    "id": service_response_json['id']
+                },
                 'config.whitelist': self.gluu_prometheus_server_ip
             }
             ip_plugin_response = self.http_post_call(service_endpoint, payload)

@@ -31,7 +31,7 @@
     <th>Protocols</th>
     <th>Methods</th>
     <th>Regex priority</th>
-    <th>Created</th>
+    <th>Tags</th>
     <th width="1"></th>
     <th width="1"></th>
   </tr>
@@ -58,7 +58,9 @@
       {{item.methods.join(", ") || "-"}}
     </td>
     <td>{{item.regex_priority}}</td>
-    <td>{{item.created_at*1000 | date : format : timezone}}</td>
+    <td>
+      <span class="badge badge-tag badge-success badge-inverse" ng-repeat="tag in item.tags"><i class="mdi mdi-tag"></i>&nbsp;{{tag}}</span>
+    </td>
     <td>
       <a class="clickable btn btn-link btn-info" data-ui-sref="routes.edit({route_id:item.id})">
         <i class="mdi mdi-pencil"></i>

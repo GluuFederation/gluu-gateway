@@ -115,7 +115,7 @@
         }
 
         function fetchPlugins() {
-          PluginsService.load({service_id: $stateParams.service_id})
+          ServiceService.plugins($stateParams.service_id)
             .then(function (res) {
               $scope.plugins = res.data
             })

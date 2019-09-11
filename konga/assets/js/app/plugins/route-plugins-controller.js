@@ -167,7 +167,7 @@
         }
 
         function fetchPlugins() {
-          PluginsService.load({route_id: $stateParams.route_id})
+          RoutesService.plugins($stateParams.route_id)
             .then(function (res) {
               $scope.plugins = res.data
             })

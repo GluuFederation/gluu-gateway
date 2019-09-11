@@ -72,7 +72,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ]
                 }
@@ -118,7 +118,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [
@@ -162,7 +162,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [
@@ -198,9 +198,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({
-                        service_id: $stateParams.service_id
-                      })
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [
