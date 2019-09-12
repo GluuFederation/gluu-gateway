@@ -66,7 +66,7 @@
       <a data-ng-if="item.consumer_id" data-ui-sref="consumers.edit({id:item.consumer_id})">{{item.consumer_id}}</a>
       <span data-ng-if="!item.consumer_id">All consumers</span>
     </td>
-    <td>{{item.created_at | date : format : timezone}}</td>
+    <td>{{item.created_at*1000 | date : format : timezone}}</td>
     <td>
       <button data-ng-if="item.name == 'gluu-openid-connect'" type="button" ng-click="deleteOPClient(item)" class="btn btn-danger btn-link">
         <i class="mdi mdi-delete"></i>
