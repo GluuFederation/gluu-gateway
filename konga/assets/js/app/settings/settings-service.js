@@ -12,11 +12,11 @@
       function ($localStorage, $http) {
 
         var defSettings = {
-          kong_version: "0-14-x"
+          kong_version: "1.3.x"
         };
 
         var kong_versions = [
-          {'name': "1.3", value: "1.3"}
+          {'name': "1.3.x", value: "1.3.x"}
         ];
 
         return {
