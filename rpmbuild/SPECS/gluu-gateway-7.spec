@@ -9,7 +9,7 @@ Source1:	gluu-gateway.service.file
 Source2:	kong.service.file
 Source3:	konga.service.file
 BuildArch:      noarch
-Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests, ca-certificates
+Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, unzip, python-requests, ca-certificates
 
 %description
 The Gluu Gateway is a package which can be used to quickly
@@ -28,6 +28,7 @@ cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a %{SOURCE3} %{buildroot}/lib/systemd/system/konga.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
 cp -a tmp/%OXD_SERVER% %{buildroot}/tmp/
+cp -a tmp/%KONG% %{buildroot}/tmp/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
@@ -102,6 +103,7 @@ fi
 /lib/systemd/system/konga.service
 /lib/systemd/system/gluu-gateway.service
 /tmp/%OXD_SERVER%
+/tmp/%KONG%
 
 %changelog
 * Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
