@@ -511,7 +511,7 @@ DELETE FROM public.konga_kong_nodes;
 --
 
 COPY public.konga_kong_nodes (id, name, kong_admin_url, kong_api_key, kong_version, health_checks, health_check_details, active, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
-1	default	http://localhost:8001		0-14-x	f	\N	t	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
+1	default	http://localhost:8001		1.3	f	\N	t	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
 \.
 
 

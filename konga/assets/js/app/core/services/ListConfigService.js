@@ -239,7 +239,7 @@
               inTitle: true
             },
             {
-              title: 'type',
+              title: 'kong admin url',
               column: 'type',
               searchable: true,
               sortable: true,
@@ -247,8 +247,8 @@
               inTitle: true
             },
             {
-              title: 'kong admin url',
-              column: 'kong_admin_url',
+              title: 'kong api key',
+              column: 'kong_api_key',
               searchable: true,
               sortable: true,
               inSearch: true,

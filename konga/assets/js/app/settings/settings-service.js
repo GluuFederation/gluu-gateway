@@ -16,10 +16,7 @@
         };
 
         var kong_versions = [
-          {'name': "0.9.x", value: "0-9-x"},
-          {'name': "0.10.x", value: "0-10-x"},
-          {'name': "0.11.x", value: "0-11-x"},
-          {'name': "0.14.x", value: "0-14-x"}
+          {'name': "1.3", value: "1.3"}
         ];
 
         return {
