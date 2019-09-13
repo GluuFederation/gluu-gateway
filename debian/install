@@ -7,4 +7,3 @@ gg_bower_components.tar.gz opt/gluu-gateway/dist
 gg_node_modules.tar.gz opt/gluu-gateway/dist
 third-party opt/gluu-gateway
 %OXD_SERVER% /tmp/
-%KONG% /tmp/
