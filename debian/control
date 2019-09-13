@@ -1,7 +1,7 @@
 Source: gluu-gateway
 Section: java
 Priority: optional
-Maintainer: Adrian Alves <adrian@gluu.org>
+Maintainer: Davit Nikoghosyan <davit@gluu.org>
 Build-Depends: debhelper (>= 8.0.0)
 Standards-Version: 3.9.4
 Homepage: https://www.gluu.org
@@ -16,5 +16,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  python-requests,
  npm,
  ca-certificates,
+ kong (= 1.3.0),
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
