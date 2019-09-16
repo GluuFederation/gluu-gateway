@@ -167,6 +167,11 @@ class KongSetup(object):
         self.oxd_log_format = "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
         self.oxd_archived_log_filename_pattern = "/var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz"
 
+        # kong package file names
+        self.ubuntu16_kong_file = "kong-1.3.0.xenial_all.deb"
+        self.centos7_kong_file = "kong-1.3.0.el7.noarch.rpm"
+        self.rhel7_kong_file = "kong-1.3.0.rhel7.noarch.rpm"
+
     def init_parameters_from_json_argument(self):
         if len(sys.argv) > 1:
             self.is_prompt = False
@@ -564,7 +569,29 @@ make sure it's available from this server."""
             self.konga_client_id = self.get_prompt('Client Id')
             self.konga_client_secret = self.get_prompt('Client Secret')
 
-    def render_kong_configure(self):
+    def install_config_kong(self):
+        # Install OXD
+        kong_package_file = ''
+        install_kong_cmd = []
+
+        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+            kong_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu16_kong_file)
+            install_kong_cmd = [self.cmd_dpkg, '--install', kong_package_file]
+
+        if self.os_type == Distribution.CENTOS and self.os_version == '7':
+            kong_package_file = "%s/%s" % (self.tmp_folder, self.centos7_kong_file)
+            install_kong_cmd = [self.cmd_rpm, '--install', '--verbose', '--hash', kong_package_file]
+
+        if self.os_type == Distribution.RHEL and self.os_version == '7':
+            kong_package_file = "%s/%s" % (self.tmp_folder, self.rhel7_kong_file)
+            install_kong_cmd = [self.cmd_rpm, '--install', '--verbose', '--hash', kong_package_file]
+
+        if not os.path.exists(kong_package_file):
+            self.log_it("%s is not found" % kong_package_file)
+            sys.exit(0)
+
+        self.run(install_kong_cmd)
+
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             self.kong_lua_ssl_trusted_certificate = "/etc/ssl/certs/ca-certificates.crt"
 
@@ -926,7 +953,7 @@ SOFTWARE.
                 kongSetup.gen_kong_ssl_certificate()
                 kongSetup.install_jre()
                 kongSetup.configure_postgres()
-                kongSetup.render_kong_configure()
+                kongSetup.install_config_kong()
                 kongSetup.install_plugins()
                 kongSetup.migrate_kong()
                 kongSetup.start_kong()
