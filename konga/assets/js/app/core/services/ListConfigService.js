@@ -640,7 +640,7 @@
           ],
         };
 
-        let defaultLimit = 1000;
+        var defaultLimit = 1000;
 
         return {
           defaultLimit: defaultLimit,

@@ -177,7 +177,7 @@
               if (errorBody) {
                 if (errorBody.fields) {
 
-                  for (let key in errorBody.fields) {
+                  for (var key in errorBody.fields) {
                     $scope.errors[key] = errorBody.fields[key]
                   }
                 }

@@ -45,7 +45,7 @@
                 fields[key].fields.forEach(function (field) {
                   if (!data.config[path]) data.config[path] = {};
                   const prop = Object.keys(field)[0];
-                  data.config[path][Object.keys(field)[0]] = _.get(field, `${prop}.value`);
+                  data.config[path][Object.keys(field)[0]] = _.get(field, prop + '.value');
                 })
               } else {
                 if (fields[key].value !== ""
