@@ -16,6 +16,5 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
  python-requests,
  npm,
  ca-certificates,
- kong (= 1.3.0),
 Description: <insert up to 60 chars description>
  <insert long description, indented with spaces>
