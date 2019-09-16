@@ -713,12 +713,14 @@ make sure it's available from this server."""
         self.log_it('Fetching plugins...')
         plugins_response_json = self.http_get_call(endpoint='http://localhost:%s/plugins/' % self.kong_admin_listen_port)
         self.log_it('plugins_response_json : %s' % plugins_response_json)
+        self.log_it('data length : %s' % len(plugins_response_json['data']))
         check_ip_plugin_exist = False
         check_metrics_plugin_exist = False
 
-        if plugins_response_json['total'] > 0:
+        if len(plugins_response_json['data']) > 1:
             for plugin in plugins_response_json['data']:
-                if plugin['name'] == "ip-restriction" and plugin['service_id'] == service_response_json['id']:
+
+                if plugin['name'] == "ip-restriction" and plugin['service'] and plugin['service']['id'] == service_response_json['id']:
                     check_ip_plugin_exist = True
 
                 if plugin['name'] == "gluu-metrics":
@@ -730,10 +732,12 @@ make sure it's available from this server."""
             service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
             payload = {
                 'name': 'ip-restriction',
-                'service':{
-                    "id": service_response_json['id']
+                'service': {
+                    'id': service_response_json['id']
                 },
-                'config.whitelist': self.gluu_prometheus_server_ip
+                'config': {
+                    'whitelist': [self.gluu_prometheus_server_ip]
+                },
             }
             ip_plugin_response = self.http_post_call(service_endpoint, payload)
 
@@ -742,9 +746,11 @@ make sure it's available from this server."""
             self.log_it('Configuring gluu-metrics globally...')
             service_endpoint = 'http://localhost:%s/plugins' % self.kong_admin_listen_port
             payload = {
-                'name': "gluu-metrics",
-                'config.ip_restrict_plugin_id': ip_plugin_response['id'],
-                'config.gluu_prometheus_server_host': self.gluu_prometheus_server_host
+                'name': 'gluu-metrics',
+                'config': {
+                    'ip_restrict_plugin_id': ip_plugin_response['id'],
+                    'gluu_prometheus_server_host': self.gluu_prometheus_server_host
+                },
             }
             self.http_post_call(service_endpoint, payload)
 
