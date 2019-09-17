@@ -574,7 +574,6 @@
                 route: {
                   id: $scope.route.id
                 },
-                tags: model.tags || null,
                 config: {
                   oxd_id: opClient.oxd_id,
                   oxd_url: model.oxd_url,
@@ -591,6 +590,10 @@
                   max_id_token_auth_age: max_id_token_auth_age,
                 }
               };
+
+              if (model.tags) {
+                pluginModel.tags = model.tags
+              }
 
               return new Promise(function (resolve, reject) {
                 return PluginHelperService.updatePlugin(model.openid_connect_id,

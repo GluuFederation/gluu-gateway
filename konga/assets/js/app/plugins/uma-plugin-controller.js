@@ -438,7 +438,6 @@
               }
               var authModel = {
                 name: 'gluu-uma-auth',
-                tags: model.tags || null,
                 config: {
                   oxd_id: model.oxd_id,
                   client_id: model.client_id,
@@ -453,6 +452,10 @@
                 authModel[$scope.context_name] = {
                   id: $scope.context_data.id
                 };
+              }
+
+              if (model.tags) {
+                authModel.tags = model.tags
               }
 
               return new Promise(function (resolve, reject) {

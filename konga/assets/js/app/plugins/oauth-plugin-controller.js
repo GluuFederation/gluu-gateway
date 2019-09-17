@@ -438,7 +438,6 @@
 
           var authModel = {
             name: 'gluu-oauth-auth',
-            tags: model.tags || null,
             config: {
               oxd_id: model.config.oxd_id,
               client_id: model.config.client_id,
@@ -453,6 +452,9 @@
             authModel[$scope.context_name] = {
               id: $scope.context_data.id
             };
+          }
+          if (model.tags) {
+            authModel.tags = model.tags
           }
           return new Promise(function (resolve, reject) {
             return PluginHelperService.updatePlugin(model.authId,
