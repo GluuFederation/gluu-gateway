@@ -7,25 +7,16 @@ HOST_IP=$4
 OXD_HOST=$5
 
 function prepareSourcesXenial {
-    sleep 60
+    sleep 120
     apt-get update
     echo "deb https://repo.gluu.org/ubuntu/ xenial-devel main" > /etc/apt/sources.list.d/gluu-repo.list
     curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
-
-    pkill .*upgrade.*
-    rm /var/lib/dpkg/lock
-    sleep 60
-    apt-get install -y apt-transport-https curl lsb-core
-    echo "deb https://kong.bintray.com/kong-deb `lsb_release -sc` main" | sudo tee -a /etc/apt/sources.list
-    curl -o bintray.key https://bintray.com/user/downloadSubjectPublicKey?username=bintray
-    apt-key add bintray.key
-
     echo "deb http://apt.postgresql.org/pub/repos/apt/ xenial-pgdg main" > /etc/apt/sources.list.d/psql.list
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     pkill .*upgrade.*
     rm /var/lib/dpkg/lock
-    sleep 60
+    sleep 120
 }
 
 function prepareSourcesCentos7 {
@@ -37,12 +28,6 @@ function prepareSourcesCentos7 {
     wget https://repo.gluu.org/centos/Gluu-centos-7-testing.repo -O /etc/yum.repos.d/Gluu.repo
     wget https://repo.gluu.org/centos/RPM-GPG-KEY-GLUU -O /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
     rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-GLUU
-
-    wget https://bintray.com/kong/kong-rpm/rpm -O bintray-kong-kong-rpm.repo
-    export major_version=`grep -oE '[0-9]+\.[0-9]+' /etc/redhat-release | cut -d "." -f1`
-    sed -i -e 's/baseurl.*/&\/centos\/'$major_version''/ bintray-kong-kong-rpm.repo
-    mv bintray-kong-kong-rpm.repo /etc/yum.repos.d/
-
     rpm -Uvh https://yum.postgresql.org/10/redhat/rhel-7-x86_64/pgdg-centos10-10-2.noarch.rpm
     curl -sL https://rpm.nodesource.com/setup_8.x | sudo -E bash -
 }
