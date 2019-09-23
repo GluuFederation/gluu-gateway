@@ -136,7 +136,7 @@ class KongSetup(object):
         self.init_parameters_from_json_argument()
 
         # OS types properties
-        self.os_types = ['centos', 'red', 'fedora', 'ubuntu', 'debian']
+        self.os_types = ['centos', 'red', 'ubuntu']
         self.os_type = None
         self.os_version = None
         self.os_initdaemon = None
@@ -164,6 +164,7 @@ class KongSetup(object):
         self.ubuntu16_oxd_file = "oxd-server_4.0-71-RC1~xenial+Ub16.04_all.deb"
         self.centos7_oxd_file = "oxd-server-4.0-71.RC1.centos7.noarch.rpm"
         self.rhel7_oxd_file = "oxd-server-4.0-71.RC1.rhel7.noarch.rpm"
+        self.ubuntu18_oxd_file = "oxd-server_4.0-16-RC1~bionic+Ub18.04_all.deb"
         self.oxd_log_format = "%-6level [%d{HH:mm:ss.SSS}] [%t] %logger{5} - %X{code} %msg %n"
         self.oxd_archived_log_filename_pattern = "/var/log/oxd-server/oxd-server-%d{yyyy-MM-dd}-%i.log.gz"
 
@@ -171,6 +172,7 @@ class KongSetup(object):
         self.ubuntu16_kong_file = "kong-1.3.0.xenial_all.deb"
         self.centos7_kong_file = "kong-1.3.0.el7.noarch.rpm"
         self.rhel7_kong_file = "kong-1.3.0.rhel7.noarch.rpm"
+        self.ubuntu18_kong_file = "kong-1.3.0.bionic_all.deb"
 
     def init_parameters_from_json_argument(self):
         if len(sys.argv) > 1:
@@ -242,6 +244,10 @@ class KongSetup(object):
         oxd_package_file = ''
         install_oxd_cmd = []
 
+        if self.os_type == Distribution.Ubuntu and self.os_version == '18':
+            oxd_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu18_oxd_file)
+            install_oxd_cmd = [self.cmd_dpkg, '--install', oxd_package_file]
+
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             oxd_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu16_oxd_file)
             install_oxd_cmd = [self.cmd_dpkg, '--install', oxd_package_file]
@@ -261,7 +267,7 @@ class KongSetup(object):
         self.run(install_oxd_cmd)
 
         self.render_template_in_out(self.dist_oxd_server_config_file, self.template_folder, self.dist_oxd_server_config_folder)
-        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['16', '18']:
             self.run([self.cmd_service, self.oxd_server_service, 'start'])
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             self.run([self.cmd_systemctl, 'start', self.oxd_server_service])
@@ -574,6 +580,10 @@ make sure it's available from this server."""
         kong_package_file = ''
         install_kong_cmd = []
 
+        if self.os_type == Distribution.Ubuntu and self.os_version == '18':
+            kong_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu18_kong_file)
+            install_kong_cmd = [self.cmd_dpkg, '--install', kong_package_file]
+
         if self.os_type == Distribution.Ubuntu and self.os_version == '16':
             kong_package_file = "%s/%s" % (self.tmp_folder, self.ubuntu16_kong_file)
             install_kong_cmd = [self.cmd_dpkg, '--install', kong_package_file]
@@ -592,7 +602,7 @@ make sure it's available from this server."""
 
         self.run(install_kong_cmd)
 
-        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['16', '18']:
             self.kong_lua_ssl_trusted_certificate = "/etc/ssl/certs/ca-certificates.crt"
 
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
@@ -636,7 +646,7 @@ make sure it's available from this server."""
 
     def start_gg_service(self):
         self.log_it("Starting %s..." % self.gg_service)
-        if self.os_type == Distribution.Ubuntu and self.os_version == '16':
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['16', '18']:
             self.run([self.cmd_service, self.oxd_server_service, 'stop'])
             self.run([self.cmd_service, self.gg_service, 'stop'])
             self.run([self.cmd_service, self.gg_service, 'start'])
@@ -656,7 +666,7 @@ make sure it's available from this server."""
             self.log_it(traceback.format_exc(), True)
 
     def disable_warnings(self):
-        if self.os_type in [Distribution.Ubuntu, Distribution.CENTOS, Distribution.RHEL] and self.os_version in ['16', '7', '6']:
+        if self.os_type in [Distribution.Ubuntu, Distribution.CENTOS, Distribution.RHEL] and self.os_version in ['18', '16', '7', '6']:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     def choose_from_list(self, list_of_choices, choice_name="item", default_choice_index=0):
