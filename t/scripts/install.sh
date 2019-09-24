@@ -6,6 +6,19 @@ HOST=$3
 HOST_IP=$4
 OXD_HOST=$5
 
+function prepareSourcesBionic {
+    sleep 120
+    apt-get update
+    echo "deb https://repo.gluu.org/ubuntu/ bionic-devel main" > /etc/apt/sources.list.d/gluu-repo.list
+    curl https://repo.gluu.org/ubuntu/gluu-apt.key | apt-key add -
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ bionic-pgdg main" > /etc/apt/sources.list.d/psql.list
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+    curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+    pkill .*upgrade.*
+    rm /var/lib/dpkg/lock
+    sleep 120
+}
+
 function prepareSourcesXenial {
     sleep 120
     apt-get update
@@ -34,6 +47,7 @@ function prepareSourcesCentos7 {
 
 function prepareSourcesForDistribution {
     case $DISTRIBUTION in
+        "bionic") prepareSourcesBionic ;;
         "xenial") prepareSourcesXenial ;;
         "centos7") prepareSourcesCentos7 ;;
     esac
@@ -51,6 +65,7 @@ function installGGRpm {
 
 function installGG {
     case $DISTRIBUTION in
+        "bionic") installGGDeb ;;
         "xenial") installGGDeb ;;
         "centos7") installGGRpm ;;
     esac
