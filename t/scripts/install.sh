@@ -15,7 +15,7 @@ function prepareSourcesBionic {
     wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     pkill .*upgrade.*
-    rm /var/lib/dpkg/lock
+    rm /var/lib/dpkg/lock-frontend
     sleep 120
 }
 
