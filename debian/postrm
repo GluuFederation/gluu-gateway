@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-if [ -e /etc/init.d/gluu-gateway ]; then
+if [ -f /etc/init.d/gluu-gateway ]; then
     update-rc.d gluu-gateway remove > /dev/null 2>&1
 fi
 rm -rf /opt/gluu-gateway > /dev/null 2>&1
