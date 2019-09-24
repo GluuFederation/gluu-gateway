@@ -9,16 +9,16 @@ rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
 rm -rf /opt/jre > /dev/null 2>&1
     
 if [ "$1" = purge ]; then
-    if [ -e /etc/init.d/gluu-gateway ]; then
+    if [ -f /etc/init.d/gluu-gateway ]; then
         rm -rf /etc/init.d/gluu-gateway > /dev/null 2>&1
     fi
-    if [ -e /etc/init.d/kong ]; then
+    if [ -f /etc/init.d/kong ]; then
         rm -rf /etc/init.d/kong > /dev/null 2>&1
     fi
-    if [ -e /etc/init.d/konga ]; then
+    if [ -f /etc/init.d/konga ]; then
         rm -rf /etc/init.d/konga > /dev/null 2>&1
     fi  
-    if [ -e /lib/systemd/system/gluu-gateway.service ]; then
+    if [ -f /lib/systemd/system/gluu-gateway.service ]; then
         rm -rf /lib/systemd/system/gluu-gateway.service > /dev/null 2>&1
 	rm -rf /lib/systemd/system/kong.service > /dev/null 2>&1
 	rm -rf /lib/systemd/system/konga.service > /dev/null 2>&1
