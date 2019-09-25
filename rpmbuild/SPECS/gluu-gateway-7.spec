@@ -5,9 +5,9 @@ Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
 Source0:	gluu-gateway-4.0.tar.gz
-Source1:	gluu-gateway.service.file
-Source2:	kong.service.file
-Source3:	konga.service.file
+Source1:	gluu-gateway.service
+Source2:	kong.service
+Source3:	konga.service
 BuildArch:      noarch
 Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, unzip, python-requests, ca-certificates
 
