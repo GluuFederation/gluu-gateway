@@ -16,6 +16,10 @@ KONG_ADMIN_HOST='localhost'
 OXD_PORT=8443
 
 function test_oauth_auth_and_pep() {
+    sleep 1
+    echo "=================================================="
+    echo "test_oauth_auth_and_pep"
+    echo "=================================================="
     # Create service in kong
     SERVICE_RESPONSE=`curl -k -X POST http://$KONG_ADMIN_HOST:8001/services/  -H 'Content-Type: application/json'  -d '{"name":"jsonplaceholder","url":"https://jsonplaceholder.typicode.com"}'`
 
@@ -92,8 +96,10 @@ function test_oauth_auth_and_pep() {
 function test_uma_auth_and_pep() {
     # =========================================================================
     # UMA Auth and PEP
-    echo "========================================================================="
-    echo "UMA Auth and PEP"
+    sleep 1
+    echo "=================================================="
+    echo "test_uma_auth_and_pep"
+    echo "=================================================="
 
     SERVICE_RESPONSE=`curl -k -X POST http://$KONG_ADMIN_HOST:8001/services/  -H 'Content-Type: application/json'  -d '{"name":"jsonplaceholder2","url":"https://jsonplaceholder.typicode.com"}'`
 
@@ -178,6 +184,10 @@ function config_oidc_and_uma_pep() {
     #####################################
     # Configure OIDC Plugin
     #####################################
+    sleep 1
+    echo "=================================================="
+    echo "config_oidc_and_uma_pep"
+    echo "=================================================="
     if [ "$DISTRIBUTION" == "centos7" ]; then
         yum install git -y
     fi
@@ -224,6 +234,10 @@ function config_oidc_and_uma_pep() {
 }
 
 function test_gluu_metrics() {
+    sleep 1
+    echo "=================================================="
+    echo "test_gluu_metrics"
+    echo "=================================================="
     GLUU_METRICS_RESPONSE=`curl -k -X GET http://localhost:8001/gluu-metrics`
     echo "GLUU_METRICS_RESPONSE: " .. $GLUU_METRICS_RESPONSE
     search_string="gluu_total_client_authenticated 8"
@@ -237,9 +251,20 @@ function test_gluu_metrics() {
 }
 
 function test_oauth_auth_and_opa_pep() {
+    sleep 1
+    echo "=================================================="
+    echo "test_oauth_auth_and_opa_pep"
+    echo "=================================================="
     ###################################
     #### Configure OPA PEP
     ###################################
+    function docker_bionic {
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add
+        add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+        apt-get -qqy update
+        apt-get -qqy install docker-ce
+    }
+
     function docker_xenial {
         curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add
         add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
@@ -255,6 +280,7 @@ function test_oauth_auth_and_opa_pep() {
     }
 
     case $DISTRIBUTION in
+         "bionic") docker_bionic ;;
          "xenial") docker_xenial ;;
          "centos7") docker_centos7 ;;
     esac
