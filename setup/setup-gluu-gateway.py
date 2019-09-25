@@ -267,8 +267,10 @@ class KongSetup(object):
         self.run(install_oxd_cmd)
 
         self.render_template_in_out(self.dist_oxd_server_config_file, self.template_folder, self.dist_oxd_server_config_folder)
-        if self.os_type == Distribution.Ubuntu and self.os_version in ['16', '18']:
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['16']:
             self.run([self.cmd_service, self.oxd_server_service, 'start'])
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['18']:
+            self.run([self.cmd_systemctl, 'start', self.oxd_server_service])
         if self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             self.run([self.cmd_systemctl, 'start', self.oxd_server_service])
 
@@ -646,11 +648,16 @@ make sure it's available from this server."""
 
     def start_gg_service(self):
         self.log_it("Starting %s..." % self.gg_service)
-        if self.os_type == Distribution.Ubuntu and self.os_version in ['16', '18']:
+        if self.os_type == Distribution.Ubuntu and self.os_version in ['16']:
             self.run([self.cmd_service, self.oxd_server_service, 'stop'])
             self.run([self.cmd_service, self.gg_service, 'stop'])
             self.run([self.cmd_service, self.gg_service, 'start'])
             self.run([self.cmd_update_rs_d, self.gg_service, 'defaults'])
+        elif self.os_type == Distribution.Ubuntu and self.os_version in ['18']:
+            self.run([self.cmd_systemctl, 'stop', self.oxd_server_service])
+            self.run([self.cmd_systemctl, 'stop', self.gg_service])
+            self.run([self.cmd_systemctl, 'start', self.gg_service])
+            self.run([self.cmd_systemctl, 'enable', self.gg_service])
         elif self.os_type in [Distribution.CENTOS, Distribution.RHEL] and self.os_version == '7':
             self.run([self.cmd_systemctl, 'stop', self.oxd_server_service])
             self.run([self.cmd_systemctl, 'stop', self.gg_service])
