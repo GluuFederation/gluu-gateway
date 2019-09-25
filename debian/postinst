@@ -12,4 +12,6 @@ if [ -f /lib/systemd/system/gluu-gateway.service ]; then
      systemctl stop kong > /dev/null 2>&1
      systemctl stop oxd-server > /dev/null 2>&1
 fi
-chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+if [ -f /opt/gluu-gateway/setup/setup-gluu-gateway.py ]; then
+     chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+fi
