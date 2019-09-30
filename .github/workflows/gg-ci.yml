@@ -1,0 +1,18 @@
+name: Gluu Gateway CI
+
+on: [push]
+
+jobs:
+
+  build:
+ 
+    runs-on: ubuntu-16.04
+ 
+    steps:
+    - name: Fix up git URLs
+      run: echo -e '[url "https://github.com/"]\n  insteadOf = "git@github.com:"' >> ~/.gitconfig
+    - uses: actions/checkout@v1
+      with:
+        submodules: recursive
+    - name: Run Test cases
+      run: ./t/run.sh
