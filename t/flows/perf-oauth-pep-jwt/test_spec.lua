@@ -63,6 +63,7 @@ local function setup()
     }
     kong_utils.backend()
     kong_utils.oxd_mock_perf()
+    kong_utils.jwt_proxy()
 end
 
 local function configure_service_route(service_name, service, route)
@@ -156,7 +157,7 @@ local function create_customer(custom_id)
     )
 end
 
-test("basic OAuth+ PEP perf run", function()
+test("basic OAuth+ PEP perf run, all tokens as JWT", function()
     setup()
 
     local create_service_response = configure_service_route()
@@ -187,7 +188,11 @@ test("basic OAuth+ PEP perf run", function()
         deny_by_default = false,
     })
 
-    sh_ex("wrk -c100 -d120s -t5 -s ", git_root, "/kong/perf/wrk.lua http://127.0.0.1:", ctx.kong_proxy_port)
+    --sh_ex("wrk -c1 -d1s -t1 -s ", git_root, "/kong/perf/wrk.lua http://127.0.0.1:", ctx.jwt_proxy_port)
+    sh_ex("wrk -c100 -d120s -t5 -s ", git_root, "/kong/perf/wrk.lua http://127.0.0.1:", ctx.jwt_proxy_port)
 
+    --sh_ex("docker logs jwt-proxy")
     ctx.print_logs = false -- comment it out if want to see logs
+    --sh_ex("docker logs ", ctx.kong_id)
+    --sh_ex("docker logs ", ctx.oxd_id)
 end)
