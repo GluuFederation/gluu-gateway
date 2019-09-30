@@ -26,19 +26,20 @@
   "editable": true,
   "gnetId": 7424,
   "graphTooltip": 0,
-  "id": 4,
-  "iteration": 1569404130842,
+  "id": 6,
+  "iteration": 1569835443760,
   "links": [],
   "panels": [
     {
       "aliasColors": {},
       "bars": false,
+      "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
-        "h": 12,
+        "h": 11,
         "w": 24,
         "x": 0,
         "y": 0
@@ -59,7 +60,8 @@
       "nullPointMode": "null",
       "options": {},
       "percentage": false,
-      "pointradius": 5,
+      "pluginVersion": "6.2.2",
+      "pointradius": 2,
       "points": false,
       "renderer": "flot",
       "seriesOverrides": [],
@@ -68,7 +70,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_total_client_authenticated[1m]))",
+          "expr": "sum(increase(gluu_total_client_authenticated[30d]))",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -128,7 +130,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 11
       },
       "id": 26,
       "legend": {
@@ -155,7 +157,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_total_client_granted[1m]))",
+          "expr": "sum(increase(gluu_total_client_granted[30d]))",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -215,7 +217,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 20
       },
       "id": 27,
       "legend": {
@@ -242,7 +244,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_openid_connect_users_authenticated{service =~ \"$service\"}[1m]))",
+          "expr": "sum(increase(gluu_openid_connect_users_authenticated{service =~ \"$service\"}[30d]))",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -302,7 +304,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 30
+        "y": 29
       },
       "id": 25,
       "legend": {
@@ -329,7 +331,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_oauth_client_authenticated{service =~ \"$service\"}[1m])) by (consumer)",
+          "expr": "sum(increase(gluu_oauth_client_authenticated{service =~ \"$service\"}[30d])) by (consumer)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -389,7 +391,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 30
+        "y": 29
       },
       "id": 20,
       "legend": {
@@ -416,7 +418,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_oauth_client_granted{service =~ \"$service\"}[1m])) by (consumer)",
+          "expr": "sum(increase(gluu_oauth_client_granted{service =~ \"$service\"}[30d])) by (consumer)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -476,7 +478,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 38
+        "y": 37
       },
       "id": 21,
       "legend": {
@@ -503,7 +505,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_uma_client_authenticated{service =~ \"$service\"}[1m])) by (consumer)",
+          "expr": "sum(increase(gluu_uma_client_authenticated{service =~ \"$service\"}[30d])) by (consumer)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -563,7 +565,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 38
+        "y": 37
       },
       "id": 22,
       "legend": {
@@ -590,7 +592,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_uma_client_granted{service =~ \"$service\"}[1m])) by (consumer)",
+          "expr": "sum(increase(gluu_uma_client_granted{service =~ \"$service\"}[30d])) by (consumer)",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -650,7 +652,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 46
+        "y": 45
       },
       "id": 19,
       "legend": {
@@ -677,7 +679,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_uma_ticket{service =~ \"$service\"}[1m]))",
+          "expr": "sum(increase(gluu_uma_ticket{service =~ \"$service\"}[30d]))",
           "format": "time_series",
           "instant": false,
           "intervalFactor": 2,
@@ -737,7 +739,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 54
+        "y": 53
       },
       "id": 16,
       "legend": {
@@ -764,7 +766,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(increase(gluu_endpoint_method{service =~ \"$service\", endpoint =~ \"$endpoint\"}[1m])) by (method)",
+          "expr": "sum(increase(gluu_endpoint_method{service =~ \"$service\", endpoint =~ \"$endpoint\"}[30d])) by (method)",
           "format": "time_series",
           "intervalFactor": 2,
           "legendFormat": "{{method}}",
@@ -813,7 +815,7 @@
       }
     }
   ],
-  "refresh": false,
+  "refresh": "1d",
   "schemaVersion": 18,
   "style": "dark",
   "tags": [],
@@ -874,8 +876,8 @@
     ]
   },
   "time": {
-    "from": "now-30m",
-    "to": "now"
+    "from": "now/M",
+    "to": "now/M"
   },
   "timepicker": {
     "refresh_intervals": [
@@ -905,5 +907,5 @@
   "timezone": "",
   "title": "Gluu",
   "uid": "dR2rx2Eiz",
-  "version": 2
+  "version": 18
 }
