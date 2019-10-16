@@ -106,5 +106,5 @@ fi
 /tmp/%KONG%
 
 %changelog
-* Fri Sep 13 2019 Davit Nikoghosyan <davit@gluu.org> - %VERSION%-1
+* Wed Oct 16 2019 Davit Nikoghosyan <davit@gluu.org> - %VERSION%-1
 - Release %VERSION%
