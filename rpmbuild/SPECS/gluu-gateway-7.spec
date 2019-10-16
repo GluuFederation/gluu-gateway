@@ -104,5 +104,5 @@ fi
 /tmp/%OXD_SERVER%
 
 %changelog
-* Mon Mar 07 2016 Adrian Alves <adrian@gluu.org> - %VERSION%-1
+* Wed Oct 16 2019 Davit Nikoghosyan <davit@gluu.org> - %VERSION%-1
 - Release %VERSION%
