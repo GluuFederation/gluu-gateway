@@ -16,7 +16,7 @@ function prepareSourcesBionic {
     curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
     pkill .*upgrade.*
     rm /var/lib/dpkg/lock-frontend
-    sleep 180
+    sleep 200
 }
 
 function prepareSourcesXenial {
