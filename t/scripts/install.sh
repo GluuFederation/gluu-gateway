@@ -55,6 +55,7 @@ function prepareSourcesForDistribution {
 
 function installGGDeb {
     apt-get update
+    sleep 120
     apt-get install gluu-gateway -y
 }
 
