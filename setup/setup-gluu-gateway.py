@@ -96,8 +96,9 @@ class KongSetup(object):
         self.gluu_openid_connect_plugin = '%s/gluu-openid-connect' % self.gg_plugins_folder
         self.gluu_metrics_plugin = '%s/gluu-metrics' % self.gg_plugins_folder
         self.gluu_opa_pep_plugin = '%s/gluu-opa-pep' % self.gg_plugins_folder
-        self.remove_plugin_list = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
+        self.disable_plugin_list = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.gg_comman_folder = '%s/kong/common' % self.dist_gluu_gateway_folder
+        self.gg_disable_plugin_stub_folder = '%s/kong/disable_plugin_stub' % self.dist_gluu_gateway_folder
 
         self.dist_oxd_server_folder = '%s/oxd-server' % self.opt_folder
         self.dist_oxd_server_config_folder = '%s/conf' % self.dist_oxd_server_folder
@@ -432,9 +433,10 @@ class KongSetup(object):
         self.run([self.cmd_cp, '-R', '%s/path-wildcard-tree.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
         self.run([self.cmd_cp, '-R', '%s/json-cache.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
 
-        # Remove kong default plugins
-        for plugin in self.remove_plugin_list:
-            self.run([self.cmd_rm, '-rf', '%s/%s' % (self.dist_kong_plugins_folder, plugin)])
+        # Disable kong stock auth plugins
+        for plugin in self.disable_plugin_list:
+            self.run([self.cmd_cp, '-R', '%s/handler.lua' % self.gg_disable_plugin_stub_folder, "%s/%s" % (self.dist_kong_plugins_folder, plugin)])
+            self.run([self.cmd_cp, '-R', '%s/migrations/init.lua' % self.gg_disable_plugin_stub_folder, "%s/%s/migrations" % (self.dist_kong_plugins_folder, plugin)])
 
     def install_jre(self):
         self.log_it("Installing server JRE 1.8 %s..." % self.jre_version)
