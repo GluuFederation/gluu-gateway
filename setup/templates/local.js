@@ -52,26 +52,26 @@ module.exports = {
   },
 
   session: {
-    secret: '' // Add your own SECRET string here
+    secret: process.env.SESSION_SECRET || '' // Add your own SECRET string here
   },
 
   ssl: {
-    key: fs.readFileSync('%(kong_ssl_key)s'),
-    cert: fs.readFileSync('%(kong_ssl_cert)s')
+    key: fs.readFileSync(process.env.SSL_KEY_PATH || '%(kong_ssl_key)s'),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH || '%(kong_ssl_cert)s')
   },
-  hookTimeout: 180000,
+  hookTimeout: process.env.HOOK_TIMEOUT || 180000, // miliseconds
   port: process.env.PORT || %(konga_port)s,
-  environment: 'development',
+  environment: 'production',
   log: {
-    level: 'info'
+    level: process.env.LOG_LEVEL || 'info'
   },
-  oxdWeb: '%(konga_oxd_web)s',
-  opHost: '%(konga_op_host)s',
-  oxdId: '%(konga_oxd_id)s',
-  clientId: '%(konga_client_id)s',
-  clientSecret: '%(konga_client_secret)s',
-  oxdVersion: '%(konga_oxd_version)s',
-  ggVersion: '%(gg_version)s',
-  postgresVersion: '%(postgres_version)s',
-  explicitHost: 'localhost',
+  oxdWeb: process.env.OXD_SERVER_URL || '%(konga_oxd_web)s',
+  opHost: process.env.OP_SERVER_URL || '%(konga_op_host)s',
+  oxdId: process.env.OXD_ID || '%(konga_oxd_id)s',
+  clientId: process.env.CLIENT_ID || '%(konga_client_id)s',
+  clientSecret: process.env.CLIENT_SECRET || '%(konga_client_secret)s',
+  oxdVersion: process.env.OXD_SERVER_VERSION || '%(konga_oxd_version)s',
+  ggVersion: process.env.GG_VERSION || '%(gg_version)s',
+  postgresVersion: process.env.POSTGRES_VERSION || '%(postgres_version)s',
+  explicitHost: process.env.EXPLICIT_HOST || 'localhost',
 };
