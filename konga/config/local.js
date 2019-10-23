@@ -31,7 +31,7 @@ module.exports = {
   /**
    * The default fallback URL to Kong's admin API.
    */
-  kong_admin_url: process.env.KONG_ADMIN_URL || 'http://gluu.local.org:8001',
+  kong_admin_url: process.env.KONG_ADMIN_URL || 'http://localhost:8001',// 'http://gluu.local.org:8001',
 
 
   connections: {
@@ -52,25 +52,26 @@ module.exports = {
   },
 
   session: {
-    secret: '' // Add your own SECRET string here
+    secret: process.env.SESSION_SECRET || '' // Add your own SECRET string here
   },
 
   ssl: {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
+    key: fs.readFileSync(process.env.SSL_KEY_PATH || 'key.pem'),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH || 'cert.pem')
   },
-
+  hookTimeout: process.env.HOOK_TIMEOUT || 180000, // miliseconds
   port: process.env.PORT || 1338,
-  environment: 'development',
+  environment: 'production',
   log: {
-    level: 'info'
+    level: process.env.LOG_LEVEL || 'info'
   },
-  oxdWeb: 'https://localhost:8553',
-  opHost: 'https://gluu.local.org',
-  oxdId: '7c39912e-209a-4cfa-a9e5-46883108eaae',
-  clientId: '@!B28D.DF29.C16D.8E6F!0001!5489.C322!0008!2A4B.992A.26CC.AD46',
-  clientSecret: '071ac317-51a9-4c0b-ba4a-71abf1092205',
-  oxdVersion: '4.0',
-  ggVersion: '2.0',
-  postgresVersion: '10.x',
+  oxdWeb: process.env.OXD_SERVER_URL || 'https://localhost:8553',
+  opHost: process.env.OP_SERVER_URL || 'https://gluu.local.org',
+  oxdId: process.env.OXD_ID || '0cc5503c-6cce-4ba4-b6d7-0786b6d2d9c7',
+  clientId: process.env.CLIENT_ID || '2f113bf1-224b-463e-b3d5-0e779333efda',
+  clientSecret: process.env.CLIENT_SECRET || 'a5263b14-0afb-4a59-b42a-81d656e8717c',
+  oxdVersion: process.env.OXD_SERVER_VERSION || '4.0',
+  ggVersion: process.env.GG_VERSION || '4.0',
+  postgresVersion: process.env.POSTGRES_VERSION || '10.x',
+  explicitHost: process.env.EXPLICIT_HOST || '0.0.0.0',
 };
