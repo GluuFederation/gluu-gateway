@@ -52,6 +52,7 @@ class KongSetup(object):
         self.dist_lua_folder = '/usr/local/share/lua/5.1'
         self.dist_gluu_lua_folder = '%s/gluu' % self.dist_lua_folder
         self.dist_kong_plugins_folder = '%s/kong/plugins' % self.dist_lua_folder
+        self.disable_plugin_list = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
 
         self.gg_plugins_folder = 'kong/plugins'
         self.gluu_oauth_auth_plugin = '%s/gluu-oauth-auth' % self.gg_plugins_folder
@@ -63,6 +64,7 @@ class KongSetup(object):
         self.gluu_opa_pep_plugin = '%s/gluu-opa-pep' % self.gg_plugins_folder
         self.remove_plugin_list = ['ldap-auth', 'key-auth', 'basic-auth', 'jwt', 'oauth2', 'hmac-auth']
         self.gg_comman_folder = 'kong/common'
+        self.gg_disable_plugin_stub_folder = 'kong/disable_plugin_stub'
 
         # Prompt
         self.is_prompt = True
@@ -192,9 +194,10 @@ class KongSetup(object):
         self.run([self.cmd_cp, '-R', '%s/path-wildcard-tree.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
         self.run([self.cmd_cp, '-R', '%s/json-cache.lua' % self.gg_comman_folder, self.dist_gluu_lua_folder])
 
-        # Remove kong default auth plugins
-        for plugin in self.remove_plugin_list:
-            self.run([self.cmd_rm, '-rf', '%s/%s' % (self.dist_kong_plugins_folder, plugin)])
+        # Disable kong stock auth plugins
+        for plugin in self.disable_plugin_list:
+            self.run([self.cmd_cp, '-R', '%s/handler.lua' % self.gg_disable_plugin_stub_folder, "%s/%s" % (self.dist_kong_plugins_folder, plugin)])
+            self.run([self.cmd_cp, '-R', '%s/migrations/init.lua' % self.gg_disable_plugin_stub_folder, "%s/%s/migrations" % (self.dist_kong_plugins_folder, plugin)])
 
         # Configure kong.conf
         self.render_template_in_out(self.kong_config_file, self.dist_kong_config_file)
