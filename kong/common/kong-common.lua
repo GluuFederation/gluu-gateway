@@ -548,17 +548,23 @@ _M.access_auth_handler = function(self, conf, introspect_token)
         client_id = introspect_response.client_id
         exp = introspect_response.exp
 
-        local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
-        if not consumer and not err then
-            clear_pending_state(token)
-            kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-            return kong.response.exit(401, { message = "Unknown consumer" })
+
+        if conf.consumer_mapping then
+            localconsumer, err = kong.db.consumers:select_by_custom_id(client_id)
+            if not consumer and not err then
+                clear_pending_state(token)
+                kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
+                return kong.response.exit(401, { message = "Unknown consumer" })
+            end
+
+            if err then
+                clear_pending_state(token)
+                return unexpected_error("select_by_custom_id error: ", err)
+            end
+
+            introspect_response.consumer = consumer
         end
-        if err then
-            clear_pending_state(token)
-            return unexpected_error("select_by_custom_id error: ", err)
-        end
-        introspect_response.consumer = consumer
+
 
         kong.log.debug("save token in cache")
         worker_cache:set(token, introspect_response,
@@ -569,8 +575,13 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     end
 
     -- Client(Consumer) is authenticated
-    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    if token_data.consumer then
+        kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+        ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    end
+
+    ngx.ctx.authenticated_credential = { id = client_id } -- this may be used by rate limiter
+
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.request_token_data = token_data -- Used to check wether token is authenticated or not for PEP plugin
     kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
