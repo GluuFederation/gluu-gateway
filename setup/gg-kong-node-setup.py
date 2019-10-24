@@ -93,8 +93,6 @@ class KongSetup(object):
             self.is_prompt = False
             data = json.loads(sys.argv[1])
             self.license = data['license']
-            self.ip = data['ip']
-            self.host_name = data['host_name']
             self.pg_host = data['pg_host']
             self.pg_port = data['pg_port']
             self.pg_user = data['pg_user']
@@ -227,8 +225,6 @@ class KongSetup(object):
 
     def prompt_for_properties(self):
         # Certificate configuration
-        self.ip = self.get_ip()
-        self.host_name = self.get_prompt('Enter Hostname', self.detect_host_name())
         print "Below question is about the postgres db which you are sharing between multiple kong nodes: "
         self.pg_host = self.get_prompt('Enter PG host')
         self.pg_port = self.get_prompt('Enter PG Port')
