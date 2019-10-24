@@ -74,7 +74,7 @@ function installGG {
 
 function configureGG {
  # Used to open port publicly
- sed -i "76s/explicitHost: 'localhost'/explicitHost: '0.0.0.0'/" /opt/gluu-gateway/setup/templates/local.js
+ sed -i "76s/explicitHost: process.env.EXPLICIT_HOST || 'localhost'/explicitHost: '0.0.0.0'/" /opt/gluu-gateway/setup/templates/local.js
 
  cd /opt/gluu-gateway/setup
  python setup-gluu-gateway.py '{"konga_redirect_uri":"'$HOST'","konga_oxd_web":"https://'$OXD_HOST':8443","license":true,"ip":"'$HOST_IP'","host_name":"'$HOST'","country_code":"US","state":"US","city":"NY","org_name":"Test","admin_email":"test@test.com","pg_pwd":"admin","install_oxd":true,"konga_op_host":"'$OP_HOST'","generate_client":true}'
