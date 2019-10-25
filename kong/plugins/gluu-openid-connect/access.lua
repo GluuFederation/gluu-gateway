@@ -55,7 +55,7 @@ local function process_logout(conf, session)
     local status, json = response.status, response.body
 
     if status ~= 200 then
-        kong.log.err("get_tokens_by_code() responds with status ", status)
+        kong.log.err("get_logout_uri() responds with status ", status)
         return kong.response.exit(502)
     end
 
