@@ -25,6 +25,22 @@ return {
                     { max_id_token_auth_age = typedefs.timeout  { required = true }, },
                     { required_acrs_expression = { required = false, type = "string" }, },
                     { method_path_tree = { required = false, type = "string" }, },
+                    {
+                        custom_headers = {
+                            required = false,
+                            type = "array",
+                            elements = {
+                                type = "record",
+                                fields = {
+                                    { header_name = { required = true, type = "string" } },
+                                    { value = { required = true, type = "string" } },
+                                    { format = { required = false, type = "string", one_of = { "JWT", "base64", "urlencoded", "list" }, } },
+                                    { sep = { required = false, type = "string" } },
+                                    { iterate = { required = false, type = "boolean" } }
+                                },
+                            },
+                        }
+                    }
                 },
                 custom_validator = function(config)
                     if not config.required_acrs_expression then

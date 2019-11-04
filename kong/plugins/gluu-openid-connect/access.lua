@@ -264,6 +264,34 @@ local function purge_id_tokens(session_data, conf)
     end
 end
 
+local function make_header(header_name, format, value, sep, new_headers)
+    if format == "JWT" then
+        if type(value) ~= "table" then
+            kong.log.debug("need object for " .. header_name .. " header, current value : ", value)
+        else
+            new_headers[header_name] = kong_auth_pep_common.make_jwt(value)
+        end
+    end
+
+    if format == "base64" then
+        new_headers[header_name] = encode_base64(value)
+    end
+
+    if format == "list" then
+        if not sep then
+            kong.log.debug("need seperator(sep) for " .. header_name .. " header list type")
+        elseif #value == 0 then
+            kong.log.debug("need list for " .. header_name .. " header list type, current value : ", value)
+        else
+            new_headers[header_name] = table.concat(value, sep)
+        end
+    end
+
+    if format == "urlencoded" then
+        -- Todo: what to do?
+    end
+end
+
 return function(self, conf)
     local session = resty_session.start()
     local session_data = session.data
@@ -392,6 +420,41 @@ return function(self, conf)
         ["X-OpenId-Connect-idtoken"] = encode_base64(cjson.encode(id_token)),
         ["X-OpenId-Connect-userinfo"] = encode_base64(cjson.encode(session_data.userinfo))
     }
+    local environments = {
+        id_token = id_token,
+        userinfo = session_data.useinfo
+    }
+
+    if conf.custom_headers and #conf.custom_headers > 0 then
+        for i = 1, #conf.custom_headers do
+            local header = conf.custom_headers[i]
+            local value_keys = split(header.value)
+            local value;
+            if environments[value_keys[1]] then
+                value = environments
+                for key = 1, #value_keys do
+                    value = value[value_keys[key]]
+                end
+            else
+                value = header.value
+            end
+            local header_name = header.header_name
+            if header.iterate then
+                if type(value) ~= "table" then
+                    kong.log.debug(header_name .. " header value should be table, current value : ", value)
+                else
+                    for k,v in pairs(value) do
+                        local header_name = header_name:gsub("{.}", k)
+                        header_name = header_name:gsub("_", "-")
+                        make_header(header_name, v, header.format, header.sep, new_headers)
+                    end
+                end
+            else
+                header_name = header_name:gsub("_", "-")
+                make_header(header_name, value, header.format, header.sep, new_headers)
+            end
+        end
+    end
 
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
