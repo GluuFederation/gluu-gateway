@@ -64,23 +64,24 @@ local function log(message)
             message.service.host
     service_name = service_name or ""
     local consumer, request = message.consumer, message.request
+
     local uri = ngx.var.uri:match"^([^%s]+)"
     local openid_auth = "openid_connect_authentication"
 
     metrics.endpoint_method:inc(1, { uri, request.method, service_name })
 
     if kong.ctx.shared.gluu_oauth_client_authenticated then
-        metrics.oauth_client_authenticated:inc(1, { consumer.custom_id, service_name })
+        metrics.oauth_client_authenticated:inc(1, { ngx.ctx.authenticated_credential.id, service_name })
         metrics.total_client_authenticated:inc(1)
     end
 
     if kong.ctx.shared.gluu_oauth_client_granted then
-        metrics.oauth_client_granted:inc(1, { consumer.custom_id, service_name })
+        metrics.oauth_client_granted:inc(1, { ngx.ctx.authenticated_credential.id, service_name })
         metrics.total_client_granted:inc(1)
     end
 
     if kong.ctx.shared.gluu_uma_client_authenticated then
-        metrics.uma_client_authenticated:inc(1, { consumer.custom_id, service_name })
+        metrics.uma_client_authenticated:inc(1, { ngx.ctx.authenticated_credential.id, service_name })
         metrics.total_client_authenticated:inc(1)
     end
 

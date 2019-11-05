@@ -17,6 +17,7 @@ return {
                     { op_url = typedefs.url { required = true }, },
                     { anonymous = { type = "string", default = " " }, }, -- TODO kong_auth_pep_common.check_user
                     { pass_credentials = { type = "string", default = "pass" }, }, -- enum = {"pass", "hide", "phantom_token"},
+                    { consumer_mapping = { type = "boolean", default = true }, },
                 },
             },
         },

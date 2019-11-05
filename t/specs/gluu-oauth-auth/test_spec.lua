@@ -480,6 +480,68 @@ test("rate limiter", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
+test("rate limiter", function()
+
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    local register_site_response, access_token = configure_plugin(create_service_response,
+        {
+            anonymous = "allow",
+            consumer_mapping = false,
+        }
+    )
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    -- backend returns all headrs within body
+    print"check that GG set all required upstream headers"
+    assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
+    assert(res:lower():find("x%-oauth%-expiration: %d+"))
+    assert(res:lower():find("x-authenticated-scope:", 1, true))
+    -- TODO test comma separated list of scopes
+
+    print"configure rate-limiting global plugin"
+    local res, err = sh_ex([[curl -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=credential" ]],
+        -- [[--data "consumer_id=]], consumer_response.id,
+        [[ --data "config.policy=local" ]]
+    )
+    assert(err:find("HTTP/1.1 201", 1, true))
+    local rate_limiting_global = JSON:decode(res)
+
+    print"test it work with token first time"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    print"it may be blocked by rate limiter"
+    local res1, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"it may be blocked by rate limiter"
+    local res2, err = sh_ex(
+        [[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    -- at least one requests of two requests above must be blocker by rate limiter
+    assert(res1:find("API rate limit exceeded", 1, true) or res2:find("API rate limit exceeded", 1, true))
+    -- if we are here global plugin works
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
 test("JWT RS256", function()
 
     setup("oxd-model4.lua")
