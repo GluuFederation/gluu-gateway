@@ -34,7 +34,7 @@ return {
                                 fields = {
                                     { header_name = { required = true, type = "string" } },
                                     { value = { required = true, type = "string" } },
-                                    { format = { required = false, type = "string", one_of = { "JWT", "base64", "urlencoded", "list" }, } },
+                                    { format = { required = false, type = "string", default = "string", one_of = { "string", "jwt", "base64", "urlencoded", "list" }, } },
                                     { sep = { required = false, type = "string" } },
                                     { iterate = { required = false, type = "boolean" } }
                                 },

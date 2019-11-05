@@ -4,6 +4,7 @@ local kong_auth_pep_common = require "gluu.kong-common"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local cjson = require "cjson.safe"
 local encode_base64 = ngx.encode_base64
+local escape_uri = ngx.escape_uri
 local json_cache = require "gluu.json-cache"
 
 local function split(str, sep)
@@ -264,20 +265,16 @@ local function purge_id_tokens(session_data, conf)
     end
 end
 
-local function make_header(header_name, format, value, sep, new_headers)
-    if format == "JWT" then
+local function make_header(header_name, value, format, sep, new_headers)
+    if format == "jwt" then
         if type(value) ~= "table" then
             kong.log.debug("need object for " .. header_name .. " header, current value : ", value)
         else
             new_headers[header_name] = kong_auth_pep_common.make_jwt(value)
         end
-    end
-
-    if format == "base64" then
-        new_headers[header_name] = encode_base64(value)
-    end
-
-    if format == "list" then
+    elseif format == "base64" then
+        new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
+    elseif format == "list" then
         if not sep then
             kong.log.debug("need seperator(sep) for " .. header_name .. " header list type")
         elseif #value == 0 then
@@ -285,10 +282,10 @@ local function make_header(header_name, format, value, sep, new_headers)
         else
             new_headers[header_name] = table.concat(value, sep)
         end
-    end
-
-    if format == "urlencoded" then
-        -- Todo: what to do?
+    elseif format == "urlencoded" then
+        new_headers[header_name] = (type(value) == "table") and escape_uri(cjson.encode(value)) or escape_uri(value)
+    else
+        new_headers[header_name] = (type(value) == "table") and cjson.encode(value) or tostring(value)
     end
 end
 
@@ -416,19 +413,17 @@ return function(self, conf)
     kong.ctx.shared.request_token = enc_id_token
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
-    local new_headers = {
-        ["X-OpenId-Connect-idtoken"] = encode_base64(cjson.encode(id_token)),
-        ["X-OpenId-Connect-userinfo"] = encode_base64(cjson.encode(session_data.userinfo))
-    }
+
+    local new_headers = {}
     local environments = {
         id_token = id_token,
-        userinfo = session_data.useinfo
+        userinfo = session_data.userinfo
     }
 
     if conf.custom_headers and #conf.custom_headers > 0 then
         for i = 1, #conf.custom_headers do
             local header = conf.custom_headers[i]
-            local value_keys = split(header.value)
+            local value_keys = split(header.value, ".")
             local value;
             if environments[value_keys[1]] then
                 value = environments
@@ -438,6 +433,7 @@ return function(self, conf)
             else
                 value = header.value
             end
+
             local header_name = header.header_name
             if header.iterate then
                 if type(value) ~= "table" then
@@ -456,9 +452,9 @@ return function(self, conf)
         end
     end
 
+    kong.log.debug(require"pl.pretty".write(new_headers))
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
-    -- TODO set other remain headers
 end
 
 
