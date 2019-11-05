@@ -22,7 +22,7 @@
     "http-status": "^1.0.1",
     "https": "^1.0.0",
     "js-yaml": "^3.13.1",
-    "mongoose": "^4.11.13",
+    "mongoose": "^5.7.8",
     "morgan": "^1.8.2"
   },
   "devDependencies": {
