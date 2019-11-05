@@ -1,6 +1,11 @@
 name: Gluu Gateway CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - '*ci'
+    paths:
+      - '**.lua'
 
 jobs:
 
