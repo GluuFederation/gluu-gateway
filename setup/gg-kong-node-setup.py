@@ -196,6 +196,7 @@ class KongSetup(object):
         for plugin in self.disable_plugin_list:
             self.run([self.cmd_cp, '-R', '%s/handler.lua' % self.gg_disable_plugin_stub_folder, "%s/%s" % (self.dist_kong_plugins_folder, plugin)])
             self.run([self.cmd_cp, '-R', '%s/migrations/init.lua' % self.gg_disable_plugin_stub_folder, "%s/%s/migrations" % (self.dist_kong_plugins_folder, plugin)])
+            self.run([self.cmd_rm, '-R', '%s/%s/daos.lua' % (self.dist_kong_plugins_folder, plugin)])
 
         # Configure kong.conf
         self.render_template_in_out(self.kong_config_file, self.dist_kong_config_file)
