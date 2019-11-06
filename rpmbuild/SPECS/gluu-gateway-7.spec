@@ -4,12 +4,12 @@ Release:	%RELEASE%
 Summary:	OAuth protected API
 License:	The Gluu Support License (GLUU-SUPPORT)
 URL:		https://www.gluu.org
-Source0:	gluu-gateway-1.0.1.tar.gz
-Source1:	gluu-gateway.service.file
-Source2:	kong.service.file
-Source3:	konga.service.file
+Source0:	gluu-gateway-4.0.tar.gz
+Source1:	gluu-gateway.service
+Source2:	kong.service
+Source3:	konga.service
 BuildArch:      noarch
-Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, kong-community-edition = 0.14.1, unzip, python-requests
+Requires:	postgresql10, postgresql10-server, nodejs, lua-cjson, unzip, python-requests, ca-certificates
 
 %description
 The Gluu Gateway is a package which can be used to quickly
@@ -28,6 +28,7 @@ cp -a %{SOURCE2} %{buildroot}/lib/systemd/system/kong.service
 cp -a %{SOURCE3} %{buildroot}/lib/systemd/system/konga.service
 cp -a opt/gluu-gateway %{buildroot}/opt/
 cp -a tmp/%OXD_SERVER% %{buildroot}/tmp/
+cp -a tmp/%KONG% %{buildroot}/tmp/
 
 %pre
 mkdir -p /opt/gluu-gateway/konga/config/locales
@@ -102,6 +103,7 @@ fi
 /lib/systemd/system/konga.service
 /lib/systemd/system/gluu-gateway.service
 /tmp/%OXD_SERVER%
+/tmp/%KONG%
 
 %changelog
 * Wed Oct 16 2019 Davit Nikoghosyan <davit@gluu.org> - %VERSION%-1

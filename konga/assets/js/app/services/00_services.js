@@ -72,7 +72,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ]
                 }
@@ -90,9 +90,9 @@
           .state('services.oauth-plugin', {
             url: '/:service_id/oauth-plugin',
             data: {
-              pageName: "Gluu OAuth PEP plugin",
+              pageName: "Gluu OAuth Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "Gluu OAuth PEP plugin",
+              displayName: "Gluu OAuth plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
@@ -118,7 +118,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [
@@ -134,9 +134,9 @@
           .state('services.uma-plugin', {
             url: '/:service_id/uma-plugin',
             data: {
-              pageName: "Gluu UMA PEP plugin",
+              pageName: "Gluu UMA Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "Gluu UMA PEP plugin",
+              displayName: "Gluu UMA plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
@@ -162,7 +162,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({service_id: $stateParams.service_id})
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [
@@ -198,9 +198,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({
-                        service_id: $stateParams.service_id
-                      })
+                      return PluginsService.getPluginsByContext("services", $stateParams.service_id)
                     }
                   ],
                   _activeNode: [

@@ -1,4 +1,4 @@
-if [ -e /etc/init.d/gluu-gateway ]; then
+if [ -f /etc/init.d/gluu-gateway ]; then
     /etc/init.d/konga stop > /dev/null 2>&1
     /etc/init.d/kong stop > /dev/null 2>&1
     /etc/init.d/oxd-server stop > /dev/null 2>&1
@@ -7,9 +7,11 @@ if [ -e /etc/init.d/gluu-gateway ]; then
     /usr/sbin/update-rc.d oxd-server remove > /dev/null 2>&1
     /usr/sbin/update-rc.d gluu-gateway defaults > /dev/null 2>&1
 fi
-if [ -e /lib/systemd/system/gluu-gateway.service ]; then
+if [ -f /lib/systemd/system/gluu-gateway.service ]; then
      systemctl stop konga > /dev/null 2>&1
      systemctl stop kong > /dev/null 2>&1
      systemctl stop oxd-server > /dev/null 2>&1
 fi
-chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+if [ -f /opt/gluu-gateway/setup/setup-gluu-gateway.py ]; then
+     chmod +x /opt/gluu-gateway/setup/setup-gluu-gateway.py > /dev/null 2>&1
+fi

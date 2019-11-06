@@ -31,7 +31,7 @@
                   _services: [
                     'ServiceModel', function resolve(ServiceModel) {
                       return ServiceModel.load({
-                        size: 4294967295
+                        size: 1000
                       })
                     }
                   ]
@@ -86,7 +86,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ]
                 }
@@ -100,9 +100,9 @@
           .state('routes.oauth-plugin', {
             url: '/:route_id/oauth-plugin',
             data: {
-              pageName: "Gluu OAuth PEP plugin",
+              pageName: "Gluu OAuth Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect via `https` to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "Gluu OAuth PEP plugin",
+              displayName: "Gluu OAuth plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
@@ -128,7 +128,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _activeNode: [
@@ -144,9 +144,9 @@
           .state('routes.uma-plugin', {
             url: '/:route_id/uma-plugin',
             data: {
-              pageName: "Gluu UMA PEP plugin",
+              pageName: "Gluu UMA Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "Gluu UMA PEP plugin",
+              displayName: "Gluu UMA plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
@@ -172,7 +172,51 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function resolve(PluginsService, $stateParams) {
-                      return PluginsService.load({route_id: $stateParams.route_id})
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
+                    }
+                  ],
+                  _activeNode: [
+                    'NodesService',
+                    function resolve(NodesService) {
+                      return NodesService.isActiveNodeSet()
+                    }
+                  ],
+                }
+              }
+            }
+          })
+          .state('routes.openid-plugin', {
+            url: '/:route_id/openid-plugin',
+            data: {
+              pageName: "Gluu OIDC and UMA PEP",
+              pageDescription: "The Gluu OpenID Connect Authorization code flow and UMA PEP security. The UMA PEP is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication.",
+              displayName: "Gluu OpenID Connect plugin",
+              prefix: '<i class="mdi mdi-pencil"></i>'
+            },
+            views: {
+              'content@': {
+                templateUrl: 'js/app/plugins/openid-plugin.html',
+                controller: 'OpenIDPluginController',
+                resolve: {
+                  _route: [
+                    '$stateParams',
+                    'RoutesService',
+                    '$log',
+                    function resolve($stateParams,
+                                     RoutesService) {
+                      return RoutesService.findById($stateParams.route_id)
+                    }
+                  ],
+                  _plugins: [
+                    'PluginsService', '$stateParams',
+                    function resolve(PluginsService, $stateParams) {
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
+                    }
+                  ],
+                  _info: [
+                    'InfoService',
+                    function resolve(InfoService) {
+                      return InfoService.getInfo()
                     }
                   ],
                   _activeNode: [
@@ -208,9 +252,7 @@
                   _plugins: [
                     'PluginsService', '$stateParams',
                     function (PluginsService, $stateParams) {
-                      return PluginsService.load({
-                        route_id: $stateParams.route_id
-                      })
+                      return PluginsService.getPluginsByContext("routes", $stateParams.route_id)
                     }
                   ],
                   _activeNode: [

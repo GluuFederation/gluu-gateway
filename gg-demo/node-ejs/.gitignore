@@ -1,0 +1,13 @@
+docs/
+reports/
+
+# Mac OS X
+.DS_Store
+
+# Node.js
+node_modules
+npm-debug.log
+
+# Editor
+.idea
+package-lock.json

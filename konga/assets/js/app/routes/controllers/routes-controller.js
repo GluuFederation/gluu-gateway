@@ -3,9 +3,9 @@
 
   angular.module('frontend.routes')
     .controller('RoutesController', [
-      '$scope', '$rootScope', '$log', '$state', 'RoutesService', 'ListConfig', 'RouteModel',
+      '$scope', '$rootScope', '$log', '$state', 'RoutesService', 'PluginsService', 'ListConfig', 'RouteModel',
       'UserService', '$uibModal', '_services', 'PluginModel',
-      function controller($scope, $rootScope, $log, $state, RoutesService, ListConfig, RouteModel,
+      function controller($scope, $rootScope, $log, $state, RoutesService, PluginsService, ListConfig, RouteModel,
                           UserService, $uibModal, _services, PluginModel) {
         $scope.services = _services.data;
         RouteModel.setScope($scope, false, 'items', 'itemCount');
@@ -14,7 +14,7 @@
         $scope.toggleStripPath = toggleStripPath
         $scope.openAddRouteModal = openAddRouteModal
         $scope.updateRoute = updateRoute
-
+        $scope.onEditPlugin = onEditPlugin
 
         /**
          * -----------------------------------------------------------------------------------------------------------
@@ -77,7 +77,7 @@
                 routeResponse.data.map(function(route) {
                   route.plugins = [];
                   pluginsSesponse.data.forEach(function(plugin){
-                    if (plugin.route_id == route.id && (plugin.name == 'gluu-oauth-pep' || plugin.name == 'gluu-uma-pep')) {
+                    if ((plugin.route && plugin.route.id === route.id) && (plugin.name === 'gluu-opa-pep' || plugin.name === 'gluu-openid-connect' || plugin.name === 'gluu-oauth-auth' || plugin.name === 'gluu-uma-auth')) {
                       route.plugins.push(plugin);
                     }
                   });
@@ -144,6 +144,24 @@
           }
         })
 
+        function onEditPlugin(item) {
+          $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/modals/edit-plugin-modal.html',
+            size: 'lg',
+            controller: 'EditPluginController',
+            resolve: {
+              _plugin: function () {
+                return _.cloneDeep(item)
+              },
+              _schema: function () {
+                return PluginsService.schema(item.name)
+              }
+            }
+          });
+        }
 
         // Init
 

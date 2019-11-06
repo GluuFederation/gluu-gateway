@@ -55,9 +55,9 @@
           .state('plugins.oauth-plugin', {
             url: '/plugins/oauth-plugin',
             data: {
-              pageName: "OAuth plugin",
+              pageName: "Gluu OAuth Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for OAuth2 client registration and authentication. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "OAuth plugin",
+              displayName: "Gluu OAuth plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {
@@ -96,9 +96,9 @@
           .state('plugins.uma-plugin', {
             url: '/plugins/uma-plugin',
             data: {
-              pageName: "UMA plugin",
+              pageName: "Gluu UMA Auth & PEP",
               pageDescription: "This plugin enables the use of an external OpenID Provider for UMA resource registration and authorization. It needs to connect to Gluu's `oxd` service, which is an OAuth2 client middleware service.",
-              displayName: "UMA plugin",
+              displayName: "Gluu UMA plugins",
               prefix: '<i class="mdi mdi-pencil"></i>'
             },
             views: {

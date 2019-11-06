@@ -41,15 +41,18 @@
               inTitle: true
             },
             {
-              title: 'created',
-              column: 'created_at',
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
             }
           ],
           route: [
             {
-              title: 'id',
-              column: 'id',
+              title: 'Name / ID',
+              column: 'name',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -80,9 +83,12 @@
               inTitle: true
             },
             {
-              title: 'created',
-              column: 'created_at',
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
               sortable: true,
+              inSearch: true,
+              inTitle: true
             }
           ],
           api: [
@@ -233,7 +239,7 @@
               inTitle: true
             },
             {
-              title: 'type',
+              title: 'kong admin url',
               column: 'type',
               searchable: true,
               sortable: true,
@@ -241,8 +247,8 @@
               inTitle: true
             },
             {
-              title: 'kong admin url',
-              column: 'kong_admin_url',
+              title: 'kong api key',
+              column: 'kong_api_key',
               searchable: true,
               sortable: true,
               inSearch: true,
@@ -319,6 +325,14 @@
               inTitle: true
             },
             {
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
               title: 'created',
               column: 'created_at',
               sortable: true,
@@ -363,6 +377,27 @@
               hide: !AuthService.hasPermission('users', 'delete'),
               column: '',
               width: 1
+            },
+          ],
+          log: [
+            {
+              title: 'comment',
+              column: 'comment',
+              searchable: true,
+              inSearch: true,
+              inTitle: true
+            },
+            {
+              title: 'created',
+              column: 'createdAt',
+              sortable: true,
+            },
+            {
+              title: 'route',
+              column: 'route_id',
+              searchable: true,
+              inSearch: true,
+              inTitle: true
             },
           ],
           snapshot: [
@@ -456,7 +491,15 @@
               sortable: false,
               inSearch: false,
               inTitle: true
-            }
+            },
+            {
+              title: 'tags',
+              column: 'tags',
+              searchable: true,
+              sortable: true,
+              inSearch: true,
+              inTitle: true
+            },
           ],
           certificate: [
             {
@@ -597,12 +640,15 @@
           ],
         };
 
+        var defaultLimit = 1000;
+
         return {
+          defaultLimit: defaultLimit,
           getConfig: function getConfig(property, model) {
             return {
               itemCount: 0,
               items: [],
-              itemsFetchSize: 4294967295,
+              itemsFetchSize: defaultLimit,
               itemsPerPage: 25,
               titleItems: this.getTitleItems(property),
               itemsPerPageOptions: [10, 25, 50, 100],

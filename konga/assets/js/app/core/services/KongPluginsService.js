@@ -74,13 +74,21 @@
                 hasConsumerPlugins: true,
                 description: "Protect your services with additional security layers",
                 plugins: {
-                  "gluu-oauth-pep": {
+                  "gluu-oauth-auth": {
                     hideIfNotInConsumerContext: true,
-                    description: "The OAuth PEP is used to enforce the presence of OAuth scopes for access to resources protected by the Gateway. OAuth scopes are defined in an external OAuth Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd OAuth middleware service for communication."
+                    description: "Allow to configure OAuth Authentication and PEP. The OAuth PEP is used to enforce the presence of OAuth scopes for access to resources protected by the Gateway. OAuth scopes are defined in an external OAuth Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd OAuth middleware service for communication."
                   },
-                  "gluu-uma-pep": {
+                  "gluu-uma-auth": {
                     hideIfNotInConsumerContext: true,
-                    description: "The UMA PEP plugin is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
+                    description: "Allow to configure UMA Authentication and PEP. The UMA PEP is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
+                  },
+                  "gluu-openid-connect": {
+                    hideIfNotInConsumerContext: true,
+                    description: "The Gluu OpenID Connect Authorization code flow and UMA PEP security. The UMA PEP is used to enforce the presence of UMA scopes for access to resources protected by the Gateway. UMA scopes and policies are defined in an external UMA Authorization Server (AS) -- in most cases the Gluu Server. The Gateway and AS leverage the oxd UMA middleware service for communication."
+                  },
+                  "gluu-opa-pep": {
+                    hideIfNotInConsumerContext: true,
+                    description: "The Open Policy Agent PEP plugin for Gluu Authentication plugins, Gluu-OAuth-Auth and Gluu-OpenID-Connect"
                   },
                   "acl": {
                     hideIfNotInConsumerContext: true,
@@ -263,6 +271,15 @@
               meta: {
                 description: 'This plugin terminates incoming requests with a specified status code and message. This allows to (temporarily) block an API or Consumer.'
               },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
+              },
               content_type: {
                 type: 'text',
                 value: 'application/json; charset=utf-8',
@@ -379,6 +396,15 @@
             "correlation-id": {
               meta: {
                 description: 'Correlate requests and responses using a unique ID transmitted over an HTTP header.'
+              },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
               },
               'header_name': {
                 type: 'text',
@@ -624,6 +650,15 @@
               meta: {
                 description: 'Transform the request sent by a client on the fly on Kong, before hitting the upstream server.'
               },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
+              },
               "http_method": {
                 help: "Changes the HTTP method for the upstream request."
               },
@@ -676,6 +711,15 @@
               meta: {
                 description: 'Transform the response sent by the upstream server on the fly on Kong, before returning the response to the client.'
               },
+              'consumer_id': {
+                displayName: "Apply to",
+                type: 'search',
+                value: null,
+                help: 'The CONSUMER ID that this plugin configuration will target. ' +
+                  'This value can only be used if authentication has been enabled ' +
+                  'so that the system can identify the user making the request.' +
+                  ' If left blank, the plugin will be applied to all consumers.'
+              },
               "remove": {
                 "headers": {
                   help: "List of header names. Unset the header(s) with the given name."
@@ -708,7 +752,45 @@
                   help: "List of property:value pairs. If the property is not present in the JSON body, add it with the given value. If it is already present, the two values (old and new) will be aggregated in an array."
                 },
               },
-            }
+            },
+            "gluu-opa-pep": {
+              'meta': {
+                description: 'The Open Policy Agent PEP plugin for Gluu Authentication plugins, Gluu-OAuth-Auth and Gluu-OpenID-Connect'
+              },
+              'opa_url': {
+                type: 'text',
+                value: null,
+                help: 'The URL of your OPA Policy. It must a valid URL.'
+              },
+              'forward_request_body': {
+                type: 'checkbox',
+                value: false,
+                help: 'Whether you want to forward request body to OPA policy or not.'
+              },
+            },
+            "gluu-metrics": {
+              'meta': {
+                description: 'The metrics plugin gathers statistics for authentication-related events generated by Gluu Gateway against its associated Gluu Server. Metrics are exposed in Prometheus exposition format, which can be scraped by a Prometheus Server.'
+              },
+              'ip_restrict_plugin_id': {
+                type: 'text',
+                value: null,
+                help: 'The IP restriction plugin id which configure for the kong service for gluu license server'
+              },
+              'gluu_prometheus_server_host': {
+                type: 'text',
+                value: 'license.gluu.org',
+                help: 'Gluu prometheus license server host i.e. license.gluu.org'
+              },
+              'kong_admin_url': {
+                type: 'text',
+                help: 'Kong Admin endpoint URL',
+              },
+              'check_ip_time': {
+                type: 'number',
+                help: 'Used to set time in seconds for IP update of ip_restriction plugin which has above ip_restrict_plugin_id.',
+              },
+            },
           };
 
           // Monkey patch to help with transition

@@ -1,33 +1,43 @@
-local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
-
---- Check OAuth scope expression
--- @param v: JSON expression
-local function check_expression(v)
-    -- TODO check the structure, required fields, etc
-    return true
-end
-
+local common = require "gluu.kong-common"
+local typedefs = require "kong.db.schema.typedefs"
+local json_cache = require "gluu.json-cache"
+local cjson = require "cjson.safe"
 
 return {
-    no_consumer = true,
+    name = "gluu-uma-pep",
     fields = {
-        hide_credentials = { type = "boolean", default = false },
-        oxd_id = { required = true, type = "string" },
-        client_id = { required = true, type = "string" },
-        client_secret = { required = true, type = "string" },
-        op_url = { required = true, type = "url" },
-        oxd_url = { required = true, type = "url" },
-        anonymous = { type = "string", func = kong_auth_pep_common.check_user, default = "" },
-        oauth_scope_expression = { required = false, type = "table", func = check_expression },
-        ignore_scope = { type = "boolean", default = false },
-        deny_by_default = { type = "boolean", default = true }
-    },
-    self_check = function(schema, plugin_t, dao, is_updating)
-        if not plugin_t.ignore_scope then
-            table.sort(plugin_t.oauth_scope_expression, function(first, second)
-                return #first.path > #second.path
-            end)
-        end
-        return true
-    end
+        { run_on = typedefs.run_on_first },
+        { consumer = typedefs.no_consumer },
+        {
+            config = {
+                type = "record",
+                fields = {
+                    { oxd_id = { required = true, type = "string" }, },
+                    { oxd_url = typedefs.url { required = true }, },
+                    { client_id = { required = true, type = "string" }, },
+                    { client_secret = { required = true, type = "string" }, },
+                    { op_url = typedefs.url { required = true }, },
+                    { deny_by_default = { type = "boolean", default = true }, },
+                    { oauth_scope_expression = { required = false, type = "string" }, },
+                    { method_path_tree = { required = false, type = "string" }, },
+                },
+                custom_validator = function(config)
+                    if not config.oauth_scope_expression then
+                        config.method_path_tree = nil
+                        return true
+                    end
+
+                    local oauth_scope_expression = json_cache(config.oauth_scope_expression)
+                    local ok, err = common.check_expression(oauth_scope_expression)
+                    if not ok then
+                        return false, err
+                    end
+
+                    local method_path_tree = common.convert_scope_expression_to_path_wildcard_tree(oauth_scope_expression)
+                    config.method_path_tree = cjson.encode(method_path_tree)
+                    return true
+                end
+            },
+        },
+    }
 }

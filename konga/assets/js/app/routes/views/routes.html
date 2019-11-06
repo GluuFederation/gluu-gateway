@@ -19,8 +19,6 @@
       <table class="table table-hover table-striped">
         <tr>
           <th></th>
-          <th></th>
-          <th></th>
           <th width="{{item.width}}" class="text-nowrap" data-ng-repeat="item in titleItems | filter:titleFilter">
             <a
               data-ng-show="item.column"
@@ -37,49 +35,50 @@
         <tr
           dir-paginate="route in items.data | orderBy:sort.column:sort.direction | filter : filters.searchWord | itemsPerPage: itemsPerPage as filteredItems">
           <td>
-            <i uib-tooltip="Strip Path"
-               ng-click="toggleStripPath(route)"
-               data-ng-class="{'text-primary' : route.strip_path,'text-muted' : !route.strip_path}"
-               class="mdi mdi-link-off clickable">
-            </i>
-          </td>
-          <td>
-            <i uib-tooltip="Preserve Host"
-               ng-click="route.preserve_host=!route.preserve_host;updateRoute(route.id,{preserve_host : route.preserve_host})"
-               class="mdi clickable"
-               ng-class="route.preserve_host ? 'mdi-cloud-outline text-primary' : 'mdi-cloud-off-outline text-muted'">
-            </i>
-          </td>
-          <td>
             <raw-view data-item="route"></raw-view>
           </td>
           <td>
-            <strong>
-              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">{{ route.id}}</a>
+            <strong ng-if="route.service.name === 'gluu-org-metrics-service'">
+              ...{{ route.id.substring(route.id.length - 12, route.id.length) }}
+            </strong>
+            <strong ng-if="!(route.service.name === 'gluu-org-metrics-service')">
+              <a class="clickable" data-ui-sref="routes.edit({route_id:route.id})">{{ route.name || '...' + route.id.substring(route.id.length - 12, route.id.length) }}</a>
             </strong>
           </td>
           <td>{{ route.hosts.join(", ") || "-" }}</td>
-          <td><a data-ui-sref="services.edit({service_id:route.service.id})">{{route.service.name ||
-            route.service.id}}</a></td>
-          <td>{{ route.paths.join(", ") || "-" }}</td>
-          <td>{{route.created_at*1000 | date : format : timezone}}</td>
           <td>
-            <div data-ng-repeat="plugin in route.plugins">
-              <a data-ng-if="plugin.name == 'gluu-oauth-pep'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
-                <i class="mdi mdi-pencil"></i> OAUTH-PEP
+            <span ng-if="route.service.name === 'gluu-org-metrics-service'">{{route.service.name ||
+              route.service.id}}</span>
+            <a ng-if="!(route.service.name === 'gluu-org-metrics-service')" data-ui-sref="services.edit({service_id:route.service.id})">{{route.service.name ||
+            route.service.id}}</a>
+          </td>
+          <td>{{ route.paths.join(", ") || "-" }}</td>
+          <td>
+            <span class="badge badge-tag badge-success badge-inverse" ng-repeat="tag in route.tags"><i class="mdi mdi-tag"></i>&nbsp;{{tag}}</span>
+          </td>
+          <td>
+            <span data-ng-repeat="plugin in route.plugins">
+              <a data-ng-if="plugin.name == 'gluu-oauth-auth'" ui-sref="routes.oauth-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OAUTH
               </a>
-              <a data-ng-if="plugin.name == 'gluu-uma-pep'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
-                <i class="mdi mdi-pencil"></i> UMA-PEP
+              <a data-ng-if="plugin.name == 'gluu-uma-auth'" ui-sref="routes.uma-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> UMA
               </a>
-            </div>
+              <a data-ng-if="plugin.name == 'gluu-openid-connect'" ui-sref="routes.openid-plugin({route_id: route.id })" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OIDC
+              </a>
+              <a data-ng-if="plugin.name == 'gluu-opa-pep'" ng-click="onEditPlugin(plugin)" class="btn btn-sm btn-primary">
+                <i class="mdi mdi-pencil"></i> OPA
+              </a>
+            </span>
             <span data-ng-if="route.plugins.length < 1">-</span>
           </td>
           <td>
-            <a class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
+            <a ng-if="!(route.service.name === 'gluu-org-metrics-service')" class="btn btn-info btn-link" ui-sref="routes.edit({ route_id: route.id })"
                class="btn btn-default btn-link">
               <i class="mdi mdi-pencil"></i>
             </a>
-            <button type="button" ng-click="deleteItem($index,route)" class="btn btn-danger btn-link">
+            <button ng-if="!(route.service.name === 'gluu-org-metrics-service')" type="button" ng-click="deleteItem($index,route)" class="btn btn-danger btn-link">
               <i class="mdi mdi-delete"></i>
             </button>
           </td>

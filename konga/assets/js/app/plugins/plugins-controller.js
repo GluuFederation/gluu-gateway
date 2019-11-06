@@ -4,9 +4,9 @@
   angular.module('frontend.plugins')
     .controller('PluginsController', [
       '_', '$scope', '$log', '$state', 'PluginsService', 'MessageService',
-      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', '$rootScope',
+      '$uibModal', 'DialogService', 'PluginModel', 'ListConfig', 'UserService', 'ServiceService', '$rootScope',
       function controller(_, $scope, $log, $state, PluginsService, MessageService,
-                          $uibModal, DialogService, PluginModel, ListConfig, UserService, $rootScope) {
+                          $uibModal, DialogService, PluginModel, ListConfig, UserService, ServiceService, $rootScope) {
 
         PluginModel.setScope($scope, false, 'items', 'itemCount');
         $scope = angular.extend($scope, angular.copy(ListConfig.getConfig('plugin', PluginModel)));
@@ -14,9 +14,9 @@
         $scope.onEditPlugin = onEditPlugin;
         $scope.updatePlugin = updatePlugin;
         $scope.getContext = getContext;
-        $scope.deletePEPClient = deletePEPClient;
         $scope.deleteOAuthClient = deleteOAuthClient;
-
+        $scope.deleteOPClient = deleteOPClient;
+        $scope.gluuMetricsServiceId = '';
         /**
          * ----------------------------------------------------------------------
          * Functions
@@ -44,28 +44,32 @@
         }
 
         function onEditPlugin(item) {
-          if (item.name == "gluu-oauth-pep") {
-            if (item.service_id) {
-              return $state.go("services.oauth-plugin", {service_id: item.service_id});
-            } else if (item.route_id) {
-              return $state.go("routes.oauth-plugin", {route_id: item.route_id});
-            } else if (item.api_id) {
-              return $state.go("apis.oauth-plugin", {api_id: item.api_id});
+          if (['gluu-oauth-pep', 'gluu-uma-pep'].indexOf(item.name) >= 0) {
+            return
+          }
+
+          if ('gluu-oauth-auth' === item.name) {
+            if (item.service && item.service.id) {
+              return $state.go("services.oauth-plugin", {service_id: item.service.id});
+            } else if (item.route && item.route.id) {
+              return $state.go("routes.oauth-plugin", {route_id: item.route.id});
             } else {
               return $state.go("plugins.oauth-plugin");
             }
           }
 
-          if (item.name == "gluu-uma-pep") {
-            if (item.service_id) {
-              return $state.go("services.uma-plugin", {service_id: item.service_id});
-            } else if (item.route_id) {
-              return $state.go("routes.uma-plugin", {route_id: item.route_id});
-            } else if (item.api_id) {
-              return $state.go("apis.uma-plugin", {api_id: item.api_id});
+          if ('gluu-uma-auth' === item.name) {
+            if (item.service && item.service.id) {
+              return $state.go("services.uma-plugin", {service_id: item.service.id});
+            } else if (item.route && item.route.id) {
+              return $state.go("routes.uma-plugin", {route_id: item.route.id});
             } else {
               return $state.go("plugins.uma-plugin");
             }
+          }
+
+          if ('gluu-openid-connect' === item.name) {
+            return $state.go("routes.openid-plugin", {route_id: item.route.id});
           }
 
           if (!$scope.user.hasPermission('plugins', 'edit')) {
@@ -97,77 +101,75 @@
             size: $scope.itemsFetchSize
           }).then(function (response) {
             $scope.items = response;
-            $scope.loading = false;
+            ServiceService.findByName('gluu-org-metrics-service')
+              .then(function (response) {
+                $scope.loading = false;
+                $scope.gluuMetricsServiceId = response.data && response.data.id;
+              })
+              .catch(function (error) {
+                $scope.loading = false;
+                console.log('Failed to get service', error)
+              });
+
           })
         }
 
         function getContext(plugin) {
-          if (plugin.service_id) {
+          if (plugin.service && plugin.service.id) {
             return 'services'
-          } else if (plugin.route_id) {
+          } else if (plugin.route && plugin.route.id) {
             return 'routes'
-          } else if (plugin.api_id) {
-            return 'apis'
           } else {
             return 'global'
           }
         }
 
-        function deletePEPClient(item) {
-          var modalInstance = $uibModal.open({
+        function deleteOPClient(item) {
+          var createConsumer = $uibModal.open({
             animation: true,
             ariaLabelledBy: 'modal-title',
             ariaDescribedBy: 'modal-body',
-            windowClass: 'dialog',
-            template: '' +
-            '<div class="modal-header dialog no-margin">' +
-            '<h5 class="modal-title">CONFIRM</h5>' +
-            '</div>' +
-            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
-            '</div>' +
-            '<div class="modal-footer dialog">' +
-            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
-            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
-            '</div>',
-            controller: function ($scope, $uibModalInstance) {
-              $scope.doWantDeleteClient = false;
-              $scope.accept = function () {
-                $uibModalInstance.close($scope.doWantDeleteClient);
-              };
+            templateUrl: 'js/app/plugins/comment-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService) {
+              $scope.close = close;
+              $scope.submit = submit;
+              $scope.comment = "";
 
-              $scope.decline = function () {
+              function submit() {
+                if (!$scope.comment) {
+                  MessageService.error('Comment required!');
+                  return
+                }
+                $uibModalInstance.close($scope.comment);
+              }
+
+              function close() {
                 $uibModalInstance.dismiss();
-              };
+              }
             },
-            size: 'sm'
+            controllerAs: '$ctrl',
           });
 
-          modalInstance.result.then(function (doWantDeleteClient) {
-            console.log('doWantDeleteClient : ', doWantDeleteClient);
+          createConsumer.result.then(function (comment) {
             PluginsService
               .delete(item.id)
               .then(function (cResponse) {
-                MessageService.success("Plugin deleted successfully");
-                $rootScope.$broadcast('plugin.added');
-
                 PluginsService
-                  .deletePEPClient(item.config.oxd_id, doWantDeleteClient)
+                  .deleteOPClient({comment: comment, route_id: item.route.id})
                   .then(function (pResponse) {
-                    if (doWantDeleteClient) {
-                      MessageService.success("Client deleted successfully from OXD");
-                    }
+                    MessageService.success("Plugin deleted successfully");
+                    $rootScope.$broadcast('plugin.added');
                   })
                   .catch(function (error) {
                     console.log(error);
-                    MessageService.error((error.data && error.data.message) || "Failed to delete client");
+                    MessageService.error((error.data && error.data.message) || "Failed to add comment");
                   });
               })
               .catch(function (error) {
                 console.log(error);
                 MessageService.error((error.data && error.data.message) || "Failed to delete Plugin");
               });
-          });
+          })
         }
 
         function deleteOAuthClient(item) {
@@ -177,16 +179,16 @@
             ariaDescribedBy: 'modal-body',
             windowClass: 'dialog',
             template: '' +
-            '<div class="modal-header dialog no-margin">' +
-            '<h5 class="modal-title">CONFIRM</h5>' +
-            '</div>' +
-            '<div class="modal-body">Do you want to delete the selected item?<br/>' +
-            '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
-            '</div>' +
-            '<div class="modal-footer dialog">' +
-            '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
-            '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
-            '</div>',
+              '<div class="modal-header dialog no-margin">' +
+              '<h5 class="modal-title">CONFIRM</h5>' +
+              '</div>' +
+              '<div class="modal-body">Do you want to delete the selected item?<br/>' +
+              '<input type="checkbox" ng-model="doWantDeleteClient" id="lblDelete"/> <label for="lblDelete">Remove OP Client from OXD?</label>' +
+              '</div>' +
+              '<div class="modal-footer dialog">' +
+              '<button class="btn btn-link" data-ng-click="decline()">CANCEL</button>' +
+              '<button class="btn btn-success btn-link" data-ng-click="accept()">OK</button>' +
+              '</div>',
             controller: function ($scope, $uibModalInstance) {
               $scope.doWantDeleteClient = false;
               $scope.accept = function () {

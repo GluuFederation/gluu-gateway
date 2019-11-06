@@ -1,6 +1,9 @@
 local pl_tablex = require "pl.tablex"
 local oxd = require "gluu.oxdweb"
-local kong_auth_pep_common = require"gluu.kong-auth-pep-common"
+local resty_session = require("resty.session")
+
+local kong_auth_pep_common = require"gluu.kong-common"
+local path_wildcard_tree = require"gluu.path-wildcard-tree"
 
 local unexpected_error = kong_auth_pep_common.unexpected_error
 
@@ -43,72 +46,90 @@ local function try_check_access(conf, path, method, token, access_token)
     return unexpected_error("uma_rs_check_access() responds with unexpected status: ", status)
 end
 
-local function try_introspect_rpt(conf, token, access_token)
-    local response = oxd.introspect_rpt(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            rpt = token,
-        },
-        access_token)
-    local status = response.status
-    if status == 200 then
-        local body = response.body
-        if body.active then
-            if not (body.exp and body.iat and body.client_id and body.permissions) then
-                return unexpected_error("introspect_rpt() missed required fields")
-            end
-        end
-        return body
-    end
-    if status == 400 then
-        return unexpected_error("introspect_rpt() responds with status 400 - Invalid parameters are provided to endpoint")
-    elseif status == 500 then
-        return unexpected_error("introspect_rpt() responds with status 500 - Internal error occured. Please check oxd-server.log file for details")
-    elseif status == 403 then
-        return unexpected_error("introspect_rpt() responds with status 403 - Invalid access token provided in Authorization header")
-    end
-    return unexpected_error("introspect_rpt() responds with unexpected status: ", status)
-end
-
 local hooks = {}
 
---- lookup registered protected path by path and http methods
--- @param self: Kong plugin object instance
--- @param conf:
--- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
--- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
--- @param method: requested http method Example: GET
--- @return protected_path; may returns no values
-function hooks.get_path_by_request_path_method(self, conf, request_path, method)
-    local exp = conf.uma_scope_expression
-    -- TODO the complexity is O(N), think how to optimize
-    local found_paths = {}
-    print(request_path)
-    for i = 1, #exp do
-        print(exp[i]["path"])
-        if kong_auth_pep_common.is_path_match(request_path, exp[i]["path"]) then
-            print(exp[i]["path"])
-            found_paths[#found_paths + 1] = exp[i]
-        end
+local function redirect_to_claim_url(conf, ticket)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
+    local claims_redirect_uri = kong_auth_pep_common.get_path_with_base_url(conf.claims_redirect_path)
+    local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
+        {
+            oxd_id = conf.oxd_id,
+            ticket = ticket,
+            claims_redirect_uri = claims_redirect_uri
+        },
+        ptoken)
+
+    if err then
+        kong.log.err(err)
+        return unexpected_error()
     end
 
-    for i = 1, #found_paths do
-        local path_item = found_paths[i]
-        kong.log.inspect(path_item)
-        for k = 1, #path_item.conditions do
-            local rule = path_item.conditions[k]
-            kong.log.inspect(rule)
-            if pl_tablex.find(rule.httpMethods, method) then
-                return path_item.path
-            end
-        end
+    local status, json = response.status, response.body
+
+    if status ~= 200 then
+        kong.log.err("uma_rp_get_claims_gathering_url() responds with status ", status)
+        return unexpected_error()
     end
 
-    return nil
+    if not json.url then
+        kong.log.err("uma_rp_get_claims_gathering_url() missed url")
+        return unexpected_error()
+    end
+
+    local session = resty_session.start()
+    local session_data = session.data
+    -- by uma_original_url session's field we distinguish enduser session previously redirected
+    -- to OP for authorization
+    session_data.uma_original_url = ngx.var.request_uri
+    session:save()
+
+    -- redirect to the /uma/gather_claims url endpoint
+    ngx.header["Cache-Control"] = "no-cache, no-store, max-age=0"
+    ngx.redirect(json.url)
+end
+
+-- call /uma_rp_get_rpt oxd API, handle errors
+local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
+
+    local requestBody = {
+        oxd_id = conf.oxd_id,
+        ticket = ticket
+    }
+
+    if state then
+        requestBody.state = state
+    end
+
+    if conf.require_id_token then
+        requestBody.claim_token = id_token_jwt
+        requestBody.claim_token_format = "http://openid.net/specs/openid-connect-core-1_0.html#IDToken"
+    end
+
+    local response = oxd.uma_rp_get_rpt(conf.oxd_url,
+        requestBody,
+        ptoken)
+    local status = response.status
+    local body = response.body
+
+    if status ~= 200 then
+        if conf.redirect_claim_gathering_url and status == 403 and body.error and body.error == "need_info" then
+            kong.log.debug("Starting claim gathering flow")
+            redirect_to_claim_url(conf, body.ticket)
+        end
+
+        return unexpected_error("Failed to get RPT token")
+    end
+
+    return body.access_token
 end
 
 function hooks.no_token_protected_path(self, conf, protected_path, method)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+    if conf.require_id_token then
+        return unexpected_error("Expect id_token")
+    end
+
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
 
@@ -122,14 +143,15 @@ function hooks.no_token_protected_path(self, conf, protected_path, method)
     return unexpected_error("check_access without RPT token, responds with access == \"granted\"")
 end
 
-function hooks.introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+local function get_ticket(self, conf, protected_path, method)
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
-    local introspect_rpt_response_data = try_introspect_rpt(conf, token, ptoken)
-    if not introspect_rpt_response_data.active then
-        return nil, 401, "Invalid access token provided in Authorization header"
+    local check_access_no_rpt_response = try_check_access(conf, protected_path, method, nil, ptoken)
+
+    if check_access_no_rpt_response.access == "denied" and check_access_no_rpt_response.ticket then
+        return check_access_no_rpt_response.ticket
     end
-    return introspect_rpt_response_data
+    return unexpected_error("check_access without RPT token, responds without ticket")
 end
 
 function hooks.build_cache_key(method, path, token)
@@ -144,8 +166,29 @@ function hooks.build_cache_key(method, path, token)
     return table.concat(t), true
 end
 
-function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, _, rpt)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
+function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
+    if conf.obtain_rpt then
+        local session = resty_session.start()
+
+        local ticket, state
+        if session.present then
+            local session_data = session.data
+            ticket, state = session_data.uma_ticket, session_data.uma_state
+            if ticket and state then
+                session_data.uma_state = nil
+                session_data.uma_ticket = nil
+                session:save()
+            end
+        end
+
+        if not ticket then
+            ticket = get_ticket(self, conf, protected_path, method)
+        end
+
+        local id_token = kong.ctx.shared.request_token
+        rpt =  get_rpt_by_ticket(self, conf, ticket, state, id_token)
+    end
+    local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local check_access_response = try_check_access(conf, protected_path, method, rpt, ptoken)
 
@@ -153,6 +196,42 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_handler(self, conf, hooks)
-end
+    local path = ngx.var.uri:match"^([^%s]+)"
+    if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then
+        kong.log.debug("Claim Redirect URI path (", path, ") is currently navigated -> Processing ticket response coming from OP")
 
+        local session = resty_session.start()
+
+        if not session.present then
+            kong.log.warn("request to the claim redirect response path but there's no session state found")
+            return kong.response.exit(400)
+        end
+
+        local session_data = session.data
+        local uma_original_url = session_data.uma_original_url
+        if not uma_original_url then
+            kong.log.warn("request to the claim redirect response path but there's no uma_original_url found")
+            return kong.response.exit(400)
+        end
+
+        local args = ngx.req.get_uri_args()
+        local ticket, state = args.ticket, args.state
+        if not ticket or not state then
+            kong.log.warn("missed ticket or state argument(s)")
+            return kong.response.exit(400, {message = "missed ticket or state argument(s)"})
+        end
+        session_data.uma_original_url = nil
+        session_data.uma_ticket = ticket
+        session_data.uma_state = state
+
+        -- TODO should be there PCT?
+        -- session_data.uma-pct = pct
+        session:save()
+
+        kong.log.debug("Got RPT and Claim flow completed -> Redirecting to original URL (", uma_original_url, ")")
+        kong.ctx.shared[self.metric_client_granted] = true
+        ngx.redirect(uma_original_url)
+    end
+
+    kong_auth_pep_common.access_pep_handler(self, conf, hooks)
+end

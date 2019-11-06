@@ -2,7 +2,7 @@ local BasePlugin = require "kong.plugins.base_plugin"
 local access = require "kong.plugins.gluu-oauth-pep.access"
 
 local handler = BasePlugin:extend()
-handler.PRIORITY = 999
+handler.PRIORITY = 996
 
 -- Your plugin handler's constructor. If you are extending the
 -- Base Plugin handler, it's only role is to instanciate itself
@@ -11,7 +11,6 @@ function handler:new()
     handler.super.new(self, "gluu-oauth-pep")
 
     local name_prefix = "gluu_oauth_"
-    self.metric_client_authenticated = name_prefix .. "client_authenticated"
     self.metric_client_granted = name_prefix .. "client_granted"
 end
 

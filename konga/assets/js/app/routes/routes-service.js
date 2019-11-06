@@ -17,7 +17,6 @@
          */
         var properties = {
           '013': {
-            name: '',
             hosts: [],
             protocols: [],
             methods: [],

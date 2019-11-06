@@ -159,5 +159,13 @@ module.exports.policies = {
 
   ClientsController: {
     "*": ['authenticated']
-  }
+  },
+
+  AuditLogController: {
+    '*': ['authenticated'],
+    'count': ['authenticated'],
+    'find': ['authenticated'],
+    'findOne': ['authenticated'],
+    'create': ['authenticated', 'isAdmin', 'addDataCreate']
+  },
 };

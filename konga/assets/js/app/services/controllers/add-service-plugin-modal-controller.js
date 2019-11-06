@@ -30,6 +30,7 @@
         $scope.close = function () {
           return $uibModalInstance.dismiss()
         };
+        $scope.checkAllow = checkAllow;
 
         /**
          * -------------------------------------------------------------
@@ -47,14 +48,19 @@
 
         function onAddPlugin(name) {
 
-          if (name == "gluu-oauth-pep") {
+          if (name == "gluu-oauth-auth") {
             $uibModalInstance.dismiss();
             return $state.go("services.oauth-plugin", {service_id: $scope.service.id});
           }
 
-          if (name == "gluu-uma-pep") {
+          if (name == "gluu-uma-auth") {
             $uibModalInstance.dismiss();
             return $state.go("services.uma-plugin", {service_id: $scope.service.id});
+          }
+
+          if (name == "gluu-openid-connect") {
+            $uibModalInstance.dismiss();
+            return MessageService.error("Not Allow! You need to configure it on Route.");
           }
 
           var modalInstance = $uibModal.open({
@@ -126,28 +132,46 @@
                 $scope.pluginGroups = groups.filter(function(group) {
                     return group.name !== "Metrics"
                   });
-                $log.debug("Plugin Groups", $scope.pluginGroups);
 
-                var flag = false;
-                $scope.existingPlugins.forEach(function(obj){
-                  if (obj == "gluu-oauth-pep") {
-                    $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = false;
-                    flag = true
-                  }
-                  if (obj == "gluu-uma-pep") {
-                    $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = false;
-                    flag = true
-                  }
-                });
-                if (flag == false) {
-                  $scope.pluginGroups[0].plugins['gluu-uma-pep'].isAllow = true;
-                  $scope.pluginGroups[0].plugins['gluu-oauth-pep'].isAllow = true;
-                }
+                delete $scope.pluginGroups[0].plugins['gluu-openid-connect'];
+                delete $scope.pluginGroups[6].plugins['gluu-oauth-pep'];
+                delete $scope.pluginGroups[6].plugins['gluu-uma-pep'];
+
+                $log.debug("Plugin Groups", $scope.pluginGroups);
               });
             })
             .catch(function (err) {
 
             })
+        }
+        
+        function checkAllow(key) {
+          var allow = true;
+          if (key === 'gluu-opa-pep') {
+            ['gluu-opa-pep', 'gluu-oauth-pep', 'gluu-uma-pep'].forEach(function (name) {
+              if ($scope.existingPlugins.indexOf(name) > -1) {
+                allow = false
+              }
+            })
+          }
+
+          if (key === 'gluu-oauth-auth') {
+            ['gluu-uma-auth', 'gluu-oauth-auth'].forEach(function (name) {
+              if ($scope.existingPlugins.indexOf(name) > -1) {
+                allow = false
+              }
+            })
+          }
+
+          if (key === 'gluu-uma-auth') {
+            ['gluu-uma-auth', 'gluu-opa-pep', 'gluu-oauth-auth', 'gluu-oauth-pep'].forEach(function (name) {
+              if ($scope.existingPlugins.indexOf(name) > -1) {
+                allow = false
+              }
+            })
+          }
+
+          return allow
         }
 
         getServicePlugins();

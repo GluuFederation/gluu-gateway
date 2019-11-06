@@ -19,6 +19,10 @@
             })
           },
 
+          getPluginsByContext: function (context, service_id) {
+            return $http.get('kong/' + context + '/' + service_id + '/plugins')
+          },
+
           add: function (data) {
             return $http.post('kong/plugins', data)
           },
@@ -51,12 +55,20 @@
             return $http.post('api/clients/oauth', data)
           },
 
+          addOPClient: function (data) {
+            return $http.post('api/clients/op', data)
+          },
+
           registerClientAndResources: function (data) {
             return $http.post('api/clients/uma', data)
           },
 
           updateResources: function (data) {
             return $http.put('api/clients/uma', data)
+          },
+
+          updateOPClient: function (data) {
+            return $http.put('api/clients/op', data)
           },
 
           addOAuthConsumerClient: function (data) {
@@ -73,6 +85,14 @@
 
           deletePEPClient: function (oxd_id, doWantDeleteClient) {
             return $http.delete('api/clients/uma/' + oxd_id + '/' + doWantDeleteClient)
+          },
+
+          getOPDiscoveryResponse: function (data) {
+            return $http.post('api/op_discovery', data)
+          },
+
+          deleteOPClient: function (data) {
+            return $http.post('api/clients/op/delete', data)
           },
         }
       }

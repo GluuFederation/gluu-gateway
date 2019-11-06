@@ -1,0 +1,27 @@
+<div class="modal-header primary">
+  <h4 class="modal-title" id="modal-title">
+    Consumer List
+    <a class="modal-close pull-right" ng-click="close()">
+      <i class="mdi mdi-close"></i>
+    </a>
+  </h4>
+</div>
+
+<div class="modal-body" id="modal-body">
+  <table class="table table-bordered table-striped">
+    <thead>
+    <tr>
+      <th>Consumer ID</th>
+      <th>Username</th>
+      <th>Custom ID</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr ng-repeat="(key, value) in consumers">
+      <td class="text-success">{{value.id}}</td>
+      <td>{{value.username}}</td>
+      <td>{{value.custom_id}}</td>
+    </tr>
+    </tbody>
+  </table>
+</div>

@@ -34,28 +34,22 @@
         <form name="PluginForm" novalidate>
           <div class="row">
             <div class="col-md-12">
-              <div class="col-md-12">
+              <div class="col-md-12" data-ng-disabled="!isAllowPEP"
+                   ng-class="{'disabled': !isAllowPEP}">
+                <div class="form-group has-feedback" ng-if="!isAllowPEP">
+                  <code> * Not allow you already configured gluu-opa-pep plugin</code>
+                </div>
                 <div class="form-group has-feedback">
-                  <label>1. OAUTH Scope expression configuration</label>
-                  <span class="help-block error-block basic-block">Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                  <label>1. OAUTH PEP Scope expression configuration</label> &nbsp;&nbsp;&nbsp;
+                  <input switch-on-text="Enabled" switch-off-text="Disabled" bs-switch type="checkbox" switch-size="small"
+                         ng-model="modelPlugin.isPEPEnabled" class="form-control"
+                         switch-change="modelPlugin.config.deny_by_default = modelPlugin.isPEPEnabled"/>
+
+                  <span class="help-block error-block basic-block">Enable first to configure OAuth PEP. Protect API paths by requiring specific OAuth Scopes for certain methods. Click on <code>Add Path</code> button to start.</span>
+                  <span>There is dynamic path facility. Click <a ng-click="showPathPossibilities()" href>here for possible dynamic path expressions</a></span>
                 </div>
-                <div class="form-group">
-                  <label class="col-sm-3 control-label">Ignore Scope
-                    <br>
-                    <em>
-                      <small class="help-block">optional</small>
-                    </em>
-                  </label>
-                  <div class="col-sm-9 check-toggle">
-                    <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                           ng-model="modelPlugin.config.ignore_scope" class="form-control"
-                           switch-change="modelPlugin.config.deny_by_default = !modelPlugin.config.ignore_scope"/>
-                    <p class="help-block">
-                      If yes then it will not check the token scope during authentication time.
-                    </p>
-                  </div>
-                </div>
-                <div class="form-group">
+                <div class="form-group" data-ng-disabled="!modelPlugin.isPEPEnabled"
+                     ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                   <label class="col-sm-3 control-label">Deny by default
                     <br>
                     <em>
@@ -72,8 +66,8 @@
                   </div>
                 </div>
                 <div class="row"></div>
-                <div data-ng-disabled="modelPlugin.config.ignore_scope"
-                          ng-class="{'disabled': modelPlugin.config.ignore_scope}">
+                <div data-ng-disabled="!modelPlugin.isPEPEnabled"
+                          ng-class="{'disabled': !modelPlugin.isPEPEnabled}">
                   <div class="row" ng-repeat="element in modelPlugin.config.oauth_scope_expression"
                        ng-init="pIndex = $index"
                        style="border: 1px dotted;">
@@ -105,7 +99,7 @@
                           <div class="row">
                             <div class="col-md-10">
                               <div class="form-group has-feedback">
-                                <tags-input ng-model="cond.httpMethods"
+                                <tags-input min-length="1" ng-model="cond.httpMethods"
                                             id="httpMethods{{pIndex}}{{$index}}"
                                             add-from-autocomplete-only="true"
                                             placeholder="Enter HTTP methods" required>
@@ -139,7 +133,7 @@
                               <input type="hidden" value="{{cond['scopes' + pIndex + $index + '0']}}"
                                      name="hdScope{{pIndex}}{{$index}}0"/>
                               <div class="form-group has-feedback">
-                                <tags-input ng-model="cond['scopes' + pIndex + $index + '0']"
+                                <tags-input min-length="1" ng-model="cond['scopes' + pIndex + $index + '0']"
                                             name="scope{{pIndex}}{{$index}}0"
                                             id="scopes{{pIndex}}{{$index}}"
                                             placeholder="Enter scopes" required>
@@ -173,7 +167,7 @@
               <div class="col-md-12">
                 <div class="form-group has-feedback">
                   <hr style="border: 3px solid #636355;"/>
-                  <label>2. Other configurations</label>
+                  <label>2. OAUTH Auth configurations</label>
                   <hr/>
                 </div>
               </div>
@@ -274,7 +268,7 @@
                   </p>
                 </div>
               </div>
-              <div class="form-group" data-ng-disabled="modelPlugin.config.deny_by_default" ng-class="{'disabled': modelPlugin.config.deny_by_default}">
+              <div class="form-group">
                 <label class="col-sm-3 control-label">Anonymous
                   <br/>
                   <em>
@@ -291,18 +285,31 @@
                 </div>
               </div>
               <div class="form-group">
-                <label class="col-sm-3 control-label">Hide credentials
-                  <br>
-                  <em>
-                    <small class="help-block">optional</small>
-                  </em>
-                </label>
+                <label class="col-sm-3 control-label">Pass credentials</label>
                 <div class="col-sm-9 check-toggle">
-                  <input switch-on-text="Yes" switch-off-text="No" bs-switch type="checkbox" switch-size="small"
-                         ng-model="modelPlugin.config.hide_credentials" class="form-control"/>
+                  <select class="form-control" id="max_id_token_age_type"
+                          ng-model="modelPlugin.config.pass_credentials"
+                          ng-options="value as value for value in passCredentials"></select>
                   <p class="help-block">
-                    An optional boolean value telling the plugin to hide the credential to the upstream API server. It
-                    will be removed by Kong before proxying the request
+                    It provide 3 behaviour. <code>pass</code>, <code>hide</code>and <code>phantom_token</code>. <code>pass</code> is used to pass authorization header as it is to Upstream API. <code>hide</code> is used to remove header at proxy so it will not available at Upstream API side. <code>phantom_token</code> is used to pass phantom token to Upstream API.
+                  </p>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Tags <br><em><small class="help-block">optional</small></em></label>
+                <div class="col-sm-9">
+                  <chips ng-model="modelPlugin.tags">
+                    <chip-tmpl>
+                      <div class="default-chip">
+                        {{chip}}
+                        <i class="mdi mdi-close" remove-chip></i>
+                      </div>
+                    </chip-tmpl>
+                    <input chip-control/>
+                  </chips>
+                  <p class="help-block">Tip: Press <code>Enter</code> to accept a value.</p>
+                  <p class="help-block">
+                    An optional set of strings associated with the Plugin, for grouping and filtering.
                   </p>
                 </div>
               </div>

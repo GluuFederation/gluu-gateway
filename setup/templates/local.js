@@ -31,7 +31,7 @@ module.exports = {
   /**
    * The default fallback URL to Kong's admin API.
    */
-  kong_admin_url: process.env.KONG_ADMIN_URL || '%(kongaKongAdminWebURL)s',
+  kong_admin_url: process.env.KONG_ADMIN_URL || '%(konga_kong_admin_web_url)s',
 
 
   connections: {
@@ -39,7 +39,7 @@ module.exports = {
       adapter: 'sails-postgresql',
       host: process.env.DB_HOST || 'localhost',
       user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || '%(pgPwd)s',
+      password: process.env.DB_PASSWORD || '%(pg_pwd)s',
       port: process.env.DB_PORT || 5432,
       database: process.env.DB_DATABASE || 'konga',
       poolSize: process.env.DB_POOLSIZE || 10,
@@ -52,25 +52,26 @@ module.exports = {
   },
 
   session: {
-    secret: '' // Add your own SECRET string here
+    secret: process.env.SESSION_SECRET || '' // Add your own SECRET string here
   },
 
   ssl: {
-    key: fs.readFileSync('%(kongSslKey)s'),
-    cert: fs.readFileSync('%(kongSslCert)s')
+    key: fs.readFileSync(process.env.SSL_KEY_PATH || '%(kong_ssl_key)s'),
+    cert: fs.readFileSync(process.env.SSL_CERT_PATH || '%(kong_ssl_cert)s')
   },
-  hookTimeout: 180000,
-  port: process.env.PORT || %(kongaPort)s,
-  environment: 'development',
+  hookTimeout: process.env.HOOK_TIMEOUT || 180000, // miliseconds
+  port: process.env.PORT || %(konga_port)s,
+  environment: 'production',
   log: {
-    level: 'info'
+    level: process.env.LOG_LEVEL || 'info'
   },
-  oxdWeb: '%(kongaOxdWeb)s',
-  opHost: '%(kongaOPHost)s',
-  oxdId: '%(kongaOxdId)s',
-  clientId: '%(kongaClientId)s',
-  clientSecret: '%(kongaClientSecret)s',
-  oxdVersion: '%(kongaOxdVersion)s',
-  ggVersion: '%(ggVersion)s',
-  explicitHost: 'localhost'
+  oxdWeb: process.env.OXD_SERVER_URL || '%(konga_oxd_web)s',
+  opHost: process.env.OP_SERVER_URL || '%(konga_op_host)s',
+  oxdId: process.env.OXD_ID || '%(konga_oxd_id)s',
+  clientId: process.env.CLIENT_ID || '%(konga_client_id)s',
+  clientSecret: process.env.CLIENT_SECRET || '%(konga_client_secret)s',
+  oxdVersion: process.env.OXD_SERVER_VERSION || '%(konga_oxd_version)s',
+  ggVersion: process.env.GG_VERSION || '%(gg_version)s',
+  postgresVersion: process.env.POSTGRES_VERSION || '%(postgres_version)s',
+  explicitHost: process.env.EXPLICIT_HOST || 'localhost',
 };

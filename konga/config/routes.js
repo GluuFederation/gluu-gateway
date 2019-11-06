@@ -33,6 +33,7 @@ module.exports.routes = {
     return res.view('homepage', {
       angularDebugEnabled: process.env.NODE_ENV == 'production' ? false : true,
       konga_version: sails.config.ggVersion,
+      postgres_version: sails.config.postgresVersion,
       accountActivated: req.query.activated ? true : false
     })
   },
@@ -92,14 +93,15 @@ module.exports.routes = {
   'GET /api/settings': 'SettingsController.find',
 
   // Client controller
-  'GET /api/clients/oauth/:oxd_id': 'ClientsController.getClient',
+  'POST /api/op_discovery': 'ClientsController.opDiscovery',
   'POST /api/clients/oauth': 'ClientsController.addGluuClientAuth',
   'POST /api/clients/uma': 'ClientsController.addGluuUMAPEP',
+  'POST /api/clients/op': 'ClientsController.addOPClient',
   'PUT /api/clients/uma': 'ClientsController.updateGluuUMAPEP',
+  'PUT /api/clients/op': 'ClientsController.updateOPClient',
   'POST /api/clients/consumer': 'ClientsController.addConsumerClient',
-  'DELETE /api/clients/consumer/:client_id/:doWantDeleteClient': 'ClientsController.deleteConsumerClient',
   'POST /api/clients/oauth/delete': 'ClientsController.deleteGluuClientAuth',
-  'DELETE /api/clients/uma/:oxd_id/:doWantDeleteClient': 'ClientsController.deleteGluuUMAPEP',
+  'POST /api/clients/op/delete': 'ClientsController.deleteOPClientComment',
 
   /**
    * Fallback to proxy

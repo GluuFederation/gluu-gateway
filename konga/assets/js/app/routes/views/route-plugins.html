@@ -46,23 +46,34 @@
       <raw-view data-item="item"></raw-view>
     </td>
     <th>
-      <a ui-sref="routes.uma-plugin({route_id: route.id})" data-ng-if="item.name == 'gluu-uma-pep'">
+      <a ui-sref="routes.uma-plugin({route_id: route.id})" data-ng-if="['gluu-uma-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a ui-sref="routes.oauth-plugin({route_id: route.id})" data-ng-if="item.name == 'gluu-oauth-pep'">
+      <a ui-sref="routes.oauth-plugin({route_id: route.id})" data-ng-if="['gluu-oauth-auth'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
-      <a href data-ng-if="item.name != 'gluu-uma-pep' && item.name != 'gluu-oauth-pep'" ng-click="onEditPlugin(item)">
+      <a ui-sref="routes.openid-plugin({route_id: route.id})" data-ng-if="['gluu-openid-connect'].indexOf(item.name) > -1">
         {{item.name}}
       </a>
+      <a href data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep', 'gluu-oauth-auth', 'gluu-uma-auth', 'gluu-openid-connect'].indexOf(item.name) == -1" ng-click="onEditPlugin(item)">
+        {{item.name}}
+      </a>
+      <span data-ng-if="['gluu-uma-pep', 'gluu-oauth-pep'].indexOf(item.name) >= 0">
+        {{item.name}}
+      </span>
     </th>
     <td>
       <a data-ng-if="item.consumer_id" data-ui-sref="consumers.edit({id:item.consumer_id})">{{item.consumer_id}}</a>
       <span data-ng-if="!item.consumer_id">All consumers</span>
     </td>
-    <td>{{item.created_at | date : format : timezone}}</td>
+    <td>{{item.created_at*1000 | date : format : timezone}}</td>
     <td>
-      <button class="btn btn-link btn-danger" ng-click="deletePlugin(item)">
+      <button data-ng-if="item.name == 'gluu-openid-connect'" type="button" ng-click="deleteOPClient(item)" class="btn btn-danger btn-link">
+        <i class="mdi mdi-delete"></i>
+        Delete
+      </button>
+
+      <button data-ng-if="['gluu-openid-connect'].indexOf(item.name) == -1" class="btn btn-link btn-danger" ng-click="deletePlugin(item)">
         <i class="mdi mdi-delete"></i>
         delete
       </button>

@@ -2,8 +2,8 @@
 -- PostgreSQL database dump
 --
 
--- Dumped from database version 10.3 (Ubuntu 10.3-1.pgdg14.04+1)
--- Dumped by pg_dump version 10.3 (Ubuntu 10.3-1.pgdg14.04+1)
+-- Dumped from database version 10.3
+-- Dumped by pg_dump version 10.3
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -75,48 +75,44 @@ ALTER TABLE public.konga_api_health_checks_id_seq OWNER TO postgres;
 
 ALTER SEQUENCE public.konga_api_health_checks_id_seq OWNED BY public.konga_api_health_checks.id;
 
-
 --
--- Name: konga_clients; Type: TABLE; Schema: public; Owner: postgres
+-- Name: konga_auditlogs; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE IF NOT EXISTS public.konga_clients (
-  id integer NOT NULL,
-  oxd_id text,
-  client_id text,
-  client_secret text,
-  context text,
-  data json,
-  "createdAt" timestamp with time zone,
-  "updatedAt" timestamp with time zone,
-  "createdUserId" integer,
-  "updatedUserId" integer
+CREATE TABLE IF NOT EXISTS public.konga_auditlogs (
+    id integer NOT NULL,
+    comment text,
+    route_id text,
+    data json,
+    "createdAt" timestamp with time zone,
+    "updatedAt" timestamp with time zone,
+    "createdUserId" integer,
+    "updatedUserId" integer
 );
 
 
-ALTER TABLE public.konga_clients OWNER TO postgres;
+ALTER TABLE public.konga_auditlogs OWNER TO postgres;
 
 --
--- Name: konga_clients_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: konga_auditlogs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE IF NOT EXISTS public.konga_clients_id_seq
-  AS integer
-  START WITH 1
-  INCREMENT BY 1
-  NO MINVALUE
-  NO MAXVALUE
-  CACHE 1;
+CREATE SEQUENCE IF NOT EXISTS public.konga_auditlogs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 
-ALTER TABLE public.konga_clients_id_seq OWNER TO postgres;
+ALTER TABLE public.konga_auditlogs_id_seq OWNER TO postgres;
 
 --
--- Name: konga_clients_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: konga_auditlogs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.konga_clients_id_seq OWNED BY public.konga_clients.id;
-
+ALTER SEQUENCE public.konga_auditlogs_id_seq OWNED BY public.konga_auditlogs.id;
 
 --
 -- Name: konga_email_transports; Type: TABLE; Schema: public; Owner: postgres
@@ -227,7 +223,7 @@ ALTER TABLE public.konga_kong_snapshot_schedules OWNER TO postgres;
 -- Name: konga_kong_snapshot_schedules_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.konga_kong_snapshot_schedules_id_seq
+CREATE SEQUENCE IF NOT EXISTS public.konga_kong_snapshot_schedules_id_seq
   AS integer
   START WITH 1
   INCREMENT BY 1
@@ -418,13 +414,11 @@ ALTER SEQUENCE public.konga_users_id_seq OWNED BY public.konga_users.id;
 
 ALTER TABLE ONLY public.konga_api_health_checks ALTER COLUMN id SET DEFAULT nextval('public.konga_api_health_checks_id_seq'::regclass);
 
-
 --
--- Name: konga_clients id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: konga_auditlogs id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.konga_clients ALTER COLUMN id SET DEFAULT nextval('public.konga_clients_id_seq'::regclass);
-
+ALTER TABLE ONLY public.konga_auditlogs ALTER COLUMN id SET DEFAULT nextval('public.konga_auditlogs_id_seq'::regclass);
 
 --
 -- Name: konga_email_transports id; Type: DEFAULT; Schema: public; Owner: postgres
@@ -482,12 +476,13 @@ ALTER TABLE ONLY public.konga_users ALTER COLUMN id SET DEFAULT nextval('public.
 COPY public.konga_api_health_checks (id, api_id, api, health_check_endpoint, notification_endpoint, active, data, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
 \.
 
+--
+-- Data for Name: konga_auditlogs; Type: TABLE DATA; Schema: public; Owner: postgres
+--
 
---
--- Data for Name: konga_clients; Type: TABLE DATA; Schema: public; Owner: postgres
---
-COPY public.konga_clients (id, oxd_id, client_id, client_secret, context, data, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
+COPY public.konga_auditlogs (id, comment, route_id, data, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
 \.
+
 
 --
 -- Delete data if exist
@@ -516,7 +511,7 @@ DELETE FROM public.konga_kong_nodes;
 --
 
 COPY public.konga_kong_nodes (id, name, kong_admin_url, kong_api_key, kong_version, health_checks, health_check_details, active, "createdAt", "updatedAt", "createdUserId", "updatedUserId") FROM stdin;
-1	default	http://localhost:8001		0-14-x	f	\N	t	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
+1	default	http://localhost:8001		1.3.x	f	\N	t	2018-04-24 15:51:08+05:30	2018-04-24 15:51:08+05:30	\N	\N
 \.
 
 
@@ -572,12 +567,11 @@ COPY public.konga_users (id, username, email, "firstName", "lastName", admin, no
 
 SELECT pg_catalog.setval('public.konga_api_health_checks_id_seq', 1, false);
 
-
 --
--- Name: konga_clients_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: konga_auditlogs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.konga_clients_id_seq', 1, false);
+SELECT pg_catalog.setval('public.konga_auditlogs_id_seq', 1, false);
 
 
 --
@@ -654,14 +648,14 @@ END IF;
 END$$;
 
 --
--- Name: konga_clients konga_clients_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: konga_auditlogs konga_auditlogs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
 DO $$
 BEGIN
-IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_clients_pkey')
+IF NOT EXISTS(SELECT 1 FROM pg_constraint WHERE conname = 'konga_auditlogs_pkey')
 THEN
-ALTER TABLE ONLY public.konga_clients ADD CONSTRAINT konga_clients_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.konga_auditlogs ADD CONSTRAINT konga_auditlogs_pkey PRIMARY KEY (id);
 END IF;
 END$$;
 

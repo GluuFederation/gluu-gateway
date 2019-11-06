@@ -9,9 +9,9 @@
   angular.module('frontend.plugins')
     .controller('RoutePluginsController', [
       '_', '$scope', '$stateParams', '$log', '$state', 'RoutesService', 'PluginsService',
-      '$uibModal', 'DialogService', 'InfoService', '_plugins',
+      '$uibModal', 'DialogService', 'InfoService', '_plugins', 'MessageService', '$rootScope',
       function controller(_, $scope, $stateParams, $log, $state, RoutesService, PluginsService,
-                          $uibModal, DialogService, InfoService, _plugins) {
+                          $uibModal, DialogService, InfoService, _plugins, MessageService, $rootScope) {
 
 
         $scope.plugins = _plugins.data;
@@ -20,6 +20,7 @@
         $scope.deletePlugin = deletePlugin;
         $scope.updatePlugin = updatePlugin;
         $scope.togglePlugin = togglePlugin;
+        $scope.deleteOPClient = deleteOPClient;
         $scope.search = ''
 
         $log.debug("Plugins", $scope.plugins.data);
@@ -79,6 +80,57 @@
           })
         }
 
+        function deleteOPClient(item) {
+          var createConsumer = $uibModal.open({
+            animation: true,
+            ariaLabelledBy: 'modal-title',
+            ariaDescribedBy: 'modal-body',
+            templateUrl: 'js/app/plugins/comment-modal.html',
+            controller: function ($scope, $rootScope, $log, $uibModalInstance, MessageService) {
+              $scope.close = close;
+              $scope.submit = submit;
+              $scope.comment = "";
+
+              function submit(valid) {
+                if (!valid) {
+                  return;
+                }
+
+                if (!$scope.comment) {
+                  MessageService.error('Comment required!');
+                  return
+                }
+                $uibModalInstance.close($scope.comment);
+              }
+
+              function close() {
+                $uibModalInstance.dismiss();
+              }
+            },
+            controllerAs: '$ctrl',
+          });
+
+          createConsumer.result.then(function (comment) {
+            PluginsService
+              .delete(item.id)
+              .then(function (cResponse) {
+                PluginsService
+                  .deleteOPClient({comment: comment, route_id: item.route.id})
+                  .then(function (pResponse) {
+                    MessageService.success("Plugin deleted successfully");
+                    $rootScope.$broadcast('plugin.added');
+                  })
+                  .catch(function (error) {
+                    console.log(error);
+                    MessageService.error((error.data && error.data.message) || "Failed to add comment");
+                  });
+              })
+              .catch(function (error) {
+                console.log(error);
+                MessageService.error((error.data && error.data.message) || "Failed to delete Plugin");
+              });
+          })
+        }
 
         function deletePlugin(plugin) {
           DialogService.prompt(
@@ -115,7 +167,7 @@
         }
 
         function fetchPlugins() {
-          PluginsService.load({route_id: $stateParams.route_id})
+          RoutesService.plugins($stateParams.route_id)
             .then(function (res) {
               $scope.plugins = res.data
             })

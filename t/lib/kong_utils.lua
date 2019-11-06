@@ -1,11 +1,12 @@
 local utils = require"test_utils"
+local JSON = require"JSON"
 local sh, stdout, stderr, sleep, sh_ex, sh_until_ok =
     utils.sh, utils.stdout, utils.stderr, utils.sleep, utils.sh_ex, utils.sh_until_ok
 
 
 local _M = {}
 
-local kong_image = "kong:0.14.1-alpine"
+local kong_image = "kong:1.3.0-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
 --local oxd_image = "gluu/oxd:4.0-beta-1"
@@ -23,6 +24,7 @@ end
 local function build_plugins_list(plugins)
     assert(type(plugins) == "table")
     local plugin_list = {}
+    plugin_list[1] = [[bundled]]
     for k,v in pairs(plugins) do
         plugin_list[#plugin_list + 1] = k
     end
@@ -57,6 +59,20 @@ local function build_modules_volumes(modules)
     print("modules volumes: ", result)
     return result
 end
+
+local function build_volumes(volumes)
+    assert(type(volumes) == "table")
+    local items = {}
+    for k,v in pairs(volumes) do
+        items[#items + 1] =
+        " -v " .. v .. ":" .. k .. " "
+    end
+
+    local result = table.concat(items)
+    print("volumes: ", result)
+    return result
+end
+
 
 local function check_container_is_running(id, name)
     -- https://stackoverflow.com/questions/24544288/how-to-detect-if-docker-run-succeeded-programmatically
@@ -96,6 +112,7 @@ _M.kong_postgress_custom_plugins = function(opts)
 
     local plugins = opts.plugins or {}
     local modules = opts.modules or {}
+    local volumes = opts.volumes or {}
 
     -- run in foreground to get a chance to finish
     sh("docker run --rm ",
@@ -108,11 +125,12 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
         " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
-        " -e KONG_PLUGINS=\"bundled\",", build_plugins_list(plugins), " ",
+        " -e KONG_PLUGINS=", build_plugins_list(plugins), " ",
         build_plugins_volumes(plugins),
         build_modules_volumes(modules),
+        build_volumes(volumes),
         opts.kong_image or kong_image,
-        " kong migrations up"
+        " kong migrations bootstrap"
     )
 
     -- TODO something better?
@@ -131,9 +149,10 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
         " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
-        " -e KONG_PLUGINS=\"bundled\",", build_plugins_list(plugins), " ",
+        " -e KONG_PLUGINS=", build_plugins_list(plugins), " ",
         build_plugins_volumes(plugins),
         build_modules_volumes(modules),
+        build_volumes(volumes),
         opts.kong_image or kong_image
     )
 
@@ -188,5 +207,57 @@ _M.oxd_mock = function(model, image)
 
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.oxd_port)
 end
+
+_M.opa = function()
+    local image = "openpolicyagent/opa:0.10.5"
+    local ctx = _G.ctx
+    ctx.opa_id = stdout("docker run -p 8181 -d ",
+        " --network=", ctx.network_name,
+        " --name opa ", -- TODO avoid hardcoded name
+        image,
+        " run --server "
+    )
+
+    check_container_is_running(ctx.opa_id, "opa")
+
+    ctx.opa_port =
+        stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8181/tcp\") 0).HostPort}}' ", ctx.opa_id)
+
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.opa_port)
+end
+
+_M.configure_metrics_plugin = function(plugin_config)
+    local payload = {
+        name = "gluu-metrics",
+        config = plugin_config,
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"enable metrics plugin globally"
+    local res, err = sh_ex([[
+        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+end
+
+_M.configure_ip_restrict_plugin = function(create_service_response, plugin_config)
+    local payload = {
+        name = "ip-restriction",
+        config = plugin_config,
+        service = { id = create_service_response.id},
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"enable ip restriction plugin for the Service"
+    local res, err = sh_ex([[
+        curl --fail -sS -X POST --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+
+    return JSON:decode(res)
+end
+
 
 return _M

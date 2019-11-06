@@ -12,6 +12,30 @@ var httpRequest = require('request-promise');
 module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
 
   // Register client
+  opDiscovery: function (req, res) {
+    if (!req.body.op_url) {
+      return res.status(400).send({message: "OP Server URL is required"});
+    }
+
+    const op_discovery_url = req.body.op_url + '/.well-known/openid-configuration'
+    const option = {
+      method: 'POST',
+      uri: op_discovery_url,
+      resolveWithFullResponse: true,
+      json: true
+    };
+
+    return httpRequest(option)
+      .then(function (response) {
+        res.send(response.body);
+      })
+      .catch(function (error) {
+        sails.log(new Date(), '----- Error OP Discovery -----', op_discovery_url, error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // Register client
   registerClient: function (clientRequest) {
     return new Promise(function (resolve, reject) {
       // Create new client
@@ -20,7 +44,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         uri: clientRequest.oxd_url + '/register-site',
         body: {
           op_host: clientRequest.op_host || sails.config.opHost,
-          authorization_redirect_uri: clientRequest.authorization_redirect_uri || 'https://client.example.com/cb',
+          redirect_uris: clientRequest.redirect_uris || ['https://client.example.com/cb'],
           client_name: clientRequest.client_name || 'gg-client',
           client_id: clientRequest.client_id || '',
           client_secret: clientRequest.client_secret || '',
@@ -53,26 +77,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     });
   },
 
-  // Get Client info
-  getClient: function (req, res) {
-    return sails.models.client
-      .findOne({
-        oxd_id: req.params.oxd_id
-      })
-      .then(function (oClient) {
-        if (!oClient) {
-          sails.log(new Date(), "Failed to fetch client data");
-          return res.status(500).send("Failed to fetch client data");
-        }
-
-        return res.status(200).send(oClient);
-      })
-      .catch(function (error) {
-        sails.log(new Date(), error);
-        return res.status(500).send("Failed to fetch client data");
-      });
-  },
-
   // User to register client for OAuth plugin
   addGluuClientAuth: function (req, res) {
     // Existing client id and secret
@@ -94,7 +98,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     const option = {
       op_host: body.op_host,
       oxd_url: body.oxd_url,
-      authorization_redirect_uri: 'https://client.example.com/cb',
       client_name: body.client_name || 'gg-oauth-client',
       client_id: body.client_id || '',
       client_secret: body.client_secret || ''
@@ -109,6 +112,7 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         })
       })
       .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
@@ -142,7 +146,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
         const option = {
           op_host: body.op_host,
           oxd_url: body.oxd_url,
-          authorization_redirect_uri: 'https://client.example.com/cb',
           client_name: body.client_name || 'gg-uma-client',
           client_id: body.client_id || '',
           client_secret: body.client_secret || '',
@@ -212,23 +215,8 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to register resources"});
         }
 
-        return sails.models.client
-          .create({
-            oxd_id: umaProtect.oxd_id,
-            client_id: opClient.client_id,
-            client_secret: opClient.client_secret,
-            context: 'GLUU-UMA-PEP',
-            data: body.uma_scope_expression
-          })
-      })
-      .then(function (dbClient) {
-        if (!dbClient.oxd_id) {
-          sails.log(new Date(), "Failed to add client and resources in konga db", dbClient);
-          return Promise.reject({message: "Failed to add client and resources in konga db"});
-        }
-
         return res.status(200).send({
-          oxd_id: dbClient.oxd_id,
+          oxd_id: opClient.oxd_id,
           client_id: opClient.client_id,
           client_secret: opClient.client_secret
         });
@@ -247,13 +235,13 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
     const option = {
       op_host: body.op_host,
       oxd_url: body.oxd_url,
-      authorization_redirect_uri: 'https://client.example.com/cb',
       client_name: body.client_name || 'gg-oauth-consumer-client',
       client_id: body.client_id || '',
       client_secret: body.client_secret || '',
       access_token_as_jwt: body.access_token_as_jwt || false,
       rpt_as_jwt: body.rpt_as_jwt || false,
       access_token_signing_alg: body.access_token_signing_alg || 'RS256',
+      scope: body.scope
     };
 
     this.registerClient(option)
@@ -264,28 +252,137 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to register client"});
         }
 
-        return sails.models.client
-          .create({
-            oxd_id: clientInfo.oxd_id,
-            client_id: clientInfo.client_id,
-            client_secret: clientInfo.client_secret,
-            context: 'CONSUMER'
-          })
-      })
-      .then(function (dbClient) {
-        if (!dbClient.oxd_id) {
-          sails.log(new Date(), "Failed to add client and resources in konga db", dbClient);
-          return Promise.reject({message: "Failed to add client and resources in konga db"});
-        }
-
         return res.status(200).send({
-          oxd_id: dbClient.oxd_id,
+          oxd_id: opClient.oxd_id,
           client_id: opClient.client_id,
           client_secret: opClient.client_secret
         });
       })
       .catch(function (error) {
-        sails.log(new Date(), '--- addOAuthConsumerClient ---', error);
+        sails.log(new Date(), '--- addConsumerClient ---', error);
+        return res.status(500).send(error);
+      });
+  },
+
+  // User to register client for OpenID Connect plugin
+  addOPClient: function (req, res) {
+    const body = req.body;
+
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
+    }
+
+    if (!body.comment) {
+      return res.status(400).send({message: "Comment is required"});
+    }
+
+    // Create new client
+    const reqBody = {
+      op_host: body.op_host,
+      oxd_url: body.oxd_url,
+      redirect_uris: body.redirect_uris || ['https://client.example.com/cb'],
+      client_name: body.client_name || 'gg-openid-connect-client',
+      post_logout_redirect_uris: body.post_logout_redirect_uris || [],
+      scope: body.scope,
+      acr_values: body.acr_values || [],
+      grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
+      claims_redirect_uri: body.claims_redirect_uri || [],
+    };
+
+    const option = {
+      method: 'POST',
+      uri: reqBody.oxd_url + '/register-site',
+      body: reqBody,
+      resolveWithFullResponse: true,
+      json: true
+    };
+
+    sails.log(new Date(), "--------------OXD API Call----------------");
+    sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/register-site'} -d '${JSON.stringify(option.body)}'`);
+
+    var opClient;
+    return httpRequest(option)
+      .then(function (response) {
+        opClient = response.body;
+        if (!opClient.client_id && !opClient.client_secret && !opClient.oxd_id) {
+          sails.log(new Date(), "Failed to register client", opClient);
+          return Promise.reject({message: "Failed to register client"});
+        }
+
+        if (!(body.uma_scope_expression && body.uma_scope_expression.length > 0)) {
+          return Promise.resolve(response)
+        }
+
+        var option = {
+          method: 'POST',
+          uri: body.oxd_url + '/get-client-token',
+          body: {
+            op_host: body.op_host,
+            client_id: opClient.client_id,
+            client_secret: opClient.client_secret,
+            scope: ['openid', 'oxd']
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option)
+          .then(function (response) {
+            var clientToken = response.body;
+            var option = {
+              method: 'POST',
+              uri: body.oxd_url + '/uma-rs-protect',
+              body: {
+                oxd_id: opClient.oxd_id,
+                resources: body.uma_scope_expression
+              },
+              headers: {
+                Authorization: 'Bearer ' + clientToken.access_token
+              },
+              resolveWithFullResponse: true,
+              json: true
+            };
+
+            sails.log(new Date(), "--------------OXD API Call----------------");
+            sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+
+            return httpRequest(option);
+          });
+      })
+      .then(function (response) {
+        var result = response.body;
+        if (!result.oxd_id) {
+          sails.log(new Date(), "Failed to update resources", response);
+          return Promise.reject({message: "Failed to update resources"});
+        }
+
+        return sails.models.auditlog
+          .create({
+            comment: body.comment,
+            route_id: body.route_id
+          })
+      })
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
+        }
+
+        return res.send({
+          oxd_id: opClient.oxd_id,
+          client_id: opClient.client_id,
+          client_secret: opClient.client_secret
+        })
+      })
+      .catch(function (error) {
+        sails.log(new Date(), error);
         return res.status(500).send(error);
       });
   },
@@ -359,18 +456,6 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
           return Promise.reject({message: "Failed to update resources"});
         }
 
-        return sails.models.client
-          .update({
-            oxd_id: umaProtect.oxd_id
-          }, {
-            data: body.uma_scope_expression
-          });
-      })
-      .then(function (dbClient) {
-        if (dbClient.length < 1) {
-          sails.log(new Date(), "Failed to update client in konga db", dbClient);
-          return Promise.reject({message: "Failed to update client in konga db"});
-        }
         return res.status(200).send({
           oxd_id: body.oxd_id
         });
@@ -381,109 +466,152 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       });
   },
 
-  // delete consumer client
-  deleteConsumerClient: function (req, res) {
-    var kongaDBClient;
-    // doWantDeleteClient=true Delete client from GG and OXD
-    if (req.params.doWantDeleteClient == "true") {
-      return sails.models.client
-        .findOne({
-          client_id: req.params.client_id
-        })
-        .then(function (oClient) {
-          kongaDBClient = oClient;
+  // User to update client for OpenID Connect plugin
+  updateOPClient: function (req, res) {
+    // Existing client id and secret
+    const body = req.body;
 
-          if (!kongaDBClient) {
-            sails.log(new Date(), "Client does not exists in GG");
-            return Promise.reject({message: "Client does not exists in GG"});
-          }
-
-          if (kongaDBClient.oxd_id == sails.config.oxdId) {
-            sails.log(new Date(), "Not allow to delete GG Admin login client");
-            return Promise.reject({message: "Not allow to delete GG Admin login client"});
-          }
-
-          var option = {
-            method: 'POST',
-            uri: sails.config.oxdWeb + '/get-client-token',
-            body: {
-              op_host: sails.config.opHost,
-              client_id: kongaDBClient.client_id,
-              client_secret: kongaDBClient.client_secret,
-              scope: ['openid', 'oxd']
-            },
-            resolveWithFullResponse: true,
-            json: true
-          };
-
-          sails.log(new Date(), "--------------OXD API Call----------------");
-          sails.log(new Date(), ` $ curl -k -X POST ${sails.config.oxdWeb + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
-
-          return httpRequest(option);
-        })
-        .then(function (response) {
-          var clientToken = response.body;
-
-          var option = {
-            method: 'POST',
-            uri: sails.config.oxdWeb + '/remove-site',
-            body: {
-              oxd_id: kongaDBClient.oxd_id
-            },
-            headers: {
-              Authorization: 'Bearer ' + clientToken.access_token
-            },
-            resolveWithFullResponse: true,
-            json: true
-          };
-
-          sails.log(new Date(), "--------------OXD API Call----------------");
-          sails.log(new Date(), ` $ curl -k -X POST ${sails.config.oxdWeb + '/remove-site'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
-
-          return httpRequest(option);
-        })
-        .then(function (response) {
-          var deletedClient = response.body;
-
-          if (!deletedClient.oxd_id) {
-            sails.log(new Date(), 'Failed to delete client from OXD', deletedClient);
-            return Promise.reject({message: "Failed to delete client from OXD"});
-          }
-
-          return sails.models.client
-            .destroy({
-              oxd_id: deletedClient.oxd_id
-            });
-        })
-        .then(function (deletedClient) {
-          if (deletedClient.length <= 0) {
-            sails.log(new Date(), 'Failed to delete client from GG', deletedClient);
-            return Promise.reject({message: "Failed to delete client from GG"});
-          }
-
-          return res.status(200).send(deletedClient);
-        })
-        .catch(function (error) {
-          sails.log(new Date(), error);
-          return res.status(500).send(error);
-        });
+    if (!body.op_host) {
+      return res.status(400).send({message: "OP Server is required"});
     }
 
-    // doWantDeleteClient=false Delete client from GG
-    return sails.models.client
-      .findOne({
-        client_id: req.params.client_id
+    if (!body.oxd_id) {
+      sails.log(new Date(), "Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide oxd_id to update resources"});
+    }
+
+    if (!body.client_id) {
+      sails.log(new Date(), "Provide client_id to update resources");
+      return res.status(500).send({message: "Provide client_id to update resources"});
+    }
+
+    if (!body.client_secret) {
+      sails.log(new Date(), "Provide oxd_id to update resources");
+      return res.status(500).send({message: "Provide client_secret to update resources"});
+    }
+
+    if (!body.oxd_url) {
+      return res.status(400).send({message: "OXD Server is required"});
+    }
+
+    if (!body.comment) {
+      return res.status(400).send({message: "Comment is required"});
+    }
+
+    var option = {
+      method: 'POST',
+      uri: body.oxd_url + '/get-client-token',
+      body: {
+        op_host: body.op_host,
+        client_id: body.client_id,
+        client_secret: body.client_secret,
+        scope: ['openid', 'oxd']
+      },
+      resolveWithFullResponse: true,
+      json: true
+    };
+    sails.log(new Date(), "--------------OXD API Call----------------");
+    sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
+    var clientATToken;
+    return httpRequest(option)
+      .then(function (response) {
+        var clientToken = response.body;
+        clientATToken = clientToken.access_token;
+
+        // Create new client
+        const reqBody = {
+          oxd_id: body.oxd_id,
+          op_host: body.op_host,
+          oxd_url: body.oxd_url,
+          redirect_uris: body.redirect_uris || ['https://client.example.com/cb'],
+          post_logout_redirect_uris: body.post_logout_redirect_uris,
+          scope: body.scope,
+          acr_values: body.acr_values || [],
+          grant_types: ['client_credentials', 'authorization_code', 'refresh_token'],
+          claims_redirect_uri: body.claims_redirect_uri || [],
+        };
+
+        const option = {
+          method: 'POST',
+          uri: reqBody.oxd_url + '/update-site',
+          body: reqBody,
+          headers: {
+            Authorization: 'Bearer ' + clientToken.access_token
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/update-site'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option)
       })
-      .then(function (oClient) {
-        if (oClient) {
-          // delete client from GG
-          sails.models.client
-            .destroy({oxd_id: oClient.oxd_id})
-            .then(function (deleteClient) {
-              sails.log(new Date(), 'deleteClient:', deleteClient);
-            });
+      .then(function (response) {
+        if (!(body.uma_scope_expression && body.uma_scope_expression.length > 0)) {
+          return Promise.resolve(response)
         }
-        return res.status(200).send();
+
+        var reqBody = {};
+        if (body.alreadyAddedUMAExpression) {
+          reqBody = {
+            oxd_id: body.oxd_id,
+            resources: body.uma_scope_expression,
+            overwrite: true
+          }
+        } else {
+          reqBody = {
+            oxd_id: body.oxd_id,
+            resources: body.uma_scope_expression
+          }
+        }
+
+        var option = {
+          method: 'POST',
+          uri: body.oxd_url + '/uma-rs-protect',
+          body: reqBody,
+          headers: {
+            Authorization: 'Bearer ' + clientATToken
+          },
+          resolveWithFullResponse: true,
+          json: true
+        };
+
+        sails.log(new Date(), "--------------OXD API Call----------------");
+        sails.log(new Date(), ` $ curl -k -X POST ${body.oxd_url + '/uma-rs-protect'} -H 'Authorization: Bearer ${clientATToken}' -d '${JSON.stringify(option.body)}'`);
+
+        return httpRequest(option)
+          .catch(function(e){
+            if (e.error && e.error.error === "uma_protection_exists") {
+              option.body.overwrite = true;
+              return httpRequest(option)
+            }
+
+            return Promise.reject({message: "Failed to register client"});
+          });
+      })
+      .then(function (response) {
+        var result = response.body;
+        if (!result.oxd_id) {
+          sails.log(new Date(), "Failed to update resources or update site", result);
+          return Promise.reject({message: "Failed to update resources"});
+        }
+
+        return sails.models.auditlog
+          .create({
+            comment: body.comment,
+            route_id: body.route_id
+          })
+      })
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
+        }
+
+        return res.send({
+          oxd_id: body.oxd_id
+        })
       })
       .catch(function (error) {
         sails.log(new Date(), error);
@@ -569,108 +697,33 @@ module.exports = _.merge(_.cloneDeep(require('../base/Controller')), {
       });
   },
 
-  // delete client from oxd for PEP plugin
-  deleteGluuUMAPEP: function (req, res) {
-    var kongaDBClient;
-
-    // doWantDeleteClient=true Delete client from GG and OXD
-    if (req.params.doWantDeleteClient == "true") {
-      return sails.models.client
-        .findOne({
-          oxd_id: req.params.oxd_id
-        })
-        .then(function (oClient) {
-          kongaDBClient = oClient;
-          if (!kongaDBClient) {
-            sails.log(new Date(), "Client does not exists in GG");
-            return Promise.reject({message: "Client does not exists in GG"});
-          }
-
-          if (kongaDBClient.oxd_id == sails.config.oxdId) {
-            sails.log(new Date(), "Not allow to delete GG Admin login client");
-            return Promise.reject({message: "Not allow to delete GG Admin login client"});
-          }
-
-          var option = {
-            method: 'POST',
-            uri: sails.config.oxdWeb + '/get-client-token',
-            body: {
-              op_host: sails.config.opHost,
-              client_id: kongaDBClient.client_id,
-              client_secret: kongaDBClient.client_secret,
-              scope: ['openid', 'oxd']
-            },
-            resolveWithFullResponse: true,
-            json: true
-          };
-
-          sails.log(new Date(), "--------------OXD API Call----------------");
-          sails.log(new Date(), ` $ curl -k -X POST ${sails.config.oxdWeb + '/get-client-token'} -d '${JSON.stringify(option.body)}'`);
-
-          return httpRequest(option);
-        })
-        .then(function (response) {
-          var clientToken = response.body;
-
-          var option = {
-            method: 'POST',
-            uri: sails.config.oxdWeb + '/remove-site',
-            body: {
-              oxd_id: kongaDBClient.oxd_id
-            },
-            headers: {
-              Authorization: 'Bearer ' + clientToken.access_token
-            },
-            resolveWithFullResponse: true,
-            json: true
-          };
-
-          sails.log(new Date(), "--------------OXD API Call----------------");
-          sails.log(new Date(), ` $ curl -k -X POST ${sails.config.oxdWeb + '/remove-site'} -H 'Authorization: Bearer ${clientToken.access_token}' -d '${JSON.stringify(option.body)}'`);
-
-          return httpRequest(option);
-        })
-        .then(function (response) {
-          var deletedClient = response.body;
-
-          if (!deletedClient.oxd_id) {
-            sails.log(new Date(), 'Failed to delete client from oxd', deletedClient);
-            return Promise.reject({message: "Failed to delete client from oxd"});
-          }
-          return sails.models.client
-            .destroy({
-              oxd_id: deletedClient.oxd_id
-            });
-        })
-        .then(function (deletedClient) {
-          if (deletedClient.length <= 0) {
-            sails.log(new Date(), 'Failed to delete client from GG', deletedClient);
-            return Promise.reject({message: "Failed to delete client from GG"});
-          }
-
-          return res.status(200).send(deletedClient);
-        })
-        .catch(function (error) {
-          sails.log(new Date(), error);
-          return res.status(500).send(error);
-        });
+  // User to update client for OpenID Connect plugin
+  deleteOPClientComment: function (req, res) {
+    // Existing client id and secret
+    const body = req.body;
+    if (!body.route_id) {
+      sails.log(new Date(), "Provide route_id to add comment");
+      return res.status(500).send({message: "Provide route_id to add comment"});
     }
 
-    // doWantDeleteClient=false Delete client from GG
-    return sails.models.client
-      .findOne({
-        oxd_id: req.params.oxd_id
+    if (!body.comment) {
+      return res.status(500).send({message: "Comment is required"});
+    }
+
+    return sails.models.auditlog
+      .create({
+        comment: body.comment,
+        route_id: body.route_id
       })
-      .then(function (oClient) {
-        if (oClient) {
-          // delete client from GG
-          sails.models.client
-            .destroy({oxd_id: oClient.oxd_id})
-            .then(function (deleteClient) {
-              sails.log(new Date(), 'deleteClient:', deleteClient);
-            });
+      .then(function (auditlog) {
+        if (!auditlog.comment) {
+          sails.log(new Date(), "Failed to add log", auditlog);
+          return Promise.reject({message: "Failed to add log"});
         }
-        return res.status(200).send();
+
+        return res.send({
+          oxd_id: body.oxd_id
+        })
       })
       .catch(function (error) {
         sails.log(new Date(), error);

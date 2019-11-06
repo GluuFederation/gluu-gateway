@@ -1,5 +1,5 @@
-local oxd = require "gluu.oxdweb"
-local kong_auth_pep_common = require "gluu.kong-auth-pep-common"
+local kong_auth_pep_common = require "gluu.kong-common"
+local path_wildcard_tree = require"gluu.path-wildcard-tree"
 local pl_tablex = require "pl.tablex"
 local logic = require "rucciva.json_logic"
 
@@ -32,72 +32,13 @@ end
 
 local hooks = {}
 
---- Fetch oauth scope expression based on path and http methods
--- Details: https://github.com/GluuFederation/gluu-gateway/issues/179#issuecomment-403453890
--- @param self: Kong plugin object
--- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
--- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
--- @param method: requested http method Example: GET
--- @return json expression Example: {path: "/posts", ...}
-function hooks.get_path_by_request_path_method(self, conf, path, method)
-    local exp = conf.oauth_scope_expression
-    -- TODO the complexity is O(N), think how to optimize
-    local found_paths = {}
-    for i = 1, #exp do
-        if kong_auth_pep_common.is_path_match(path, exp[i]["path"]) then
-            found_paths[#found_paths + 1] = exp[i]
-        end
-    end
+local function strip_method(path)
 
-    for i = 1, #found_paths do
-        local conditions = found_paths[i].conditions
-        for k = 1, #conditions do
-            local rule = conditions[k]
-            if pl_tablex.find(rule.httpMethods, method) then
-                return found_paths[i].path, rule.scope_expression
-            end
-        end
-    end
-
-    return nil
 end
 
 function hooks.no_token_protected_path()
     -- no pending cache state at the moment, may use PDK directly
     kong.response.exit(401, { message = "Missed OAuth token" })
-end
-
--- @return introspect_response, status, err
--- upon success returns only introspect_response,
--- otherwise return nil, status, err
-function hooks.introspect_token(self, conf, token)
-    local ptoken = kong_auth_pep_common.get_protection_token(self, conf)
-
-    local response = oxd.introspect_access_token(conf.oxd_url,
-        {
-            oxd_id = conf.oxd_id,
-            access_token = token,
-        },
-        ptoken)
-    local status = response.status
-
-    if status == 403 then
-        kong.log.err("Invalid access token provided in Authorization header");
-        return nil, 502, "An unexpected error ocurred"
-    end
-
-    if status ~= 200 then
-        kong.log.err("introspect-access-token error, status: ", status)
-        return nil, 502, "An unexpected error ocurred"
-    end
-
-    local body = response.body
-    if not body.active then
-        -- TODO should we cache negative resposes? https://github.com/GluuFederation/gluu-gateway/issues/213
-        return nil, 401, "Invalid access token provided in Authorization header"
-    end
-
-    return body
 end
 
 function hooks.build_cache_key(method, path, _, scopes)
@@ -137,5 +78,5 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
 end
 
 return function(self, conf)
-    kong_auth_pep_common.access_handler(self, conf, hooks)
+    kong_auth_pep_common.access_pep_handler(self, conf, hooks)
 end
