@@ -18,7 +18,7 @@ const credentials = {
 
 // MongoDB connection configuration
 mongoose.Promise = global.Promise;
-mongoose.connect(process.env.DB_URL, {useMongoClient: true}, (err, res) => {
+mongoose.connect(process.env.DB_URL, {useNewUrlParser: true, useUnifiedTopology: true, useCreateIndex: true}, (err, res) => {
   if (err)
     console.log(`err connecting to db on ${process.env.DB_URL}, err: ${err}`);
   else
