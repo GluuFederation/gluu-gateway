@@ -7,7 +7,7 @@ fi
 rm -rf /opt/gluu-gateway > /dev/null 2>&1
 rm -rf /opt/jdk1.8.0_162 > /dev/null 2>&1
 rm -rf /opt/jre > /dev/null 2>&1
-    
+
 if [ "$1" = purge ]; then
     if [ -f /etc/init.d/gluu-gateway ]; then
         rm -rf /etc/init.d/gluu-gateway > /dev/null 2>&1
