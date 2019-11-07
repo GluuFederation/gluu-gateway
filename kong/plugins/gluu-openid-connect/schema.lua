@@ -47,7 +47,7 @@ return {
                         config.method_path_tree = nil
                         return true
                     end
-                    local required_acrs_expression = json_cache(config.required_acrs_expression)
+                    local required_acrs_expression = json_cache(config.required_acrs_expression, config.required_acrs_expression, true)
                     local ok, err = common.check_expression(required_acrs_expression)
                     if not ok then
                         return false, err

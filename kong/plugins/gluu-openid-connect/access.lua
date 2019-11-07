@@ -2,22 +2,7 @@ local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-local cjson = require "cjson.safe"
-local encode_base64 = ngx.encode_base64
-local escape_uri = ngx.escape_uri
 local json_cache = require "gluu.json-cache"
-
-local function split(str, sep)
-    local ret = {}
-    local n = 1
-    for w in str:gmatch("([^" .. sep .. "]*)") do
-        ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
-        if w == "" then
-            n = n + 1
-        end -- step forwards on a blank but not a string
-    end
-    return ret
-end
 
 local function unexpected_error()
     kong.response.exit(502, { message = "An unexpected error ocurred" })
@@ -148,7 +133,7 @@ local function is_acr_enough(required_acrs, acr)
     if not required_acrs then
         return true
     end
-    local acr_array = split(acr, " ")
+    local acr_array = kong_auth_pep_common.split(acr, " ")
     for i = 1, #required_acrs do
         for k = 1, #acr_array do
             if required_acrs[i] == acr_array[k] then
@@ -265,30 +250,6 @@ local function purge_id_tokens(session_data, conf)
     end
 end
 
-local function make_header(header_name, value, format, sep, new_headers)
-    if format == "jwt" then
-        if type(value) ~= "table" then
-            kong.log.debug("need object for " .. header_name .. " header, current value : ", value)
-        else
-            new_headers[header_name] = kong_auth_pep_common.make_jwt(value)
-        end
-    elseif format == "base64" then
-        new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
-    elseif format == "list" then
-        if not sep then
-            kong.log.debug("need seperator(sep) for " .. header_name .. " header list type")
-        elseif #value == 0 then
-            kong.log.debug("need list for " .. header_name .. " header list type, current value : ", value)
-        else
-            new_headers[header_name] = table.concat(value, sep)
-        end
-    elseif format == "urlencoded" then
-        new_headers[header_name] = (type(value) == "table") and escape_uri(cjson.encode(value)) or escape_uri(value)
-    else
-        new_headers[header_name] = (type(value) == "table") and cjson.encode(value) or tostring(value)
-    end
-end
-
 return function(self, conf)
     local session = resty_session.start()
     local session_data = session.data
@@ -338,7 +299,7 @@ return function(self, conf)
     -- we use required_acrs_expression as a flag, because Kong merge behavior
     -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
     if required_acrs_expression then
-        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree), ngx.req.get_method(), path)
+        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree, method_path_tree, true), ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth
     end
@@ -414,45 +375,12 @@ return function(self, conf)
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
 
-    local new_headers = {}
     local environments = {
         id_token = id_token,
         userinfo = session_data.userinfo
     }
 
-    if conf.custom_headers and #conf.custom_headers > 0 then
-        for i = 1, #conf.custom_headers do
-            local header = conf.custom_headers[i]
-            local value_keys = split(header.value, ".")
-            local value;
-            if environments[value_keys[1]] then
-                value = environments
-                for key = 1, #value_keys do
-                    value = value[value_keys[key]]
-                end
-            else
-                value = header.value
-            end
-
-            local header_name = header.header_name
-            if header.iterate then
-                if type(value) ~= "table" then
-                    kong.log.debug(header_name .. " header value should be table, current value : ", value)
-                else
-                    for k,v in pairs(value) do
-                        local header_name = header_name:gsub("{.}", k)
-                        header_name = header_name:gsub("_", "-")
-                        make_header(header_name, v, header.format, header.sep, new_headers)
-                    end
-                end
-            else
-                header_name = header_name:gsub("_", "-")
-                make_header(header_name, value, header.format, header.sep, new_headers)
-            end
-        end
-    end
-
-    kong.log.debug(require"pl.pretty".write(new_headers))
+    local new_headers = kong_auth_pep_common.make_headers(conf.custom_headers, environments, enc_id_token)
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
 end

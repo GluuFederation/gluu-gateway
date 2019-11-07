@@ -1028,14 +1028,16 @@ test("Check custom header", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
+    local headers = {"kong-openidc-idtoken-auth-time","kong-openidc-idtoken-aud","kong-openidc-userinfo-sub","kong-openidc-idtoken-at-hash","kong-openidc-userinfo-email","kong-openidc-idtoken-iat","kong-openidc-userinfo-given-name","kong-openidc-userinfo-family-name","kong-openidc-idtoken-nonce","kong-openidc-idtoken-iss","kong-openidc-userinfo-picture","http-sm-name","kong-id-token-jwt","http-dept-id","http-kong-api-version","kong-openidc-idtoken-sub","kong-user-info-jwt","kong-openidc-userinfo-preferred-username","kong-openidc-idtoken-exp","kong-openidc-userinfo-name"}
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    print(res)
-    local headers = {"kong-openidc-idtoken-auth-time","kong-openidc-idtoken-aud","kong-openidc-userinfo-sub","kong-openidc-idtoken-at-hash","kong-openidc-userinfo-email","kong-openidc-idtoken-iat","kong-openidc-userinfo-given-name","kong-openidc-userinfo-family-name","kong-openidc-idtoken-nonce","kong-openidc-idtoken-iss","kong-openidc-userinfo-picture","http-sm-name","kong-id-token-jwt","http-dept-id","http-kong-api-version","kong-openidc-idtoken-sub","kong-user-info-jwt","kong-openidc-userinfo-preferred-username","kong-openidc-idtoken-exp","kong-openidc-userinfo-name"}
     for i = 1, #headers do
         assert(res:find(headers[i], 1, true))
     end
@@ -1045,8 +1047,6 @@ test("Check custom header", function()
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    print(res)
-    local headers = {"kong-openidc-idtoken-auth-time","kong-openidc-idtoken-aud","kong-openidc-userinfo-sub","kong-openidc-idtoken-at-hash","kong-openidc-userinfo-email","kong-openidc-idtoken-iat","kong-openidc-userinfo-given-name","kong-openidc-userinfo-family-name","kong-openidc-idtoken-nonce","kong-openidc-idtoken-iss","kong-openidc-userinfo-picture","http-sm-name","kong-id-token-jwt","http-dept-id","http-kong-api-version","kong-openidc-idtoken-sub","kong-user-info-jwt","kong-openidc-userinfo-preferred-username","kong-openidc-idtoken-exp","kong-openidc-userinfo-name"}
     for i = 1, #headers do
         assert(res:find(headers[i], 1, true))
     end

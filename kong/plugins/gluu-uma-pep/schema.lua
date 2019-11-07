@@ -31,7 +31,7 @@ return {
                         return true
                     end
 
-                    local uma_scope_expression = json_cache(config.uma_scope_expression)
+                    local uma_scope_expression = json_cache(config.uma_scope_expression, config.uma_scope_expression, true)
                     local ok, err = common.check_expression(uma_scope_expression)
                     if not ok then
                         return false, err

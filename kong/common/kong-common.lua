@@ -8,6 +8,8 @@ local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local json_cache = require "gluu.json-cache"
+local encode_base64 = ngx.encode_base64
+local escape_uri = ngx.escape_uri
 
 -- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
 local EXPIRE_DELTA = 5
@@ -20,6 +22,18 @@ local lrucache = require "resty.lrucache.pureffi"
 local worker_cache, err = lrucache.new(10000) -- allow up to 10000 items in the cache
 if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
+end
+
+local function split(str, sep)
+    local ret = {}
+    local n = 1
+    for w in str:gmatch("([^" .. sep .. "]*)") do
+        ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
+        if w == "" then
+            n = n + 1
+        end -- step forwards on a blank but not a string
+    end
+    return ret
 end
 
 local function unexpected_error(...)
@@ -388,7 +402,7 @@ end
 -- @param method: requested http method Example: GET
 -- @return json protected_path path, expression Example: {path: "/posts", ...}
 local function get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree = json_cache(conf.method_path_tree)
+    local method_path_tree = json_cache(conf.method_path_tree, conf.method_path_tree, true)
 
     local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
@@ -694,7 +708,80 @@ function _M.convert_scope_expression_to_path_wildcard_tree(exp)
     return method_path_tree
 end
 
+local function map_header(header_name, value, format, sep, new_headers)
+    if format == "jwt" then
+        if type(value) ~= "table" then
+            kong.log.debug("need object for " .. header_name .. " header, current value : ", value)
+        else
+            new_headers[header_name] = make_jwt(value)
+        end
+    elseif format == "base64" then
+        new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
+    elseif format == "list" then
+        if not sep then
+            kong.log.debug("need seperator(sep) for " .. header_name .. " header list type")
+        elseif #value == 0 then
+            kong.log.debug("need list for " .. header_name .. " header list type, current value : ", value)
+        else
+            new_headers[header_name] = table.concat(value, sep)
+        end
+    elseif format == "urlencoded" then
+        new_headers[header_name] = (type(value) == "table") and escape_uri(cjson.encode(value)) or escape_uri(value)
+    else
+        new_headers[header_name] = (type(value) == "table") and cjson.encode(value) or tostring(value)
+    end
+end
+
+function _M.make_headers(custom_headers, environments, cache_key)
+    local new_headers = json_cache(cache_key)
+
+    if new_headers then
+        return new_headers
+    end
+
+    if not custom_headers or #custom_headers <= 0 then
+        kong.log.debug("conf.custom_headers has not set up")
+        return {}
+    end
+
+    new_headers = {}
+    for i = 1, #custom_headers do
+        local header = custom_headers[i]
+        local value_keys = split(header.value, ".")
+        local value;
+        if environments[value_keys[1]] then
+            value = environments
+            for key = 1, #value_keys do
+                value = value[value_keys[key]]
+            end
+        else
+            value = header.value
+        end
+
+        local header_name = header.header_name
+        if header.iterate then
+            if type(value) ~= "table" then
+                kong.log.debug(header_name .. " header value should be table, current value : ", value)
+            else
+                for k,v in pairs(value) do
+                    local header_name = header_name:gsub("{.}", k)
+                    header_name = header_name:gsub("_", "-")
+                    map_header(header_name, v, header.format, header.sep, new_headers)
+                end
+            end
+        else
+            header_name = header_name:gsub("_", "-")
+            map_header(header_name, value, header.format, header.sep, new_headers)
+        end
+    end
+
+    kong.log.debug('Custom Headers : ', require"pl.pretty".write(new_headers))
+    json_cache(cache_key, new_headers, false)
+    return new_headers
+end
+
 _M.get_protection_token = get_protection_token
 _M.make_jwt = make_jwt
+_M.split = split
 
 return _M

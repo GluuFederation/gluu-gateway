@@ -9,18 +9,23 @@ if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
-return function(json_text)
-    local data, stale_data = worker_cache:get(json_text)
+return function(key, value, do_decode_value)
+    local data, stale_data = worker_cache:get(key)
     if data and not stale_data then
         return data
     end
 
-    local data, err = cjson.decode(json_text)
-    if err then
-        return nil, "Cannot parse JSON: ".. err
+    local data, err
+    if do_decode_value then
+        data, err = cjson.decode(value)
+        if err then
+            return nil, "Cannot parse JSON: ".. err
+        end
+    else
+        data = value
     end
 
-    worker_cache:set(json_text, data, EXPIRE_IN)
+    worker_cache:set(key, data, EXPIRE_IN)
 
     return data
 end
