@@ -53,6 +53,7 @@ local function setup(model)
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
             ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
+            ["gluu/header-cache.lua"] = host_git_root .. "/kong/common/header-cache.lua",
             ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
@@ -1043,6 +1044,15 @@ test("Check custom header", function()
     end
 
     print"request third time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    print"request fourth time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)

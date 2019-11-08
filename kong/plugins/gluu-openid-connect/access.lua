@@ -299,7 +299,7 @@ return function(self, conf)
     -- we use required_acrs_expression as a flag, because Kong merge behavior
     -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
     if required_acrs_expression then
-        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree, method_path_tree, true), ngx.req.get_method(), path)
+        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree), ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth
     end
@@ -375,12 +375,12 @@ return function(self, conf)
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
 
-    local environments = {
+    local environment = {
         id_token = id_token,
         userinfo = session_data.userinfo
     }
 
-    local new_headers = kong_auth_pep_common.make_headers(conf.custom_headers, environments, enc_id_token)
+    local new_headers = kong_auth_pep_common.make_headers(conf.custom_headers, environment, enc_id_token)
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
 end

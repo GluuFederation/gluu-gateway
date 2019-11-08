@@ -27,7 +27,7 @@ return {
                         return true
                     end
 
-                    local oauth_scope_expression = json_cache(config.oauth_scope_expression, config.oauth_scope_expression, true)
+                    local oauth_scope_expression = json_cache(config.oauth_scope_expression)
                     local ok, err = common.check_expression(oauth_scope_expression)
                     if not ok then
                         return false, err

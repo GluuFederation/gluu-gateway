@@ -8,6 +8,7 @@ local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local json_cache = require "gluu.json-cache"
+local header_cache = require "gluu.header-cache"
 local encode_base64 = ngx.encode_base64
 local escape_uri = ngx.escape_uri
 
@@ -276,7 +277,7 @@ local function process_jwt(self, conf, jwt_obj)
     return nil, 401, "JWT - malformed payload"
 end
 
-local function make_jwt(token_data)
+local function make_jwt_alg_none(token_data)
     local header = ngx.encode_base64(cjson.encode({ typ = "JWT", alg = "none" }))
     local payload = ngx.encode_base64(cjson.encode(token_data))
     local token = table.concat({
@@ -298,7 +299,7 @@ local function request_authenticated(conf, token_data)
 
     if conf.pass_credentials == "phantom_token" and token_data.active then
         kong.log.debug("Phantom token requested")
-        kong.service.request.set_header("authorization", "Bearer " .. make_jwt(token_data))
+        kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
     end
 
     local consumer = token_data.consumer
@@ -402,7 +403,7 @@ end
 -- @param method: requested http method Example: GET
 -- @return json protected_path path, expression Example: {path: "/posts", ...}
 local function get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree = json_cache(conf.method_path_tree, conf.method_path_tree, true)
+    local method_path_tree = json_cache(conf.method_path_tree)
 
     local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
@@ -711,29 +712,29 @@ end
 local function map_header(header_name, value, format, sep, new_headers)
     if format == "jwt" then
         if type(value) ~= "table" then
-            kong.log.debug("need object for " .. header_name .. " header, current value : ", value)
+            kong.log.notice("need object for " .. header_name .. " header, current value : ", value)
         else
-            new_headers[header_name] = make_jwt(value)
+            new_headers[header_name] = make_jwt_alg_none(value)
         end
     elseif format == "base64" then
         new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
     elseif format == "list" then
-        if not sep then
-            kong.log.debug("need seperator(sep) for " .. header_name .. " header list type")
-        elseif #value == 0 then
-            kong.log.debug("need list for " .. header_name .. " header list type, current value : ", value)
+        if #value == 0 then
+            kong.log.notice("need list for " .. header_name .. " header list type, current value : ", value)
         else
-            new_headers[header_name] = table.concat(value, sep)
+            new_headers[header_name] = table.concat(value, sep or ",")
         end
     elseif format == "urlencoded" then
         new_headers[header_name] = (type(value) == "table") and escape_uri(cjson.encode(value)) or escape_uri(value)
-    else
+    elseif format == "string" then
         new_headers[header_name] = (type(value) == "table") and cjson.encode(value) or tostring(value)
+    else
+        kong.log.notice("Invalid format type for header " .. header_name)
     end
 end
 
-function _M.make_headers(custom_headers, environments, cache_key)
-    local new_headers = json_cache(cache_key)
+function _M.make_headers(custom_headers, environment, cache_key)
+    local new_headers = header_cache(cache_key)
 
     if new_headers then
         return new_headers
@@ -747,13 +748,12 @@ function _M.make_headers(custom_headers, environments, cache_key)
     new_headers = {}
     for i = 1, #custom_headers do
         local header = custom_headers[i]
-        local value_keys = split(header.value, ".")
-        local value;
-        if environments[value_keys[1]] then
-            value = environments
-            for key = 1, #value_keys do
-                value = value[value_keys[key]]
-            end
+        local chunk_text = "return " .. header.value
+        local chunk = loadstring(chunk_text)
+        local value = ''
+        if chunk then
+            setfenv(chunk, environment)
+            value = chunk()
         else
             value = header.value
         end
@@ -761,7 +761,7 @@ function _M.make_headers(custom_headers, environments, cache_key)
         local header_name = header.header_name
         if header.iterate then
             if type(value) ~= "table" then
-                kong.log.debug(header_name .. " header value should be table, current value : ", value)
+                kong.log.notice(header_name .. " header value should be table, current value : ", value)
             else
                 for k,v in pairs(value) do
                     local header_name = header_name:gsub("{.}", k)
@@ -775,13 +775,13 @@ function _M.make_headers(custom_headers, environments, cache_key)
         end
     end
 
-    kong.log.debug('Custom Headers : ', require"pl.pretty".write(new_headers))
-    json_cache(cache_key, new_headers, false)
+    kong.log.debug('Custom Headers : ', require"pl.pretty".write(new_headers)) -- Todo: debug or notice log or remove line?
+    header_cache(cache_key, new_headers)
     return new_headers
 end
 
 _M.get_protection_token = get_protection_token
-_M.make_jwt = make_jwt
+_M.make_jwt_alg_none = make_jwt_alg_none
 _M.split = split
 
 return _M
