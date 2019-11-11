@@ -1061,5 +1061,5 @@ test("Check custom header", function()
         assert(res:find(headers[i], 1, true))
     end
 
-    ctx.print_logs = false -- comment it out if want to see logs
+    --ctx.print_logs = false -- comment it out if want to see logs
 end)

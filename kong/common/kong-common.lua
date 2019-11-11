@@ -709,7 +709,13 @@ function _M.convert_scope_expression_to_path_wildcard_tree(exp)
     return method_path_tree
 end
 
+local function default_formats(lua_type)
+    return (lua_type == "string" or lua_type == "number") and "string"  or "base64"
+end
+
 local function map_header(header_name, value, format, sep, new_headers)
+    format = format or default_formats(type(value))
+
     if format == "jwt" then
         if type(value) ~= "table" then
             kong.log.notice("need object for " .. header_name .. " header, current value : ", value)
@@ -764,7 +770,7 @@ function _M.make_headers(custom_headers, environment, cache_key)
                 kong.log.notice(header_name .. " header value should be table, current value : ", value)
             else
                 for k,v in pairs(value) do
-                    local header_name = header_name:gsub("{.}", k)
+                    local header_name = header_name:gsub("{%*}", k)
                     header_name = header_name:gsub("_", "-")
                     map_header(header_name, v, header.format, header.sep, new_headers)
                 end
@@ -775,7 +781,7 @@ function _M.make_headers(custom_headers, environment, cache_key)
         end
     end
 
-    kong.log.debug('Custom Headers : ', require"pl.pretty".write(new_headers)) -- Todo: debug or notice log or remove line?
+    --kong.log.inspect(new_headers)
     header_cache(cache_key, new_headers)
     return new_headers
 end
