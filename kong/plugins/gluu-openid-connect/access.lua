@@ -2,21 +2,7 @@ local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-local cjson = require "cjson.safe"
-local encode_base64 = ngx.encode_base64
 local json_cache = require "gluu.json-cache"
-
-local function split(str, sep)
-    local ret = {}
-    local n = 1
-    for w in str:gmatch("([^" .. sep .. "]*)") do
-        ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
-        if w == "" then
-            n = n + 1
-        end -- step forwards on a blank but not a string
-    end
-    return ret
-end
 
 local function unexpected_error()
     kong.response.exit(502, { message = "An unexpected error ocurred" })
@@ -147,7 +133,7 @@ local function is_acr_enough(required_acrs, acr)
     if not required_acrs then
         return true
     end
-    local acr_array = split(acr, " ")
+    local acr_array = kong_auth_pep_common.split(acr, " ")
     for i = 1, #required_acrs do
         for k = 1, #acr_array do
             if required_acrs[i] == acr_array[k] then
@@ -388,14 +374,15 @@ return function(self, conf)
     kong.ctx.shared.request_token = enc_id_token
     kong.ctx.shared.request_token_data = id_token
     kong.ctx.shared.userinfo = session_data.userinfo
-    local new_headers = {
-        ["X-OpenId-Connect-idtoken"] = encode_base64(cjson.encode(id_token)),
-        ["X-OpenId-Connect-userinfo"] = encode_base64(cjson.encode(session_data.userinfo))
+
+    local environment = {
+        id_token = id_token,
+        userinfo = session_data.userinfo
     }
 
+    local new_headers = kong_auth_pep_common.make_headers(conf.custom_headers, environment, enc_id_token)
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
-    -- TODO set other remain headers
 end
 
 

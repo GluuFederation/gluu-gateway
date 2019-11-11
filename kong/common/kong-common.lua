@@ -8,6 +8,9 @@ local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local json_cache = require "gluu.json-cache"
+local header_cache = require "gluu.header-cache"
+local encode_base64 = ngx.encode_base64
+local escape_uri = ngx.escape_uri
 
 -- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
 local EXPIRE_DELTA = 5
@@ -20,6 +23,18 @@ local lrucache = require "resty.lrucache.pureffi"
 local worker_cache, err = lrucache.new(10000) -- allow up to 10000 items in the cache
 if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
+end
+
+local function split(str, sep)
+    local ret = {}
+    local n = 1
+    for w in str:gmatch("([^" .. sep .. "]*)") do
+        ret[n] = ret[n] or w -- only set once (so the blank after a string is ignored)
+        if w == "" then
+            n = n + 1
+        end -- step forwards on a blank but not a string
+    end
+    return ret
 end
 
 local function unexpected_error(...)
@@ -262,17 +277,17 @@ local function process_jwt(self, conf, jwt_obj)
     return nil, 401, "JWT - malformed payload"
 end
 
-local function get_phantom_token(token_data)
+local function make_jwt_alg_none(token_data)
     local header = ngx.encode_base64(cjson.encode({ typ = "JWT", alg = "none" }))
     local payload = ngx.encode_base64(cjson.encode(token_data))
-    local phantom_token = table.concat({
+    local token = table.concat({
         header,
         ".",
         payload,
         "."
     })
 
-    return phantom_token
+    return token
 end
 
 local function request_authenticated(conf, token_data)
@@ -284,7 +299,7 @@ local function request_authenticated(conf, token_data)
 
     if conf.pass_credentials == "phantom_token" and token_data.active then
         kong.log.debug("Phantom token requested")
-        kong.service.request.set_header("authorization", "Bearer " .. get_phantom_token(token_data))
+        kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
     end
 
     local consumer = token_data.consumer
@@ -694,6 +709,85 @@ function _M.convert_scope_expression_to_path_wildcard_tree(exp)
     return method_path_tree
 end
 
+local function default_formats(lua_type)
+    return (lua_type == "string" or lua_type == "number") and "string"  or "base64"
+end
+
+local function map_header(header_name, value, format, sep, new_headers)
+    format = format or default_formats(type(value))
+
+    if format == "jwt" then
+        if type(value) ~= "table" then
+            kong.log.notice("need object for " .. header_name .. " header, current value : ", value)
+        else
+            new_headers[header_name] = make_jwt_alg_none(value)
+        end
+    elseif format == "base64" then
+        new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
+    elseif format == "list" then
+        if #value == 0 then
+            kong.log.notice("need list for " .. header_name .. " header list type, current value : ", value)
+        else
+            new_headers[header_name] = table.concat(value, sep or ",")
+        end
+    elseif format == "urlencoded" then
+        new_headers[header_name] = (type(value) == "table") and escape_uri(cjson.encode(value)) or escape_uri(value)
+    elseif format == "string" then
+        new_headers[header_name] = (type(value) == "table") and cjson.encode(value) or tostring(value)
+    else
+        kong.log.notice("Invalid format type for header " .. header_name)
+    end
+end
+
+function _M.make_headers(custom_headers, environment, cache_key)
+    local new_headers = header_cache(cache_key)
+
+    if new_headers then
+        return new_headers
+    end
+
+    if not custom_headers or #custom_headers <= 0 then
+        kong.log.debug("conf.custom_headers has not set up")
+        return {}
+    end
+
+    new_headers = {}
+    for i = 1, #custom_headers do
+        local header = custom_headers[i]
+        local chunk_text = "return " .. header.value
+        local chunk = loadstring(chunk_text)
+        local value = ''
+        if chunk then
+            setfenv(chunk, environment)
+            value = chunk()
+        else
+            value = header.value
+        end
+
+        local header_name = header.header_name
+        if header.iterate then
+            if type(value) ~= "table" then
+                kong.log.notice(header_name .. " header value should be table, current value : ", value)
+            else
+                for k,v in pairs(value) do
+                    local header_name = header_name:gsub("{%*}", k)
+                    header_name = header_name:gsub("_", "-")
+                    map_header(header_name, v, header.format, header.sep, new_headers)
+                end
+            end
+        else
+            header_name = header_name:gsub("_", "-")
+            map_header(header_name, value, header.format, header.sep, new_headers)
+        end
+    end
+
+    --kong.log.inspect(new_headers)
+    header_cache(cache_key, new_headers)
+    return new_headers
+end
+
 _M.get_protection_token = get_protection_token
+_M.make_jwt_alg_none = make_jwt_alg_none
+_M.split = split
 
 return _M

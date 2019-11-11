@@ -53,6 +53,7 @@ local function setup(model)
             ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
             ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
             ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
+            ["gluu/header-cache.lua"] = host_git_root .. "/kong/common/header-cache.lua",
             ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
             ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
             ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
@@ -232,16 +233,14 @@ test("basic", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
+
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
+
 
     sh_ex("sleep 15");
 
@@ -260,8 +259,7 @@ test("basic", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
+
 
     print"logout and check the cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -359,16 +357,12 @@ test("OpenID Connect with UMA, Metrics", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"check metrics, it should return openid_connect_users_authenticated = 2"
     local res, err = sh_ex(
@@ -386,24 +380,18 @@ test("OpenID Connect with UMA, Metrics", function()
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request to another path page2/photos"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page2/photos --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request to another path /path/one/two/image.jpg"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/path/123/image.jpg --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"check metrics, it should return openid_connect_users_authenticated = 5"
     local res, err = sh_ex(
@@ -480,24 +468,18 @@ test("OpenID Connect with UMA, PCT", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request third time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"just check getting 200 when request comes to post_logout_redirect_path_or_url"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -578,24 +560,18 @@ test("OpenID Connect with UMA Claim gathering flow", function()
         [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
         print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"request third time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     ctx.print_logs = false
 end)
@@ -667,8 +643,6 @@ test("acr_values testing", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     update_required_acrs_expression(plugin.id,
         {
@@ -709,8 +683,6 @@ test("acr_values testing", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     update_required_acrs_expression(plugin.id,
         {
@@ -751,8 +723,6 @@ test("acr_values testing", function()
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"test url based required acrs, unescaped space in URI, protected with superhero acr"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url 'http://localhost:]],
@@ -769,8 +739,6 @@ test("acr_values testing", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("superhero", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     print"should allow, this path accept any acr"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
@@ -778,8 +746,6 @@ test("acr_values testing", function()
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     assert(res:find("any_acr", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
@@ -869,6 +835,10 @@ test("required_acrs in user session", function()
                 }
             },
         },
+        custom_headers = {
+            {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
+            {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
+        },
     })
 
     print"acr=any"
@@ -886,8 +856,8 @@ test("required_acrs in user session", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
+    assert(res:find("kong-id-token-jwt", 1, true))
+    assert(res:find("kong-user-info-jwt", 1, true))
 
     print"acr=auth_ldap_server"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -904,8 +874,8 @@ test("required_acrs in user session", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
+    assert(res:find("kong-id-token-jwt", 1, true))
+    assert(res:find("kong-user-info-jwt", 1, true))
 
 
     update_required_acrs_expression(plugin.id,
@@ -946,8 +916,6 @@ test("required_acrs in user session", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
@@ -1006,8 +974,6 @@ test("unset required_acrs_expression", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    assert(res:find("x-openid-connect-idtoken", 1, true))
-    assert(res:find("x-openid-connect-userinfo", 1, true))
 
     unset_required_acrs_expression(plugin.id)
 
@@ -1018,4 +984,82 @@ test("unset required_acrs_expression", function()
     assert(res:find("HTTP/1.1 200", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Check custom header", function()
+    setup("oxd-model8.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    configure_plugin(create_service_response,{
+        authorization_redirect_path = "/callback",
+        requested_scopes = {"openid", "email", "profile"},
+        max_id_token_age = 14,
+        max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+        custom_headers = {
+            {header_name = "http_sm_name", value = "userinfo.name", format = "string"},
+            {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
+            {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
+            {header_name = "KONG_OPENIDC_USERINFO_{*}", value = "userinfo", format = "string", iterate = true},
+            {header_name = "KONG_OPENIDC_idtoken_{*}", value = "id_token", format = "base64", iterate = true},
+            {header_name = "http_dept_id", value = "123", format = "base64"},
+            {header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded"},
+        }
+    })
+
+    print"test it responds with 302"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"call callback with state from oxd-model1, follow redirect"
+    local res, err = sh_ex([[curl -i -v -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    local headers = {"kong-openidc-idtoken-auth-time","kong-openidc-idtoken-aud","kong-openidc-userinfo-sub","kong-openidc-idtoken-at-hash","kong-openidc-userinfo-email","kong-openidc-idtoken-iat","kong-openidc-userinfo-given-name","kong-openidc-userinfo-family-name","kong-openidc-idtoken-nonce","kong-openidc-idtoken-iss","kong-openidc-userinfo-picture","http-sm-name","kong-id-token-jwt","http-dept-id","http-kong-api-version","kong-openidc-idtoken-sub","kong-user-info-jwt","kong-openidc-userinfo-preferred-username","kong-openidc-idtoken-exp","kong-openidc-userinfo-name"}
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    print"request second time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    print"request third time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    print"request fourth time with cookie"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    --ctx.print_logs = false -- comment it out if want to see logs
 end)

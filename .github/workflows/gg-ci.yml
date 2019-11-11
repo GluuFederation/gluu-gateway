@@ -1,6 +1,14 @@
 name: Gluu Gateway CI
 
-on: [push]
+on:
+  push:
+    paths:
+      - 'kong/**'
+      - 't/lib/**'
+      - 't/specs/**'
+      - 't/Dockerfile'
+      - 't/run.sh'
+      - 't/run-flow.sh'
 
 jobs:
 
