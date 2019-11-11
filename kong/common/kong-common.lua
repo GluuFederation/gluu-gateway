@@ -302,13 +302,15 @@ local function request_authenticated(conf, token_data)
         kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
     end
 
-    local consumer = token_data.consumer
+    local new_headers = {}
     local const = constants.HEADERS
-    local new_headers = {
-        [const.CONSUMER_ID] = consumer.id,
-        [const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id),
-        [const.CONSUMER_USERNAME] = tostring(consumer.username),
-    }
+    local consumer = token_data.consumer
+
+    if consumer then
+        new_headers[const.CONSUMER_ID] = consumer.id
+        new_headers[const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id)
+        new_headers[const.CONSUMER_USERNAME] = tostring(consumer.username)
+    end
 
     local client_id = token_data.client_id
     if client_id then
@@ -365,13 +367,21 @@ end
 
 local function handle_anonymous(conf, scope_expression, status, err)
     kong.log.debug("conf.anonymous: ", conf.anonymous)
-    local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
-    local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
 
-    if err then
-        return unexpected_error("Anonymous customer: ", err)
+    if conf.consumer_mapping then
+        local consumer_cache_key = kong.db.consumers:cache_key(conf.anonymous)
+        local consumer, err = kong.cache:get(consumer_cache_key, nil, load_consumer_by_id, conf.anonymous)
+
+        if err then
+            return unexpected_error("Anonymous customer: ", err)
+        end
+        return request_authenticated(conf, { consumer = consumer })
     end
-    request_authenticated(conf, { consumer = consumer })
+
+    -- if conf.consumer_mapping == false and conf.anonymous is configured
+    -- we just allow access, but doesn't set consumer and credential
+    -- rate limiter will works per IP
+    return request_authenticated(conf, {})
 end
 
 local _M = {}
@@ -548,17 +558,22 @@ _M.access_auth_handler = function(self, conf, introspect_token)
         client_id = introspect_response.client_id
         exp = introspect_response.exp
 
-        local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
-        if not consumer and not err then
-            clear_pending_state(token)
-            kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
-            return kong.response.exit(401, { message = "Unknown consumer" })
+        if conf.consumer_mapping then
+            local consumer, err = kong.db.consumers:select_by_custom_id(client_id)
+            if not consumer and not err then
+                clear_pending_state(token)
+                kong.log.err('consumer with custom_id "' .. client_id .. '" not found')
+                return kong.response.exit(401, { message = "Unknown consumer" })
+            end
+
+            if err then
+                clear_pending_state(token)
+                return unexpected_error("select_by_custom_id error: ", err)
+            end
+
+            introspect_response.consumer = consumer
         end
-        if err then
-            clear_pending_state(token)
-            return unexpected_error("select_by_custom_id error: ", err)
-        end
-        introspect_response.consumer = consumer
+
 
         kong.log.debug("save token in cache")
         worker_cache:set(token, introspect_response,
@@ -569,8 +584,13 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     end
 
     -- Client(Consumer) is authenticated
-    kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
-    ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    if token_data.consumer then
+        kong.ctx.shared.authenticated_consumer = token_data.consumer -- forward compatibility
+        ngx.ctx.authenticated_consumer = token_data.consumer -- backward compatibility
+    end
+
+    ngx.ctx.authenticated_credential = { id = client_id } -- this is used by gluu-metrics and maybe used by rate limiter
+
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.request_token_data = token_data -- Used to check wether token is authenticated or not for PEP plugin
     kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
