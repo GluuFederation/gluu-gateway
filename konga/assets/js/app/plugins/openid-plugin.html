@@ -155,20 +155,44 @@
                   </div>
                 </div>
               </div>
-              <!--<div class="form-group">-->
-                <!--<label class="col-sm-2 control-label">Required acrs (optional)</label>-->
-                <!--<div class="col-sm-10 well">-->
-                  <!--<div class="col-sm-offset-1 col-sm-6" data-ng-repeat="(key,value) in opResponse.acr_values_supported">-->
-                    <!--<div class="checkbox">-->
-                      <!--<label class="custom-checkbox">-->
-                        <!--<input type="checkbox" id="acr_values_supported{{key}}"-->
-                               <!--checklist-model="pluginConfig.required_acrs" checklist-value="value.value">-->
-                        <!--<span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>-->
-                      <!--</label>-->
-                    <!--</div>-->
-                  <!--</div>-->
-                <!--</div>-->
-              <!--</div>-->
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Headers</label>
+                <div class="col-sm-10 well">
+                  <div class="form-group" ng-repeat="header in pluginConfig.custom_headers">
+                    <div class="col-sm-3">
+                      <input class="form-control" ng-model="header.header_name" placeholder="Header Title"/>
+                      <p class="help-block">Header title</p>
+                    </div>
+                    <div class="col-sm-2">
+                      <input class="form-control" ng-model="header.value" placeholder="Value"/>
+                      <p class="help-block">Header value</p>
+                    </div>
+                    <div class="col-sm-2">
+                      <select class="form-control" ng-model="header.format"
+                              ng-options="type as type for type in headerFormats"/>
+                      <p class="help-block">Header format</p>
+                    </div>
+                    <div class="col-sm-2">
+                      <input class="form-control" placeholder="sep" ng-model="header.sep"/>
+                      <p class="help-block">Header separator</p>
+                    </div>
+                    <div class="col-sm-2">
+                      <input switch-on-text="Yes" switch-off-text="No" bs-switch
+                             ng-model="header.iterate" type="checkbox" switch-size="small" class="form-control"/>
+                      <p class="help-block">Iterate</p>
+                    </div>
+                    <div class="col-sm-1">
+                      <button type="button" title="Delete" class="btn btn-danger" ng-click="pluginConfig.custom_headers.splice($index,1)">
+                        <i class="mdi mdi-close"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <button type="button" title="Add new header" class="btn btn-primary" ng-click="addCustomHeader()">
+                    Add
+                  </button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                  <span><a ng-click="showPathPossibilities()" href>Click here for all other options to make a custom headers.</a></span>
+                </div>
+              </div>
             </div>
             <div style="background-color: #d7ede8" class="col-md-12 well">
               <label style="font-weight: bolder">ACRs Expression</label>
@@ -190,7 +214,8 @@
                      style="border: 1px dotted;">
                   <hr/>
                   <div class="col-md-1">
-                    <button type="button" title="Delete path" class="btn btn-danger" ng-if="pluginConfig.required_acrs_expression.length > 1"
+                    <button type="button" title="Delete path" class="btn btn-danger"
+                            ng-if="pluginConfig.required_acrs_expression.length > 1"
                             ng-click="pluginConfig.required_acrs_expression.splice($index,1)">
                       <i class="mdi mdi-close"></i>
                     </button>
@@ -241,7 +266,8 @@
                             <div class="col-sm-5">
                               <input switch-on-text="Yes" switch-off-text="No" bs-switch switch-off-color="danger"
                                      type="checkbox" switch-size="small"
-                                     ng-model="cond.apply_auth" class="form-control" ng-change="authSwitchClicked(cond)" />
+                                     ng-model="cond.apply_auth" class="form-control"
+                                     ng-change="authSwitchClicked(cond)"/>
                             </div>
                           </div>
                         </div>
@@ -249,12 +275,12 @@
                           <div class="col-md-10 well">
                             <div class="form-group has-feedback">
                               <!--<tags-input min-length="1" ng-model="cond.required_acrs"-->
-                                          <!--id="acrs{{pIndex}}{{$index}}"-->
-                                          <!--name="acrs{{pIndex}}{{$index}}"-->
-                                          <!--placeholder="Enter acr value" required>-->
-                                <!--<auto-complete source="loadACRMethods($query)"-->
-                                               <!--min-length="0"-->
-                                               <!--debounce-delay="0"></auto-complete>-->
+                              <!--id="acrs{{pIndex}}{{$index}}"-->
+                              <!--name="acrs{{pIndex}}{{$index}}"-->
+                              <!--placeholder="Enter acr value" required>-->
+                              <!--<auto-complete source="loadACRMethods($query)"-->
+                              <!--min-length="0"-->
+                              <!--debounce-delay="0"></auto-complete>-->
                               <!--</tags-input>-->
 
                               <div class="col-sm-offset-1 col-sm-6"
@@ -262,7 +288,7 @@
                                 <div class="checkbox">
                                   <label class="custom-checkbox">
                                     <input type="checkbox" id="acr_values_supported{{key}}"
-                                           checklist-model="cond.required_acrs" checklist-value="value.value" />
+                                           checklist-model="cond.required_acrs" checklist-value="value.value"/>
                                     <span style="font-weight: 600">{{value.value}} (Level: {{value.level}})</span>
                                   </label>
                                 </div>
@@ -333,7 +359,6 @@
                                ng-required="true" required/>
                         <span
                           class="help-block error-block basic-block">The path which you want to have protected.</span>
-
                       </div>
                       <div class="col-md-12">
                         <div class="row" ng-repeat="cond in element.conditions">
@@ -463,7 +488,9 @@
             </div>
             <div class="col-md-12">
               <div class="form-group">
-                <label class="col-sm-2 control-label">Tags <br><em><small class="help-block">optional</small></em></label>
+                <label class="col-sm-2 control-label">Tags <br><em>
+                  <small class="help-block">optional</small>
+                </em></label>
                 <div class="col-sm-10">
                   <chips ng-model="pluginConfig.tags">
                     <chip-tmpl>

@@ -19,6 +19,7 @@
         $scope.customHeaders = [['CUSTOM_NUMBER', '123321123']];
         $scope.claimSupported = [['role', '==', '[Mm][Aa]']];
         $scope.timeType = ['seconds', 'minutes', 'hours', 'days'];
+        $scope.headerFormats = ["string", "jwt", "base64", "urlencoded", "list"];
         $scope.op_acr_values_supported = ['auth_ldap_server'];
         $scope.getKongProxyURL = getKongProxyURL;
 
@@ -39,6 +40,7 @@
         $scope.showPathPossibilities = showPathPossibilities;
         $scope.isAllowPEP = true;
         $scope.authSwitchClicked = authSwitchClicked;
+        $scope.addCustomHeader = addCustomHeader;
 
         $scope.pluginConfig = {
           isPEPEnabled: true
@@ -218,7 +220,32 @@
             max_id_token_age_type: 'minutes',
             max_id_token_auth_age_type: 'minutes',
             uma_scope_expression: [],
-            require_id_token: true
+            require_id_token: true,
+            custom_headers: [{
+              header_name: 'http-kong-id-token-{*}',
+              value: 'id_token',
+              format: 'string',
+              sep: ' ',
+              iterate: true,
+            }, {
+              header_name: 'http-kong-userinfo-{*}',
+              value: 'userinfo',
+              format: 'string',
+              sep: ' ',
+              iterate: true,
+            }, {
+              header_name: 'http-kong-userinfo',
+              value: 'userinfo',
+              format: 'jwt',
+              iterate: false,
+              sep: ' ',
+            }, {
+              header_name: 'http-kong-id-token',
+              value: 'id_token',
+              format: 'jwt',
+              iterate: false,
+              sep: ' ',
+            }]
           };
           setURLs();
         }
@@ -479,6 +506,7 @@
                   required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
+                  custom_headers: model.custom_headers || []
                 }
               };
 
@@ -588,6 +616,7 @@
                   required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
+                  custom_headers: model.custom_headers || [],
                 }
               };
 
@@ -1170,6 +1199,19 @@
           } else {
             cond.required_acrs = ['auth_ldap_server']
           }
+        }
+
+        function addCustomHeader() {
+          if (!$scope.pluginConfig.custom_headers || $scope.pluginConfig.custom_headers.length <= 0) {
+            $scope.pluginConfig.custom_headers = []
+          }
+          $scope.pluginConfig.custom_headers.push({
+            header_name: 'http-kong-custom',
+            value: 'any_value',
+            format: 'string',
+            iterate: false,
+            sep: ' ',
+          })
         }
 
         // init
