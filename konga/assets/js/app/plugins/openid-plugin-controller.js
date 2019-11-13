@@ -38,6 +38,7 @@
         $scope.openCreateConsumerModal = openCreateConsumerModal;
         $scope.openConsumerListModal = openConsumerListModal;
         $scope.showPathPossibilities = showPathPossibilities;
+        $scope.showCustomHeadersGuide = showCustomHeadersGuide;
         $scope.isAllowPEP = true;
         $scope.authSwitchClicked = authSwitchClicked;
         $scope.addCustomHeader = addCustomHeader;
@@ -1212,6 +1213,18 @@
             iterate: false,
             sep: ' ',
           })
+        }
+
+        function showCustomHeadersGuide() {
+          $uibModal.open({
+            animation: true,
+            templateUrl: 'js/app/plugins/modals/custom-headers-guide.html',
+            size: 'lg',
+            controller: ['$uibModalInstance', '$scope', function ($uibModalInstance, $scope) {
+
+            }],
+          }).result.then(function (result) {
+          });
         }
 
         // init

@@ -158,13 +158,13 @@
               <div class="form-group">
                 <label class="col-sm-2 control-label">Headers</label>
                 <div class="col-sm-10 well">
-                  <div class="form-group" ng-repeat="header in pluginConfig.custom_headers">
+                  <div class="form-group" ng-repeat="header in pluginConfig.custom_headers" ng-class="{'has-error' : ((PluginForm['header_name' + $index].$invalid && PluginForm['header_name' + $index].$dirty) || (PluginForm['header_value' + $index].$invalid && PluginForm['header_value' + $index].$dirty) || PluginForm.$submitted)}">
                     <div class="col-sm-3">
-                      <input class="form-control" ng-model="header.header_name" placeholder="Header Title"/>
+                      <input class="form-control" ng-required="true" required ng-model="header.header_name" name="header_name{{$index}}" placeholder="Header Title"/>
                       <p class="help-block">Header title</p>
                     </div>
                     <div class="col-sm-2">
-                      <input class="form-control" ng-model="header.value" placeholder="Value"/>
+                      <input class="form-control" ng-required="true" required ng-model="header.value" name="header_value{{$index}}" placeholder="Value"/>
                       <p class="help-block">Header value</p>
                     </div>
                     <div class="col-sm-2">
@@ -174,7 +174,7 @@
                     </div>
                     <div class="col-sm-2">
                       <input class="form-control" placeholder="sep" ng-model="header.sep"/>
-                      <p class="help-block">Header separator</p>
+                      <p class="help-block">Separator</p>
                     </div>
                     <div class="col-sm-2">
                       <input switch-on-text="Yes" switch-off-text="No" bs-switch
@@ -189,8 +189,8 @@
                   </div>
                   <button type="button" title="Add new header" class="btn btn-primary" ng-click="addCustomHeader()">
                     Add
-                  </button> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                  <span><a ng-click="showPathPossibilities()" href>Click here for all other options to make a custom headers.</a></span>
+                  </button> <br/>
+                  <span><code>userinfo</code> and <code>id_token</code> are the environments which you can use at header value. Plugin will populate this environments and set headers. </span> <span><a ng-click="showCustomHeadersGuide()" href>Click here for all other options to make a custom headers.</a></span>
                 </div>
               </div>
             </div>
