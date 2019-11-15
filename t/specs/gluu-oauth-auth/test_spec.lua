@@ -50,6 +50,12 @@ test("with, without token and metrics", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -159,6 +165,7 @@ test("Anonymous test and metrics", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     anonymous = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d", -- must match consumer id below
+                    custom_headers = { { header_name = "x-consumer-id", value = "consumer.id", format = "string" } },
                 },
             },
             {
@@ -223,6 +230,12 @@ test("pass_credentials = hide and metrics", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -294,6 +307,13 @@ test("rate limiter", function()
     local register_site_response, access_token = kong_utils.configure_oauth_auth_plugin(create_service_response,
         {
             anonymous = anonymous_consumer_response.id,
+            custom_headers = {
+                { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+            },
         }
     )
 
@@ -434,7 +454,14 @@ test("consumer_mapping = false, allow anonymous access", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     consumer_mapping = false,
-                    anonymous = "allow"
+                    anonymous = "allow",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
         },
@@ -502,6 +529,13 @@ test("JWT RS256", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
         },
@@ -693,6 +727,13 @@ test("JWT RS384", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
         },
@@ -703,7 +744,6 @@ test("JWT RS384", function()
             }
         }
     }
-
     kong_utils.gg_db_less(kong_config)
 
     print "test it fail with 401 without token"
@@ -847,6 +887,13 @@ test("Test phantom token", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "phantom_token",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
         },
@@ -883,6 +930,64 @@ test("Test phantom token", function()
     assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(kong_config.consumers[1].custom_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(kong_config.consumers[1].custom_id), 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Test Headers", function()
+
+    setup("oxd-model1.lua")
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    local register_site_response, access_token = configure_plugin(create_service_response,{
+        custom_headers = {
+            {header_name = "KONG_access_token_jwt", value = "access_token", format = "jwt"},
+            {header_name = "KONG_access_token_{*}", value = "access_token", format = "string", iterate = true},
+            {header_name = "KONG_access_token_scope_v", value = "access_token.scope", format = "list"},
+            {header_name = "KONG_consumer_jwt", value = "consumer", format = "jwt"},
+            {header_name = "KONG_consumer_{*}", value = "consumer", format = "string", iterate = true},
+            {header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded"},
+        },
+    })
+
+    print"create a consumer"
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
+    )
+
+    local consumer_response = JSON:decode(res)
+
+    print"test it work with token, consumer is registered"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+
+    print"check headers, auth header should not have requsted bearer token"
+    assert.equal(nil, res:lower():find("authorization: Bearer " .. access_token))
+    assert(res:find("200", 1, true))
+    local headers = {"kong-access-token-jwt", "kong-consumer-jwt", "kong-consumer-created-at", "kong-access-token-username", "kong-access-token-exp", "kong-consumer-id", "kong-access-token-consumer", "kong-access-token-aud", "kong-access-token-client-id", "kong-access-token-scope-v", "kong-access-token-active", "kong-consumer-custom-id", "kong-access-token-scope", "http-kong-api-version", "kong-access-token-iss", "kong-access-token-token-type", "kong-access-token-iat"}
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
+
+    print"second time call"
+    local res, err = sh_ex(
+        [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']]
+    )
+    assert.equal(nil, res:lower():find("authorization: Bearer " .. access_token))
+    assert(res:find("200", 1, true))
+    for i = 1, #headers do
+        assert(res:find(headers[i], 1, true))
+    end
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

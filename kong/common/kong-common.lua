@@ -290,53 +290,6 @@ local function make_jwt_alg_none(token_data)
     return token
 end
 
-local function request_authenticated(conf, token_data)
-    kong.log.debug("request_authenticated")
-    if conf.pass_credentials == "hide" then
-        kong.log.debug("Hide authorization header")
-        kong.service.request.clear_header("authorization")
-    end
-
-    if conf.pass_credentials == "phantom_token" and token_data.active then
-        kong.log.debug("Phantom token requested")
-        kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
-    end
-
-    local new_headers = {}
-    local const = constants.HEADERS
-    local consumer = token_data.consumer
-
-    if consumer then
-        new_headers[const.CONSUMER_ID] = consumer.id
-        new_headers[const.CONSUMER_CUSTOM_ID] = tostring(consumer.custom_id)
-        new_headers[const.CONSUMER_USERNAME] = tostring(consumer.username)
-    end
-
-    local client_id = token_data.client_id
-    if client_id then
-        new_headers["X-OAuth-Client-ID"] = tostring(client_id)
-
-        -- introspect-rpt API return mandatory `permissions` field
-        if token_data.permissions then
-            new_headers["X-RPT-Expiration"] = tostring(token_data.exp)
-        else
-            new_headers["X-OAuth-Expiration"] = tostring(token_data.exp)
-
-            local scope = token_data.scope
-            local t = {}
-            for i = 1, #scope do
-                t[#t + 1] = scope[i]
-            end
-            new_headers["X-Authenticated-Scope"] = table.concat(t, ", ")
-        end
-
-        kong.service.request.clear_header(const.ANONYMOUS) -- in case of auth plugins concatenation
-    else
-        new_headers[const.ANONYMOUS] = true
-    end
-    kong.service.request.set_headers(new_headers)
-end
-
 -- lru cache get operation with `pending` state support
 local function worker_cache_get_pending(key)
     for i = 1, MAX_PENDING_SLEEPS do
@@ -365,6 +318,38 @@ local function clear_pending_state(key)
     worker_cache:delete(key)
 end
 
+local _M = {}
+
+local function request_authenticated(conf, token_data, token)
+    kong.log.debug("request_authenticated")
+    if conf.pass_credentials == "hide" then
+        kong.log.debug("Hide authorization header")
+        kong.service.request.clear_header("authorization")
+    end
+
+    if conf.pass_credentials == "phantom_token" and token_data.active then
+        kong.log.debug("Phantom token requested")
+        kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
+    end
+
+    local const = constants.HEADERS
+    local consumer = token_data.consumer
+    local environment = {
+        access_token = token_data,
+    }
+
+    if consumer then
+        environment.consumer = consumer
+    end
+
+    local new_headers = _M.make_headers(conf.custom_headers, environment, token)
+    if not token_data.client_id then
+        new_headers[const.ANONYMOUS] = true
+    end
+
+    kong.service.request.set_headers(new_headers)
+end
+
 local function handle_anonymous(conf, scope_expression, status, err)
     kong.log.debug("conf.anonymous: ", conf.anonymous)
 
@@ -383,8 +368,6 @@ local function handle_anonymous(conf, scope_expression, status, err)
     -- rate limiter will works per IP
     return request_authenticated(conf, {})
 end
-
-local _M = {}
 
 _M.unexpected_error = unexpected_error
 
@@ -605,7 +588,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
     kong.ctx.shared[self.metric_client_authenticated] = true
     kong.ctx.shared.request_token_data = token_data -- Used to check wether token is authenticated or not for PEP plugin
     kong.ctx.shared.request_token = token -- May hide from autorization header so need it for PEP plugin
-    return request_authenticated(conf, token_data)
+    return request_authenticated(conf, token_data, token)
 end
 
 --- Check requested path match to register path
@@ -715,6 +698,11 @@ local function default_formats(lua_type)
 end
 
 local function map_header(header_name, value, format, sep, new_headers)
+    if not value then
+        kong.log.notice("need value for " .. header_name .. " header")
+        return
+    end
+
     format = format or default_formats(type(value))
 
     if format == "jwt" then
@@ -726,7 +714,7 @@ local function map_header(header_name, value, format, sep, new_headers)
     elseif format == "base64" then
         new_headers[header_name] = (type(value) == "table") and encode_base64(cjson.encode(value)) or encode_base64(value)
     elseif format == "list" then
-        if #value == 0 then
+        if type(value) == "string" or #value == 0 then
             kong.log.notice("need list for " .. header_name .. " header list type, current value : ", value)
         else
             new_headers[header_name] = table.concat(value, sep or ",")
@@ -758,14 +746,19 @@ function _M.make_headers(custom_headers, environment, cache_key)
         local chunk_text = "return " .. header.value
         local chunk = loadstring(chunk_text)
         local value = ''
+        local header_name = header.header_name
         if chunk then
-            setfenv(chunk, environment)
-            value = chunk()
+            local ok, result = pcall(setfenv(chunk, environment))
+            if ok then
+                value = chunk()
+            else
+                kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", result)
+                value = nil
+            end
         else
             value = header.value
         end
 
-        local header_name = header.header_name
         if header.iterate then
             if type(value) ~= "table" then
                 kong.log.notice(header_name .. " header value should be table, current value : ", value)

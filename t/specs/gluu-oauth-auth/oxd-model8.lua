@@ -52,7 +52,7 @@ model = {
                 payload = {
                     client_id = request_json.client_id,
                     exp = ngx.now() + 60*5,
-                    scope = "openid oxd",
+                    scope = {"openid", "oxd"},
                 }
             }
             local private_key = [[
