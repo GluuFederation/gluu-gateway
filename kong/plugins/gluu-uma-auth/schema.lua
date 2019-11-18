@@ -18,6 +18,22 @@ return {
                     { anonymous = { type = "string", default = " " }, }, -- TODO kong_auth_pep_common.check_user
                     { pass_credentials = { type = "string", default = "pass" }, }, -- enum = {"pass", "hide", "phantom_token"},
                     { consumer_mapping = { type = "boolean", default = true }, },
+                    {
+                        custom_headers = {
+                            required = false,
+                            type = "array",
+                            elements = {
+                                type = "record",
+                                fields = {
+                                    { header_name = { required = true, type = "string" } },
+                                    { value = { required = true, type = "string" } },
+                                    { format = { required = false, type = "string", one_of = { "string", "jwt", "base64", "urlencoded", "list" }, } },
+                                    { sep = { required = false, type = "string" } },
+                                    { iterate = { required = false, type = "boolean" } }
+                                },
+                            },
+                        }
+                    },
                 },
             },
         },

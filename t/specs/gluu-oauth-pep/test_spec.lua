@@ -50,6 +50,13 @@ test("with, without token and metrics", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
             {
@@ -397,6 +404,13 @@ test("deny_by_default = false, pass_credentials = hide and metrics", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
             {
@@ -520,6 +534,13 @@ test("check oauth_scope_expression and metrics", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
             {
@@ -768,6 +789,13 @@ test("JWT RS256", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
             {
@@ -884,6 +912,13 @@ test("check metrics client auth and grant", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-oauth-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-authenticated-scope", value = "access_token.scope", format = "list" },
+                    },
                 },
             },
             {

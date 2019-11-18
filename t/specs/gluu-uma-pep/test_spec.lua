@@ -46,6 +46,12 @@ test("with and without token, metrics, uma-auth and check UMA scope", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     anonymous = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -265,6 +271,7 @@ test("deny_by_default = true, uma-auth", function()
 end)
 
 test("deny_by_default = false and pass_credentials = hide, uma-auth", function()
+
     setup_db_less("oxd-model2.lua")
 
     local register_site_response, access_token = kong_utils.register_site_get_client_token()
@@ -308,6 +315,12 @@ test("deny_by_default = false and pass_credentials = hide, uma-auth", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     deny_by_default = false,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                    },
                     uma_scope_expression = JSON:encode{
                         {
                             path = "/posts",
