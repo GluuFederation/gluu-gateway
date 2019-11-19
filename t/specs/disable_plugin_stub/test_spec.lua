@@ -9,7 +9,7 @@ local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
 local test_root = host_git_root .. "/t/specs/gluu-opa-pep"
 
-local function setup(model)
+local function setup()
     _G.ctx = {}
     local ctx = _G.ctx
     ctx.finalizeres = {}
@@ -20,9 +20,6 @@ local function setup(model)
         if ctx.print_logs then
             if ctx.kong_id then
                 sh("docker logs ", ctx.kong_id, " || true") -- don't fail
-            end
-            if ctx.oxd_id then
-                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
             end
         end
 
@@ -89,7 +86,7 @@ end
 
 test("key-auth disabled", function()
 
-    setup("oxd-model1.lua")
+    setup()
 
     local create_service_response = configure_service_route()
 
