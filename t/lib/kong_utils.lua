@@ -168,10 +168,11 @@ end
 
 local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
---[[
+
 _M.gg_db_less = function(config)
 
-    local gg_image_id = sh_ex("docker build -q -f ", git_root, "/docker-gg/Dockerfile ", git_root, "/docker-gg")
+    sh_ex(git_root, "/setup/make-gg-lua-deps-archive.sh")
+    local gg_image_id = sh_ex("docker build -q -f ", git_root, "/Dockerfile.gluu_gateway ", git_root)
 
     local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
     ctx.finalizeres[#ctx.finalizeres + 1] = function()
@@ -181,18 +182,13 @@ _M.gg_db_less = function(config)
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
         " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
-        " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1M\" ",
         " -e KONG_DECLARATIVE_CONFIG=/config.yml ",
         " -v ", config_json_tmp_filename, ":/config.yml ",
         " -e KONG_DATABASE=off ",
         " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
         " -e KONG_LOG_LEVEL=debug ",
-        " -e KONG_PROXY_ACCESS_LOG=/dev/stdout ",
-        " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
-        " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
-        " -e KONG_ADMIN_ERROR_LOG=/dev/stderr ",
-
-
+        gg_image_id
+    )
 
     check_container_is_running(ctx.kong_id, "kong")
 
@@ -204,7 +200,6 @@ _M.gg_db_less = function(config)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
-]]
 
 _M.backend = function(image)
     local ctx = _G.ctx
