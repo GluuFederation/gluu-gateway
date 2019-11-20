@@ -290,34 +290,6 @@ local function make_jwt_alg_none(token_data)
     return token
 end
 
--- lru cache get operation with `pending` state support
-local function worker_cache_get_pending(key)
-    for i = 1, MAX_PENDING_SLEEPS do
-        local token_data, stale_data = worker_cache:get(key)
-
-        if not token_data or stale_data then
-            return
-        end
-
-        if token_data == PENDING_TABLE then
-            kong.log.debug("sleep 5ms")
-            ngx.sleep(0.005) -- 5ms
-        else
-            return token_data
-        end
-    end
-end
-
-local function set_pending_state(key)
-    kong.ctx.plugin.pending_key = key
-    worker_cache:set(key, PENDING_TABLE, PENDING_EXPIRE)
-end
-
-local function clear_pending_state(key)
-    kong.ctx.plugin.pending_key = nil
-    worker_cache:delete(key)
-end
-
 local _M = {}
 
 local function request_authenticated(conf, token_data, token)
@@ -367,6 +339,34 @@ local function handle_anonymous(conf, scope_expression, status, err)
     -- we just allow access, but doesn't set consumer and credential
     -- rate limiter will works per IP
     return request_authenticated(conf, {})
+end
+
+-- lru cache get operation with `pending` state support
+local function worker_cache_get_pending(key)
+    for i = 1, MAX_PENDING_SLEEPS do
+        local token_data, stale_data = worker_cache:get(key)
+
+        if not token_data or stale_data then
+            return
+        end
+
+        if token_data == PENDING_TABLE then
+            kong.log.debug("sleep 5ms")
+            ngx.sleep(0.005) -- 5ms
+        else
+            return token_data
+        end
+    end
+end
+
+local function set_pending_state(key)
+    kong.ctx.plugin.pending_key = key
+    worker_cache:set(key, PENDING_TABLE, PENDING_EXPIRE)
+end
+
+local function clear_pending_state(key)
+    kong.ctx.plugin.pending_key = nil
+    worker_cache:delete(key)
 end
 
 _M.unexpected_error = unexpected_error
