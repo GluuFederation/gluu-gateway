@@ -19,6 +19,7 @@ local function setup_db_less(model)
     kong_utils.setup_db_less(finally, test_root .. "/" .. model, true) -- create_cookie_tmp_filename = true
 end
 
+
 test("basic", function()
     setup_db_less("oxd-model1.lua")
 
@@ -833,8 +834,8 @@ test("required_acrs in user session", function()
                         },
                     },
                     custom_headers = {
-                        {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
-                        {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
+                        {header_name = "KONG_USER_INFO_JWT", value_lua_exp = "userinfo", format = "jwt"},
+                        {header_name = "kong_id_token_jwt", value_lua_exp = "id_token", format = "jwt"},
                     },
                 },
             },
@@ -1052,13 +1053,13 @@ test("Check custom header", function()
                     logout_path = "/logout_path",
                     post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
                     custom_headers = {
-                        { header_name = "http_sm_name", value = "userinfo.name", format = "string" },
-                        { header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt" },
-                        { header_name = "kong_id_token_jwt", value = "id_token", format = "jwt" },
-                        { header_name = "KONG_OPENIDC_USERINFO_{*}", value = "userinfo", format = "string", iterate = true },
-                        { header_name = "KONG_OPENIDC_idtoken_{*}", value = "id_token", format = "base64", iterate = true },
-                        { header_name = "http_dept_id", value = "123", format = "base64" },
-                        { header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded" },
+                        { header_name = "http_sm_name", value_lua_exp = "userinfo.name", format = "string" },
+                        { header_name = "KONG_USER_INFO_JWT", value_lua_exp = "userinfo", format = "jwt" },
+                        { header_name = "kong_id_token_jwt", value_lua_exp = "id_token", format = "jwt" },
+                        { header_name = "KONG_OPENIDC_USERINFO_{*}", value_lua_exp = "userinfo", format = "string", iterate = true },
+                        { header_name = "KONG_OPENIDC_idtoken_{*}", value_lua_exp = "id_token", format = "base64", iterate = true },
+                        { header_name = "http_dept_id", value_lua_exp = "123", format = "base64" },
+                        { header_name = "http_kong_api_version", value_lua_exp = [["version 1.0"]], format = "urlencoded" },
                     }
                 },
             },

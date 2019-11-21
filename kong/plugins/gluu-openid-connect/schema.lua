@@ -31,7 +31,7 @@ return {
                                 type = "record",
                                 fields = {
                                     { header_name = { required = true, type = "string" } },
-                                    { value = { required = true, type = "string" } },
+                                    { value_lua_exp = { required = true, type = "string" } },
                                     { format = { required = false, type = "string", one_of = { "string", "jwt", "base64", "urlencoded", "list" }, } },
                                     { sep = { required = false, type = "string" } },
                                     { iterate = { required = false, type = "boolean" } }
@@ -41,9 +41,15 @@ return {
                     }
                 },
                 custom_validator = function(config)
+                    local ok, err = common.check_valid_lua_expression(config.custom_headers)
+                    if not ok then
+                        return false, err
+                    end
+
                     if not config.required_acrs_expression then
                         return true
                     end
+
                     local required_acrs_expression = cjson.decode(config.required_acrs_expression)
                     local ok, err = common.check_expression(required_acrs_expression)
                     if not ok then
@@ -51,7 +57,7 @@ return {
                     end
 
                     return true
-                end
+                end,
             },
         },
     }

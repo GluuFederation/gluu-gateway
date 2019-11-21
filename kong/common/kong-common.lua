@@ -743,20 +743,16 @@ function _M.make_headers(custom_headers, environment, cache_key)
     new_headers = {}
     for i = 1, #custom_headers do
         local header = custom_headers[i]
-        local chunk_text = "return " .. header.value
+        local chunk_text = "return " .. header.value_lua_exp
         local chunk = loadstring(chunk_text)
         local value = ''
         local header_name = header.header_name
-        if chunk then
-            local ok, result = pcall(setfenv(chunk, environment))
-            if ok then
-                value = chunk()
-            else
-                kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", result)
-                value = nil
-            end
+        local ok, result = pcall(setfenv(chunk, environment))
+        if ok then
+            value = chunk()
         else
-            value = header.value
+            kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", result)
+            value = nil
         end
 
         if header.iterate then
@@ -778,6 +774,23 @@ function _M.make_headers(custom_headers, environment, cache_key)
     --kong.log.inspect(new_headers)
     header_cache(cache_key, new_headers)
     return new_headers
+end
+
+_M.check_valid_lua_expression = function(custom_headers)
+    if not custom_headers or custom_headers == cjson.null then
+        return true
+    end
+
+    for i = 1, #custom_headers do
+        local header = custom_headers[i]
+        local chunk_text = "return " .. header.value_lua_exp
+        local chunk, err = loadstring(chunk_text)
+
+        if not chunk or err then
+            return false, header.header_name .. " has not a valid lua expression value, Error: " .. err
+        end
+    end
+    return true
 end
 
 _M.get_protection_token = get_protection_token

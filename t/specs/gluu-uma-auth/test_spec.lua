@@ -46,10 +46,10 @@ test("with and without token, metrics", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     custom_headers = {
-                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
-                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "access_token.exp", format = "string" },
                     },
                 },
             },
@@ -174,10 +174,10 @@ test("pass_credentials = hide", function()
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
                     custom_headers = {
-                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
-                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "access_token.exp", format = "string" },
                     },
                 },
             },
@@ -257,7 +257,7 @@ test("Anonymous test", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     anonymous = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
-                    custom_headers = { { header_name = "x-consumer-id", value = "consumer.id", format = "string" } },
+                    custom_headers = { { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" } },
                 },
             },
             {
@@ -315,10 +315,10 @@ test("JWT RS512", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     custom_headers = {
-                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
-                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "access_token.exp", format = "string" },
                     },
                 },
             },
@@ -421,10 +421,10 @@ test("Test phantom token", function()
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "phantom_token",
                     custom_headers = {
-                        { header_name = "x-consumer-id", value = "consumer.id", format = "string" },
-                        { header_name = "x-oauth-client-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-consumer-custom-id", value = "access_token.client_id", format = "string" },
-                        { header_name = "x-rpt-expiration", value = "access_token.exp", format = "string" },
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "access_token.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "access_token.exp", format = "string" },
                     },
                 },
             },
@@ -469,43 +469,57 @@ end)
 
 
 test("Test Headers", function()
-    setup("oxd-model1.lua")
+    setup_db_less("oxd-model1.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_plugin(create_service_response,
-        {
-            custom_headers = {
-                {header_name = "KONG_access_token_jwt", value = "access_token", format = "jwt"},
-                {header_name = "KONG_access_token_{*}", value = "access_token", format = "string", iterate = true},
-                {header_name = "KONG_consumer_jwt", value = "consumer", format = "jwt"},
-                {header_name = "KONG_consumer_{*}", value = "consumer", format = "string", iterate = true},
-                {header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded"},
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name = "demo-service",
+                url = "http://backend",
             },
+        },
+        routes = {
+            {
+                name = "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-uma-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "KONG_access_token_jwt", value_lua_exp = "access_token", format = "jwt" },
+                        { header_name = "KONG_access_token_{*}", value_lua_exp = "access_token", format = "string", iterate = true },
+                        { header_name = "KONG_consumer_jwt", value_lua_exp = "consumer", format = "jwt" },
+                        { header_name = "KONG_consumer_{*}", value_lua_exp = "consumer", format = "string", iterate = true },
+                        { header_name = "http_kong_api_version", value_lua_exp = "\"version 1.0\"", format = "urlencoded" },
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
+            }
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                custom_id = register_site_response.client_id,
+            }
         }
-    )
+    }
 
-    print "create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
-
-    local consumer_response = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
