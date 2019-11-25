@@ -10,7 +10,10 @@ local _M = {}
 local kong_image = "kong:1.3.0-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
---local oxd_image = "gluu/oxd:4.0-beta-1"
+
+local host_git_root = os.getenv"HOST_GIT_ROOT"
+local git_root = os.getenv"GIT_ROOT"
+local gg_image_id = os.getenv"GG_IMAGE_ID"
 
 _M.docker_unique_network = function()
     local ctx = _G.ctx
@@ -103,7 +106,6 @@ _M.kong_postgress_custom_plugins = function(opts)
         opts.postgress_image or postgress_image
     )
 
-    -- https://stackoverflow.com/questions/24544288/how-to-detect-if-docker-run-succeeded-programmatically
     check_container_is_running(ctx.postgress_id, "postgress")
 
     -- TODO use Postgress client and try to connect
@@ -166,25 +168,48 @@ _M.kong_postgress_custom_plugins = function(opts)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
 
-local host_git_root = os.getenv"HOST_GIT_ROOT"
-local git_root = os.getenv"GIT_ROOT"
+_M.kong_postgress = function()
+    local ctx = _G.ctx
 
-_M.gg_db_less = function(config)
+    -- too expensive to do it upon every test
+    --sh_ex(git_root, "/setup/make-gg-lua-deps-archive.sh")
 
-    sh_ex(git_root, "/setup/make-gg-lua-deps-archive.sh")
+    -- this is fast with Docker cache
     local gg_image_id = sh_ex("docker build -q -f ", git_root, "/Dockerfile.gluu_gateway ", git_root)
 
-    local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
-    ctx.finalizeres[#ctx.finalizeres + 1] = function()
-        pl_file.delete(config_json_tmp_filename)
-    end
+    assert(ctx.network_name)
+    ctx.postgress_id = stdout("docker run -p 5432 -d ",
+        " --network=", ctx.network_name,
+        " -e POSTGRES_USER=kong ",
+        " -e POSTGRES_DB=kong ",
+        " --name kong-database ", -- TODO avoid hardcoded names
+        postgress_image
+    )
+
+    check_container_is_running(ctx.postgress_id, "postgress")
+
+    -- TODO use Postgress client and try to connect
+    sleep(30)
+
+    -- run in foreground to get a chance to finish
+    sh("docker run --rm ",
+        " --network=", ctx.network_name,
+        " -e KONG_DATABASE=postgres ",
+        " -e KONG_PG_HOST=kong-database ",
+        " -e KONG_LOG_LEVEL=debug ",
+        gg_image_id,
+        " kong migrations bootstrap"
+    )
+
+    -- TODO something better?
+    sleep(2)
 
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
         " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
-        " -e KONG_DECLARATIVE_CONFIG=/config.yml ",
-        " -v ", config_json_tmp_filename, ":/config.yml ",
-        " -e KONG_DATABASE=off ",
+        " -e KONG_DATABASE=postgres ",
+        " -e KONG_PG_HOST=kong-database ",
+        " -e KONG_PG_DATABASE=kong ",
         " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
         " -e KONG_LOG_LEVEL=debug ",
         gg_image_id
@@ -199,6 +224,39 @@ _M.gg_db_less = function(config)
 
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+end
+
+
+_M.gg_db_less = function(config)
+
+    local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
+    ctx.finalizeres[#ctx.finalizeres + 1] = function()
+        pl_file.delete(config_json_tmp_filename)
+    end
+
+    ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
+        " --network=", ctx.network_name,
+        " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
+        " -e KONG_DECLARATIVE_CONFIG=/config.yml ",
+        " -v ", config_json_tmp_filename, ":/config.yml ",
+        " -e KONG_DATABASE=off ",
+        " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
+        " -e KONG_PROXY_LISTEN=0.0.0.0:8000 ",
+        " -e KONG_LOG_LEVEL=debug ",
+        gg_image_id
+    )
+
+    check_container_is_running(ctx.kong_id, "kong")
+
+    ctx.kong_admin_port =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8001/tcp\") 0).HostPort}}' ", ctx.kong_id)
+    ctx.kong_proxy_port =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
+
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
+    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+
+    sleep(1)
 end
 
 _M.backend = function(image)
