@@ -9,183 +9,21 @@ local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
 local test_root = host_git_root .. "/t/specs/gluu-oauth-auth"
 
-local function setup(model)
-    _G.ctx = {}
-    local ctx = _G.ctx
-    ctx.finalizeres = {}
-    ctx.host_git_root = host_git_root
-
-    ctx.print_logs = true
-    finally(function()
-        if ctx.print_logs then
-            if ctx.kong_id then
-                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
-            end
-            if ctx.oxd_id then
-                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
-            end
-        end
-
-        local finalizeres = ctx.finalizeres
-        -- call finalizers in revers order
-        for i = #finalizeres, 1, -1 do
-            xpcall(finalizeres[i], debug.traceback)
-        end
-    end)
-
-    kong_utils.docker_unique_network()
-    kong_utils.kong_postgress()
-    kong_utils.backend()
-    kong_utils.oxd_mock(test_root .. "/" .. model)
-end
-
-local function configure_service_route(service_name, service, route)
-    service_name = service_name or "demo-service"
-    service = service or "backend"
-    route = route or "backend.com"
-    print"create a Sevice"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"]],service_name,[[","url":"http://]],
-        service, [["}']]
-    )
-
-    local create_service_response = JSON:decode(res)
-
-    print"create a Route"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -i -sS -X POST  --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/]], service_name, [[/routes --data 'hosts[]=]], route, [[']]
-    )
-
-    return create_service_response
-end
-
-local function configure_plugin(create_service_response, plugin_config)
-    local register_site = {
-        scope = { "openid", "uma_protection" },
-        op_host = "just_stub",
-        authorization_redirect_uri = "https://client.example.com/cb",
-        client_name = "demo plugin",
-        grant_types = { "client_credentials" }
-    }
-    local register_site_json = JSON:encode(register_site)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/register-site --header 'Content-Type: application/json' --data ']],
-        register_site_json, [[']]
-    )
-    local register_site_response = JSON:decode(res)
-
-    local get_client_token = {
-        op_host = "just_stub",
-        client_id = register_site_response.client_id,
-        client_secret = register_site_response.client_secret,
-    }
-
-    local get_client_token_json = JSON:encode(get_client_token)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/get-client-token --header 'Content-Type: application/json' --data ']],
-        get_client_token_json, [[']]
-    )
-    local response = JSON:decode(res)
-
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-oauth-auth",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-
-    return register_site_response, response.access_token
-end
-
+-- finally() available only in current module environment
+-- this is a hack to pass it to a functions in kong_utils
 local function setup_db_less(model)
-    _G.ctx = {}
-    local ctx = _G.ctx
-    ctx.finalizeres = {}
-    ctx.host_git_root = host_git_root
-
-    ctx.print_logs = true
-    finally(function()
-        if ctx.print_logs then
-            if ctx.kong_id then
-                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
-            end
-            if ctx.oxd_id then
-                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
-            end
-        end
-
-        local finalizeres = ctx.finalizeres
-        -- call finalizers in revers order
-        for i = #finalizeres, 1, -1 do
-            xpcall(finalizeres[i], debug.traceback)
-        end
-    end)
-
-    kong_utils.docker_unique_network()
-    kong_utils.oxd_mock(test_root .. "/" .. model)
-    kong_utils.backend()
+    kong_utils.setup_db_less(finally, test_root .. "/" .. model)
 end
 
-local function register_site_get_client_token()
-    local register_site = {
-        scope = { "openid", "uma_protection" },
-        op_host = "just_stub",
-        authorization_redirect_uri = "https://client.example.com/cb",
-        client_name = "demo plugin",
-        grant_types = { "client_credentials" }
-    }
-    local register_site_json = JSON:encode(register_site)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/register-site --header 'Content-Type: application/json' --data ']],
-        register_site_json, [[']]
-    )
-    local register_site_response = JSON:decode(res)
-
-    local get_client_token = {
-        op_host = "just_stub",
-        client_id = register_site_response.client_id,
-        client_secret = register_site_response.client_secret,
-    }
-
-    local get_client_token_json = JSON:encode(get_client_token)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/get-client-token --header 'Content-Type: application/json' --data ']],
-        get_client_token_json, [[']]
-    )
-    local response = JSON:decode(res)
-
-    return register_site_response, response.access_token
+local function setup_postgress(model)
+    kong_utils.setup_postgress(finally, test_root .. "/" .. model)
 end
 
 test("with, without token and metrics", function()
 
     setup_db_less("oxd-model1.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -294,7 +132,7 @@ test("Anonymous test and metrics", function()
 
     setup_db_less("oxd-model2.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -326,7 +164,6 @@ test("Anonymous test and metrics", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -359,7 +196,7 @@ test("pass_credentials = hide and metrics", function()
 
     setup_db_less("oxd-model1.lua")  -- yes, model1 should work
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -443,9 +280,9 @@ end)
 test("rate limiter", function()
     -- we shall use a database for this test
 
-    setup("oxd-model1.lua")
+    setup_postgress("oxd-model1.lua")
 
-    local create_service_response = configure_service_route()
+    local create_service_response = kong_utils.configure_service_route()
 
     print "Create a anonymous consumer"
     local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
@@ -456,7 +293,7 @@ test("rate limiter", function()
 
     print("anonymous_consumer_response.id: ", anonymous_consumer_response.id)
 
-    local register_site_response, access_token = configure_plugin(create_service_response,
+    local register_site_response, access_token = kong_utils.configure_oauth_auth_plugin(create_service_response,
         {
             anonymous = anonymous_consumer_response.id,
         }
@@ -487,9 +324,9 @@ test("rate limiter", function()
 
     print"configure rate-limiting global plugin"
     local res, err = sh_ex([[curl -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=consumer" ]],
+        ctx.kong_admin_port, [[/plugins --data "name=rate-limiting" --data "config.second=1" --data "config.limit_by=credential" ]],
         -- [[--data "consumer_id=]], consumer_response.id,
-        [[ --data "config.policy=local" ]]
+        [[ --data "config.policy=cluster" ]]
     )
     assert(err:find("HTTP/1.1 201", 1, true))
     local rate_limiting_global = JSON:decode(res)
@@ -531,7 +368,7 @@ test("rate limiter", function()
     assert(err:find("HTTP/1.1 201", 1, true))
     local rate_limiting_consumer = JSON:decode(res)
 
-    sleep(2) -- TODO is it required?!
+    sleep(2)
 
     print"test it work with token first time"
     local res, err = sh_ex(
@@ -571,7 +408,7 @@ test("consumer_mapping = false, allow anonymous access", function()
 
     setup_db_less("oxd-model1.lua")  -- yes, model1 should work
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -640,7 +477,7 @@ test("JWT RS256", function()
 
     setup_db_less("oxd-model4.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -713,7 +550,7 @@ test("JWT none alg fail", function()
 
     setup_db_less("oxd-model5.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -768,7 +605,7 @@ test("JWT alg mismatch", function()
 
     setup_db_less("oxd-model6.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -831,7 +668,7 @@ test("JWT RS384", function()
 
     setup_db_less("oxd-model8.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -900,8 +737,8 @@ test("2 different service with different clients", function()
 
     setup_db_less("oxd-model9.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
-    local register_site_response2, access_token2 = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+    local register_site_response2, access_token2 = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",
@@ -984,7 +821,7 @@ test("Test phantom token", function()
 
     setup_db_less("oxd-model1.lua")
 
-    local register_site_response, access_token = register_site_get_client_token()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
     local kong_config = {
         _format_version = "1.1",

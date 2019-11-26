@@ -350,5 +350,176 @@ _M.configure_ip_restrict_plugin = function(create_service_response, plugin_confi
     return JSON:decode(res)
 end
 
+_M.setup_postgress = function(finally, model)
+    _G.ctx = {}
+    local ctx = _G.ctx
+    ctx.finalizeres = {}
+    ctx.host_git_root = host_git_root
+
+    ctx.print_logs = true
+    finally(function()
+        if ctx.print_logs then
+            if ctx.kong_id then
+                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
+            end
+            if ctx.oxd_id then
+                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
+            end
+        end
+
+        local finalizeres = ctx.finalizeres
+        -- call finalizers in revers order
+        for i = #finalizeres, 1, -1 do
+            xpcall(finalizeres[i], debug.traceback)
+        end
+    end)
+
+    _M.docker_unique_network()
+    _M.kong_postgress()
+    _M.backend()
+    if model then
+        _M.oxd_mock(model)
+    end
+end
+
+_M.configure_service_route = function(service_name, service, route)
+    service_name = service_name or "demo-service"
+    service = service or "backend"
+    route = route or "backend.com"
+    print"create a Sevice"
+    local res, err = sh_until_ok(10,
+        [[curl --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"]],service_name,[[","url":"http://]],
+        service, [["}']]
+    )
+
+    local create_service_response = JSON:decode(res)
+
+    print"create a Route"
+    local res, err = sh_until_ok(10,
+        [[curl --fail -i -sS -X POST  --url http://localhost:]],
+        ctx.kong_admin_port, [[/services/]], service_name, [[/routes --data 'hosts[]=]], route, [[']]
+    )
+
+    return create_service_response
+end
+
+_M.setup_db_less = function(finally, model)
+    _G.ctx = {}
+    local ctx = _G.ctx
+    ctx.finalizeres = {}
+    ctx.host_git_root = host_git_root
+
+    ctx.print_logs = true
+    finally(function()
+        if ctx.print_logs then
+            if ctx.kong_id then
+                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
+            end
+            if ctx.oxd_id then
+                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
+            end
+        end
+
+        local finalizeres = ctx.finalizeres
+        -- call finalizers in revers order
+        for i = #finalizeres, 1, -1 do
+            xpcall(finalizeres[i], debug.traceback)
+        end
+    end)
+
+    _M.docker_unique_network()
+    if model then
+        _M.oxd_mock()
+    end
+    _M.backend()
+end
+
+_M.register_site_get_client_token = function()
+    local register_site = {
+        scope = { "openid", "uma_protection" },
+        op_host = "just_stub",
+        authorization_redirect_uri = "https://client.example.com/cb",
+        client_name = "demo plugin",
+        grant_types = { "client_credentials" }
+    }
+    local register_site_json = JSON:encode(register_site)
+
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/register-site --header 'Content-Type: application/json' --data ']],
+        register_site_json, [[']]
+    )
+    local register_site_response = JSON:decode(res)
+
+    local get_client_token = {
+        op_host = "just_stub",
+        client_id = register_site_response.client_id,
+        client_secret = register_site_response.client_secret,
+    }
+
+    local get_client_token_json = JSON:encode(get_client_token)
+
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/get-client-token --header 'Content-Type: application/json' --data ']],
+        get_client_token_json, [[']]
+    )
+    local response = JSON:decode(res)
+
+    return register_site_response, response.access_token
+end
+
+_M.configure_oauth_auth_plugin = function(create_service_response, plugin_config)
+    local register_site = {
+        scope = { "openid", "uma_protection" },
+        op_host = "just_stub",
+        authorization_redirect_uri = "https://client.example.com/cb",
+        client_name = "demo plugin",
+        grant_types = { "client_credentials" }
+    }
+    local register_site_json = JSON:encode(register_site)
+
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/register-site --header 'Content-Type: application/json' --data ']],
+        register_site_json, [[']])
+    local register_site_response = JSON:decode(res)
+
+    local get_client_token = {
+        op_host = "just_stub",
+        client_id = register_site_response.client_id,
+        client_secret = register_site_response.client_secret,
+    }
+
+    local get_client_token_json = JSON:encode(get_client_token)
+
+    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/get-client-token --header 'Content-Type: application/json' --data ']],
+        get_client_token_json, [[']])
+    local response = JSON:decode(res)
+
+
+    plugin_config.op_url = "http://stub"
+    plugin_config.oxd_url = "http://oxd-mock"
+    plugin_config.client_id = register_site_response.client_id
+    plugin_config.client_secret = register_site_response.client_secret
+    plugin_config.oxd_id = register_site_response.oxd_id
+
+    local payload = {
+        name = "gluu-oauth-auth",
+        config = plugin_config,
+        service = { id = create_service_response.id },
+    }
+    local payload_json = JSON:encode(payload)
+
+    print "enable plugin for the Service"
+    local res, err = sh_ex([[
+        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']])
+
+    return register_site_response, response.access_token
+end
+
 
 return _M
