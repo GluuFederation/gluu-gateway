@@ -256,7 +256,7 @@ _M.gg_db_less = function(config)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
     local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 
-    sleep(1)
+    sleep(3)
 end
 
 _M.backend = function(image)
@@ -430,7 +430,7 @@ _M.setup_db_less = function(finally, model)
 
     _M.docker_unique_network()
     if model then
-        _M.oxd_mock()
+        _M.oxd_mock(model)
     end
     _M.backend()
 end
