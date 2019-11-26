@@ -7,7 +7,7 @@ local validators = require "resty.jwt-validators"
 local cjson = require"cjson"
 local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-local json_cache = require "gluu.json-cache"
+local method_path_tree_cache = require "gluu.method-path-tree-cache"
 local header_cache = require "gluu.header-cache"
 local encode_base64 = ngx.encode_base64
 local escape_uri = ngx.escape_uri
@@ -413,7 +413,11 @@ end
 -- @param method: requested http method Example: GET
 -- @return json protected_path path, expression Example: {path: "/posts", ...}
 local function get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree = json_cache(conf.method_path_tree)
+    local method_path_tree, err = method_path_tree_cache(conf.oauth_scope_expression)
+    if not method_path_tree then
+        kong.log.err(err)
+        return
+    end
 
     local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
@@ -697,36 +701,6 @@ function _M.check_expression(expression, config)
         end
     end
     return true
-end
-
--- @param exp: scope expression or acrs expression
-function _M.convert_scope_expression_to_path_wildcard_tree(exp)
-    if not exp or exp == cjson.null then
-        -- it is possible that expression is not required, but this function is called
-        return
-    end
-
-    local method_path_tree = {}
-
-    for k = 1, #exp do
-        local item = exp[k]
-
-        for i = 1, #item.conditions do
-            local condition = item.conditions[i]
-
-            for j = 1, #condition.httpMethods do
-                local t = { path = item.path }
-                -- copy all conditions keys except httpMethods
-                for k, v in pairs(condition) do
-                    if k ~= "httpMethods" then
-                        t[k] = v
-                    end
-                end
-                path_wildcard_tree.addPath(method_path_tree, condition.httpMethods[j], item.path, t)
-            end
-        end
-    end
-    return method_path_tree
 end
 
 local function default_formats(lua_type)

@@ -1,6 +1,5 @@
 local common = require "gluu.kong-common"
 local typedefs = require "kong.db.schema.typedefs"
-local json_cache = require "gluu.json-cache"
 local cjson = require "cjson.safe"
 
 return {
@@ -23,7 +22,6 @@ return {
                     { claims_redirect_path = { required = false, type = "string" }, },
                     { redirect_claim_gathering_url = { type = "boolean", default = false }, },
                     { uma_scope_expression = { required = false, type = "string" }, },
-                    { method_path_tree = { required = false, type = "string" }, },
                 },
                 custom_validator = function(config)
                     if not config.uma_scope_expression then
@@ -31,14 +29,12 @@ return {
                         return true
                     end
 
-                    local uma_scope_expression = json_cache(config.uma_scope_expression)
+                    local uma_scope_expression = cjson.decode(config.uma_scope_expression)
                     local ok, err = common.check_expression(uma_scope_expression)
                     if not ok then
                         return false, err
                     end
 
-                    local method_path_tree = common.convert_scope_expression_to_path_wildcard_tree(uma_scope_expression)
-                    config.method_path_tree = cjson.encode(method_path_tree)
                     return true
                 end
             },
