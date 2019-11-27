@@ -19,33 +19,6 @@ local function setup_postgress(model)
     kong_utils.setup_postgress(finally, test_root .. "/" .. model)
 end
 
-local function configure_pep_plugin(register_site_response, create_service_response, plugin_config, disableFail)
-    if plugin_config.oauth_scope_expression then
-        plugin_config.oauth_scope_expression = JSON:encode(plugin_config.oauth_scope_expression)
-    end
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-oauth-pep",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl ]], (disableFail and "" or "--fail") ,[[ -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-    return res, err
-end
-
 test("with, without token and metrics", function()
 
     setup_db_less("oxd-model1.lua")
