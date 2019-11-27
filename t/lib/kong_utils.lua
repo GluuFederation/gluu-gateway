@@ -548,4 +548,60 @@ _M.configure_oauth_pep_plugin = function(register_site_response, create_service_
     return res, err
 end
 
+_M.configure_uma_auth_plugin = function(create_service_response, plugin_config)
+    local register_site = {
+        scope = { "openid", "uma_protection" },
+        op_host = "just_stub",
+        authorization_redirect_uri = "https://client.example.com/cb",
+        client_name = "demo plugin",
+        grant_types = { "client_credentials" }
+    }
+    local register_site_json = JSON:encode(register_site)
+
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/register-site --header 'Content-Type: application/json' --data ']],
+        register_site_json, [[']]
+    )
+    local register_site_response = JSON:decode(res)
+
+    local get_client_token = {
+        op_host = "just_stub",
+        client_id = register_site_response.client_id,
+        client_secret = register_site_response.client_secret,
+    }
+    local get_client_token_json = JSON:encode(get_client_token)
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/get-client-token --header 'Content-Type: application/json' --data ']],
+        get_client_token_json, [[']]
+    )
+
+    local response = JSON:decode(res)
+
+    -- configure gluu-uma-auth
+    plugin_config.op_url = "http://stub"
+    plugin_config.oxd_url = "http://oxd-mock"
+    plugin_config.client_id = register_site_response.client_id
+    plugin_config.client_secret = register_site_response.client_secret
+    plugin_config.oxd_id = register_site_response.oxd_id
+
+    local payload = {
+        name = "gluu-uma-auth",
+        config = plugin_config,
+        service = { id = create_service_response.id},
+    }
+
+    local payload_json = JSON:encode(payload)
+
+    print"enable plugin for the Service"
+    local res, err = sh_ex([[
+        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+
+    return register_site_response, response.access_token
+end
+
 return _M
