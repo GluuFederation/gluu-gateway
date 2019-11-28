@@ -604,4 +604,35 @@ _M.configure_uma_auth_plugin = function(create_service_response, plugin_config)
     return register_site_response, response.access_token
 end
 
+_M.configure_uma_pep_plugin = function(register_site_response, create_service_response, plugin_config, consumer_id)
+    if plugin_config.uma_scope_expression then
+        plugin_config.uma_scope_expression = JSON:encode(plugin_config.uma_scope_expression)
+    end
+
+    plugin_config.op_url = "http://stub"
+    plugin_config.oxd_url = "http://oxd-mock"
+    plugin_config.client_id = register_site_response.client_id
+    plugin_config.client_secret = register_site_response.client_secret
+    plugin_config.oxd_id = register_site_response.oxd_id
+
+    local payload = {
+        name = "gluu-uma-pep",
+        config = plugin_config,
+        service = { id = create_service_response.id},
+    }
+
+    if consumer_id then
+        payload.consumer_id = consumer_id
+    end
+
+    local payload_json = JSON:encode(payload)
+
+    print"enable plugin for the Service"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+end
+
 return _M

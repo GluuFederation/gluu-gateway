@@ -25,7 +25,6 @@ return {
                 },
                 custom_validator = function(config)
                     if not config.uma_scope_expression then
-                        config.method_path_tree = nil
                         return true
                     end
 
