@@ -412,8 +412,12 @@ end
 -- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
 -- @param method: requested http method Example: GET
 -- @return json protected_path path, expression Example: {path: "/posts", ...}
-local function get_path_by_request_path_method(self, conf, path, method)
-    local method_path_tree, err = method_path_tree_cache(conf.oauth_scope_expression)
+local function get_path_by_request_path_method(self, exp, path, method)
+    if not exp then
+        return
+    end
+
+    local method_path_tree, err = method_path_tree_cache(exp)
     if not method_path_tree then
         kong.log.err(err)
         return
@@ -441,13 +445,16 @@ function build_cache_key(method, protected_path, token, scopes)
 @return boolean
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, scopes, rpt)
 end
+
+@return string
+function get_scope_expression(config)
  ]]
 _M.access_pep_handler = function(self, conf, hooks)
     local token = kong.ctx.shared.request_token
 
     local method = ngx.req.get_method()
     local path = ngx.var.uri:match"^([^%s]+)"
-    local protected_path, scope_expression = get_path_by_request_path_method(self, conf, path, method)
+    local protected_path, scope_expression = get_path_by_request_path_method(self,  hooks.get_scope_expression(conf), path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -510,7 +517,7 @@ end
 --[[
 Authentication
 
-introspect_token hooks must be a table with methods below:
+introspect_token hook must be a function with signature below:
 
 @return introspect_response, status, err
 upon success returns only introspect_response,
