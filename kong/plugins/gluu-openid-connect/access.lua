@@ -294,12 +294,10 @@ return function(self, conf)
         ", session.data.id_tokens=", id_tokens ~= nil)
 
     local required_acrs_expression = conf.required_acrs_expression
-    local method_path_tree = method_path_tree_cache(required_acrs_expression)
     local required_acrs, no_auth
 
-    -- we use required_acrs_expression as a flag, because Kong merge behavior
-    -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
     if required_acrs_expression then
+        local method_path_tree = method_path_tree_cache(required_acrs_expression)
         local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth

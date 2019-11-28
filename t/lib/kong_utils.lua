@@ -3,6 +3,8 @@ local JSON = require"JSON"
 local sh, stdout, stderr, sleep, sh_ex, sh_until_ok =
     utils.sh, utils.stdout, utils.stderr, utils.sleep, utils.sh_ex, utils.sh_until_ok
 local pl_file = require"pl.file"
+local pl_path = require "pl.path"
+local pl_tmpname = pl_path.tmpname
 
 
 local _M = {}
@@ -404,11 +406,14 @@ _M.configure_service_route = function(service_name, service, route)
     return create_service_response
 end
 
-_M.setup_db_less = function(finally, model)
+_M.setup_db_less = function(finally, model, create_cookie_tmp_filename)
     _G.ctx = {}
     local ctx = _G.ctx
     ctx.finalizeres = {}
     ctx.host_git_root = host_git_root
+    if create_cookie_tmp_filename then
+        ctx.cookie_tmp_filename = pl_tmpname()
+    end
 
     ctx.print_logs = true
     finally(function()
@@ -426,6 +431,10 @@ _M.setup_db_less = function(finally, model)
         for i = #finalizeres, 1, -1 do
             xpcall(finalizeres[i], debug.traceback)
         end
+
+        if create_cookie_tmp_filename then
+            pl_file.delete(ctx.cookie_tmp_filename)
+        end
     end)
 
     _M.docker_unique_network()
@@ -435,7 +444,7 @@ _M.setup_db_less = function(finally, model)
     _M.backend()
 end
 
-_M.register_site_get_client_token = function()
+_M.register_site = function()
     local register_site = {
         scope = { "openid", "uma_protection" },
         op_host = "just_stub",
@@ -451,6 +460,12 @@ _M.register_site_get_client_token = function()
         register_site_json, [[']]
     )
     local register_site_response = JSON:decode(res)
+
+    return register_site_response
+end
+
+_M.register_site_get_client_token = function()
+    local register_site_response = _M.register_site()
 
     local get_client_token = {
         op_host = "just_stub",
@@ -633,6 +648,93 @@ _M.configure_uma_pep_plugin = function(register_site_response, create_service_re
         [[/plugins/ ]],
         [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
     )
+end
+
+_M.configure_openid_connect_plugin = function(create_service_response, plugin_config)
+    if plugin_config.required_acrs_expression then
+        plugin_config.required_acrs_expression = JSON:encode(plugin_config.required_acrs_expression)
+    end
+
+    local register_site = {
+        scope = { "openid", "uma_protection" },
+        op_host = "just_stub",
+        authorization_redirect_uri = "https://client.example.com/cb",
+        client_name = "demo plugin",
+        grant_types = { "client_credentials" }
+    }
+    local register_site_json = JSON:encode(register_site)
+
+    local res, err = sh_ex(
+        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
+        [[/register-site --header 'Content-Type: application/json' --data ']],
+        register_site_json, [[']]
+    )
+    local register_site_response = JSON:decode(res)
+
+    plugin_config.op_url = "http://stub"
+    plugin_config.oxd_url = "http://oxd-mock"
+    plugin_config.client_id = register_site_response.client_id
+    plugin_config.client_secret = register_site_response.client_secret
+    plugin_config.oxd_id = register_site_response.oxd_id
+
+    local payload = {
+        name = "gluu-openid-connect",
+        config = plugin_config,
+        service = { id = create_service_response.id},
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"enable plugin for the Service"
+    local res, err = sh_ex([[
+        curl -v -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/ ]],
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+    local plugin_response = JSON:decode(res)
+
+    return register_site_response, plugin_response
+end
+
+_M.update_openid_connect_required_acrs_expression = function(plugin_id, required_acrs_expression)
+    local required_acrs_expression_json = JSON:encode(required_acrs_expression)
+    local payload = {
+        config = {
+            required_acrs_expression = required_acrs_expression_json
+        },
+    }
+    local payload_json = JSON:encode(payload)
+
+    print"update plugin"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/]], plugin_id,
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
+    )
+end
+
+_M.unset_openid_connect_required_acrs_expression = function(plugin_id)
+    local payload = [[{
+        "config": { "required_acrs_expression" : null }
+    }]]
+
+    print"unset_required_acrs_expression"
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
+        [[/plugins/]], plugin_id,
+        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload, [[']]
+    )
+end
+
+_M.db_less_reconfigure = function(config)
+
+    local payload = JSON:encode(config)
+
+    local res, err = sh_ex([[
+        curl --fail -v -i -sS -X POST --url http://localhost:]], ctx.kong_admin_port,
+        [[/config --header 'content-type: application/json;charset=UTF-8' --data ']], payload, [[']]
+    )
+
+    sleep(2)
 end
 
 return _M
