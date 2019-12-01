@@ -229,7 +229,7 @@ _M.kong_postgress = function()
 end
 
 
-_M.gg_db_less = function(config)
+_M.gg_db_less = function(config, plugins)
 
     local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
     ctx.finalizeres[#ctx.finalizeres + 1] = function()
@@ -245,6 +245,7 @@ _M.gg_db_less = function(config)
         " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
         " -e KONG_PROXY_LISTEN=0.0.0.0:8000 ",
         " -e KONG_LOG_LEVEL=debug ",
+        plugins and build_plugins_volumes(plugins) or "",
         gg_image_id
     )
 
