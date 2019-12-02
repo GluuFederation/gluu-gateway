@@ -79,7 +79,6 @@ test("with and without token, metrics, uma-auth and check UMA scope", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -236,7 +235,6 @@ test("deny_by_default = true, uma-auth", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -324,7 +322,6 @@ test("deny_by_default = false and pass_credentials = hide, uma-auth", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {

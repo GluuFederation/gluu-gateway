@@ -58,7 +58,6 @@ test("opa, client_id match", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {

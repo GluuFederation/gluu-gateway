@@ -49,7 +49,6 @@ test("with and without token, metrics", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -173,7 +172,6 @@ test("pass_credentials = hide", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -252,7 +250,6 @@ test("Anonymous test", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -309,7 +306,6 @@ test("JWT RS512", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -410,7 +406,6 @@ test("Test phantom token", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {

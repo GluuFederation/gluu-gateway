@@ -54,7 +54,6 @@ test("with, without token and metrics", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
@@ -228,7 +227,6 @@ test("pass_credentials = hide and metrics", function()
             },
             {
                 name = "gluu-metrics",
-                service = "demo-service",
             }
         },
         consumers = {
