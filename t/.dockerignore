@@ -1,0 +1,5 @@
+# Ignore everything
+**
+
+# Allow only one file
+!/wait-for-http-ready.sh

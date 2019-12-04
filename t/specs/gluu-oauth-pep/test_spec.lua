@@ -9,229 +9,105 @@ local host_git_root = os.getenv"HOST_GIT_ROOT"
 local git_root = os.getenv"GIT_ROOT"
 local test_root = host_git_root .. "/t/specs/gluu-oauth-pep"
 
-local function setup(model)
-    _G.ctx = {}
-    local ctx = _G.ctx
-    ctx.finalizeres = {}
-    ctx.host_git_root = host_git_root
-
-    ctx.print_logs = true
-    finally(function()
-        if ctx.print_logs then
-            if ctx.kong_id then
-                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
-            end
-            if ctx.oxd_id then
-                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
-            end
-        end
-
-        local finalizeres = ctx.finalizeres
-        -- call finalizers in revers order
-        for i = #finalizeres, 1, -1 do
-            xpcall(finalizeres[i], debug.traceback)
-        end
-    end)
-
-
-    kong_utils.docker_unique_network()
-    kong_utils.kong_postgress_custom_plugins{
-        plugins = {
-            ["gluu-oauth-auth"] = host_git_root .. "/kong/plugins/gluu-oauth-auth",
-            ["gluu-oauth-pep"] = host_git_root .. "/kong/plugins/gluu-oauth-pep",
-            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
-        },
-        modules = {
-            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
-            ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
-            ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
-            ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
-            ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
-            ["gluu/header-cache.lua"] = host_git_root .. "/kong/common/header-cache.lua",
-            ["resty/lrucache.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache.lua",
-            ["resty/lrucache/pureffi.lua"] = host_git_root .. "/third-party/lua-resty-lrucache/lib/resty/lrucache/pureffi.lua",
-            ["rucciva/json_logic.lua"] = host_git_root .. "/third-party/json-logic-lua/logic.lua",
-            ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
-            ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
-            ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
-            ["resty/hmac.lua"] = host_git_root .. "/third-party/lua-resty-hmac/lib/resty/hmac.lua",
-        },
-        host_git_root = host_git_root,
-    }
-    kong_utils.backend()
-    kong_utils.oxd_mock(test_root .. "/" .. model)
+-- finally() available only in current module environment
+-- this is a hack to pass it to a functions in kong_utils
+local function setup_db_less(model)
+    kong_utils.setup_db_less(finally, model and (test_root .. "/" .. model) or nil)
 end
 
-local function configure_service_route(service_name, service, route)
-    service_name = service_name or "demo-service"
-    service = service or "backend"
-    route = route or "backend.com"
-    print"create a Sevice"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"]],service_name,[[","url":"http://]],
-        service, [["}']]
-    )
-
-    local create_service_response = JSON:decode(res)
-
-    print"create a Route"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -i -sS -X POST  --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/]], service_name, [[/routes --data 'hosts[]=]], route, [[']]
-    )
-
-    return create_service_response
-end
-
-local function configure_pep_plugin(register_site_response, create_service_response, plugin_config, disableFail)
-    if plugin_config.oauth_scope_expression then
-        plugin_config.oauth_scope_expression = JSON:encode(plugin_config.oauth_scope_expression)
-    end
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-oauth-pep",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl ]], (disableFail and "" or "--fail") ,[[ -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-    return res, err
-end
-
-local function configure_auth_plugin(create_service_response, plugin_config)
-    local register_site = {
-        scope = { "openid", "uma_protection" },
-        op_host = "just_stub",
-        authorization_redirect_uri = "https://client.example.com/cb",
-        client_name = "demo plugin",
-        grant_types = { "client_credentials" }
-    }
-    local register_site_json = JSON:encode(register_site)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/register-site --header 'Content-Type: application/json' --data ']],
-        register_site_json, [[']]
-    )
-    local register_site_response = JSON:decode(res)
-
-    local get_client_token = {
-        op_host = "just_stub",
-        client_id = register_site_response.client_id,
-        client_secret = register_site_response.client_secret,
-    }
-
-    local get_client_token_json = JSON:encode(get_client_token)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/get-client-token --header 'Content-Type: application/json' --data ']],
-        get_client_token_json, [[']]
-    )
-    local response = JSON:decode(res)
-
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-oauth-auth",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-
-    return register_site_response, response.access_token
+local function setup_postgress(model)
+    kong_utils.setup_postgress(finally, model and (test_root .. "/" .. model) or nil)
 end
 
 test("with, without token and metrics", function()
 
-    setup("oxd-model1.lua")
+    setup_db_less("oxd-model1.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response, {})
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/todos",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = false,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = false
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config)
 
     print"test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
     assert(res:find("401", 1, true))
-
-    print"create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
-    )
-
-    local consumer_response = JSON:decode(res)
 
     print"test it work with token, consumer is registered"
     local res, err = sh_ex(
@@ -242,7 +118,7 @@ test("with, without token and metrics", function()
 
     -- backend returns all headrs within body
     print"check that GG set all required upstream headers"
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -260,7 +136,8 @@ test("with, without token and metrics", function()
         [[/gluu-metrics]]
     )
     assert(res:lower():find("gluu_oauth_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]]
+            .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
 
     print"test it fail with 403 with wrong Bearer token"
@@ -276,7 +153,8 @@ test("with, without token and metrics", function()
         [[/gluu-metrics]]
     )
     assert(res:lower():find("gluu_oauth_client_authenticated", 1, true))
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]]
+            .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
 
     print"test it works with the same token again, oxd-model id completed, token taken from cache"
     local res, err = sh_ex(
@@ -290,56 +168,89 @@ end)
 
 test("Anonymous test", function()
 
-    setup("oxd-model2.lua")
+    setup_db_less("oxd-model2.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print "Create a anonymous consumer"
-    local ANONYMOUS_CONSUMER_CUSTOM_ID = "anonymous_123"
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], ANONYMOUS_CONSUMER_CUSTOM_ID, [[']])
-    local anonymous_consumer_response = JSON:decode(res)
-
-    print("anonymous_consumer_response.id: ", anonymous_consumer_response.id)
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response, {
-        anonymous = anonymous_consumer_response.id
-    })
-
-    configure_pep_plugin(register_site_response, create_service_response,
-        {
-            oauth_scope_expression = {
-                {
-                    path = "/todos",
-                    conditions = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    anonymous = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = false,
+                    oauth_scope_expression = JSON:encode{
                         {
-                            scope_expression = {
-                                rule = {
-                                    ["and"] = {
-                                        {
-                                            var = 0
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
                                         }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
-                                },
-                                data = {
-                                    "admin"
                                 }
-                            },
-                            httpMethods = {
-                                "GET",
-                                "DELETE",
-                                "POST"
                             }
                         }
-                    }
-                }
+                    },
+                },
             },
-            deny_by_default = false
+            {
+                name = "gluu-metrics",
+            }
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = "anonymous_123",
+            }
         }
-    )
+    }
 
-    sleep(1)
+    kong_utils.gg_db_less(kong_config)
 
     print"Allow access, deny_by_default = false"
     local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
@@ -351,64 +262,88 @@ end)
 
 test("deny_by_default = true and metrics", function()
 
-    setup("oxd-model1.lua") -- yes, model1 should work
+    setup_db_less("oxd-model1.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/todos",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = true
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
 
-    print"create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
-    )
-
-    local consumer_response = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     print"test it fail with 403"
     local res, err = sh_ex(
@@ -432,68 +367,89 @@ end)
 
 test("deny_by_default = false, pass_credentials = hide and metrics", function()
 
-    setup("oxd-model1.lua") -- yes, model1 should work
+    setup_db_less("oxd-model1.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,
-        {
-            pass_credentials = "hide"
-        }
-    )
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/posts",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    pass_credentials = "hide",
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = false,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/posts",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = false,
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
 
-    print"create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
-    )
-
-    local consumer_response = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     print"test with unprotected path"
     local res, err = sh_ex(
@@ -501,7 +457,7 @@ test("deny_by_default = false, pass_credentials = hide and metrics", function()
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -513,7 +469,7 @@ test("deny_by_default = false, pass_credentials = hide and metrics", function()
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']]
     )
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -524,7 +480,8 @@ test("deny_by_default = false, pass_credentials = hide and metrics", function()
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
         [[/gluu-metrics]]
     )
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]]
+            .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
     assert(res:lower():find("gluu_oauth_client_granted", 1, true) == nil)
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/todos",method="GET"]]), 1, true))
 
@@ -533,145 +490,171 @@ end)
 
 test("check oauth_scope_expression and metrics", function()
 
-    setup("oxd-model3.lua")
+    setup_db_less("oxd-model3.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin"
-                            }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
-                        }
-                    }
-                }
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    pass_credentials = "hide",
+                },
             },
             {
-                path = "/posts",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
+                                        }
                                     },
-                                    {
-                                        var = 1
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
-                        }
-                    }
-                }
-            },
-            {
-                path = "/comments",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["or"] = {
-                                    {
-                                        var = 0
+                        {
+                            path = "/posts",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin",
+                                            "employee"
+                                        }
                                     },
-                                    {
-                                        var = 1
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "POST",
-                            "DELETE"
+                        {
+                            path = "/comments",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["or"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin",
+                                            "employee"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "POST",
+                                        "DELETE"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["!"] = { var = 0 }
+                                        },
+                                        data = {
+                                            "customer"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "POST",
+                                        "DELETE"
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
+                    },
+                },
             },
             {
-                path = "/todos",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["!"] = { var = 0 }
-                            },
-                            data = {
-                                "customer"
-                            }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "POST",
-                            "DELETE"
-                        }
-                    }
-                }
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = true,
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
 
-    print "create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
-
-    local consumer_response = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     print "test with path /posts"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -680,7 +663,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/comments --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -689,7 +672,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -698,7 +681,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/todos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -707,7 +690,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -716,7 +699,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -725,7 +708,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/photos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -734,7 +717,7 @@ test("check oauth_scope_expression and metrics", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/photos --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -744,8 +727,10 @@ test("check oauth_scope_expression and metrics", function()
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
         [[/gluu-metrics]]
     )
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 8]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 8]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]]
+            .. register_site_response.client_id .. [[",service="demo-service"} 8]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]]
+            .. register_site_response.client_id .. [[",service="demo-service"} 8]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
@@ -753,57 +738,95 @@ end)
 
 test("JWT RS256", function()
 
-    setup("oxd-model4.lua")
+    setup_db_less("oxd-model4.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/todos",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    pass_credentials = "hide",
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = false,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = false,
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
 
     print"test it fail with 401 without token"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
     assert(res:find("401", 1, true))
-
-    print"create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
-    )
-
-    local consumer_response = JSON:decode(res)
 
     print"test it work with token, consumer is registered"
     local res, err = sh_ex(
@@ -814,7 +837,7 @@ test("JWT RS256", function()
 
     -- backend returns all headrs within body
     print"check that GG set all required upstream headers"
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -831,102 +854,126 @@ end)
 
 test("check metrics client auth and grant", function()
 
-    setup("oxd-model7.lua")
+    setup_db_less("oxd-model7.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,
-        {});
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/posts",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    },
-                                    {
-                                        var = 1
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
-                            }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
-                        }
-                    }
-                }
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    pass_credentials = "hide",
+                },
             },
             {
-                path = "/comments",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/posts",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin",
+                                            "employee"
+                                        }
                                     },
-                                    {
-                                        var = 1
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "customer"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "POST",
-                            "DELETE"
+                        {
+                            path = "/comments",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "customer"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "POST",
+                                        "DELETE"
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = true,
-    })
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
 
-    print "create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']])
-
-    local consumer_response = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     print "test with path /posts"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -935,7 +982,7 @@ test("check metrics client auth and grant", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts --header 'Host: backend.com' --header 'Authorization: Bearer ]],
         access_token, [[']])
-    assert(res:lower():find("x-consumer-id: " .. string.lower(consumer_response.id), 1, true))
+    assert(res:lower():find("x-consumer-id: " .. string.lower(kong_config.consumers[1].id), 1, true))
     assert(res:lower():find("x-oauth-client-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x-consumer-custom-id: " .. string.lower(register_site_response.client_id), 1, true))
     assert(res:lower():find("x%-oauth%-expiration: %d+"))
@@ -945,8 +992,8 @@ test("check metrics client auth and grant", function()
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
         [[/gluu-metrics]]
     )
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/posts",method="GET"]]), 1, true))
 
     print "test with path /comments"
@@ -960,8 +1007,8 @@ test("check metrics client auth and grant", function()
         [[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_admin_port,
         [[/gluu-metrics]]
     )
-    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 3]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_authenticated{consumer="]] .. register_site_response.client_id .. [[",service="demo-service"} 3]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]] .. register_site_response.client_id .. [[",service="demo-service"} 2]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/posts",method="GET"]]), 1, true))
 
     print "test with unescaped space in the path, path /posts"
@@ -974,105 +1021,158 @@ end)
 
 test("2 different service with different clients", function()
 
-    setup("oxd-model9.lua")
+    setup_db_less("oxd-model9.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+    local register_site_response2, access_token2 = kong_utils.register_site_get_client_token()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
-
-    configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/posts",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name =  "demo-service",
+                url = "http://backend",
+            },
+            {
+                name =  "demo-service2",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+            {
+                name =  "demo-route2",
+                service = "demo-service2",
+                hosts = { "backend2.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/posts",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin",
+                                            "employee"
+                                        }
                                     },
-                                    {
-                                        var = 1
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
-            }
-        },
-        deny_by_default = true
-    })
-
-    print"create a consumer"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response.client_id, [[']]
-    )
-
-    local consumer_response = JSON:decode(res)
-
-    local create_service_response2 = configure_service_route("demo-service2", "backend", "backend2.com")
-
-    print"test it works"
-    sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend2.com']])
-
-    local register_site_response2, access_token2 = configure_auth_plugin(create_service_response2,{})
-
-    configure_pep_plugin(register_site_response2, create_service_response2, {
-        oauth_scope_expression = {
+                    },
+                },
+            },
             {
-                path = "/todos",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
+                name = "gluu-oauth-auth",
+                service = "demo-service2",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response2.client_id,
+                    client_secret = register_site_response2.client_secret,
+                    oxd_id = register_site_response2.oxd_id,
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service2",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response2.client_id,
+                    client_secret = register_site_response2.client_secret,
+                    oxd_id = register_site_response2.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/todos",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "admin",
+                                            "employee"
+                                        }
                                     },
-                                    {
-                                        var = 1
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
                                     }
                                 }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
                             }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
                         }
-                    }
-                }
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
             }
         },
-        deny_by_default = true
-    })
+        consumers = {
+            {
+                custom_id = register_site_response.client_id,
+            },
+            {
+                custom_id = register_site_response2.client_id,
+            }
 
-    print"create a consumer 2"
-    local res, err = sh_ex([[curl --fail -v -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/consumers/ --data 'custom_id=]], register_site_response2.client_id, [[']]
-    )
+        }
+    }
 
-    local consumer_response2 = JSON:decode(res)
+    kong_utils.gg_db_less(kong_config)
 
     print"test it work with token"
     local res, err = sh_ex(
@@ -1088,271 +1188,346 @@ test("2 different service with different clients", function()
         access_token2, [[']]
     )
 
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+local function build_config(oauth_scope_expression)
+    return {
+        _format_version = "1.1",
+        services = {
+            {
+                name = "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name = "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = "1234567890",
+                    client_secret = "1234567890",
+                    oxd_id = "1234567890",
+                    pass_credentials = "hide",
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = "1234567890",
+                    client_secret = "1234567890",
+                    oxd_id = "1234567890",
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode(oauth_scope_expression),
+                },
+            },
+            {
+                name = "gluu-metrics",
+            }
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
+                custom_id = "1234567890",
+            }
+        }
+    }
+end
+
+test("Path is missing or empty in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                }
+                            }
+                        },
+                        data = {
+                            "admin"
+                        }
+                    },
+                    httpMethods = {
+                        "GET",
+                        "DELETE",
+                        "POST"
+                    }
+                }
+            }
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("Path is missing or empty in expression", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-test("validate oauth_scope_expression", function()
+test("Empty expression not allowed", function()
+    setup_db_less()
 
-    setup("oxd-model3.lua")
+    local kong_config = build_config{}
 
-    local create_service_response = configure_service_route()
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response, access_token = configure_auth_plugin(create_service_response,{})
-
-    print "Empty or invalid item in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {},
-        deny_by_default = true,
-    }, true)
+    local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Empty expression not allowed", 1, true))
 
-    print "Path is missing in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Path is missing or empty in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
+                        data = {
+                            "admin"
                         }
+                    },
+                    httpMethods = {
+                        "GET",
+                        "DELETE",
+                        "POST"
                     }
                 }
-            },
-        },
-        deny_by_default = true,
-    }, true)
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Path is missing or empty in expression", 1, true))
 
-    print "Path is empty in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Duplicate path in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "/posts/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
+                        data = {
+                            "admin"
                         }
+                    },
+                    httpMethods = {
+                        "GET",
+                        "DELETE",
+                        "POST"
                     }
                 }
             }
         },
-        deny_by_default = true,
-    }, true)
-    assert(res:find("Path is missing or empty in expression", 1, true))
-
-    print "Duplicate path in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "/posts/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
+        {
+            path = "/posts/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                },
+                                {
+                                    var = 1
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
                         },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
+                        data = {
+                            "admin",
+                            "employee"
                         }
+                    },
+                    httpMethods = {
+                        "GET",
+                        "DELETE",
+                        "POST"
                     }
                 }
-            },
-            {
-                path = "/posts/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    },
-                                    {
-                                        var = 1
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin",
-                                "employee"
-                            }
-                        },
-                        httpMethods = {
-                            "GET",
-                            "DELETE",
-                            "POST"
-                        }
-                    }
-                }
-            },
+            }
         },
-        deny_by_default = true,
-    }, true)
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Duplicate path in expression", 1, true))
 
-    print "Conditions are missing in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "/posts/??",
-            },
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Conditions are missing in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "/posts/??",
         },
-        deny_by_default = true,
-    }, true)
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Conditions are missing in expression", 1, true))
 
-    print "HTTP Methods are missing from condition in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "/posts/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin"
-                            }
-                        },
-                    }
-                }
-            }
-        },
-        deny_by_default = true,
-    }, true)
-    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
 
-    print "HTTP Methods are empty from condition in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "/posts/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin"
-                            }
-                        },
-                        httpMethods = {}
-                    }
-                }
-            }
-        },
-        deny_by_default = true,
-    }, true)
-    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+test("HTTP Methods are missing or empty from condition in expression", function()
+    setup_db_less()
 
-    print "Duplicate http method from conditions in expression"
-    local res, err = configure_pep_plugin(register_site_response, create_service_response, {
-        oauth_scope_expression = {
-            {
-                path = "/posts/??",
-                conditions = {
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
+    local kong_config = build_config{
+        {
+            path = "/posts/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
                                 }
-                            },
-                            data = {
-                                "admin"
                             }
                         },
-                        httpMethods = {"GET", "POST"}
+                        data = {
+                            "admin"
+                        }
                     },
-                    {
-                        scope_expression = {
-                            rule = {
-                                ["and"] = {
-                                    {
-                                        var = 0
-                                    }
-                                }
-                            },
-                            data = {
-                                "admin"
-                            }
-                        },
-                        httpMethods = {"POST","PUT"}
-                    }
                 }
             }
-        },
-        deny_by_default = true,
-    }, true)
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("HTTP Methods are missing or empty from condition in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "/posts/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                }
+                            }
+                        },
+                        data = {
+                            "admin"
+                        }
+                    },
+                    httpMethods = {}
+                }
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("Duplicate http method from conditions in expression", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "/posts/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                }
+                            }
+                        },
+                        data = {
+                            "admin"
+                        }
+                    },
+                    httpMethods = { "GET", "POST" }
+                },
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                }
+                            }
+                        },
+                        data = {
+                            "admin"
+                        }
+                    },
+                    httpMethods = { "POST", "PUT" }
+                }
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Duplicate http method from conditions in expression", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs

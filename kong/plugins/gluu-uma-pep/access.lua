@@ -195,6 +195,10 @@ function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
     return check_access_response.access == "granted"
 end
 
+function hooks.get_scope_expression(config)
+    return config.uma_scope_expression
+end
+
 return function(self, conf)
     local path = ngx.var.uri:match"^([^%s]+)"
     if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then

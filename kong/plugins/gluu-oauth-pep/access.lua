@@ -67,7 +67,7 @@ end
 -- @return true or false
 function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, requested_scopes)
     scope_expression = scope_expression or {}
-    kong.log.inspect(scope_expression)
+
     local data = {}
     local scope_expression_data = scope_expression.data
     for i = 1, #scope_expression_data do
@@ -75,6 +75,10 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
     end
     local result = logic_apply(scope_expression.rule, mark_as_array(data))
     return result
+end
+
+function hooks.get_scope_expression(config)
+    return config.oauth_scope_expression
 end
 
 return function(self, conf)

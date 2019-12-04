@@ -18,6 +18,7 @@ function handler:access(config)
     -- (will log that your plugin is entering this context)
     handler.super.access(self)
 
+    kong.log.debug("All stock Kong authentication plugins are disabled, use Gluu authentication plugins")
     kong.response.exit(500)
 end
 

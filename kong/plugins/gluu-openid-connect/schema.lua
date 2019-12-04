@@ -1,6 +1,5 @@
 local common = require "gluu.kong-common"
 local typedefs = require "kong.db.schema.typedefs"
-local json_cache = require "gluu.json-cache"
 local cjson = require "cjson.safe"
 
 return {
@@ -24,7 +23,6 @@ return {
                     { max_id_token_age = typedefs.timeout  { required = true }, },
                     { max_id_token_auth_age = typedefs.timeout  { required = true }, },
                     { required_acrs_expression = { required = false, type = "string" }, },
-                    { method_path_tree = { required = false, type = "string" }, },
                     {
                         custom_headers = {
                             required = false,
@@ -44,17 +42,14 @@ return {
                 },
                 custom_validator = function(config)
                     if not config.required_acrs_expression then
-                        config.method_path_tree = nil
                         return true
                     end
-                    local required_acrs_expression = json_cache(config.required_acrs_expression)
+                    local required_acrs_expression = cjson.decode(config.required_acrs_expression)
                     local ok, err = common.check_expression(required_acrs_expression)
                     if not ok then
                         return false, err
                     end
 
-                    local method_path_tree = common.convert_scope_expression_to_path_wildcard_tree(required_acrs_expression)
-                    config.method_path_tree = cjson.encode(method_path_tree)
                     return true
                 end
             },

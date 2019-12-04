@@ -35,13 +35,21 @@ local endpoint_without_token = {
     ["/get-client-token"] = true,
 }
 
-local index = 0
+local index = -1
 -- model is an array where every element has structure below:
 -- expect: expected oxd-https-extentions endpoint
 -- data: body to response, will be conversted into JSON
 -- callback: function to modify hardcoded response before send it to wire
 return function(model)
     index = index + 1
+    if index == 0 then
+        -- we test oxd mock container for readiness by HEAD request
+        if ngx.req.get_method() ~= "HEAD" then
+            ngx.log(ngx.ERR, "expect HEAD method,  got: ", method)
+            return ngx.exit(400)
+        end
+        return ngx.exit(200)
+    end
 
     if index > #model then
         ngx.log(ngx.ERR, "scenario is finished")

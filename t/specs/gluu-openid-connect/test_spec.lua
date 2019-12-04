@@ -13,210 +13,56 @@ local pl_path = require "pl.path"
 local pl_tmpname = pl_path.tmpname
 local pl_file = require "pl.file"
 
-local function setup(model)
-    _G.ctx = {}
-    local ctx = _G.ctx
-    ctx.finalizeres = {}
-    ctx.host_git_root = host_git_root
-    ctx.cookie_tmp_filename = pl_tmpname()
-
-    ctx.print_logs = true
-    finally(function()
-        if ctx.print_logs then
-            if ctx.kong_id then
-                sh("docker logs ", ctx.kong_id, " || true") -- don't fail
-            end
-            if ctx.oxd_id then
-                sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
-            end
-        end
-
-        local finalizeres = ctx.finalizeres
-        -- call finalizers in revers order
-        for i = #finalizeres, 1, -1 do
-            xpcall(finalizeres[i], debug.traceback)
-        end
-
-        pl_file.delete(ctx.cookie_tmp_filename)
-    end)
-
-
-    kong_utils.docker_unique_network()
-    kong_utils.kong_postgress_custom_plugins{
-        plugins = {
-            ["gluu-openid-connect"] = host_git_root .. "/kong/plugins/gluu-openid-connect",
-            ["gluu-uma-pep"] = host_git_root .. "/kong/plugins/gluu-uma-pep",
-            ["gluu-metrics"] = host_git_root .. "/kong/plugins/gluu-metrics",
-        },
-        modules = {
-            ["gluu/oxdweb.lua"] = host_git_root .. "/third-party/oxd-web-lua/oxdweb.lua",
-            ["gluu/kong-common.lua"] = host_git_root .. "/kong/common/kong-common.lua",
-            ["gluu/path-wildcard-tree.lua"] = host_git_root .. "/kong/common/path-wildcard-tree.lua",
-            ["gluu/json-cache.lua"] = host_git_root .. "/kong/common/json-cache.lua",
-            ["gluu/header-cache.lua"] = host_git_root .. "/kong/common/header-cache.lua",
-            ["resty/jwt.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt.lua",
-            ["resty/evp.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/evp.lua",
-            ["resty/jwt-validators.lua"] = host_git_root .. "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua",
-            ["resty/hmac.lua"] = host_git_root .. "/third-party/lua-resty-hmac/lib/resty/hmac.lua",
-            ["resty/session.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session.lua",
-            ["resty/session/ciphers/aes.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/ciphers/aes.lua",
-            ["resty/session/encoders/base64.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/encoders/base64.lua",
-            ["resty/session/hmac/sha1.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/hmac/sha1.lua",
-            ["resty/session/identifiers/random.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/identifiers/random.lua",
-            ["resty/session/serializers/json.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/serializers/json.lua",
-            ["resty/session/storage/cookie.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/storage/cookie.lua",
-            ["resty/session/strategies/default.lua"] = host_git_root .. "/third-party/lua-resty-session/lib/resty/session/strategies/default.lua",
-            ["prometheus.lua"] = host_git_root .. "/third-party/nginx-lua-prometheus/prometheus.lua",
-        },
-        host_git_root = host_git_root,
-    }
-    kong_utils.backend()
-    kong_utils.oxd_mock(test_root .. "/" .. model)
-end
-
-local function configure_service_route(service_name, service, route)
-    service_name = service_name or "demo-service"
-    service = service or "backend"
-    route = route or "backend.com"
-    print"create a Sevice"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -sS -X POST --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/ --header 'content-type: application/json' --data '{"name":"]],service_name,[[","url":"http://]],
-        service, [["}']]
-    )
-
-    local create_service_response = JSON:decode(res)
-
-    print"create a Route"
-    local res, err = sh_until_ok(10,
-        [[curl --fail -i -sS -X POST  --url http://localhost:]],
-        ctx.kong_admin_port, [[/services/]], service_name, [[/routes --data 'hosts[]=]], route, [[']]
-    )
-
-    return create_service_response
-end
-
-local function configure_plugin(create_service_response, plugin_config)
-    if plugin_config.required_acrs_expression then
-        plugin_config.required_acrs_expression = JSON:encode(plugin_config.required_acrs_expression)
-    end
-
-    local register_site = {
-        scope = { "openid", "uma_protection" },
-        op_host = "just_stub",
-        authorization_redirect_uri = "https://client.example.com/cb",
-        client_name = "demo plugin",
-        grant_types = { "client_credentials" }
-    }
-    local register_site_json = JSON:encode(register_site)
-
-    local res, err = sh_ex(
-        [[curl --fail -v -sS -X POST --url http://localhost:]], ctx.oxd_port,
-        [[/register-site --header 'Content-Type: application/json' --data ']],
-        register_site_json, [[']]
-    )
-    local register_site_response = JSON:decode(res)
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-openid-connect",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl -v -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-    local plugin_response = JSON:decode(res)
-
-    return register_site_response, plugin_response
-end
-
-local function configure_pep_plugin(register_site_response, create_service_response, plugin_config)
-    if plugin_config.uma_scope_expression then
-        plugin_config.uma_scope_expression = JSON:encode(plugin_config.uma_scope_expression)
-    end
-
-    plugin_config.op_url = "http://stub"
-    plugin_config.oxd_url = "http://oxd-mock"
-    plugin_config.client_id = register_site_response.client_id
-    plugin_config.client_secret = register_site_response.client_secret
-    plugin_config.oxd_id = register_site_response.oxd_id
-
-    local payload = {
-        name = "gluu-uma-pep",
-        config = plugin_config,
-        service = { id = create_service_response.id},
-    }
-
-    local payload_json = JSON:encode(payload)
-
-    print"enable plugin for the Service"
-    local res, err = sh_ex([[
-        curl -v -i -sS -X POST  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/ ]],
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-    assert(res:find("HTTP/1.1 201", 1, true))
-end
-
-local function update_required_acrs_expression(plugin_id, required_acrs_expression)
-    local required_acrs_expression_json = JSON:encode(required_acrs_expression)
-    local payload = {
-        config = {
-            required_acrs_expression = required_acrs_expression_json
-        },
-    }
-    local payload_json = JSON:encode(payload)
-
-    print"update plugin"
-    local res, err = sh_ex([[
-        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/]], plugin_id,
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload_json, [[']]
-    )
-end
-
-local function unset_required_acrs_expression(plugin_id)
-    local payload = [[{
-        "config": { "required_acrs_expression" : null }
-    }]]
-
-    print"unset_required_acrs_expression"
-    local res, err = sh_ex([[
-        curl --fail -v -i -sS -X PATCH  --url http://localhost:]], ctx.kong_admin_port,
-        [[/plugins/]], plugin_id,
-        [[ --header 'content-type: application/json;charset=UTF-8' --data ']], payload, [[']]
-    )
+-- finally() available only in current module environment
+-- this is a hack to pass it to a functions in kong_utils
+local function setup_db_less(model)
+    kong_utils.setup_db_less(finally, test_root .. "/" .. model, true) -- create_cookie_tmp_filename = true
 end
 
 test("basic", function()
-    setup("oxd-model1.lua")
+    setup_db_less("oxd-model1.lua")
+
+    local register_site_response = kong_utils.register_site()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 4,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
     local cookie_tmp_filename = ctx.cookie_tmp_filename
-
-    local create_service_response = configure_service_route()
-
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 14,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
-    })
 
     print"test it responds with 302"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -242,7 +88,7 @@ test("basic", function()
     assert(res:find("200", 1, true))
 
 
-    sh_ex("sleep 15");
+    sh_ex("sleep 5");
 
     print"id_token is expired, require silent reauth"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -277,69 +123,91 @@ test("basic", function()
 end)
 
 test("OpenID Connect with UMA, Metrics", function()
-    setup("oxd-model2.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model2.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print"test it works"
-    local stdout, stderr = sh_ex([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local test_runner_ip = stdout:match("x%-real%-ip: ([%d%.]+)")
-    print("test_runner_ip: ", test_runner_ip)
-
-    print "configure gluu-metrics and ip restriction plugin for the Service"
-    local ip_restrictriction_response = kong_utils.configure_ip_restrict_plugin(create_service_response, {
-        whitelist = {test_runner_ip}
-    })
-    kong_utils.configure_metrics_plugin({
-        gluu_prometheus_server_host = "localhost",
-        ip_restrict_plugin_id = ip_restrictriction_response.id
-    })
-
-    local register_site_response = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
-    })
-
-    print"Adding uma-pep"
-    configure_pep_plugin(register_site_response, create_service_response,
-        {
-            uma_scope_expression = {
-                {
-                    path = "/page1",
-                    conditions = {
-                        {
-                            httpMethods = {"GET"},
-                        }
-                    }
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
                 },
-                {
-                    path = "/page2/{todos|photos}",
-                    conditions = {
+            },
+            {
+                name = "gluu-uma-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    obtain_rpt = true,
+                    uma_scope_expression = JSON:encode{
                         {
-                            httpMethods = {"GET"},
-                        }
-                    }
-                },
-                {
-                    path = "/path/?/image.jpg",
-                    conditions = {
+                            path = "/page1",
+                            conditions = {
+                                {
+                                    httpMethods = {"GET"},
+                                }
+                            }
+                        },
                         {
-                            httpMethods = {"GET"},
+                            path = "/page2/{todos|photos}",
+                            conditions = {
+                                {
+                                    httpMethods = {"GET"},
+                                }
+                            }
+                        },
+                        {
+                            path = "/path/?/image.jpg",
+                            conditions = {
+                                {
+                                    httpMethods = {"GET"},
+                                }
+                            }
                         }
                     }
                 }
             },
-            deny_by_default = true,
-            obtain_rpt = true
-        }
-    )
+            {
+                name = "gluu-metrics",
+            }
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     print"test it responds with 302"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -370,10 +238,10 @@ test("OpenID Connect with UMA, Metrics", function()
         [[/gluu-metrics]]
     )
     assert(res:lower():find("gluu_openid_connect_users_authenticated", 1, true))
-    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="]] .. create_service_response.name .. [["} 3]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="]] .. create_service_response.name .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="]] .. create_service_response.name .. [["} 2]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="]] .. create_service_response.name .. [["} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="demo-service"} 3]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="demo-service"} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="demo-service"} 2]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="demo-service"} 1]]), 1, true))
 
     print"request third time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -399,12 +267,12 @@ test("OpenID Connect with UMA, Metrics", function()
         [[/gluu-metrics]]
     )
     assert(res:lower():find("gluu_openid_connect_users_authenticated", 1, true))
-    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="]] .. create_service_response.name .. [["} 4]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page2/photos",method="GET",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/path/123/image.jpg",method="GET",service="]] .. create_service_response.name .. [["} 1]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="]] .. create_service_response.name .. [["} 5]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="]] .. create_service_response.name .. [["} 5]]), 1, true))
-    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="]] .. create_service_response.name .. [["} 3]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page1",method="GET",service="demo-service"} 4]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/page2/photos",method="GET",service="demo-service"} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/path/123/image.jpg",method="GET",service="demo-service"} 1]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_openid_connect_users_authenticated{service="demo-service"} 5]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_client_granted{consumer="openid_connect_authentication",service="demo-service"} 5]]), 1, true))
+    assert(res:lower():find(string.lower([[gluu_uma_ticket{service="demo-service"} 3]]), 1, true))
 
     print "deny for tha path which is not registered in UMA resources"
     local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
@@ -416,42 +284,73 @@ test("OpenID Connect with UMA, Metrics", function()
 end)
 
 test("OpenID Connect with UMA, PCT", function()
-    setup("oxd-model3.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model3.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local register_site_response = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
-    })
-
-    print"Adding uma-pep"
-    configure_pep_plugin(register_site_response, create_service_response,
-        {
-            uma_scope_expression = {
-                {
-                    path = "/page1",
-                    conditions = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
+                },
+            },
+            {
+                name = "gluu-uma-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = false,
+                    obtain_rpt = true,
+                    require_id_token = true,
+                    uma_scope_expression = JSON:encode{
                         {
-                            httpMethods = {"GET"},
+                            path = "/page1",
+                            conditions = {
+                                {
+                                    httpMethods = {"GET"},
+                                }
+                            }
                         }
                     }
                 }
             },
-            deny_by_default = false,
-            obtain_rpt = true,
-            require_id_token = true,
-        }
-    )
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     print"test it responds with 302"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -490,43 +389,74 @@ test("OpenID Connect with UMA, PCT", function()
 end)
 
 test("OpenID Connect with UMA Claim gathering flow", function()
-    setup("oxd-model4.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model4.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local register_site_response = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
-    })
-
-    print"Adding uma-pep"
-    configure_pep_plugin(register_site_response, create_service_response,
-        {
-            uma_scope_expression = {
-                {
-                    path = "/page1",
-                    conditions = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url"
+                },
+            },
+            {
+                name = "gluu-uma-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    obtain_rpt = true,
+                    redirect_claim_gathering_url = true,
+                    claims_redirect_path = "/claim_gathering_path",
+                    uma_scope_expression = JSON:encode{
                         {
-                            httpMethods = {"GET"},
+                            path = "/page1",
+                            conditions = {
+                                {
+                                    httpMethods = {"GET"},
+                                }
+                            }
                         }
                     }
                 }
             },
-            deny_by_default = true,
-            obtain_rpt = true,
-            redirect_claim_gathering_url = true,
-            claims_redirect_path = "/claim_gathering_path"
-        }
-    )
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     print"test it responds with 302"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -577,52 +507,78 @@ test("OpenID Connect with UMA Claim gathering flow", function()
 end)
 
 test("acr_values testing", function()
-    setup("oxd-model5.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model5.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local _, plugin = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/??",
-                conditions = {
-                    {
-                        required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/superhero",
-                conditions = {
-                    {
-                        required_acrs = { "superhero" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/open/??",
-                conditions = {
-                    {
-                        no_auth = true,
-                        httpMethods = { "?" }, -- any
-                    }
-                }
+                name =  "demo-service",
+                url = "http://backend",
             },
         },
-    })
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    required_acrs_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    required_acrs = { "auth_ldap_server" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/superhero",
+                            conditions = {
+                                {
+                                    required_acrs = { "superhero" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/open/??",
+                            conditions = {
+                                {
+                                    no_auth = true,
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
         ctx.kong_proxy_port, [[/open/page,html --header 'Host: backend.com' ]])
@@ -644,29 +600,28 @@ test("acr_values testing", function()
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
 
-    update_required_acrs_expression(plugin.id,
+    kong_config.plugins[1].config.required_acrs_expression = JSON:encode{
         {
-            {
-                path = "/??",
-                conditions = {
-                    {
-                        required_acrs = { "otp" },
-                        httpMethods = { "?" }, -- any
-                    }
+            path = "/??",
+            conditions = {
+                {
+                    required_acrs = { "otp" },
+                    httpMethods = { "?" }, -- any
                 }
-            },
-            {
-                path = "/superhero",
-                conditions = {
-                    {
-                        required_acrs = { "superhero" },
-                        httpMethods = { "?" }, -- any
-                    }
+            }
+        },
+        {
+            path = "/superhero",
+            conditions = {
+                {
+                    required_acrs = { "superhero" },
+                    httpMethods = { "?" }, -- any
                 }
-            },
-        })
+            }
+        },
+    }
+    kong_utils.db_less_reconfigure(kong_config)
 
-    sh_ex("sleep 1")
 
     print"acr=OTP, acr updated so plugin should redirect for re-auth"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -684,38 +639,35 @@ test("acr_values testing", function()
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
 
-    update_required_acrs_expression(plugin.id,
+    kong_config.plugins[1].config.required_acrs_expression = JSON:encode{
         {
-            {
-                path = "/??",
-                conditions = {
-                    {
-                        required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
+            path = "/??",
+            conditions = {
+                {
+                    required_acrs = { "auth_ldap_server" },
+                    httpMethods = { "?" }, -- any
                 }
-            },
-            {
-                path = "/superhero",
-                conditions = {
-                    {
-                        required_acrs = { "superhero" },
-                        httpMethods = { "?" }, -- any
-                    }
+            }
+        },
+        {
+            path = "/superhero",
+            conditions = {
+                {
+                    required_acrs = { "superhero" },
+                    httpMethods = { "?" }, -- any
                 }
-            },
-            {
-                path = "/any_acr",
-                conditions = {
-                    {
-                        httpMethods = { "?" }, -- any
-                    }
+            }
+        },
+        {
+            path = "/any_acr",
+            conditions = {
+                {
+                    httpMethods = { "?" }, -- any
                 }
-            },
-        })
-
-
-    sh_ex("sleep 1")
+            }
+        },
+    }
+    kong_utils.db_less_reconfigure(kong_config)
 
     print"acr=auth_ldap_server, plugin should allow because already authenticated with auth_ldap_server"
     local res, err = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
@@ -751,34 +703,60 @@ test("acr_values testing", function()
 end)
 
 test("not enough acr", function()
-    setup("oxd-model6.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model6.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local _, plugin = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/??",
-                conditions = {
-                    {
-                        required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
+                name =  "demo-service",
+                url = "http://backend",
             },
         },
-    })
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    required_acrs_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    required_acrs = { "auth_ldap_server" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     print"acr=auth_ldap_server"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -800,46 +778,72 @@ end)
 
 -- https://github.com/GluuFederation/gluu-gateway/issues/355
 test("required_acrs in user session", function()
-    setup("oxd-model7.lua")
+    setup_db_less("oxd-model7.lua")
+
+    local register_site_response = kong_utils.register_site()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    required_acrs_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/users/??",
+                            conditions = {
+                                {
+                                    required_acrs = { "auth_ldap_server" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                    },
+                    custom_headers = {
+                        {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
+                        {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
     local cookie_tmp_filename = ctx.cookie_tmp_filename
-
-    local create_service_response = configure_service_route()
-
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local _, plugin = configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs_expression = {
-            {
-                path = "/??",
-                conditions = {
-                    {
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/users/??",
-                conditions = {
-                    {
-                        required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-        },
-        custom_headers = {
-            {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
-            {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
-        },
-    })
 
     print"acr=any"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -878,28 +882,26 @@ test("required_acrs in user session", function()
     assert(res:find("kong-user-info-jwt", 1, true))
 
 
-    update_required_acrs_expression(plugin.id,
+    kong_config.plugins[1].config.required_acrs_expression = JSON:encode{
         {
-            {
-                path = "/??",
-                conditions = {
-                    {
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/users/??",
-                conditions = {
-                    {
-                        required_acrs = { "otp" },
-                        httpMethods = { "?" }, -- any
-                    }
+            path = "/??",
+            conditions = {
+                {
+                    httpMethods = { "?" }, -- any
                 }
             }
-        })
-
-    sh_ex("sleep 1")
+        },
+        {
+            path = "/users/??",
+            conditions = {
+                {
+                    required_acrs = { "otp" },
+                    httpMethods = { "?" }, -- any
+                }
+            }
+        }
+    }
+    kong_utils.db_less_reconfigure(kong_config)
 
     print"acr=otp"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -922,42 +924,68 @@ end)
 
 test("unset required_acrs_expression", function()
 
-    setup("oxd-model7.lua")
-    local cookie_tmp_filename = ctx.cookie_tmp_filename
+    setup_db_less("oxd-model7.lua")
 
-    local create_service_response = configure_service_route()
+    local register_site_response = kong_utils.register_site()
 
-    print "test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    local _, plugin = configure_plugin(create_service_response, {
-        authorization_redirect_path = "/callback",
-        requested_scopes = { "openid", "email", "profile" },
-        max_id_token_age = 10,
-        max_id_token_auth_age = 60 * 60 * 24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        required_acrs_expression = {
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
             {
-                path = "/??",
-                conditions = {
-                    {
-                        httpMethods = { "?" }, -- any
-                    }
-                }
-            },
-            {
-                path = "/users/??",
-                conditions = {
-                    {
-                        required_acrs = { "auth_ldap_server" },
-                        httpMethods = { "?" }, -- any
-                    }
-                }
+                name =  "demo-service",
+                url = "http://backend",
             },
         },
-    })
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    required_acrs_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/users/??",
+                            conditions = {
+                                {
+                                    required_acrs = { "auth_ldap_server" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
 
     print "acr=any"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -975,7 +1003,8 @@ test("unset required_acrs_expression", function()
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
 
-    unset_required_acrs_expression(plugin.id)
+    kong_config.plugins[1].config.required_acrs_expression = nil
+    kong_utils.db_less_reconfigure(kong_config)
 
     print"it should allow, because we already have any acr id_token"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -987,32 +1016,58 @@ test("unset required_acrs_expression", function()
 end)
 
 test("Check custom header", function()
-    setup("oxd-model8.lua")
+    setup_db_less("oxd-model8.lua")
+
+    local register_site_response = kong_utils.register_site()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 14,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    custom_headers = {
+                        { header_name = "http_sm_name", value = "userinfo.name", format = "string" },
+                        { header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt" },
+                        { header_name = "kong_id_token_jwt", value = "id_token", format = "jwt" },
+                        { header_name = "KONG_OPENIDC_USERINFO_{*}", value = "userinfo", format = "string", iterate = true },
+                        { header_name = "KONG_OPENIDC_idtoken_{*}", value = "id_token", format = "base64", iterate = true },
+                        { header_name = "http_dept_id", value = "123", format = "base64" },
+                        { header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded" },
+                    }
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
     local cookie_tmp_filename = ctx.cookie_tmp_filename
-
-    local create_service_response = configure_service_route()
-
-    print"test it works"
-    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
-        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
-
-    configure_plugin(create_service_response,{
-        authorization_redirect_path = "/callback",
-        requested_scopes = {"openid", "email", "profile"},
-        max_id_token_age = 14,
-        max_id_token_auth_age = 60*60*24,
-        logout_path = "/logout_path",
-        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
-        custom_headers = {
-            {header_name = "http_sm_name", value = "userinfo.name", format = "string"},
-            {header_name = "KONG_USER_INFO_JWT", value = "userinfo", format = "jwt"},
-            {header_name = "kong_id_token_jwt", value = "id_token", format = "jwt"},
-            {header_name = "KONG_OPENIDC_USERINFO_{*}", value = "userinfo", format = "string", iterate = true},
-            {header_name = "KONG_OPENIDC_idtoken_{*}", value = "id_token", format = "base64", iterate = true},
-            {header_name = "http_dept_id", value = "123", format = "base64"},
-            {header_name = "http_kong_api_version", value = "version 1.0", format = "urlencoded"},
-        }
-    })
 
     print"test it responds with 302"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
@@ -1029,9 +1084,29 @@ test("Check custom header", function()
     -- test that we redirected to original url
     assert(res:find("200", 1, true))
     assert(res:find("page1", 1, true))
-    local headers = {"kong-openidc-idtoken-auth-time","kong-openidc-idtoken-aud","kong-openidc-userinfo-sub","kong-openidc-idtoken-at-hash","kong-openidc-userinfo-email","kong-openidc-idtoken-iat","kong-openidc-userinfo-given-name","kong-openidc-userinfo-family-name","kong-openidc-idtoken-nonce","kong-openidc-idtoken-iss","kong-openidc-userinfo-picture","http-sm-name","kong-id-token-jwt","http-dept-id","http-kong-api-version","kong-openidc-idtoken-sub","kong-user-info-jwt","kong-openidc-userinfo-preferred-username","kong-openidc-idtoken-exp","kong-openidc-userinfo-name"}
+    local headers = {
+        "kong-openidc-idtoken-auth-time",
+        "kong-openidc-idtoken-aud",
+        "kong-openidc-userinfo-sub",
+        "kong-openidc-idtoken-at-hash",
+        "kong-openidc-userinfo-email",
+        "kong-openidc-idtoken-iat",
+        "kong-openidc-userinfo-given-name",
+        "kong-openidc-userinfo-family-name",
+        "kong-openidc-idtoken-nonce",
+        "kong-openidc-idtoken-iss",
+        "kong-openidc-userinfo-picture",
+        "http-sm-name",
+        "kong-id-token-jwt",
+        "http-dept-id",
+        "http-kong-api-version",
+        "kong-openidc-idtoken-sub",
+        "kong-user-info-jwt",
+        "kong-openidc-userinfo-preferred-username",
+        "kong-openidc-idtoken-exp",
+        "kong-openidc-userinfo-name"}
     for i = 1, #headers do
-        assert(res:find(headers[i], 1, true))
+        assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
 
     print"request second time with cookie"
@@ -1040,7 +1115,7 @@ test("Check custom header", function()
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     for i = 1, #headers do
-        assert(res:find(headers[i], 1, true))
+        assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
 
     print"request third time with cookie"
@@ -1049,7 +1124,7 @@ test("Check custom header", function()
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     for i = 1, #headers do
-        assert(res:find(headers[i], 1, true))
+        assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
 
     print"request fourth time with cookie"
@@ -1058,8 +1133,8 @@ test("Check custom header", function()
         [[ -b ]], cookie_tmp_filename)
     assert(res:find("200", 1, true))
     for i = 1, #headers do
-        assert(res:find(headers[i], 1, true))
+        assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
 
-    --ctx.print_logs = false -- comment it out if want to see logs
+    ctx.print_logs = false -- comment it out if want to see logs
 end)

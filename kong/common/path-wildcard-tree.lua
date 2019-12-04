@@ -1,4 +1,7 @@
+local cjson = require"cjson"
+
 local gmatch = string.gmatch
+
 local function path_split(s)
     local result = {};
     for match in (s):gmatch([[/([^/]*)]]) do
@@ -152,5 +155,36 @@ _M.matchPath = function(self, method, path)
         return node[EXPRESSION_KEY]
     end
 end
+
+-- @param exp: scope expression or acrs expression
+_M.convert_scope_expression_to_path_wildcard_tree = function (exp)
+    if not exp or exp == cjson.null then
+        -- it is possible that expression is not required, but this function is called
+        return
+    end
+
+    local method_path_tree = {}
+
+    for k = 1, #exp do
+        local item = exp[k]
+
+        for i = 1, #item.conditions do
+            local condition = item.conditions[i]
+
+            for j = 1, #condition.httpMethods do
+                local t = { path = item.path }
+                -- copy all conditions keys except httpMethods
+                for k, v in pairs(condition) do
+                    if k ~= "httpMethods" then
+                        t[k] = v
+                    end
+                end
+                _M.addPath(method_path_tree, condition.httpMethods[j], item.path, t)
+            end
+        end
+    end
+    return method_path_tree
+end
+
 
 return _M

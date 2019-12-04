@@ -15,7 +15,6 @@ model = {
         },
         response = {
             oxd_id = "bcad760f-91ba-46e1-a020-05e4281d91b6",
-            client_id_of_oxd_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4",
             op_host = "https://example.com",
             setup_client_oxd_id = "qwerty",
             client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B387",
@@ -58,7 +57,6 @@ model = {
         },
         response = {
             oxd_id = "bcad760f-91ba-46e1-a020-05e4281d91b7",
-            client_id_of_oxd_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.AAA4",
             op_host = "https://example.com",
             setup_client_oxd_id = "qwerty",
             client_id = "@!1736.179E.AA60.16B2!0001!8F7C.B9AB!0008!A2BB.9AE6.5F14.B388",
@@ -165,6 +163,7 @@ model = {
             expires_in = 299,
         }
     },
+
     -- #8, plugin check the client token
     {
         expect = "/introspect-access-token",

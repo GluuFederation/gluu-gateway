@@ -2,7 +2,7 @@ local oxd = require "gluu.oxdweb"
 local resty_session = require("resty.session")
 local kong_auth_pep_common = require "gluu.kong-common"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
-local json_cache = require "gluu.json-cache"
+local method_path_tree_cache = require "gluu.method-path-tree-cache"
 
 local function unexpected_error()
     kong.response.exit(502, { message = "An unexpected error ocurred" })
@@ -293,13 +293,12 @@ return function(self, conf)
         "session.present=", session.present,
         ", session.data.id_tokens=", id_tokens ~= nil)
 
-    local method_path_tree, required_acrs_expression = conf.method_path_tree, conf.required_acrs_expression
+    local required_acrs_expression = conf.required_acrs_expression
     local required_acrs, no_auth
 
-    -- we use required_acrs_expression as a flag, because Kong merge behavior
-    -- when we unset required_acrs_expression Kong doesn't unset method_path_tree
     if required_acrs_expression then
-        local rule = path_wildcard_tree.matchPath(json_cache(method_path_tree), ngx.req.get_method(), path)
+        local method_path_tree = method_path_tree_cache(required_acrs_expression)
+        local rule = path_wildcard_tree.matchPath(method_path_tree, ngx.req.get_method(), path)
         required_acrs = rule and rule.required_acrs
         no_auth = rule and rule.no_auth
     end
