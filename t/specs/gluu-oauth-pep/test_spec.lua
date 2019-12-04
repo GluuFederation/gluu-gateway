@@ -12,11 +12,11 @@ local test_root = host_git_root .. "/t/specs/gluu-oauth-pep"
 -- finally() available only in current module environment
 -- this is a hack to pass it to a functions in kong_utils
 local function setup_db_less(model)
-    kong_utils.setup_db_less(finally, test_root .. "/" .. model)
+    kong_utils.setup_db_less(finally, model and (test_root .. "/" .. model) or nil)
 end
 
 local function setup_postgress(model)
-    kong_utils.setup_postgress(finally, test_root .. "/" .. model)
+    kong_utils.setup_postgress(finally, model and (test_root .. "/" .. model) or nil)
 end
 
 test("with, without token and metrics", function()
@@ -1191,7 +1191,7 @@ test("2 different service with different clients", function()
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
-local function build_config(register_site_response, oauth_scope_expression)
+local function build_config(oauth_scope_expression)
     return {
         _format_version = "1.1",
         services = {
@@ -1214,9 +1214,9 @@ local function build_config(register_site_response, oauth_scope_expression)
                 config = {
                     op_url = "http://stub",
                     oxd_url = "http://oxd-mock",
-                    client_id = register_site_response.client_id,
-                    client_secret = register_site_response.client_secret,
-                    oxd_id = register_site_response.oxd_id,
+                    client_id = "1234567890",
+                    client_secret = "1234567890",
+                    oxd_id = "1234567890",
                     pass_credentials = "hide",
                 },
             },
@@ -1226,9 +1226,9 @@ local function build_config(register_site_response, oauth_scope_expression)
                 config = {
                     op_url = "http://stub",
                     oxd_url = "http://oxd-mock",
-                    client_id = register_site_response.client_id,
-                    client_secret = register_site_response.client_secret,
-                    oxd_id = register_site_response.oxd_id,
+                    client_id = "1234567890",
+                    client_secret = "1234567890",
+                    oxd_id = "1234567890",
                     deny_by_default = true,
                     oauth_scope_expression = JSON:encode(oauth_scope_expression),
                 },
@@ -1240,18 +1240,16 @@ local function build_config(register_site_response, oauth_scope_expression)
         consumers = {
             {
                 id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2d",
-                custom_id = register_site_response.client_id,
+                custom_id = "1234567890",
             }
         }
     }
 end
 
 test("Path is missing or empty in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response,{
+    local kong_config = build_config{
         {
             conditions = {
                 {
@@ -1275,9 +1273,9 @@ test("Path is missing or empty in expression", function()
                 }
             }
         },
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Path is missing or empty in expression", 1, true))
@@ -1286,13 +1284,11 @@ test("Path is missing or empty in expression", function()
 end)
 
 test("Empty expression not allowed", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+    local kong_config = build_config{}
 
-    local kong_config = build_config(register_site_response,{})
-
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Empty expression not allowed", 1, true))
@@ -1301,11 +1297,9 @@ test("Empty expression not allowed", function()
 end)
 
 test("Path is missing or empty in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response,{
+    local kong_config = build_config{
         {
             path = "",
             conditions = {
@@ -1330,9 +1324,9 @@ test("Path is missing or empty in expression", function()
                 }
             }
         }
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Path is missing or empty in expression", 1, true))
@@ -1341,11 +1335,9 @@ test("Path is missing or empty in expression", function()
 end)
 
 test("Duplicate path in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response, {
+    local kong_config = build_config{
         {
             path = "/posts/??",
             conditions = {
@@ -1398,9 +1390,9 @@ test("Duplicate path in expression", function()
                 }
             }
         },
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Duplicate path in expression", 1, true))
@@ -1409,17 +1401,15 @@ test("Duplicate path in expression", function()
 end)
 
 test("Conditions are missing in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response, {
+    local kong_config = build_config{
         {
             path = "/posts/??",
         },
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Conditions are missing in expression", 1, true))
@@ -1428,11 +1418,9 @@ test("Conditions are missing in expression", function()
 end)
 
 test("HTTP Methods are missing or empty from condition in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response, {
+    local kong_config = build_config{
         {
             path = "/posts/??",
             conditions = {
@@ -1452,9 +1440,9 @@ test("HTTP Methods are missing or empty from condition in expression", function(
                 }
             }
         }
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
@@ -1463,11 +1451,9 @@ test("HTTP Methods are missing or empty from condition in expression", function(
 end)
 
 test("HTTP Methods are missing or empty from condition in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response, {
+    local kong_config = build_config{
         {
             path = "/posts/??",
             conditions = {
@@ -1488,9 +1474,9 @@ test("HTTP Methods are missing or empty from condition in expression", function(
                 }
             }
         }
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("HTTP Methods are missing or empty from condition in expression", 1, true))
@@ -1499,11 +1485,9 @@ test("HTTP Methods are missing or empty from condition in expression", function(
 end)
 
 test("Duplicate http method from conditions in expression", function()
-    setup_db_less("oxd-model3.lua")
+    setup_db_less()
 
-    local register_site_response, access_token = kong_utils.register_site_get_client_token()
-
-    local kong_config = build_config(register_site_response, {
+    local kong_config = build_config{
         {
             path = "/posts/??",
             conditions = {
@@ -1539,9 +1523,9 @@ test("Duplicate http method from conditions in expression", function()
                 }
             }
         }
-    })
+    }
 
-    kong_utils.gg_db_less(kong_config)
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
 
     local res = stderr("docker logs ", ctx.kong_id)
     assert(res:find("Duplicate http method from conditions in expression", 1, true))

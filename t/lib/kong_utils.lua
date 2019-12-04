@@ -229,7 +229,7 @@ _M.kong_postgress = function()
 end
 
 
-_M.gg_db_less = function(config, plugins)
+_M.gg_db_less = function(config, plugins, wait_for_stop)
 
     local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
     ctx.finalizeres[#ctx.finalizeres + 1] = function()
@@ -256,8 +256,12 @@ _M.gg_db_less = function(config, plugins)
     ctx.kong_proxy_port =
     stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
 
-    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
-    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+    if wait_for_stop then
+        sh_ex("docker wait ", ctx.kong_id)
+    else
+        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+    end
 end
 
 _M.backend = function(image)
