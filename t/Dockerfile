@@ -21,7 +21,10 @@ RUN apt-get -qqy install apt-transport-https ca-certificates software-properties
     pip install --upgrade pip==9.0.3 && \
     pip install docker-compose
 
-RUN cd /opt && git clone -q https://github.com/vishnubob/wait-for-it.git
+RUN curl https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh --output /opt/wait-for-it.sh --silent && \
+  chmod +x /opt/wait-for-it.sh
+
+COPY wait-for-http-ready.sh /opt/
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

@@ -234,7 +234,7 @@ test("deny_by_default = true, uma-auth", function()
                 },
             },
             {
-                name = "gluu-metrics",
+                name = "gluu-metrics"
             }
         },
         consumers = {
@@ -321,7 +321,7 @@ test("deny_by_default = false and pass_credentials = hide, uma-auth", function()
                 },
             },
             {
-                name = "gluu-metrics",
+                name = "gluu-metrics"
             }
         },
         consumers = {

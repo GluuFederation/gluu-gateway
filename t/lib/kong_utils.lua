@@ -166,8 +166,8 @@ _M.kong_postgress_custom_plugins = function(opts)
     ctx.kong_proxy_port =
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
 
 _M.kong_postgress = function()
@@ -224,8 +224,8 @@ _M.kong_postgress = function()
     ctx.kong_proxy_port =
     stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
 
 
@@ -256,10 +256,8 @@ _M.gg_db_less = function(config, plugins)
     ctx.kong_proxy_port =
     stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_admin_port)
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.kong_proxy_port)
-
-    sleep(3)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
 
 _M.backend = function(image)
@@ -276,7 +274,7 @@ _M.backend = function(image)
     ctx.backend_port =
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"80/tcp\") 0).HostPort}}' ", ctx.backend_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.backend_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.backend_port)
 end
 
 _M.oxd_mock = function(model, image)
@@ -299,7 +297,7 @@ _M.oxd_mock = function(model, image)
     ctx.oxd_port =
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"80/tcp\") 0).HostPort}}' ", ctx.oxd_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.oxd_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.oxd_port)
 end
 
 _M.opa = function()
@@ -317,7 +315,7 @@ _M.opa = function()
     ctx.opa_port =
         stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8181/tcp\") 0).HostPort}}' ", ctx.opa_id)
 
-    local res, err = sh_ex("/opt/wait-for-it/wait-for-it.sh ", "127.0.0.1:", ctx.opa_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.opa_port)
 end
 
 _M.configure_metrics_plugin = function(plugin_config)
