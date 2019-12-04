@@ -16,9 +16,9 @@ return function(json_text)
         return method_path_tree
     end
 
-    local oauth_scope_expression = cjson.decode(json_text)
+    local scope_expression = cjson.decode(json_text)
 
-    method_path_tree = path_wildcard_tree.convert_scope_expression_to_path_wildcard_tree(oauth_scope_expression)
+    method_path_tree = path_wildcard_tree.convert_scope_expression_to_path_wildcard_tree(scope_expression)
 
     worker_cache:set(json_text, method_path_tree, EXPIRE_IN)
 
