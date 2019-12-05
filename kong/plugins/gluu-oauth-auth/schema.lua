@@ -16,7 +16,8 @@ return {
                     { client_secret = { required = true, type = "string" }, },
                     { op_url = typedefs.url { required = true }, },
                     { anonymous = { type = "string", default = " " }, }, -- TODO kong_auth_pep_common.check_user
-                    { pass_credentials = { type = "string", default = "pass" }, }, -- enum = {"pass", "hide", "phantom_token"},
+                    { pass_credentials = { type = "string", default = "pass",
+                        one_of = common.PASS_CREDENTIALS_ENUM }, },
                     { consumer_mapping = { type = "boolean", default = true }, },
                     {
                         custom_headers = {
@@ -27,7 +28,8 @@ return {
                                 fields = {
                                     { header_name = { required = true, type = "string" } },
                                     { value_lua_exp = { required = true, type = "string" } },
-                                    { format = { required = false, type = "string", one_of = { "string", "jwt", "base64", "urlencoded", "list" }, } },
+                                    { format = { required = false, type = "string",
+                                        one_of = common.CUSTOM_HEADERS_FORMATS } },
                                     { sep = { required = false, type = "string" } },
                                     { iterate = { required = false, type = "boolean" } }
                                 },

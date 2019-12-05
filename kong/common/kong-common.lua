@@ -797,4 +797,7 @@ _M.get_protection_token = get_protection_token
 _M.make_jwt_alg_none = make_jwt_alg_none
 _M.split = split
 
+_M.CUSTOM_HEADERS_FORMATS = { "string", "jwt", "base64", "urlencoded", "list" }
+_M.PASS_CREDENTIALS_ENUM = { "pass", "hide", "phantom_token" }
+
 return _M

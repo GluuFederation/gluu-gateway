@@ -32,7 +32,8 @@ return {
                                 fields = {
                                     { header_name = { required = true, type = "string" } },
                                     { value_lua_exp = { required = true, type = "string" } },
-                                    { format = { required = false, type = "string", one_of = { "string", "jwt", "base64", "urlencoded", "list" }, } },
+                                    { format = { required = false, type = "string",
+                                        one_of = common.CUSTOM_HEADERS_FORMATS } },
                                     { sep = { required = false, type = "string" } },
                                     { iterate = { required = false, type = "boolean" } }
                                 },
