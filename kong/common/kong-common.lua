@@ -305,7 +305,7 @@ local function request_authenticated(conf, token_data, token)
     local const = constants.HEADERS
     local consumer = token_data.consumer
     local environment = {
-        access_token = token_data,
+        introspect_data  = token_data,
     }
 
     if consumer then
