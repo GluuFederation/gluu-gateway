@@ -269,7 +269,7 @@ _M.backend = function(image)
     ctx.backend_id = stdout("docker run -p 80 -d ",
         " --network=", ctx.network_name,
         " -v ", ctx.host_git_root, "/t/lib/backend.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
-        " --name backend ", -- TODO avoid hardcoded name
+        " --net-alias=backend ",
         image or openresty_image
     )
 
@@ -292,7 +292,8 @@ _M.oxd_mock = function(model, image)
         " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/evp.lua:/usr/local/openresty/lualib/resty/evp.lua:ro ",
         " -v ", ctx.host_git_root, "/third-party/lua-resty-jwt/lib/resty/jwt-validators.lua:/usr/local/openresty/lualib/resty/jwt-validators.lua:ro ",
         " -v ", ctx.host_git_root, "/third-party/lua-resty-hmac/lib/resty/hmac.lua:/usr/local/openresty/lualib/resty/hmac.lua:ro ",
-        " --name oxd-mock ", -- TODO avoid hardcoded name
+        " --net-alias=oxd-mock ",
+
         image or openresty_image
     )
 
@@ -309,7 +310,7 @@ _M.opa = function()
     local ctx = _G.ctx
     ctx.opa_id = stdout("docker run -p 8181 -d ",
         " --network=", ctx.network_name,
-        " --name opa ", -- TODO avoid hardcoded name
+        " --net-alias=opa ",
         image,
         " run --server "
     )
