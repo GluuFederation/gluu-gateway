@@ -1060,6 +1060,7 @@ test("Check custom header", function()
                         { header_name = "KONG_OPENIDC_idtoken_{*}", value_lua_exp = "id_token", format = "base64", iterate = true },
                         { header_name = "http_dept_id", value_lua_exp = "123", format = "base64" },
                         { header_name = "http_kong_api_version", value_lua_exp = [["version 1.0"]], format = "urlencoded" },
+                        { header_name = "GG-ACCESS-TOKEN", value_lua_exp = "access_token", format = "urlencoded" },
                     }
                 },
             },
@@ -1105,7 +1106,8 @@ test("Check custom header", function()
         "kong-user-info-jwt",
         "kong-openidc-userinfo-preferred-username",
         "kong-openidc-idtoken-exp",
-        "kong-openidc-userinfo-name"}
+        "kong-openidc-userinfo-name",
+        "gg-access-token"}
     for i = 1, #headers do
         assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end

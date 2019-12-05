@@ -90,15 +90,19 @@ local function authorization_response(conf, session)
     session_data.original_url = nil
 
     local id_tokens = session_data.id_tokens
+    local access_tokens = session_data.access_tokens
 
     if not id_tokens then
         id_tokens = {}
         session_data.id_tokens = id_tokens
+        access_tokens = {}
+        session_data.access_tokens = access_tokens
     end
 
     id_token.requested_acrs = session_data.requested_acrs
     session_data.requested_acrs = nil
     id_tokens[json.id_token] = id_token
+    access_tokens[json.id_token] = json.access_token
 
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
@@ -378,6 +382,11 @@ return function(self, conf)
         id_token = id_token,
         userinfo = session_data.userinfo
     }
+
+    local access_token = session_data.access_tokens[enc_id_token]
+    if access_token then
+        environment.access_token = access_token
+    end
 
     local new_headers = kong_auth_pep_common.make_headers(conf.custom_headers, environment, enc_id_token)
     kong.service.request.set_headers(new_headers)
