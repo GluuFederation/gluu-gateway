@@ -468,7 +468,7 @@ test("Test phantom token", function()
 end)
 
 
-test("Test Headers", function()
+test("Custom headers", function()
     setup_db_less("oxd-model1.lua")
 
     local register_site_response, access_token = kong_utils.register_site_get_client_token()
@@ -540,4 +540,63 @@ test("Test Headers", function()
     end
 
     ctx.print_logs = false
+end)
+
+
+test("Test custom headers runtime error", function()
+    setup_db_less("oxd-model1.lua")
+
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name = "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name = "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-uma-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "KONG_access_token_jwt", value_lua_exp = "access_token", format = "jwt" },
+                        { header_name = "KONG_runtime_error_test", value_lua_exp = "access_token.stub[2]", format = "string" },
+                    },
+                },
+            },
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    print"ensure that another header is set"
+    assert(stdout:find("kong-access-token-jwt", 1, true))
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("attempt to index field 'stub' (a nil value)", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)

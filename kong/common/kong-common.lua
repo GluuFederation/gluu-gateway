@@ -297,9 +297,7 @@ local function request_authenticated(conf, token_data, token)
     if conf.pass_credentials == "hide" then
         kong.log.debug("Hide authorization header")
         kong.service.request.clear_header("authorization")
-    end
-
-    if conf.pass_credentials == "phantom_token" and token_data.active then
+    elseif conf.pass_credentials == "phantom_token" and token_data.active then
         kong.log.debug("Phantom token requested")
         kong.service.request.set_header("authorization", "Bearer " .. make_jwt_alg_none(token_data))
     end
@@ -743,31 +741,35 @@ function _M.make_headers(custom_headers, environment, cache_key)
     new_headers = {}
     for i = 1, #custom_headers do
         local header = custom_headers[i]
-        local chunk_text = "return " .. header.value_lua_exp
-        local chunk = loadstring(chunk_text)
-        local value = ''
         local header_name = header.header_name
-        local ok, result = pcall(setfenv(chunk, environment))
-        if ok then
-            value = chunk()
-        else
-            kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", result)
+
+        local chunk_text = "return " .. header.value_lua_exp
+
+        -- we rely here on schema validation, it should check for valid Lua syntax
+        local chunk = assert(loadstring(chunk_text))
+        setfenv(chunk, environment)
+        local ok, value = pcall(chunk)
+        if not ok then
+            kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", value)
             value = nil
         end
 
-        if header.iterate then
-            if type(value) ~= "table" then
-                kong.log.notice(header_name .. " header value should be table, current value : ", value)
-            else
-                for k,v in pairs(value) do
-                    local header_name = header_name:gsub("{%*}", k)
-                    header_name = header_name:gsub("_", "-")
-                    map_header(header_name, v, header.format, header.sep, new_headers)
+        -- set header only if any value returned
+        if value ~= nil then
+            if header.iterate then
+                if type(value) ~= "table" then
+                    kong.log.notice(header_name .. " header value should be table, current value type : ", type(value))
+                else
+                    for k,v in pairs(value) do
+                        local header_name = header_name:gsub("{%*}", k)
+                        header_name = header_name:gsub("_", "-")
+                        map_header(header_name, v, header.format, header.sep, new_headers)
+                    end
                 end
+            else
+                header_name = header_name:gsub("_", "-")
+                map_header(header_name, value, header.format, header.sep, new_headers)
             end
-        else
-            header_name = header_name:gsub("_", "-")
-            map_header(header_name, value, header.format, header.sep, new_headers)
         end
     end
 
