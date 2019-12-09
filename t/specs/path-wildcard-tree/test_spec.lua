@@ -8,7 +8,7 @@ local git_root = os.getenv "GIT_ROOT"
 local function docker_run()
     return stdout("docker run -d --rm -p 80",
         " -v ", host_git_root, "/t/specs/path-wildcard-tree/test.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
-        " -v ", host_git_root, "/kong/common/path-wildcard-tree.lua:/usr/local/openresty/lualib/gluu/path-wildcard-tree.lua:ro ",
+        " -v ", host_git_root, "/lib/gluu/path-wildcard-tree.lua:/usr/local/openresty/lualib/gluu/path-wildcard-tree.lua:ro ",
         " -v ", host_git_root, "/t/specs/path-wildcard-tree/path-wildcard-tree-tester.lua:/usr/local/openresty/lualib/gluu/path-wildcard-tree-tester.lua:ro ",
         " openresty/openresty:alpine")
 end

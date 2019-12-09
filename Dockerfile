@@ -7,7 +7,7 @@ ARG DISABLED_PLUGINS="ldap-auth key-auth basic-auth hmac-auth jwt oauth2"
 # Gluu Gateway
 # ============
 
-ADD gluu-gateway-lua-deps.tag.gz ${LUA_DIST}/
+COPY lib/ ${LUA_DIST}/
 
 RUN for plugin in ${DISABLED_PLUGINS}; do \
   cp ${LUA_DIST}/gluu/disable_plugin_handler.lua ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
@@ -15,6 +15,16 @@ RUN for plugin in ${DISABLED_PLUGINS}; do \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/daos.lua; \
   done && \
   rm ${LUA_DIST}/gluu/disable_plugin_handler.lua
+
+#copy Lua deps
+
+COPY third-party/lua-resty-hmac/lib/ ${LUA_DIST}/
+COPY third-party/lua-resty-jwt/lib/ ${LUA_DIST}/
+COPY third-party/lua-resty-lrucache/lib/ ${LUA_DIST}/
+COPY third-party/lua-resty-session/lib/ ${LUA_DIST}/
+COPY third-party/json-logic-lua/logic.lua ${LUA_DIST}/rucciva/json_logic.lua
+COPY third-party/oxd-web-lua/oxdweb.lua ${LUA_DIST}/gluu/
+COPY third-party/nginx-lua-prometheus/prometheus.lua ${LUA_DIST}/
 
 # ===
 # ENV
