@@ -10,11 +10,11 @@ ARG DISABLED_PLUGINS="ldap-auth key-auth basic-auth hmac-auth jwt oauth2"
 COPY lib/ ${LUA_DIST}/
 
 RUN for plugin in ${DISABLED_PLUGINS}; do \
-  cp ${LUA_DIST}/gluu/disable_plugin_handler.lua ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
+  cp ${LUA_DIST}/gluu/disable-plugin-handler.lua ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/migrations/*; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/daos.lua; \
   done && \
-  rm ${LUA_DIST}/gluu/disable_plugin_handler.lua
+  rm ${LUA_DIST}/gluu/disable-plugin-handler.lua
 
 #copy Lua deps
 
