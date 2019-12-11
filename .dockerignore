@@ -1,5 +1,7 @@
 # Ignore everything
 **
 
-# Allow only one file
-!/gluu-gateway-lua-deps.tag.gz
+# Allow only
+!/lib/**
+!/third-party/**
+

@@ -1,9 +1,0 @@
-#!/bin/sh -e
-
-# Stopping gluu-gateway
-if [ -f /etc/init.d/gluu-gateway ]; then
-    /etc/init.d/gluu-gateway stop > /dev/null 2>&1
-fi
-if [ -f /lib/systemd/system/gluu-gateway.service ]; then
-   systemctl stop gluu-gateway > /dev/null 2>&1
-fi

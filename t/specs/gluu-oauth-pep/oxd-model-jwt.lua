@@ -1,4 +1,5 @@
 local cjson = require"cjson"
+local validators = require "resty.jwt-validators"
 
 local model
 model = {
@@ -48,47 +49,47 @@ model = {
         response_callback = function(response, request_json)
             local jwt_lib = require "resty.jwt"
             local t = {
-                header = { typ = "JWT", alg = "RS384", kid = "1234567890" },
+                header = { typ = "JWT", alg = "ES256", kid = "1234567890" },
                 payload = {
                     client_id = request_json.client_id,
                     exp = ngx.now() + 60*5,
-                    scope = {"openid", "oxd"},
+                    scope = "openid oxd",
                 }
             }
-            local private_key = [[
------BEGIN RSA PRIVATE KEY-----
-MIIEpAIBAAKCAQEA+H/dG3SB3xiugukW0xXxiCheGy9XkoUF3zF3Pfh8DK8HnIH2
-LDBEY5zVEkfwm+bd3mgPfpG76Vky56z3DM+FRl4LHUivbl8B+fW0kQF5z1JMZBJC
-h5s3rY3S/pkRdr0kfZgPT7SGnUJte8nTqlqLJFE384lIAxEpFORHcbZTReyFktZC
-cvyTvzFidyM4idEUT3Aua64uCdx0VuGT4OmH1oymEsAtU4Pg0VTWOoL+x4smRbwB
-ep3nSlbCPESDZ6DQEKWEHVUr+bKbYMfBpmOA4nOeIYfb+8uqeIsQ/bYv2mmkEvzD
-0gqxJsfeN+Co/R0JYEzQY3xDKyojB1lFnGdBKQIDAQABAoIBAEkEgTrFBDhCr1yG
-Ew/ZXcxNWEGSqp/B+JS5mzkZX5H2iD0DrwsS77V5at5hRyD4OG9Wkl71gYqyjBOp
-LjqUa6vejFOBfRLoVdNV0EXfciRqIUoyV1wzTqvvhXUMEyaZszQ4Tx9zgy6IS1VZ
-W5mt2z7DorYru34zN6gM37VZBqT/o5GpazvcLjUEOwCAVI5egTlV0lLy3Io57C8/
-YbaJI6GCA7+HgcGEG2bs59YpzKmwInWLb+N1kax9XqakxLJA3qcx5N6uAdtcuCve
-jZRSnEiR6MVd4bWdrokiblY8Ae+m5M6VBkrorbk5db5kULW9UcaJvln8LPy5eUzk
-8piPjhECgYEA/e3Mjlgz9fYD+BzIU8SDJg8q27vEzD1uZzpE+pdb5frIrv06LP6V
-ZppxGxK81vX+Vpokq+CSxcuV0zUZfpECoAc1hS06o473OWeBn0CX7yqheujzBMOx
-AF6O0sTnDb0XZkOqY5HYlOtlhDjOZUwVfEHuOv+Hsybl/49IJ1YgWc0CgYEA+oa6
-YWLv8E/COgvuG/G7UWmB/MkFc8HlHnHYLrK8fa1f5hm/XExmEfM/DMCQt2z8EM0b
-Ovm6Be+oav4+BkzmM6blZKRDhibs8s12BrVKPQiht39E/ykd5JIEHruyKeVeoA75
-nU91HcMV5iEF6b6WvvWQTdix7x9QJIBEES/EuM0CgYEAuAULRuT40vi0q6wAKWSy
-PnSjdJZA6lpilgCOWKQz/xidMuNks5LTpoWqDhqoK4geB5ixlrWq6Bi/vU4v6Z8h
-LePLj3XVlw5Wb41pTIW9FZ/pYm9LHlrK/R+JlYkIgNZWDNBgvMPHFzT4XrfkK1jW
-ATSudqcUKmq4J1ooygkKbMkCgYBI9KUgKRywgbmRB9peXuXqzmvhPnUNAcEEPajz
-6G8FtlCABK16ZnEu9wQ8ZXN/Rwicp+4vHXwzsFf+WG2djhVXo1mYFlHnpjxIdNbT
-G0Y0Qeg+NJzWJZYj8vWqMYSvuLD2sYW1bucvNJmS+7jqGetyTraoRNuERD0ldAje
-bGfAXQKBgQCDcJm7J57fRsFhVg+qxhlayIRudMh7Anx8fZeRxEmgxGl5BBhtHmLv
-NZDUoRYg0a8oceWDLsWTqrGkRJN6zYqa8pr+WOSe/r7QgQ+W6AgoYlHKJ5BpybZD
-Lk8vESLpKHTn32PJKBa2pPBbraWf/UVa5XQcBmpYOjfvj6SZ/pnvjA==
------END RSA PRIVATE KEY-----
-            ]]
+            local private_key = [[-----BEGIN EC PARAMETERS-----
+BggqhkjOPQMBBw==
+-----END EC PARAMETERS-----
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEICcwmLp3HFM6xNIS/+XXTCmHveGL4Sa9NTxBe3lIZQ0DoAoGCCqGSM49
+AwEHoUQDQgAEkpNLc/4PUjPG9iVd0iKA+5dszHsRU1w9LZEVEyUudcFQWcOuSiZv
+jkP7XK4OMP0nN8+x2yhp2rkoPgzWafSwBQ==
+-----END EC PRIVATE KEY-----
+]]
             local jwt = jwt_lib:sign(private_key, t)
             print(jwt)
             response.access_token = jwt
-        end
 
+            local jwt_obj = jwt_lib:load_jwt(jwt)
+            local claim_spec = {
+                exp = validators.is_not_expired(),
+            }
+            local verified = jwt_lib:verify_jwt_obj([[-----BEGIN CERTIFICATE-----
+MIIB0TCCAXegAwIBAgIJAOo9VQCTpIExMAoGCCqGSM49BAMCMEUxCzAJBgNVBAYT
+AlJVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRn
+aXRzIFB0eSBMdGQwHhcNMTgxMjA2MTczNDE3WhcNMjgxMjAzMTczNDE3WjBFMQsw
+CQYDVQQGEwJSVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJu
+ZXQgV2lkZ2l0cyBQdHkgTHRkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkpNL
+c/4PUjPG9iVd0iKA+5dszHsRU1w9LZEVEyUudcFQWcOuSiZvjkP7XK4OMP0nN8+x
+2yhp2rkoPgzWafSwBaNQME4wHQYDVR0OBBYEFGWwerwH1k2YEUTrOtVidlb901u4
+MB8GA1UdIwQYMBaAFGWwerwH1k2YEUTrOtVidlb901u4MAwGA1UdEwQFMAMBAf8w
+CgYIKoZIzj0EAwIDSAAwRQIhAL115TQo/DX3lyhVfc5Ie+808U9oBR0MzI8B9qFh
+ri1tAiBLSeXQ89nvecDC6K+xtcCd9NvaSmObROj71CDGRLd4mA==
+-----END CERTIFICATE-----
+]]
+                , jwt_obj, claim_spec)
+
+            print(cjson.encode(verified))
+        end
     },
     -- #3, plugin request access token
     {
@@ -123,27 +124,17 @@ Lk8vESLpKHTn32PJKBa2pPBbraWf/UVa5XQcBmpYOjfvj6SZ/pnvjA==
             keys = {
                 {
                     kid = "1234567890",
-                    alg = "RS384",
-                    x5c = {[[MIIDpzCCAo+gAwIBAgIJAMDerhuS5UbdMA0GCSqGSIb3DQEBCwUAMGkxCzAJBgNV
-BAYTAlJVMRMwEQYDVQQIDApTb21lLVN0YXRlMQ8wDQYDVQQHDAZLYWx1Z2ExITAf
-BgNVBAoMGEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDERMA8GA1UEAwwIdGVzdC5v
-cmcwIBcNMTgxMjA1MDkwMjU3WhgPNDc1NjExMDEwOTAyNTdaMGkxCzAJBgNVBAYT
-AlJVMRMwEQYDVQQIDApTb21lLVN0YXRlMQ8wDQYDVQQHDAZLYWx1Z2ExITAfBgNV
-BAoMGEludGVybmV0IFdpZGdpdHMgUHR5IEx0ZDERMA8GA1UEAwwIdGVzdC5vcmcw
-ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQD4f90bdIHfGK6C6RbTFfGI
-KF4bL1eShQXfMXc9+HwMrwecgfYsMERjnNUSR/Cb5t3eaA9+kbvpWTLnrPcMz4VG
-XgsdSK9uXwH59bSRAXnPUkxkEkKHmzetjdL+mRF2vSR9mA9PtIadQm17ydOqWosk
-UTfziUgDESkU5EdxtlNF7IWS1kJy/JO/MWJ3IziJ0RRPcC5rri4J3HRW4ZPg6YfW
-jKYSwC1Tg+DRVNY6gv7HiyZFvAF6nedKVsI8RINnoNAQpYQdVSv5sptgx8GmY4Di
-c54hh9v7y6p4ixD9ti/aaaQS/MPSCrEmx9434Kj9HQlgTNBjfEMrKiMHWUWcZ0Ep
-AgMBAAGjUDBOMB0GA1UdDgQWBBRe1ddB+6VWjhN99A3mnxkZkET/jzAfBgNVHSME
-GDAWgBRe1ddB+6VWjhN99A3mnxkZkET/jzAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
-DQEBCwUAA4IBAQA+/f0FU3jQmhnHi7kYfc5wgs/hJrMEwH/Yt1O1aiWFFzLAwEHK
-CjzHrIwYqUgvdGiHF+0XB78WeBxp2kzOuQKn1zO+YDUAuM72LRQkNZ54M3Tio6L6
-hbAQ64ASFCA/dm1b0eO+3UkGiq/STTS9UANpUSqJRwFU5cCdmJPAJs4i7KvgM1XO
-Uvz65U/u9ZqCo1ePg1VwYe2QDxiW6i7p60gEuYqaR6nuKbtKO57NH5WRHFU6qgCD
-DAManrq7vbGpJJFzJCH85aVRdNGKPjZYvKXiUFiy0y+NowxTFgvDRdzouRtgohD3
-p+vmB051SzaYHbmXdhhnDtLScikAVLbPoAD9]]}
+                    alg = "ES256",
+                    x5c = {[[IIB0TCCAXegAwIBAgIJAOo9VQCTpIExMAoGCCqGSM49BAMCMEUxCzAJBgNVBAYT
+AlJVMRMwEQYDVQQIDApTb21lLVN0YXRlMSEwHwYDVQQKDBhJbnRlcm5ldCBXaWRn
+aXRzIFB0eSBMdGQwHhcNMTgxMjA2MTczNDE3WhcNMjgxMjAzMTczNDE3WjBFMQsw
+CQYDVQQGEwJSVTETMBEGA1UECAwKU29tZS1TdGF0ZTEhMB8GA1UECgwYSW50ZXJu
+ZXQgV2lkZ2l0cyBQdHkgTHRkMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEkpNL
+c/4PUjPG9iVd0iKA+5dszHsRU1w9LZEVEyUudcFQWcOuSiZvjkP7XK4OMP0nN8+x
+2yhp2rkoPgzWafSwBaNQME4wHQYDVR0OBBYEFGWwerwH1k2YEUTrOtVidlb901u4
+MB8GA1UdIwQYMBaAFGWwerwH1k2YEUTrOtVidlb901u4MAwGA1UdEwQFMAMBAf8w
+CgYIKoZIzj0EAwIDSAAwRQIhAL115TQo/DX3lyhVfc5Ie+808U9oBR0MzI8B9qFh
+ri1tAiBLSeXQ89nvecDC6K+xtcCd9NvaSmObROj71CDGRLd4mA==]]}
                 }
             }
         },

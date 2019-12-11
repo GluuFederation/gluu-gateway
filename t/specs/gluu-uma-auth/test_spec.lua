@@ -45,6 +45,12 @@ test("with and without token, metrics", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "introspect_data.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -60,7 +66,6 @@ test("with and without token, metrics", function()
     }
 
     kong_utils.gg_db_less(kong_config)
-
 
     print"ensure it fails without token"
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
@@ -168,6 +173,12 @@ test("pass_credentials = hide", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "hide",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "introspect_data.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -246,6 +257,7 @@ test("Anonymous test", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     anonymous = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                    custom_headers = { { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" } },
                 },
             },
             {
@@ -302,6 +314,12 @@ test("JWT RS512", function()
                     client_id = register_site_response.client_id,
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "introspect_data.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -402,6 +420,12 @@ test("Test phantom token", function()
                     client_secret = register_site_response.client_secret,
                     oxd_id = register_site_response.oxd_id,
                     pass_credentials = "phantom_token",
+                    custom_headers = {
+                        { header_name = "x-consumer-id", value_lua_exp = "consumer.id", format = "string" },
+                        { header_name = "x-oauth-client-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-consumer-custom-id", value_lua_exp = "introspect_data.client_id", format = "string" },
+                        { header_name = "x-rpt-expiration", value_lua_exp = "introspect_data.exp", format = "string" },
+                    },
                 },
             },
             {
@@ -417,7 +441,6 @@ test("Test phantom token", function()
     }
 
     kong_utils.gg_db_less(kong_config)
-
 
     print"ensure it fails without token"
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
@@ -442,4 +465,138 @@ test("Test phantom token", function()
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(kong_config.consumers[1].custom_id), 1, true))
 
     ctx.print_logs = false
+end)
+
+
+test("Custom headers", function()
+    setup_db_less("oxd-model1.lua")
+
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name = "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name = "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-uma-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "KONG_access_token_jwt", value_lua_exp = "introspect_data", format = "jwt" },
+                        { header_name = "KONG_access_token_{*}", value_lua_exp = "introspect_data", format = "string", iterate = true },
+                        { header_name = "KONG_consumer_jwt", value_lua_exp = "consumer", format = "jwt" },
+                        { header_name = "KONG_consumer_{*}", value_lua_exp = "consumer", format = "string", iterate = true },
+                        { header_name = "http_kong_api_version", value_lua_exp = "\"version 1.0\"", format = "urlencoded" },
+                    },
+                },
+            },
+            {
+                name = "gluu-metrics",
+            }
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+    assert(stdout:find("401", 1, true))
+
+    local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    local headers = {"kong-access-token-jwt", "kong-consumer-jwt", "kong-consumer-created-at", "kong-access-token-exp", "kong-consumer-id", "kong-access-token-consumer", "kong-access-token-client-id", "kong-access-token-active", "kong-consumer-custom-id", "http-kong-api-version", "kong-access-token-iat"}
+    for i = 1, #headers do
+        assert(stdout:find(headers[i], 1, true))
+    end
+
+    -- second time request
+    local stdout, stderr = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    for i = 1, #headers do
+        assert(stdout:find(headers[i], 1, true))
+    end
+
+    ctx.print_logs = false
+end)
+
+
+test("Test custom headers runtime error", function()
+    setup_db_less("oxd-model1.lua")
+
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name = "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name = "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-uma-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    custom_headers = {
+                        { header_name = "KONG_access_token_jwt", value_lua_exp = "introspect_data", format = "jwt" },
+                        { header_name = "KONG_runtime_error_test", value_lua_exp = "introspect_data.stub[2]", format = "string" },
+                    },
+                },
+            },
+        },
+        consumers = {
+            {
+                id = "a28a0f83-b619-4b58-94b3-e4ecaf8b6a2a",
+                custom_id = register_site_response.client_id,
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local stdout, _ = sh_ex([[curl -v --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com' --header 'Authorization: Bearer 1234567890']])
+    print"ensure that another header is set"
+    assert(stdout:find("kong-access-token-jwt", 1, true))
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("attempt to index field 'stub' (a nil value)", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
 end)

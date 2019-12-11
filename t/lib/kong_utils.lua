@@ -173,12 +173,6 @@ end
 _M.kong_postgress = function()
     local ctx = _G.ctx
 
-    -- too expensive to do it upon every test
-    --sh_ex(git_root, "/setup/make-gg-lua-deps-archive.sh")
-
-    -- this is fast with Docker cache
-    local gg_image_id = sh_ex("docker build -q -f ", git_root, "/Dockerfile.gluu_gateway ", git_root)
-
     assert(ctx.network_name)
     ctx.postgress_id = stdout("docker run -p 5432 -d ",
         " --network=", ctx.network_name,

@@ -14,14 +14,20 @@ fi
 
 echo "Building test runner Docker image (please be patient first time)..."
 TEST_RUNNER_IMAGE_ID="$(docker build -q $DIR)"
-echo "Done"
-
-echo "Build gluu-gateway-lua-deps.tag.gz"
-${HOST_GIT_ROOT}/setup/make-gg-lua-deps-archive.sh
+if [ -z "$TEST_RUNNER_IMAGE_ID" ]
+then
+    echo "test runner image build error"
+    exit 1
+fi
 echo "Done"
 
 echo "Build gluu-gateway docker image"
-export GG_IMAGE_ID="$(docker build -q -f $HOST_GIT_ROOT/Dockerfile.gluu_gateway $HOST_GIT_ROOT)"
+export GG_IMAGE_ID="$(docker build -q -f $HOST_GIT_ROOT/Dockerfile $HOST_GIT_ROOT)"
+if [ -z "$GG_IMAGE_ID" ]
+then
+    echo "gluu-gateway image build error"
+    exit 1
+fi
 echo "Done"
 
 docker run --net host --rm -v /var/run/docker.sock:/var/run/docker.sock \
