@@ -9,9 +9,11 @@ local pl_tablex = require "pl.tablex"
 local path_wildcard_tree = require "gluu.path-wildcard-tree"
 local json_cache = require "gluu.json-cache"
 
--- EXPIRE_DELTA should be not big positive number, IMO in range from 2 to 10 seconds
-local EXPIRE_DELTA = 5
-local MAX_PENDING_SLEEPS = 40
+-- EXPIRE_DELTA_SECONDS should be not big positive number, IMO in range from 2 to 10 seconds
+local EXPIRE_DELTA_SECONDS = 5
+
+local MAX_PENDING_SLEEP_MS = 200 -- 200 * 5ms = 1 seconds max waiting for pending operation
+local PENDING_SLEEP_SEC = 0.005
 local PENDING_EXPIRE = 0.2
 local PENDING_TABLE = {}
 
@@ -88,13 +90,22 @@ local function get_protection_token(conf)
     local ptoken = access_token_data.token
 
     kong.log.debug("Current datetime: ", now, " access_token_data.expire: ", access_token_data.expire)
-    if access_token_data.expire > now - EXPIRE_DELTA then
+    if access_token_data.expire > now - EXPIRE_DELTA_SECONDS then
         return access_token_data.access_token
     end
 
-    if access_token_data.expire < now and access_token_data.refresh_pending then
-        -- refreshing access token is in progress, avoid multiple token requests
-        return access_token_data.access_token
+    if access_token_data.refresh_pending then
+        for i = 1, MAX_PENDING_SLEEP_MS do
+            kong.log.debug("sleep")
+            ngx.sleep(PENDING_SLEEP_SEC)
+            if not access_token_data.refresh_pending then
+                if access_token_data.expire > now - EXPIRE_DELTA_SECONDS then
+                    return access_token_data.access_token
+                end
+                return unexpected_error("Failed to get access token, pending operation failed")
+            end
+        end
+        return unexpected_error("Failed to get access token, pending operation  timeout")
     end
 
     -- token will expire soon, we are trying to refresh it
@@ -131,14 +142,14 @@ local function get_protection_token(conf)
             op_host = conf.op_url,
         })
 
+    access_token_data.refresh_pending = nil
     local body = response.body
     if response.status >= 300 or not body.access_token then
         access_tokens_per_client_id[conf.client_id] = nil
-        return unexpected_error("Failed to get access token, status: ", status)
+        return unexpected_error("Failed to get access token, status: ", response.status)
     end
 
     access_token_data = body
-    access_token_data.refresh_pending = nil
     access_token_data.expire = ngx.time() + body.expires_in
     access_tokens_per_client_id[conf.client_id] = access_token_data
     return access_token_data.access_token
@@ -322,7 +333,7 @@ end
 
 -- lru cache get operation with `pending` state support
 local function worker_cache_get_pending(key)
-    for i = 1, MAX_PENDING_SLEEPS do
+    for i = 1, MAX_PENDING_SLEEP_MS do
         local token_data, stale_data = worker_cache:get(key)
 
         if not token_data or stale_data then
@@ -330,8 +341,8 @@ local function worker_cache_get_pending(key)
         end
 
         if token_data == PENDING_TABLE then
-            kong.log.debug("sleep 5ms")
-            ngx.sleep(0.005) -- 5ms
+            kong.log.debug("sleep")
+            ngx.sleep(PENDING_SLEEP_SEC)
         else
             return token_data
         end
@@ -467,7 +478,7 @@ _M.access_pep_handler = function(self, conf, hooks)
     end
     if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
         if cache_key then
-            worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA)
+            worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA_SECONDS)
         end
         kong.ctx.shared[self.metric_client_granted] = true
         return -- access_granted
@@ -547,7 +558,7 @@ _M.access_auth_handler = function(self, conf, introspect_token)
 
         kong.log.debug("save token in cache")
         worker_cache:set(token, introspect_response,
-            exp - ngx.now() - EXPIRE_DELTA)
+            exp - ngx.now() - EXPIRE_DELTA_SECONDS)
     else
         client_id = token_data.client_id
         exp = token_data.exp
