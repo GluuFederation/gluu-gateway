@@ -2,6 +2,7 @@ local pretty = require"pl.pretty"
 local pl_path = require"pl.path"
 local pl_tmpname = pl_path.tmpname
 local pl_file = require"pl.file"
+local JSON = require"JSON"
 
 local _M = {}
 
@@ -94,5 +95,12 @@ _M.dump_table_to_tmp_file = function(t)
     return tmp
 end
 
+_M.dump_table_to_tmp_json_file = function(t)
+    local tdump = JSON:encode(t)
+    local tmp = pl_tmpname()
+    pl_file.write(tmp, tdump)
+    _M.sh("chmod 666 ", tmp)
+    return tmp
+end
 
 return _M

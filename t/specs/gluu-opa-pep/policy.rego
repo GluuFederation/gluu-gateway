@@ -9,5 +9,5 @@ default allow = false
 allow {
   input.method = "GET"
   input.path = ["folder", "command"]
-  input.request_token_data.client_id = "0123456789"
+  input.request_token_data.client_id = "1234567"
 }

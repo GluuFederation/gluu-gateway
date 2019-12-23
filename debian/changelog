@@ -1,5 +1,0 @@
-gluu-gateway %VERSION% %DIST%; urgency=low
-
-  * New Version %VERSION%
-
- -- Davit Nikoghosyan <davit@gluu.org>  Wed, 16 Oct 2019 12:40:08 -0400
