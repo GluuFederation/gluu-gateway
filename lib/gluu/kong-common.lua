@@ -790,7 +790,7 @@ function _M.make_headers(custom_headers, environment, cache_key)
     return new_headers
 end
 
-_M.check_valid_lua_expression = function(custom_headers)
+_M.check_headers_valid_lua_expression = function(custom_headers)
     if not custom_headers or custom_headers == cjson.null then
         return true
     end
@@ -804,6 +804,21 @@ _M.check_valid_lua_expression = function(custom_headers)
             return false, header.header_name .. " has not a valid lua expression value, Error: " .. err
         end
     end
+    return true
+end
+
+_M.check_valid_lua_expression = function(lua_exp)
+    if not lua_exp or lua_exp == cjson.null then
+        return true
+    end
+
+    local chunk_text = "return " .. lua_exp
+    local chunk, err = loadstring(chunk_text)
+
+    if not chunk or err then
+        return false, "String not a valid lua expression value, Error: " .. err
+    end
+
     return true
 end
 

@@ -25,7 +25,7 @@ return {
                     { pushed_claims_lua_exp = { required = false, type = "string" } },
                 },
                 custom_validator = function(config)
-                    local ok, err = common.check_valid_lua_expression(config.check_valid_lua_expression)
+                    local ok, err = common.check_valid_lua_expression(config.pushed_claims_lua_exp)
                     if not ok then
                         return false, err
                     end
