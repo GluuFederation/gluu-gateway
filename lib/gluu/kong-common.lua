@@ -289,8 +289,8 @@ local function process_jwt(self, conf, jwt_obj)
 end
 
 local function make_jwt_alg_none(token_data)
-    local header = ngx.encode_base64(cjson.encode({ typ = "JWT", alg = "none" }))
-    local payload = ngx.encode_base64(cjson.encode(token_data))
+    local header = ngx.encode_base64(cjson.encode({ typ = "JWT", alg = "none" }), true)
+    local payload = ngx.encode_base64(cjson.encode(token_data), true)
     local token = table.concat({
         header,
         ".",
@@ -754,6 +754,7 @@ function _M.make_headers(custom_headers, environment, cache_key)
         local header = custom_headers[i]
         local header_name = header.header_name
 
+        -- TODO use a cache here to avoid Lua code parsing/compiling upon every request
         local chunk_text = "return " .. header.value_lua_exp
 
         -- we rely here on schema validation, it should check for valid Lua syntax
@@ -761,7 +762,7 @@ function _M.make_headers(custom_headers, environment, cache_key)
         setfenv(chunk, environment)
         local ok, value = pcall(chunk)
         if not ok then
-            kong.log.notice("Failed to populate value for " .. header_name .. " header, Error: ", value)
+            kong.log.notice("Failed to populate value for " .. header_name .. " header, Lua error: ", value)
             value = nil
         end
 
