@@ -334,6 +334,7 @@ test("OpenID Connect with UMA, PCT", function()
                     deny_by_default = false,
                     obtain_rpt = true,
                     require_id_token = true,
+                    pushed_claims_lua_exp = "id_token",
                     uma_scope_expression = JSON:encode{
                         {
                             path = "/page1",
