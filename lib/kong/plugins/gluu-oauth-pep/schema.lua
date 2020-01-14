@@ -5,7 +5,7 @@ local cjson = require "cjson.safe"
 return {
     name = "gluu-uma-pep",
     fields = {
-        { run_on = typedefs.run_on_first },
+        { protocols = typedefs.protocols_http },
         { consumer = typedefs.no_consumer },
         {
             config = {
