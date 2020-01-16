@@ -23,7 +23,14 @@ return function(self, conf)
         end
 
         local answers, err, tries = r:query(conf.gluu_prometheus_server_host, nil, {})
-        if not answers and answers.errcode then
+
+        if not answers then
+            kong.log.err("failed to query the DNS server: ", err)
+            kong.log.err("retry historie:\n  ", table.concat(tries, "\n  "))
+            return
+        end
+
+        if answers.errcode then
             self.last_check = ngx.now()
             kong.log.err(self, "failed to query the DNS server: ", err, "retry historie:\n  ", table.concat(tries, "\n  "), self, "server returned error code: ", answers.errcode,
                 ": ", answers.errstr)
