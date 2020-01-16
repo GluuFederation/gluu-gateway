@@ -60,9 +60,7 @@ local function log(message)
         return
     end
 
-    local service_name = message.service and message.service.name or
-            message.service.host
-    service_name = service_name or ""
+    local service_name = message.service and (message.service.name or message.service.host) or ""
     local consumer, request = message.consumer, message.request
     local uri = ngx.var.uri:match"^([^%s]+)"
     local openid_auth = "openid_connect_authentication"
@@ -106,18 +104,15 @@ local function log(message)
     end
 end
 
-
 local function collect()
     if not prometheus or not metrics then
-        kong.log.err("gluu_oauth_pep: plugin is not initialized, please make sure ",
-            " 'gluu_oauth_pep_metrics' shared dict is present in nginx template")
+        kong.log.err("plugin is not initialized, please make sure ",
+            " 'gluu_metrics' shared dict is present in nginx template")
         return ngx.exit(500)
     end
 
     prometheus:collect()
-    return ngx.exit(200)
 end
-
 
 return {
     init = init,
