@@ -5,7 +5,6 @@ local cjson = require "cjson.safe"
 return {
     name = "gluu-uma-pep",
     fields = {
-        { run_on = typedefs.run_on_first },
         { consumer = typedefs.no_consumer },
         {
             config = {

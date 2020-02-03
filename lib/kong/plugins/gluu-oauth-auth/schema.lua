@@ -4,7 +4,6 @@ local typedefs = require "kong.db.schema.typedefs"
 return {
     name = "gluu-oauth-auth",
     fields = {
-        { run_on = typedefs.run_on_first },
         { consumer = typedefs.no_consumer },
         {
             config = {
