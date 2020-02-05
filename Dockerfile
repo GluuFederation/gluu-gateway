@@ -1,4 +1,4 @@
-FROM kong:1.5.0-alpine
+FROM kong:2.0.0-alpine
 
 ARG LUA_DIST=/usr/local/share/lua/5.1
 ARG DISABLED_PLUGINS="ldap-auth key-auth basic-auth hmac-auth jwt oauth2"
@@ -7,9 +7,14 @@ ARG DISABLED_PLUGINS="ldap-auth key-auth basic-auth hmac-auth jwt oauth2"
 # Gluu Gateway
 # ============
 
+
+# otherwise we cannot replace/remove existing files
+USER root
+
 COPY lib/ ${LUA_DIST}/
 
 RUN for plugin in ${DISABLED_PLUGINS}; do \
+  ls -l ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
   cp ${LUA_DIST}/gluu/disable-plugin-handler.lua ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/migrations/*; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/daos.lua; \
@@ -25,6 +30,10 @@ COPY third-party/lua-resty-session/lib/ ${LUA_DIST}/
 COPY third-party/json-logic-lua/logic.lua ${LUA_DIST}/rucciva/json_logic.lua
 COPY third-party/oxd-web-lua/oxdweb.lua ${LUA_DIST}/gluu/
 COPY third-party/nginx-lua-prometheus/prometheus.lua ${LUA_DIST}/
+
+
+# restore
+USER kong
 
 # ===
 # ENV
