@@ -42,7 +42,7 @@ USER kong
 # by default enable all bundled and gluu plugins
 ENV KONG_PLUGINS bundled,gluu-oauth-auth,gluu-uma-auth,gluu-uma-pep,gluu-oauth-pep,gluu-metrics,gluu-openid-connect,gluu-opa-pep
 # required in kong.conf
-ENV KONG_NGINX_HTTP_LUA_SHARED_DICT "gluu_metrics 1M"
+ENV KONG_NGINX_HTTP_LUA_SHARED_DICT "gluu_metrics 1m"
 #redirect all logs to Docker
 ENV KONG_PROXY_ACCESS_LOG /dev/stdout
 ENV KONG_ADMIN_ACCESS_LOG /dev/stdout
