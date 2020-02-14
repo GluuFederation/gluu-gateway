@@ -70,7 +70,7 @@ test("basic tests", function()
 
     -- slash is required before multiple wildcards placeholder
     local res, err = matchPath("/path")
-    assert(res:find("Not match"))
+    assert(res:find("/path/??", 1 , true))
 
     addPath("/path/??/image.jpg")
 
