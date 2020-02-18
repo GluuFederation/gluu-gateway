@@ -14,7 +14,6 @@ USER root
 COPY lib/ ${LUA_DIST}/
 
 RUN for plugin in ${DISABLED_PLUGINS}; do \
-  ls -l ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
   cp ${LUA_DIST}/gluu/disable-plugin-handler.lua ${LUA_DIST}/kong/plugins/${plugin}/handler.lua; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/migrations/*; \
   rm -f ${LUA_DIST}/kong/plugins/${plugin}/daos.lua; \
