@@ -1,3 +1,5 @@
+local cjson = require"cjson"
+
 local model
 model = {
     -- array part start, scenario
@@ -141,7 +143,14 @@ model = {
             assert(json.oxd_id == model[1].response.oxd_id)
             assert(token == model[2].response.access_token)
             assert(json.ticket == model[6].response.ticket)
-            assert(json.claim_token == model[4].response.id_token)
+            local jwt = json.claim_token
+            local payload64 = assert(jwt:match("^[^%.]+%.([^%.]+)%."))
+            local payload = assert(ngx.decode_base64(payload64))
+            payload = assert(cjson.decode(payload))
+            assert(payload.aud == model[4].response.id_token_claims.aud)
+            assert(payload.sub == model[4].response.id_token_claims.sub)
+            assert(payload.iss == model[4].response.id_token_claims.iss)
+            assert(payload.nonce == model[4].response.id_token_claims.nonce)
             assert(json.claim_token_format == "http://openid.net/specs/openid-connect-core-1_0.html#IDToken")
         end,
         response = {

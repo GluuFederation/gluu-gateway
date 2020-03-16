@@ -89,7 +89,7 @@ local function redirect_to_claim_url(conf, ticket)
 end
 
 -- call /uma_rp_get_rpt oxd API, handle errors
-local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
+local function get_rpt_by_ticket(self, conf, ticket, state, id_token, userinfo)
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 
     local requestBody = {
@@ -101,8 +101,29 @@ local function get_rpt_by_ticket(self, conf, ticket, state, id_token_jwt)
         requestBody.state = state
     end
 
-    if conf.require_id_token then
-        requestBody.claim_token = id_token_jwt
+    local pushed_claims_lua_exp = conf.pushed_claims_lua_exp
+    if conf.pushed_claims_lua_exp then
+        -- TODO use a cache here to avoid Lua code parsing/compiling upon every request
+        local chunk_text = "return " .. pushed_claims_lua_exp
+
+        -- we rely here on schema validation, it should check for valid Lua syntax
+        local chunk = assert(loadstring(chunk_text))
+
+        local environment = {
+            id_token = id_token,
+            userinfo = userinfo,
+            request = kong.request,
+        }
+        setfenv(chunk, environment)
+        local ok, value = pcall(chunk)
+        if not ok then
+            kong.log.notice("Failed to populate value for custom UMA pushed claims, Lua error: ", value)
+            value = nil
+        end
+
+        local jwt = kong_auth_pep_common.make_jwt_alg_none(value)
+
+        requestBody.claim_token = jwt
         requestBody.claim_token_format = "http://openid.net/specs/openid-connect-core-1_0.html#IDToken"
     end
 
@@ -185,8 +206,9 @@ function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
             ticket = get_ticket(self, conf, protected_path, method)
         end
 
-        local id_token = kong.ctx.shared.request_token
-        rpt =  get_rpt_by_ticket(self, conf, ticket, state, id_token)
+        local id_token = kong.ctx.shared.request_token_data
+        local userinfo = kong.ctx.shared.userinfo
+        rpt =  get_rpt_by_ticket(self, conf, ticket, state, id_token, userinfo)
     end
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
 

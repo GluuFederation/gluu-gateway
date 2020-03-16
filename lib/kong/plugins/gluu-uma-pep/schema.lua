@@ -5,7 +5,6 @@ local cjson = require "cjson.safe"
 return {
     name = "gluu-uma-pep",
     fields = {
-        { run_on = typedefs.run_on_first },
         { consumer = typedefs.no_consumer },
         {
             config = {
@@ -22,8 +21,14 @@ return {
                     { claims_redirect_path = { required = false, type = "string" }, },
                     { redirect_claim_gathering_url = { type = "boolean", default = false }, },
                     { uma_scope_expression = { required = false, type = "string" }, },
+                    { pushed_claims_lua_exp = { required = false, type = "string" } },
                 },
                 custom_validator = function(config)
+                    local ok, err = common.check_valid_lua_expression(config.pushed_claims_lua_exp)
+                    if not ok then
+                        return false, err
+                    end
+
                     if not config.uma_scope_expression then
                         return true
                     end

@@ -653,7 +653,31 @@ test("check oauth_scope_expression and metrics", function()
                                     }
                                 }
                             }
-                        }
+                        },
+                        {
+                            path = "/test/??",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "unpossible"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
+                                    }
+                                }
+                            }
+                        },
                     },
                 },
             },
@@ -753,6 +777,20 @@ test("check oauth_scope_expression and metrics", function()
     assert(res:lower():find(string.lower([[gluu_oauth_client_granted{consumer="]]
             .. register_site_response.client_id .. [[",service="demo-service"} 8]]), 1, true))
     assert(res:lower():find(string.lower([[gluu_endpoint_method{endpoint="/",method="GET"]]), 1, true))
+
+    print "test with path /test, should be redjected"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/test --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:find("403", 1, true))
+    assert(not res:find([[Unprotected path\/method are not allowed]], 1, true))
+
+    print "test with path /test, should be redjected, no introspect call, use the cache"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/test/whatever --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+    assert(res:find("403", 1, true))
+    assert(not res:find([[Unprotected path\/method are not allowed]], 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)

@@ -4,7 +4,6 @@ local typedefs = require "kong.db.schema.typedefs"
 return {
     name = "gluu-uma-auth",
     fields = {
-        { run_on = typedefs.run_on_first },
         { consumer = typedefs.no_consumer },
         {
             config = {
@@ -38,7 +37,7 @@ return {
                     },
                 },
                 custom_validator = function(config)
-                    local ok, err = common.check_valid_lua_expression(config.custom_headers)
+                    local ok, err = common.check_headers_valid_lua_expression(config.custom_headers)
                     if not ok then
                         return false, err
                     end

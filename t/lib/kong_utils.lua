@@ -9,7 +9,7 @@ local pl_tmpname = pl_path.tmpname
 
 local _M = {}
 
-local kong_image = "kong:1.3.0-alpine"
+local kong_image = "kong:2.0.0-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
 
@@ -123,7 +123,7 @@ _M.kong_postgress_custom_plugins = function(opts)
         " -e KONG_DATABASE=postgres ",
         " -e KONG_PG_HOST=kong-database ",
         " -e KONG_LOG_LEVEL=debug ",
-        " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1M\" ",
+        " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1m\" ",
         " -e KONG_PROXY_ACCESS_LOG=/dev/stdout ",
         " -e KONG_ADMIN_ACCESS_LOG=/dev/stdout ",
         " -e KONG_PROXY_ERROR_LOG=/dev/stderr ",
@@ -142,7 +142,7 @@ _M.kong_postgress_custom_plugins = function(opts)
     ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
         " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
-        " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1M\" ",
+        " -e KONG_NGINX_HTTP_LUA_SHARED_DICT=\"gluu_metrics 1m\" ",
         " -e KONG_DATABASE=postgres ",
         " -e KONG_PG_HOST=kong-database ",
         " -e KONG_PG_DATABASE=kong ",
@@ -243,6 +243,11 @@ _M.gg_db_less = function(config, plugins, wait_for_stop)
         gg_image_id
     )
 
+    if wait_for_stop then
+        sh_ex("docker wait ", ctx.kong_id)
+        return
+    end
+
     check_container_is_running(ctx.kong_id, "kong")
 
     ctx.kong_admin_port =
@@ -250,12 +255,8 @@ _M.gg_db_less = function(config, plugins, wait_for_stop)
     ctx.kong_proxy_port =
     stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
 
-    if wait_for_stop then
-        sh_ex("docker wait ", ctx.kong_id)
-    else
-        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
-        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
-    end
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
 end
 
 _M.backend = function(image)

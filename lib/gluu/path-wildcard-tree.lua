@@ -151,8 +151,17 @@ _M.matchPath = function(self, method, path)
         last_index = i
     end
 
-    if last_index == #path_as_array and node[EXPRESSION_KEY] then
-        return node[EXPRESSION_KEY]
+    if last_index == #path_as_array then
+        -- check for corner case, example
+        -- protected path /test/??, real path /test
+        -- does this node has multiple wildcard subnode?
+        if node and node[WILDCARD_MULTIPLE_ELEMENTS] and node[WILDCARD_MULTIPLE_ELEMENTS][EXPRESSION_KEY] then
+            return node[WILDCARD_MULTIPLE_ELEMENTS][EXPRESSION_KEY]
+        end
+
+        if node and node[EXPRESSION_KEY] then
+            return node[EXPRESSION_KEY]
+        end
     end
 end
 
