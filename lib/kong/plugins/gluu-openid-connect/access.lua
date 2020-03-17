@@ -307,13 +307,14 @@ return function(self, conf)
         no_auth = rule and rule.no_auth
     end
 
-    if no_auth then
-        return
-    end
-
     if not session.present or not id_tokens then
-        kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
-        return authorize(conf, session, nil, required_acrs)
+        if no_auth then
+            print("allow access no headers")
+            return -- allow access
+        else
+            kong.log.debug("Authentication is required - Redirecting to OP Authorization endpoint")
+            return authorize(conf, session, nil, required_acrs)
+        end
     end
 
     local enc_id_token, id_token
@@ -336,7 +337,6 @@ return function(self, conf)
        end
     end
 
-
     for token, token_data in pairs(id_tokens) do
         local acr = token_data.acr
 
@@ -346,7 +346,7 @@ return function(self, conf)
         end
     end
 
-    if not id_token then
+    if not id_token and not no_auth then
         if acr_already_requested(id_tokens, required_acrs) then
             kong.log.debug("We already requested all required acrs, avoid a loop")
 

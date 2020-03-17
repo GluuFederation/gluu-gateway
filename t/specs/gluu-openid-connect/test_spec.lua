@@ -19,7 +19,6 @@ local function setup_db_less(model)
     kong_utils.setup_db_less(finally, test_root .. "/" .. model, true) -- create_cookie_tmp_filename = true
 end
 
-
 test("basic", function()
     setup_db_less("oxd-model1.lua")
 
@@ -1139,6 +1138,112 @@ test("Check custom header", function()
     for i = 1, #headers do
         assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
+
+test("custom headers for non protected page", function()
+    setup_db_less("oxd-model5.lua")
+
+    local register_site_response = kong_utils.register_site()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 10,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    required_acrs_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    required_acrs = { "auth_ldap_server" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/superhero",
+                            conditions = {
+                                {
+                                    required_acrs = { "superhero" },
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                        {
+                            path = "/open/??",
+                            conditions = {
+                                {
+                                    no_auth = true,
+                                    httpMethods = { "?" }, -- any
+                                }
+                            }
+                        },
+                    },
+                    custom_headers = {
+                        { header_name = "http_sm_name", value_lua_exp = "userinfo.sub", format = "string" },
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/open/page.html --header 'Host: backend.com' ]])
+    assert(res:find("200", 1, true))
+    assert(not res:find("http_sm_name", 1, true))
+
+    print"acr=auth_ldap_server"
+    local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"follow redirect 1"
+    local res, err = sh_ex([[curl -i  -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+
+    local res, err = sh_ex([[curl -i -v -sS --fail -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/open/page.html --header 'Host: backend.com' -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    assert(res:find("200", 1, true))
+    assert(res:find("http-sm-name", 1, true))
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
