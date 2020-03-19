@@ -103,4 +103,11 @@ _M.dump_table_to_tmp_json_file = function(t)
     return tmp
 end
 
+_M.dump_text_to_tmp_file = function(text)
+    local tmp = pl_tmpname()
+    pl_file.write(tmp, text)
+    _M.sh("chmod 666 ", tmp)
+    return tmp
+end
+
 return _M
