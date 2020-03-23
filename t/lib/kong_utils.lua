@@ -223,18 +223,30 @@ _M.kong_postgress = function()
 end
 
 
-_M.gg_db_less = function(config, plugins, wait_for_stop)
+_M.gg_db_less = function(config, plugins, wait_for_stop, injected_kong_proxy, kong2)
+    local kong_id_key = kong2 and "kong_id2" or "kong_id"
 
     local config_json_tmp_filename = utils.dump_table_to_tmp_json_file(config)
     ctx.finalizeres[#ctx.finalizeres + 1] = function()
         pl_file.delete(config_json_tmp_filename)
     end
 
-    ctx.kong_id = stdout("docker run -p 8000 -p 8001 -d ",
+    local injected_kong_proxy_command
+    if injected_kong_proxy then
+        local injected_kong_proxy_tmp_file_name = utils.dump_text_to_tmp_file(injected_kong_proxy)
+        injected_kong_proxy_command = " -v " .. injected_kong_proxy_tmp_file_name .. ":/injected_http.conf "
+        ctx.finalizeres[#ctx.finalizeres + 1] = function()
+            pl_file.delete(injected_kong_proxy_tmp_file_name)
+        end
+    end
+
+    ctx[kong_id_key] = stdout("docker run -p 8000 -p 8001 -d ",
         " --network=", ctx.network_name,
         " -e KONG_NGINX_WORKER_PROCESSES=1 ", -- important! oxd-mock logic assume one worker
         " -e KONG_DECLARATIVE_CONFIG=/config.yml ",
         " -v ", config_json_tmp_filename, ":/config.yml ",
+        injected_kong_proxy and  injected_kong_proxy_command or "",
+        injected_kong_proxy and " -e KONG_NGINX_PROXY_INCLUDE=/injected_http.conf" or "",
         " -e KONG_DATABASE=off ",
         " -e KONG_ADMIN_LISTEN=0.0.0.0:8001 ",
         " -e KONG_PROXY_LISTEN=0.0.0.0:8000 ",
@@ -244,19 +256,30 @@ _M.gg_db_less = function(config, plugins, wait_for_stop)
     )
 
     if wait_for_stop then
-        sh_ex("docker wait ", ctx.kong_id)
+        sh_ex("docker wait ", ctx[kong_id_key])
         return
     end
 
-    check_container_is_running(ctx.kong_id, "kong")
+    check_container_is_running(ctx[kong_id_key], "kong")
 
-    ctx.kong_admin_port =
-    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8001/tcp\") 0).HostPort}}' ", ctx.kong_id)
-    ctx.kong_proxy_port =
-    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx.kong_id)
+    if not kong2 then
+        ctx.kong_admin_port =
+        stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8001/tcp\") 0).HostPort}}' ", ctx[kong_id_key])
+        ctx.kong_proxy_port =
+        stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx[kong_id_key])
 
-    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
-    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port)
+        local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port)
+        return
+    end
+
+    ctx.kong_admin_port2 =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8001/tcp\") 0).HostPort}}' ", ctx[kong_id_key])
+    ctx.kong_proxy_port2 =
+    stdout("docker inspect --format='{{(index (index .NetworkSettings.Ports \"8000/tcp\") 0).HostPort}}' ", ctx[kong_id_key])
+
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_admin_port2)
+    local res, err = sh_ex("/opt/wait-for-http-ready.sh ", "127.0.0.1:", ctx.kong_proxy_port2)
 end
 
 _M.backend = function(image)
@@ -419,6 +442,9 @@ _M.setup_db_less = function(finally, model, create_cookie_tmp_filename)
         if ctx.print_logs then
             if ctx.kong_id then
                 sh("docker logs ", ctx.kong_id, " || true") -- don't fail
+            end
+            if ctx.kong_id2 then
+                sh("docker logs ", ctx.kong_id2, " || true") -- don't fail
             end
             if ctx.oxd_id then
                 sh("docker logs ", ctx.oxd_id, " || true")  -- don't fail
