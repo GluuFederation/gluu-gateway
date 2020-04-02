@@ -104,6 +104,7 @@ _M.kong_postgress_custom_plugins = function(opts)
         " --network=", ctx.network_name,
         " -e POSTGRES_USER=kong ",
         " -e POSTGRES_DB=kong ",
+        " -e POSTGRES_HOST_AUTH_METHOD=trust",
         " --name kong-database ", -- TODO avoid hardcoded names
         opts.postgress_image or postgress_image
     )
@@ -178,6 +179,7 @@ _M.kong_postgress = function()
         " --network=", ctx.network_name,
         " -e POSTGRES_USER=kong ",
         " -e POSTGRES_DB=kong ",
+        " -e POSTGRES_HOST_AUTH_METHOD=trust",
         " --name kong-database ", -- TODO avoid hardcoded names
         postgress_image
     )
