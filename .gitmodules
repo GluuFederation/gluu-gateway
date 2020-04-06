@@ -9,10 +9,10 @@
 	url = https://git.rucciva.one/rucciva/json-logic-lua.git
 [submodule "third-party/lua-resty-jwt"]
 	path = third-party/lua-resty-jwt
-	url = https://github.com/altexy/lua-resty-jwt.git
+	url = https://github.com/GluuFederation/lua-resty-jwt.git
 [submodule "third-party/lua-resty-hmac"]
 	path = third-party/lua-resty-hmac
-	url = https://github.com/altexy/lua-resty-hmac.git
+	url = https://github.com/GluuFederation/lua-resty-hmac.git
 [submodule "third-party/nginx-lua-prometheus"]
 	path = third-party/nginx-lua-prometheus
 	url = https://github.com/knyar/nginx-lua-prometheus.git
