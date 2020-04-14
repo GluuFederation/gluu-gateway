@@ -23,6 +23,11 @@ http {
             }
         }
 
+        location = /named_captures {
+            content_by_lua_block{
+            require "gluu.path-wildcard-tree-tester".named_captures()
+        }
+        }
 
     }
 }

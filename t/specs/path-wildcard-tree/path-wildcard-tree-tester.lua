@@ -75,13 +75,34 @@ function _M.match()
 
     local data = ngx.req.get_body_data()
 
-    local node = path_wildcard_tree.matchPath(tree, "GET", data)
+    local node, captures = path_wildcard_tree.matchPath(tree, "GET", data)
 
     if node then
         ngx.say(node.path)
+        if captures then
+            for i = 1, #captures do
+                ngx.say("PC", i, "=[", captures[i], "]")
+            end
+        end
     else
         ngx.say"Not match"
     end
+end
+
+function _M.named_captures()
+    print"1"
+    local captures, err = ngx.re.match("/folder/asdqwe123/command/321321321", "^/folder/([^/]+)/command/.+$")
+    if not captures and err then
+        print(err)
+        ngx.say(err)
+        return
+    end
+    print"2"
+    if captures then
+        ngx.say(serialize(captures))
+        return
+    end
+    ngx.say"no captures"
 end
 
 return _M
