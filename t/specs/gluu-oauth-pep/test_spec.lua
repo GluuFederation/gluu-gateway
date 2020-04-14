@@ -1605,3 +1605,194 @@ test("Duplicate http method from conditions in expression", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
+
+test("spontaneous scopes", function()
+
+    setup_db_less("oxd-model10.lua")
+
+    local register_site_response, access_token = kong_utils.register_site_get_client_token()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-oauth-auth",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    pass_credentials = "hide",
+                    consumer_mapping = false,
+                },
+            },
+            {
+                name = "gluu-oauth-pep",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    deny_by_default = true,
+                    oauth_scope_expression = JSON:encode{
+                        {
+                            path = "/??",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "email"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            path = "/posts/?/??",
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            "^posts:(.+)$",
+                                            "email"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "DELETE",
+                                        "POST"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            path = [[/comments/{\d\d\d}]],
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                }
+                                            }
+                                        },
+                                        data = {
+                                            [[^\d\d\d$]], -- no capture group, plugin must use whole match
+                                            "email"
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "POST",
+                                        "DELETE"
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            path = [[/todos/?/command/{^(\d\d\d)-([a-d]{4})$}]],
+                            conditions = {
+                                {
+                                    scope_expression = {
+                                        rule = {
+                                            ["and"] = {
+                                                {
+                                                    var = 0
+                                                },
+                                                {
+                                                    var = 1
+                                                },
+                                                {
+                                                    var = 2
+                                                },
+                                            }
+                                        },
+                                        data = {
+                                            [[^todos:(?P<PC1>.+)$]],
+                                            [[^command:(?P<PC2>.+)$]], -- IMO we don't need to repeat regexp here, .+ is enough, because path would match
+                                            [[^subcommand:(?P<PC3>[a-d]{4})$]], -- bit here we repeat PC regexp
+                                        }
+                                    },
+                                    httpMethods = {
+                                        "GET",
+                                        "POST",
+                                        "DELETE"
+                                    }
+                                }
+                            }
+                        },
+                    },
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    print "test the root"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/ --header 'Host: backend.com' --header 'Authorization: Bearer ]],
+        access_token, [[']])
+
+    print "test the /posts/?/??"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/posts/123 --header 'Host: backend.com' --header 'Authorization: Bearer 123456789abc']])
+
+    print "test the /comments/{^\d\d\d$}"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/comments/123 --header 'Host: backend.com' --header 'Authorization: Bearer 123456789qwerty']])
+
+    print "test the named path captures, path = [[/todos/?/command/{^(\d\d\d)-([a-d]{4})$]]"
+    local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos/hh/command/123-abcd --header 'Host: backend.com' --header 'Authorization: Bearer 123456789qwerty1']])
+
+    print "test the named path captures, path = [[/todos/?/command/{^(\d\d\d)-([a-d]{4})$]], not enough scopes"
+    local res, err = sh_ex([[curl -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
+        [[/todos/hh/command/123-abcd --header 'Host: backend.com' --header 'Authorization: Bearer 123456789qwerty2']])
+    assert(res:find("403 Forbidden", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
