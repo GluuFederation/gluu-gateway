@@ -403,7 +403,7 @@ end
 -- @param exp: OAuth scope expression Example: [{ path: "/posts", ...}, { path: "/todos", ...}] it must be sorted - longest strings first
 -- @param request_path: requested api endpoint(path) Example: "/posts/one/two"
 -- @param method: requested http method Example: GET
--- @return json protected_path path, expression Example: {path: "/posts", ...}
+-- @return json protected_path path, expression, captures Example: {path: "/posts", ...}
 local function get_path_by_request_path_method(self, exp, path, method)
     if not exp then
         return
@@ -415,10 +415,10 @@ local function get_path_by_request_path_method(self, exp, path, method)
         return
     end
 
-    local rule = path_wildcard_tree.matchPath(method_path_tree, method, path)
+    local rule, captures = path_wildcard_tree.matchPath(method_path_tree, method, path)
 
     if rule then
-        return rule.path, rule.scope_expression
+        return rule.path, rule.scope_expression, captures
     end
 end
 
@@ -446,7 +446,7 @@ _M.access_pep_handler = function(self, conf, hooks)
 
     local method = ngx.req.get_method()
     local path = ngx.var.uri:match"^([^%s]+)"
-    local protected_path, scope_expression = get_path_by_request_path_method(self,  hooks.get_scope_expression(conf), path, method)
+    local protected_path, scope_expression, captures = get_path_by_request_path_method(self,  hooks.get_scope_expression(conf), path, method)
 
     if token and not protected_path and conf.deny_by_default then
         kong.log.err("Path: ", path, " and method: ", method, " are not protected with scope expression. Configure your scope expression.")
@@ -493,7 +493,7 @@ _M.access_pep_handler = function(self, conf, hooks)
     if pending then
         set_pending_state(cache_key)
     end
-    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token) then
+    if hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_data.scope, token, captures) then
         if cache_key then
             worker_cache:set(cache_key, true, exp - ngx.now() - EXPIRE_DELTA_SECONDS)
         end
