@@ -97,7 +97,7 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
             local matched = false
             for k = 1, #token_scopes do
                 kong.log.debug(token_scopes[k])
-                local scope_captures, err = ngx.re.match(token_scopes[k], scope)
+                local scope_captures, err = ngx.re.match(token_scopes[k], scope, "jo")
                 if not scope_captures and err then
                     kong.log.error(err)
                     break
