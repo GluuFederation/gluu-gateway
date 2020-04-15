@@ -1751,9 +1751,9 @@ test("spontaneous scopes", function()
                                             }
                                         },
                                         data = {
-                                            [[^todos:(?P<PC1>.+)$]],
-                                            [[^command:(?P<PC2>.+)$]], -- IMO we don't need to repeat regexp here, .+ is enough, because path would match
-                                            [[^subcommand:(?P<PC3>[a-d]{4})$]], -- bit here we repeat PC regexp
+                                            [[^todos:(?<PC1>.+)$]],
+                                            [[^command:(?<PC2>.+)$]], -- IMO we don't need to repeat regexp here, .+ is enough, because path would match
+                                            [[^subcommand:(?<PC3>[a-d]{4})$]], -- bit here we repeat PC regexp
                                         }
                                     },
                                     httpMethods = {
