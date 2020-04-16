@@ -59,19 +59,80 @@ function hooks.build_cache_key(method, path, _, scopes)
     return table.concat(t)
 end
 
+local function match_named_captures(scope_captures, path_captures)
+    local ret = false
+    for k,v in pairs(scope_captures) do
+        if type(k) == "string" then
+            local pc_number = k:match("^PC([1-9])$")
+            if pc_number then
+                kong.log.debug("PC", pc_number, "= [", v, "], path capture = [",path_captures[tonumber(pc_number)], "]")
+                if path_captures[tonumber(pc_number)] ~= v then
+                    return false
+                end
+                ret = true
+            end
+        end
+    end
+    kong.log.debug("match_named_captures() return ", ret)
+    return ret
+end
+
 --- Check JSON expression
 -- @param self: Kong plugin object instance
 -- @param conf
+-- @param protected_path
+-- @param method
 -- @param scope_expression: example: { rule = { ["or"] = { { var = 0 }, { var = 1 }, { ["!"] = { { var = 2 } } } } }, data = { "admin", "hrr", "employee" } }
--- @param data: Array of scopes example: { "admin", "hrr" }
+-- @param token_scopes: Array of scopes example: { "admin", "hrr" }
 -- @return true or false
-function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, requested_scopes)
+function hooks.is_access_granted(self, conf, protected_path, method, scope_expression, token_scopes, _, path_captures)
     scope_expression = scope_expression or {}
 
     local data = {}
     local scope_expression_data = scope_expression.data
     for i = 1, #scope_expression_data do
-        data[#data + 1] = pl_tablex.find(requested_scopes, scope_expression_data[i]) and true or false
+        local scope = scope_expression_data[i]
+        kong.log.debug(scope)
+        if scope:sub(1,1) == "^" then
+            local matched = false
+            for k = 1, #token_scopes do
+                kong.log.debug(token_scopes[k])
+                local scope_captures, err = ngx.re.match(token_scopes[k], scope, "jo")
+                if not scope_captures and err then
+                    kong.log.error(err)
+                    break
+                end
+                if scope_captures then
+                    kong.log.debug("scope_captures")
+
+                    if not path_captures then
+                        kong.log.debug("no path captures, match")
+                        matched = true
+                        break
+                    end
+                    -- the whole match is always returned as scope_captures[0]
+                    -- the captures are returned as scope_captures[1] ... scope_captures[N]
+                    -- if no capturing group(s) present we use whole match, otherwise only captures
+                    if not scope_captures[1] then
+                        kong.log.debug("no scope captures")
+                        scope_captures[1] = scope_captures[0]
+                    end
+                    -- make it Lua array, index from 1
+                    scope_captures[0] = nil
+
+                    if match_named_captures(scope_captures, path_captures) or
+                            #path_captures == 1 and #scope_captures == 1 and path_captures[1] == scope_captures[1]
+                    then
+                        matched = true
+                        break
+                    end
+                end
+            end
+            kong.log.debug("data[#data + 1]=", matched)
+            data[#data + 1] = matched
+        else
+            data[#data + 1] = pl_tablex.find(token_scopes, scope) and true or false
+        end
     end
     local result = logic_apply(scope_expression.rule, mark_as_array(data))
     return result

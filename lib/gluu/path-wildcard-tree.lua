@@ -22,7 +22,7 @@ _M.addPath = function(self, method, path, exp)
     -- TODO here must be special version of split with {regexp} support
     -- or should we forbid slash within regexp?
 
-    -- for methods we support exact mact or wildcard
+    -- for methods we support exact match or wildcard
     assert(method ~= "??")
     assert(not method:match"^{(.+)}$")
 
@@ -78,6 +78,7 @@ local function isKeysExist(t)
     return false
 end
 
+-- @return scope expression [, multiple_wildcard_matched (boolean), [captures (array)]
 local function processItem(node, path_as_array, index)
     local item = path_as_array[index]
     local key_node = node[item]
@@ -90,16 +91,28 @@ local function processItem(node, path_as_array, index)
     -- next check regexp match
     for i = 1, #node do
         local regexp = node[i][REGEXP_KEY]
-        local m, err = ngx.re.match(item, regexp, "jo")
-        if m then
-            return node[i]
+        local captures, err = ngx.re.match(item, regexp, "jo")
+        if not captures and err then
+            print(err)
+            return
+        end
+        if captures then
+            if not captures[1] then
+                -- no captures in regexp, return the whole match
+                return node[i], false, { captures[0] }
+            end
+            -- capture(s) in regexp
+
+            -- convert captures variable into Lua array (start from index 1)
+            captures[0] = nil
+            return node[i], false, captures
         end
     end
 
     local wildcard_node = node[WILDCARD_ELEMENT]
     if wildcard_node then
         print"wildcard match"
-        return wildcard_node
+        return wildcard_node, false, { item }
     end
 
     local wildcard_multiple_node = node[WILDCARD_MULTIPLE_ELEMENTS]
@@ -108,11 +121,11 @@ local function processItem(node, path_as_array, index)
         if isKeysExist(wildcard_multiple_node) then
             for skip = -1, #path_as_array - index do
                 local node_local = wildcard_multiple_node
-                local matched, last_index
+                local multiple_wildcard_matched, last_index
                 for  j = 1, #path_as_array - index - skip do
-                    node_local, matched = processItem(node_local, path_as_array, index + skip + j)
+                    node_local, multiple_wildcard_matched = processItem(node_local, path_as_array, index + skip + j)
 
-                    -- we allow only one multiple wildcard, so processItem cannot return matched == true
+                    -- we allow only one multiple wildcard, so processItem cannot return multiple_wildcard_matched == true
                     if not node_local then
                         break
                     end
@@ -138,15 +151,26 @@ _M.matchPath = function(self, method, path)
     local path_as_array = path_split(path)
 
     local node = self
-    local matched, last_index
+    local multiple_wildcard_matched, last_index, node_captures, captures
 
     for i = 1, #path_as_array do
-        node, matched = processItem(node, path_as_array, i)
-        if matched then
-            return node[EXPRESSION_KEY]
+        node, multiple_wildcard_matched, node_captures = processItem(node, path_as_array, i)
+        if multiple_wildcard_matched then
+            -- (matched == true) only for multiple wildcard, no captures
+            return node[EXPRESSION_KEY], captures
         end
         if not node then
             break
+        end
+        if node_captures then
+            captures = captures or {}
+            if #node_captures > 0 then
+                for i = 1, #node_captures do
+                    captures[#captures + 1] = node_captures[i]
+                end
+            else
+                captures[#captures + 1] = node_captures[0]
+            end
         end
         last_index = i
     end
@@ -156,11 +180,11 @@ _M.matchPath = function(self, method, path)
         -- protected path /test/??, real path /test
         -- does this node has multiple wildcard subnode?
         if node and node[WILDCARD_MULTIPLE_ELEMENTS] and node[WILDCARD_MULTIPLE_ELEMENTS][EXPRESSION_KEY] then
-            return node[WILDCARD_MULTIPLE_ELEMENTS][EXPRESSION_KEY]
+            return node[WILDCARD_MULTIPLE_ELEMENTS][EXPRESSION_KEY], captures
         end
 
         if node and node[EXPRESSION_KEY] then
-            return node[EXPRESSION_KEY]
+            return node[EXPRESSION_KEY], captures
         end
     end
 end

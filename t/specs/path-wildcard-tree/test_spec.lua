@@ -6,7 +6,7 @@ local host_git_root = os.getenv "HOST_GIT_ROOT"
 local git_root = os.getenv "GIT_ROOT"
 
 local function docker_run()
-    return stdout("docker run -d --rm -p 80",
+    return stdout("docker run -d -p 80",
         " -v ", host_git_root, "/t/specs/path-wildcard-tree/test.nginx:/usr/local/openresty/nginx/conf/nginx.conf:ro ",
         " -v ", host_git_root, "/lib/gluu/path-wildcard-tree.lua:/usr/local/openresty/lualib/gluu/path-wildcard-tree.lua:ro ",
         " -v ", host_git_root, "/t/specs/path-wildcard-tree/path-wildcard-tree-tester.lua:/usr/local/openresty/lualib/gluu/path-wildcard-tree-tester.lua:ro ",
@@ -120,6 +120,16 @@ test("basic tests", function()
 
     local res, err = matchPath("/users/123/todos/123")
     assert(res:find("/users/?/{todos|photos}/123", 1 , true))
+    assert(res:find("PC1=[123]", 1 , true))
+    assert(res:find("PC2=[todos]", 1 , true))
 
-    print_logs = false
+    addPath("/path/??/images/?")
+
+    local res, err = matchPath("/path/??/images/p1.jpg")
+    assert(res:find("/path/??/images/?", 1 , true))
+    assert(res:find("PC1=[p1.jpg]", 1 , true))
+
+    sh_ex([[curl -sS -v --fail -m 5 -L  "127.0.0.1:]], nginx_port, [[/named_captures"]])
+
+    --print_logs = false
 end)
