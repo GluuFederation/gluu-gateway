@@ -1796,3 +1796,37 @@ test("spontaneous scopes", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
+
+test("Multiple ?? patterns in a path", function()
+    setup_db_less()
+
+    local kong_config = build_config{
+        {
+            path = "/posts/??/folder/??",
+            conditions = {
+                {
+                    scope_expression = {
+                        rule = {
+                            ["and"] = {
+                                {
+                                    var = 0
+                                }
+                            }
+                        },
+                        data = {
+                            "admin"
+                        }
+                    },
+                    httpMethods = { "GET", "POST" }
+                },
+            }
+        }
+    }
+
+    kong_utils.gg_db_less(kong_config, nil, true) -- wait for stop
+
+    local res = stderr("docker logs ", ctx.kong_id)
+    assert(res:find("Multiple ?? patterns in path are not supported", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)

@@ -670,14 +670,20 @@ function _M.check_expression(expression, config)
     for k = 1, #expression do
         local item = expression[k]
 
-        if not item.path or #item.path == 0 then
+        local path = item.path
+        if not path or #path == 0 then
             return false, "Path is missing or empty in expression"
         end
 
-        if pl_tablex.find(paths, item.path) then
+        local _, multiple_wildcard_count = path:gsub("/%?%?", "")
+        if multiple_wildcard_count > 1 then
+            return false, "Multiple ?? patterns in path are not supported"
+        end
+
+        if pl_tablex.find(paths, path) then
             return false, "Duplicate path in expression"
         end
-        table.insert(paths, item.path)
+        table.insert(paths, path)
 
         if not item.conditions or #item.conditions == 0 then
             return false, "Conditions are missing in expression"
