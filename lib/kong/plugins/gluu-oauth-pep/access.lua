@@ -61,20 +61,22 @@ end
 
 local function match_named_captures(scope_captures, path_captures)
     local ret = false
+    local no_named_capture = true
     for k,v in pairs(scope_captures) do
         if type(k) == "string" then
             local pc_number = k:match("^PC([1-9])$")
             if pc_number then
+                no_named_capture = false
                 kong.log.debug("PC", pc_number, "= [", v, "], path capture = [",path_captures[tonumber(pc_number)], "]")
                 if path_captures[tonumber(pc_number)] ~= v then
-                    return false
+                    return false, no_named_capture
                 end
-                ret = true
+                ret = true, no_named_capture
             end
         end
     end
     kong.log.debug("match_named_captures() return ", ret)
-    return ret
+    return ret, no_named_capture
 end
 
 --- Check JSON expression
@@ -120,9 +122,8 @@ function hooks.is_access_granted(self, conf, protected_path, method, scope_expre
                     -- make it Lua array, index from 1
                     scope_captures[0] = nil
 
-                    if match_named_captures(scope_captures, path_captures) or
-                            #path_captures == 1 and #scope_captures == 1 and path_captures[1] == scope_captures[1]
-                    then
+                    local named_capture_matched, no_named_capture = match_named_captures(scope_captures, path_captures)
+                    if named_capture_matched or no_named_capture then
                         matched = true
                         break
                     end
