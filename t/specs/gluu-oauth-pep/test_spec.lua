@@ -1692,7 +1692,7 @@ test("spontaneous scopes", function()
                                             }
                                         },
                                         data = {
-                                            "^posts:(.+)$",
+                                            "^posts:.+$",
                                             "email"
                                         }
                                     },
@@ -1700,34 +1700,6 @@ test("spontaneous scopes", function()
                                         "GET",
                                         "DELETE",
                                         "POST"
-                                    }
-                                }
-                            }
-                        },
-                        {
-                            path = [[/comments/{\d\d\d}]],
-                            conditions = {
-                                {
-                                    scope_expression = {
-                                        rule = {
-                                            ["and"] = {
-                                                {
-                                                    var = 0
-                                                },
-                                                {
-                                                    var = 1
-                                                }
-                                            }
-                                        },
-                                        data = {
-                                            [[^\d\d\d$]], -- no capture group, plugin must use whole match
-                                            "email"
-                                        }
-                                    },
-                                    httpMethods = {
-                                        "GET",
-                                        "POST",
-                                        "DELETE"
                                     }
                                 }
                             }
@@ -1781,9 +1753,9 @@ test("spontaneous scopes", function()
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
         [[/posts/123 --header 'Host: backend.com' --header 'Authorization: Bearer 123456789abc']])
 
-    print "test the /comments/{^\d\d\d$}"
+    print "test the /posts/?/?? any ? should match, no path capture defined in scope regexp"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
-        [[/comments/123 --header 'Host: backend.com' --header 'Authorization: Bearer 123456789qwerty']])
+        [[/posts/321 --header 'Host: backend.com' --header 'Authorization: Bearer 123456789abc']])
 
     print "test the named path captures, path = [[/todos/?/command/{^(\d\d\d)-([a-d]{4})$]]"
     local res, err = sh_ex([[curl --fail -i -sS  -X GET --url http://localhost:]], ctx.kong_proxy_port,
