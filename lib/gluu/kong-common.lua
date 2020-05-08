@@ -835,4 +835,23 @@ _M.split = split
 _M.CUSTOM_HEADERS_FORMATS = { "string", "jwt", "base64", "urlencoded", "list" }
 _M.PASS_CREDENTIALS_ENUM = { "pass", "hide", "phantom_token" }
 
+function _M.get_body_data()
+    -- explicitly read the req body
+    ngx.req.read_body()
+
+    local data = ngx.req.get_body_data()
+    if not data then
+        -- body may get buffered in a temp file:
+        ngx.log(ngx.DEBUG, "loading client request body from a temp file")
+        local filename = ngx.req.get_body_file()
+        if not filename then
+            print("no body found")
+            return nil
+        end
+        -- this is really bad for performance
+        data = assert(read_file(filename)) -- body should be here
+    end
+    return data
+end
+
 return _M
