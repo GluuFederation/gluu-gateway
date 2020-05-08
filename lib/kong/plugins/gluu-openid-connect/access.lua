@@ -227,6 +227,15 @@ local function authorize(conf, session, prompt, required_acrs)
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
+    local method = kong.request.get_method()
+    if conf.restore_original_auth_params and method ~= "GET" then
+        session_data.original_requests_params = {
+            method = method,
+            content_type = kong.request.get_header("content-type"),
+            content_encoding = kong.request.get_header("content-encoding"),
+            body = kong_auth_pep_common.get_body_data(),
+        }
+    end
     session.data:set_requested_acrs(required_acrs)
     session:save()
 
@@ -257,6 +266,20 @@ local function request_authenticated(conf, session, id_token)
     kong.service.request.set_headers(new_headers)
     kong.ctx.shared.gluu_openid_connect_users_authenticated = true
 
+    local original_requests_params
+    if conf.restore_original_auth_params then
+        original_requests_params = session_data.original_requests_params
+        if original_requests_params then
+            session_data.original_requests_params = nil
+            session:save()
+            kong.service.request.set_method(original_requests_params.method)
+            kong.service.request.set_header("content-type", original_requests_params.content_type)
+            if original_requests_params.content_encoding then
+                kong.service.request.set_header("content-encoding", original_requests_params.content_encoding)
+            end
+            kong.service.request.set_raw_body(original_requests_params.body)
+        end
+    end
 end
 
 return function(self, conf)

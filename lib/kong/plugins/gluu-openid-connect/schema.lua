@@ -22,6 +22,7 @@ return {
                     { max_id_token_age = typedefs.timeout  { required = true }, },
                     { max_id_token_auth_age = typedefs.timeout  { required = true }, },
                     { required_acrs_expression = { required = false, type = "string" }, },
+                    { restore_original_auth_params = { default = false, type = "boolean" }, },
                     {
                         custom_headers = {
                             required = false,
@@ -62,4 +63,3 @@ return {
         },
     }
 }
-
