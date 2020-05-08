@@ -237,6 +237,15 @@ local function authorize(conf, session, prompt, required_acrs)
     -- by original_url session's field we distinguish enduser session previously redirected
     -- to OP for authentication
     session_data.original_url = ngx.var.request_uri
+    local method = kong.request.get_method()
+    if conf.restore_original_auth_params and method ~= "GET" then
+        session_data.original_requests_params = {
+            method = method,
+            content_type = kong.request.get_header("content-type"),
+            content_encoding = kong.request.get_header("content-encoding"),
+            body = kong_auth_pep_common.get_body_data(),
+        }
+    end
     set_requested_acrs(session_data, required_acrs)
     session:save()
 
@@ -382,6 +391,21 @@ return function(self, conf)
 
         kong.log.debug("Silent authentication is required - Redirecting to OP Authorization endpoint")
         return authorize(conf, session, "none", required_acrs)
+    end
+
+    local original_requests_params
+    if conf.restore_original_auth_params then
+        original_requests_params = session_data.original_requests_params
+        if original_requests_params then
+            session_data.original_requests_params = nil
+            session:save()
+            kong.service.request.set_method(original_requests_params.method)
+            kong.service.request.set_header("content-type", original_requests_params.content_type)
+            if original_requests_params.content_encoding then
+                kong.service.request.set_header("content-encoding", original_requests_params.content_encoding)
+            end
+            kong.service.request.set_raw_body(original_requests_params.body)
+        end
     end
 
     -- request_token_data need in uma-pep in both case i.e. uma-auth and openid-connect

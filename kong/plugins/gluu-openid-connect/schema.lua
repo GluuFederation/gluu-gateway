@@ -25,6 +25,7 @@ return {
                     { max_id_token_auth_age = typedefs.timeout  { required = true }, },
                     { required_acrs_expression = { required = false, type = "string" }, },
                     { method_path_tree = { required = false, type = "string" }, },
+                    { restore_original_auth_params = { default = false, type = "boolean" }, },
                 },
                 custom_validator = function(config)
                     if not config.required_acrs_expression then
