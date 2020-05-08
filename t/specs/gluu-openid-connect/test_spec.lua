@@ -1019,3 +1019,46 @@ test("unset required_acrs_expression", function()
 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
+
+test("restore POST after authentication", function()
+    setup("oxd-model1.lua")
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    local create_service_response = configure_service_route()
+
+    print"test it works"
+    sh([[curl --fail -i -sS -X GET --url http://localhost:]],
+        ctx.kong_proxy_port, [[/ --header 'Host: backend.com']])
+
+    configure_plugin(create_service_response,{
+        authorization_redirect_path = "/callback",
+        requested_scopes = {"openid", "email", "profile"},
+        max_id_token_age = 14,
+        max_id_token_auth_age = 60*60*24,
+        logout_path = "/logout_path",
+        post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+        restore_original_auth_params = true,
+    })
+
+    print"test it responds with 302"
+    local res, err = sh_ex([[curl -i --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Content-Type: text' --data 'qwerty1234567' --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"call callback with state from oxd-model1, follow redirect"
+    local res, err = sh_ex([[curl -i -v -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("x-openid-connect-idtoken", 1, true))
+    assert(res:find("x-openid-connect-userinfo", 1, true))
+    assert(res:find("content-type: text", 1, true))
+    assert(res:find("Method: POST", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
