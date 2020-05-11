@@ -103,6 +103,17 @@
                 </div>
               </div>
               <div class="form-group">
+                <label class="col-sm-2 control-label">Restore original auth params</label>
+                <div class="col-sm-7 check-toggle-size">
+                  <input bs-switch ng-model="pluginConfig.restore_original_auth_params"
+                         switch-size="small"
+                         type="checkbox"
+                         switch-on-text="YES"
+                         switch-off-text="NO" />
+                  <p class="help-block">It use when your first request is <code>HTTP POST</code>. Plugin store the request object and after auth plugin will redirect with the same POST requested parametrs. </p>
+                </div>
+              </div>
+              <div class="form-group">
                 <label class="col-sm-2 control-label">Requested scopes</label>
                 <div class="col-sm-10 well">
                   <div class="col-sm-offset-1 col-sm-8" data-ng-repeat="(key,value) in opResponse.scopes_supported">

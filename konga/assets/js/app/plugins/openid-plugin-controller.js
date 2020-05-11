@@ -218,7 +218,8 @@
             max_id_token_age_type: 'minutes',
             max_id_token_auth_age_type: 'minutes',
             uma_scope_expression: [],
-            require_id_token: true
+            require_id_token: true,
+            restore_original_auth_params: false
           };
           setURLs();
         }
@@ -479,6 +480,7 @@
                   required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
+                  restore_original_auth_params: model.restore_original_auth_params || false
                 }
               };
 
@@ -588,6 +590,7 @@
                   required_acrs_expression: (model.required_acrs_expression && JSON.stringify(model.required_acrs_expression)) || null,
                   max_id_token_age: max_id_token_age,
                   max_id_token_auth_age: max_id_token_auth_age,
+                  restore_original_auth_params: model.restore_original_auth_params || false
                 }
               };
 
