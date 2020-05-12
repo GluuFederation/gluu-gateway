@@ -1386,3 +1386,73 @@ test("unexpected error, max_id_token_age - 1 hour and max_id_token_auth_age - 1 
     ctx.print_logs = false -- comment it out if want to see logs
 end)
 
+test("restore POST after authentication", function()
+    setup_db_less("oxd-model1.lua")
+
+    local register_site_response = kong_utils.register_site()
+
+    local kong_config = {
+        _format_version = "1.1",
+        services = {
+            {
+                name =  "demo-service",
+                url = "http://backend",
+            },
+        },
+        routes = {
+            {
+                name =  "demo-route",
+                service = "demo-service",
+                hosts = { "backend.com" },
+            },
+        },
+        plugins = {
+            {
+                name = "gluu-openid-connect",
+                service = "demo-service",
+                config = {
+                    op_url = "http://stub",
+                    oxd_url = "http://oxd-mock",
+                    client_id = register_site_response.client_id,
+                    client_secret = register_site_response.client_secret,
+                    oxd_id = register_site_response.oxd_id,
+                    authorization_redirect_path = "/callback",
+                    requested_scopes = {"openid", "email", "profile"},
+                    max_id_token_age = 14,
+                    max_id_token_auth_age = 60*60*24,
+                    logout_path = "/logout_path",
+                    post_logout_redirect_path_or_url = "/post_logout_redirect_path_or_url",
+                    restore_original_auth_params = true,
+                    custom_headers = {
+                        { header_name = "kong_id_token_jwt", value_lua_exp = "id_token", format = "jwt" },
+                    }
+                },
+            },
+        },
+    }
+
+    kong_utils.gg_db_less(kong_config)
+
+    local cookie_tmp_filename = ctx.cookie_tmp_filename
+
+    print"test it responds with 302"
+    local res, err = sh_ex([[curl -i --fail -sS -X POST --url http://localhost:]],
+        ctx.kong_proxy_port, [[/page1 --header 'Content-Type: text' --data 'qwerty1234567' --header 'Host: backend.com' -c ]], cookie_tmp_filename,
+        [[ -b ]], cookie_tmp_filename)
+    assert(res:find("302", 1, true))
+    assert(res:find("response_type=code", 1, true))
+    assert(res:find("session=", 1, true)) -- session cookie is here
+
+    print"call callback with state from oxd-model1, follow redirect"
+    local res, err = sh_ex([[curl -i -v -sS -X GET -L --url 'http://localhost:]],
+        ctx.kong_proxy_port, [[/callback?code=1234567890&state=473ot4nuqb4ubeokc139raur13' --header 'Host: backend.com']],
+        [[ -c ]], cookie_tmp_filename, [[ -b ]], cookie_tmp_filename)
+    -- test that we redirected to original url
+    assert(res:find("200", 1, true))
+    assert(res:find("page1", 1, true))
+    assert(res:find("kong-id-token-jwt", 1, true))
+    assert(res:find("content-type: text", 1, true))
+    assert(res:find("Method: POST", 1, true))
+
+    ctx.print_logs = false -- comment it out if want to see logs
+end)
