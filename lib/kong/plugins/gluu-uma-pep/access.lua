@@ -76,7 +76,10 @@ local function redirect_to_claim_url(conf, ticket)
         return unexpected_error()
     end
 
-    local session = resty_session.start()
+    local session = kong.ctx.plugin.session
+    if not session.started then
+        session:start() -- with some storage adapters this will held a lock.
+    end
     local session_data = session.data
     -- by uma_original_url session's field we distinguish enduser session previously redirected
     -- to OP for authorization
@@ -189,13 +192,17 @@ end
 
 function hooks.is_access_granted(self, conf, protected_path, method, _, _, rpt)
     if conf.obtain_rpt then
-        local session = resty_session.start()
+        local session = kong.ctx.plugin.session
 
         local ticket, state
         if session.present then
             local session_data = session.data
             ticket, state = session_data.uma_ticket, session_data.uma_state
             if ticket and state then
+                if not session.started then
+                    session:start() -- with some storage adapters this will held a lock.
+                end
+
                 session_data.uma_state = nil
                 session_data.uma_ticket = nil
                 session:save()
@@ -222,11 +229,13 @@ function hooks.get_scope_expression(config)
 end
 
 return function(self, conf)
+    local session, present  = resty_session.open{ name = "gluu_uma_pep_session" }
+    session:hide()
+    kong.ctx.plugin.session = session
+
     local path = ngx.var.uri:match"^([^%s]+)"
     if conf.redirect_claim_gathering_url and path == conf.claims_redirect_path then
         kong.log.debug("Claim Redirect URI path (", path, ") is currently navigated -> Processing ticket response coming from OP")
-
-        local session = resty_session.start()
 
         if not session.present then
             kong.log.warn("request to the claim redirect response path but there's no session state found")
@@ -245,6 +254,9 @@ return function(self, conf)
         if not ticket or not state then
             kong.log.warn("missed ticket or state argument(s)")
             return kong.response.exit(400, {message = "missed ticket or state argument(s)"})
+        end
+        if not session.started then
+            session:start() -- with some storage adapters this will held a lock.
         end
         session_data.uma_original_url = nil
         session_data.uma_ticket = ticket
