@@ -174,6 +174,7 @@ test("with and without token, metrics, uma-auth and check UMA scope", function()
     assert(stdout:lower():find("x-oauth-client-id: " .. string.lower(kong_config.consumers[2].custom_id), 1, true))
     assert(stdout:lower():find("x-consumer-custom-id: " .. string.lower(kong_config.consumers[2].custom_id), 1, true))
     assert(stdout:lower():find("x%-rpt%-expiration: %d+"))
+    assert(not res:find("cookie: ", 1, true))
 
     print"GET to the same path but with another already cached token"
     local stdout, _ = sh_ex([[curl -i -sS -X GET --url http://localhost:]],
