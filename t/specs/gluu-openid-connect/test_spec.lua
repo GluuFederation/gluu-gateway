@@ -1111,6 +1111,7 @@ test("Check custom header", function()
     for i = 1, #headers do
         assert(res:find(headers[i], 1, true), "Missed header: " .. headers[i])
     end
+    assert(not res:find("cookie: ", 1, true))
 
     print"request second time with cookie"
     local res, err = sh_ex([[curl -i --fail -sS -X GET --url http://localhost:]],

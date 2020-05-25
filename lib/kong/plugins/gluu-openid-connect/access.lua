@@ -270,6 +270,7 @@ local function request_authenticated(conf, session, id_token)
     if conf.restore_original_auth_params then
         original_requests_params = session_data.original_requests_params
         if original_requests_params then
+            session:start()
             session_data.original_requests_params = nil
             session:save()
             kong.service.request.set_method(original_requests_params.method)
@@ -285,7 +286,8 @@ end
 return function(self, conf)
     -- open() check cookie exist and validate if any, but it doesn't modify cookie
     -- you need to call session:start() to really start the session
-    local session = oidc_wrap(resty_session.open())
+    local session = oidc_wrap(resty_session.open{ name  = "gluu_openid_connect_session"})
+    session:hide()
 
     local path = ngx.var.uri:match"^([^%s]+)"
 
