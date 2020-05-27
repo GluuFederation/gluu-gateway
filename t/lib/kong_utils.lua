@@ -9,7 +9,7 @@ local pl_tmpname = pl_path.tmpname
 
 local _M = {}
 
-local kong_image = "kong:2.0.0-alpine"
+local kong_image = "kong:2.0.4-alpine"
 local postgress_image = "postgres:9.5"
 local openresty_image = "openresty/openresty:alpine"
 
