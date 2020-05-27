@@ -7,6 +7,13 @@ local path_wildcard_tree = require"gluu.path-wildcard-tree"
 
 local unexpected_error = kong_auth_pep_common.unexpected_error
 
+local lrucache = require "resty.lrucache.pureffi"
+-- it is shared by all the requests served by each nginx worker process:
+local lua_exp_worker_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
+if not lua_exp_worker_cache then
+    return error("failed to create the cache: " .. (err or "unknown"))
+end
+
 -- call /uma-rs-check-access oxd API, handle errors
 local function try_check_access(conf, path, method, token, access_token)
     token = token or ""
@@ -106,11 +113,16 @@ local function get_rpt_by_ticket(self, conf, ticket, state, id_token, userinfo)
 
     local pushed_claims_lua_exp = conf.pushed_claims_lua_exp
     if conf.pushed_claims_lua_exp then
-        -- TODO use a cache here to avoid Lua code parsing/compiling upon every request
-        local chunk_text = "return " .. pushed_claims_lua_exp
+        local chunk = lua_exp_worker_cache:get(pushed_claims_lua_exp)
 
-        -- we rely here on schema validation, it should check for valid Lua syntax
-        local chunk = assert(loadstring(chunk_text))
+        if not chunk then
+            local chunk_text = "return " .. pushed_claims_lua_exp
+
+            -- we rely here on schema validation, it should check for valid Lua syntax
+            chunk = assert(loadstring(chunk_text))
+        
+            lua_exp_worker_cache:set(pushed_claims_lua_exp, chunk, 60*60*24 ) -- expire in a day
+        end
 
         local environment = {
             id_token = id_token,
