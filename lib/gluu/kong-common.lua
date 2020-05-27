@@ -27,6 +27,11 @@ if not worker_cache then
     return error("failed to create the cache: " .. (err or "unknown"))
 end
 
+local lua_exp_worker_cache, err = lrucache.new(1000) -- allow up to 1000 items in the cache
+if not lua_exp_worker_cache then
+    return error("failed to create the cache: " .. (err or "unknown"))
+end
+
 local function split(str, sep)
     local ret = {}
     local n = 1
@@ -760,11 +765,18 @@ function _M.make_headers(custom_headers, environment, cache_key)
         local header = custom_headers[i]
         local header_name = header.header_name
 
-        -- TODO use a cache here to avoid Lua code parsing/compiling upon every request
-        local chunk_text = "return " .. header.value_lua_exp
+        local value_lua_exp = header.value_lua_exp
+        local chunk = lua_exp_worker_cache:get(value_lua_exp)
 
-        -- we rely here on schema validation, it should check for valid Lua syntax
-        local chunk = assert(loadstring(chunk_text))
+        if not chunk then
+            local chunk_text = "return " .. header.value_lua_exp
+
+            -- we rely here on schema validation, it should check for valid Lua syntax
+            chunk = assert(loadstring(chunk_text))
+
+            lua_exp_worker_cache:set(value_lua_exp, chunk, 60*60*24 ) -- expire in a day
+        end
+
         setfenv(chunk, environment)
         local ok, value = pcall(chunk)
         if not ok then
