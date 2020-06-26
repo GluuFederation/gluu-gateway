@@ -3,7 +3,7 @@ local typedefs = require "kong.db.schema.typedefs"
 local cjson = require "cjson.safe"
 
 return {
-    name = "gluu-uma-pep",
+    name = "gluu-oauth-pep",
     fields = {
         { consumer = typedefs.no_consumer },
         {
