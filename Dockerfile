@@ -1,4 +1,4 @@
-FROM kong:2.0.4-alpine
+FROM kong:2.1.1-alpine
 
 ARG LUA_DIST=/usr/local/share/lua/5.1
 ARG DISABLED_PLUGINS="ldap-auth key-auth basic-auth hmac-auth jwt oauth2"
