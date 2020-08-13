@@ -4,9 +4,6 @@
 [submodule "third-party/oxd-web-lua"]
 	path = third-party/oxd-web-lua
 	url = https://github.com/GluuFederation/oxd-web-lua.git
-[submodule "third-party/json-logic-lua"]
-	path = third-party/json-logic-lua
-	url = https://git.rucciva.one/rucciva/json-logic-lua.git
 [submodule "third-party/lua-resty-jwt"]
 	path = third-party/lua-resty-jwt
 	url = https://github.com/GluuFederation/lua-resty-jwt.git
@@ -19,3 +16,6 @@
 [submodule "third-party/lua-resty-session"]
 	path = third-party/lua-resty-session
 	url = https://github.com/bungle/lua-resty-session.git
+[submodule "third-party/json-logic-lua"]
+	path = third-party/json-logic-lua
+	url = https://github.com/GluuFederation/json-logic-lua.git
