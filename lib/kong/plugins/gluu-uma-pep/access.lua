@@ -55,15 +55,57 @@ end
 
 local hooks = {}
 
+local function get_stored_pct(conf)
+    local response, err = oxd.get_rp(conf.oxd_url,
+        {
+            oxd_id = conf.oxd_id
+        },
+        ptoken)
+
+    if err then
+        kong.log.err(err)
+        return unexpected_error()
+    end
+
+    local status, json = response.status, response.body
+
+    if status ~= 200 then
+        kong.log.err("get_rp() responds with status ", status)
+        return ""
+    end
+
+    if not json["node"]["rpt_pct"] then
+        kong.log.err("get_rp() missed rpt_pct")
+        return ""
+    end
+    return json["node"]["rpt_pct"]
+end
 local function redirect_to_claim_url(conf, ticket)
     local ptoken = kong_auth_pep_common.get_protection_token(conf)
     local claims_redirect_uri = kong_auth_pep_common.get_path_with_base_url(conf.claims_redirect_path)
-    local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
-        {
+    local pct = ""
+    local get_claims_params = {
+        oxd_id = conf.oxd_id,
+        ticket = ticket,
+        claims_redirect_uri = claims_redirect_uri
+    }
+
+    if conf.read_claims_from_pct then
+        if conf.claims_gathering_pct_value ~= nil and conf.claims_gathering_pct_value ~= "" then
+            pct = conf.claims_gathering_pct_value
+        else
+            pct = get_stored_pct(conf)
+        end
+        get_claims_params = {
             oxd_id = conf.oxd_id,
             ticket = ticket,
-            claims_redirect_uri = claims_redirect_uri
-        },
+            claims_redirect_uri = claims_redirect_uri,
+            custom_parameters = {pct = pct}
+        }
+    end
+
+    local response, err = oxd.uma_rp_get_claims_gathering_url(conf.oxd_url,
+        get_claims_params,
         ptoken)
 
     if err then

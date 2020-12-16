@@ -16,6 +16,8 @@ return {
                     { client_secret = { required = true, type = "string" }, },
                     { op_url = typedefs.url { required = true }, },
                     { deny_by_default = { type = "boolean", default = true }, },
+                    { read_claims_from_pct = { type = "boolean", default = false }, },
+                    { claims_gathering_pct_value = { type = "string" }, },
                     { require_id_token = { type = "boolean", default = false }, },
                     { obtain_rpt = { type = "boolean", default = false }, },
                     { claims_redirect_path = { required = false, type = "string" }, },
